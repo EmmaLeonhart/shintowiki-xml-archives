@@ -1,0 +1,359 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>User:Nardog/AutoSectionLink.js</title>
+    <ns>2</ns>
+    <id>143908</id>
+    <revision>
+      <id>3367771</id>
+      <timestamp>2026-03-02T18:43:58Z</timestamp>
+      <contributor>
+        <username>en&gt;Nardog</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>refac</comment>
+      <origin>3367771</origin>
+      <model>javascript</model>
+      <format>text/javascript</format>
+      <text bytes="5134" sha1="cgwlzm01zi9ko23tj8oxai6j7wetk4a" xml:space="preserve">['edit', 'submit'].includes(mw.config.get('wgAction')) &amp;&amp;
+mw.config.get('wgArticleId') &amp;&amp;
+mw.config.get('wgPageContentModel') === 'wikitext' &amp;&amp;
+$(function autoSectionLink() {
+	let form = document.getElementById('editform');
+	if (!form) return;
+	let formData = new FormData(form);
+	let section = formData.get('wpSection');
+	if (section === 'new') return;
+	let widget = document.getElementById('wpSummaryWidget');
+	if (!widget) return;
+	let isOld = formData.get('altBaseRevId') &gt; 0 ||
+		(formData.get('baseRevId') || formData.get('parentRevId')) !== formData.get('editRevId');
+	mw.loader.using([
+		'jquery.textSelection', 'mediawiki.util', 'oojs-ui-core',
+		'oojs-ui.styles.icons-editing-core'
+	], () =&gt; {
+		let $textarea = $('#wpTextbox1');
+		let input = OO.ui.infuse(widget);
+		let button = new OO.ui.ButtonWidget({
+			framed: false,
+			icon: 'undo',
+			classes: ['autosectionlink-button'],
+			invisibleLabel: true,
+			label: 'Restore previous section link'
+		}).toggle().on('click', () =&gt; {
+			let cache = button.getData();
+			input.setValue(input.getValue().replace(
+				/^(\/\*.*?\*\/)?\s*/,
+				cache[0] ? '/* ' + cache[0] + ' */ ' : ''
+			));
+			updatePreview(cache[0]);
+			cache.reverse();
+		}).on('toggle', () =&gt; {
+			input.$input.css('width', `calc(100% - ${button.$element.width()}px)`);
+		});
+		input.$input.after(button.$element);
+		let update = mw.util.debounce($diff =&gt; {
+			let lines = $textarea.textSelection('getContents').replace(/\s+$/, '').split('\n');
+			let firstLineNum;
+			if (isOld) {
+				let i, lastLineNum;
+				$diff.find('td:last-child').each(function () {
+					if (this.classList.contains('diff-lineno')) {
+						i = this.textContent.replace(/\D+/g, '') - 1;
+					} else if (this.classList.contains('diff-context')) {
+						i++;
+					} else if (this.classList.contains('diff-addedline')) {
+						i++;
+						if (!firstLineNum) {
+							firstLineNum = i;
+						}
+						lastLineNum = i;
+					} else if (this.classList.contains('diff-empty')) {
+						if (!firstLineNum) {
+							firstLineNum = i === 0 ? 1 : i;
+						}
+						lastLineNum = i;
+					}
+				});
+				lines.length = lastLineNum || 0;
+			} else {
+				let origLines = $textarea.prop('defaultValue').replace(/\s+$/, '').split('\n');
+				firstLineNum = lines.findIndex((line, i) =&gt; line !== origLines[i]) + 1;
+				if (!firstLineNum) {
+					firstLineNum = lines.length &lt; origLines.length
+						? lines.length
+						: 1;
+				}
+				for (let i = 1, x = lines.length, y = origLines.length;
+					(section ? i &lt; x : i &lt;= x) &amp;&amp; lines[x - i] === origLines[y - i];
+					i++
+				) {
+					lines.pop();
+				}
+			}
+			let re = /^(={1,6})\s*(.+?)\s*\1\s*(?:&lt;!--.+--&gt;\s*)?$/, lowest = 7;
+			lines.slice(firstLineNum).forEach(line =&gt; {
+				let match = line.match(re);
+				if (match &amp;&amp; match[1].length &lt; lowest) {
+					lowest = match[1].length;
+				}
+			});
+			let head;
+			lines.slice(0, firstLineNum).reverse().some(line =&gt; {
+				let match = line.match(re);
+				if (match &amp;&amp; match[1].length &lt; lowest) {
+					head = match[2];
+					return true;
+				}
+			});
+			head = head ? head
+				.replace(/'''(.+?)'''|\[\[:?(?:[^|\]]+\|)?([^\]]+)\]\]|&lt;\/?(?:abbr|b|bdi|bdo|big|cite|code|data|del|dfn|em|font|i|ins|kbd|mark|nowiki|q|rb|ref|rp|rt|rtc|ruby|s|samp|small|span|strike|strong|sub|sup|templatestyles|time|translate|tt|u|var)(?:\s[^&gt;]*)?&gt;|&lt;!--.*?--&gt;|\[(?:https?:)?\/\/[^\s\[\]]+\s([^\]]+)\]/gi, '$1$2$3')
+				.replace(/''(.+?)''/g, '$1')
+				.trim() : '';
+			let match = input.getValue().match(/^(?:\/\*\s*(.*?)\s*\*\/)?\s*(.*?)$/);
+			let prev = match[1] || '';
+			if (prev === head) return;
+			if (section &lt; 1 &amp;&amp; lowest === 7 &amp;&amp; !head &amp;&amp; prev === 'top') return;
+			input.setValue((head ? '/* ' + head + ' */ ' : '') + match[2]);
+			button.setData([prev, head]).toggle(true);
+			updatePreview(head);
+		}, 500);
+		let updatePreview = head =&gt; {
+			let $preview = $('.mw-summary-preview &gt; .comment &gt; span[dir="auto"]');
+			if (!$preview.length) return;
+			let url = head &amp;&amp; mw.util.getUrl() + '#' + head.replace(/ /g, '_');
+			let text = head &amp;&amp; (document.dir === 'rtl' ? '←\u200F' : '→\u200E') + head;
+			let $ac = $preview.children('.autocomment:first-child');
+			if ($ac.length &amp;&amp; !$ac[0].previousSibling) {
+				if (head) {
+					$ac.children('a').attr('href', url).text(text);
+				} else {
+					let node = $ac[0].nextSibling;
+					if (node &amp;&amp; node.nodeType === 3) {
+						node.textContent = node.textContent.replace(/^\s+/, '');
+					}
+					$ac.remove();
+				}
+			} else if (head) {
+				$('&lt;span&gt;').addClass('autocomment').append(
+					$('&lt;a&gt;').attr({
+						href: url,
+						title: mw.config.get('wgPageName').replace(/_/g, ' ')
+					}).text(text),
+					mw.messages.get('colon-separator', ': ')
+				).prependTo($preview);
+			}
+		};
+		if (isOld) {
+			mw.hook('wikipage.diff').add(update);
+		} else {
+			$textarea.on('input', update);
+			mw.hook('ext.CodeMirror.switch').add((on, $codeMirror) =&gt; {
+				if (on &amp;&amp; $codeMirror[0].CodeMirror) {
+					$codeMirror[0].CodeMirror.on('change', update);
+				}
+			});
+			mw.hook('ext.CodeMirror.input').add(update);
+			update();
+		}
+	});
+	mw.loader.addStyleTag('.autosectionlink-button{position:absolute;top:0;right:0;margin:0}');
+});</text>
+      <sha1>cgwlzm01zi9ko23tj8oxai6j7wetk4a</sha1>
+    </revision>
+    <revision>
+      <id>3367772</id>
+      <parentid>3367771</parentid>
+      <timestamp>2026-03-02T18:43:58Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3367771</origin>
+      <model>javascript</model>
+      <format>text/javascript</format>
+      <text bytes="5134" sha1="cgwlzm01zi9ko23tj8oxai6j7wetk4a" xml:space="preserve">['edit', 'submit'].includes(mw.config.get('wgAction')) &amp;&amp;
+mw.config.get('wgArticleId') &amp;&amp;
+mw.config.get('wgPageContentModel') === 'wikitext' &amp;&amp;
+$(function autoSectionLink() {
+	let form = document.getElementById('editform');
+	if (!form) return;
+	let formData = new FormData(form);
+	let section = formData.get('wpSection');
+	if (section === 'new') return;
+	let widget = document.getElementById('wpSummaryWidget');
+	if (!widget) return;
+	let isOld = formData.get('altBaseRevId') &gt; 0 ||
+		(formData.get('baseRevId') || formData.get('parentRevId')) !== formData.get('editRevId');
+	mw.loader.using([
+		'jquery.textSelection', 'mediawiki.util', 'oojs-ui-core',
+		'oojs-ui.styles.icons-editing-core'
+	], () =&gt; {
+		let $textarea = $('#wpTextbox1');
+		let input = OO.ui.infuse(widget);
+		let button = new OO.ui.ButtonWidget({
+			framed: false,
+			icon: 'undo',
+			classes: ['autosectionlink-button'],
+			invisibleLabel: true,
+			label: 'Restore previous section link'
+		}).toggle().on('click', () =&gt; {
+			let cache = button.getData();
+			input.setValue(input.getValue().replace(
+				/^(\/\*.*?\*\/)?\s*/,
+				cache[0] ? '/* ' + cache[0] + ' */ ' : ''
+			));
+			updatePreview(cache[0]);
+			cache.reverse();
+		}).on('toggle', () =&gt; {
+			input.$input.css('width', `calc(100% - ${button.$element.width()}px)`);
+		});
+		input.$input.after(button.$element);
+		let update = mw.util.debounce($diff =&gt; {
+			let lines = $textarea.textSelection('getContents').replace(/\s+$/, '').split('\n');
+			let firstLineNum;
+			if (isOld) {
+				let i, lastLineNum;
+				$diff.find('td:last-child').each(function () {
+					if (this.classList.contains('diff-lineno')) {
+						i = this.textContent.replace(/\D+/g, '') - 1;
+					} else if (this.classList.contains('diff-context')) {
+						i++;
+					} else if (this.classList.contains('diff-addedline')) {
+						i++;
+						if (!firstLineNum) {
+							firstLineNum = i;
+						}
+						lastLineNum = i;
+					} else if (this.classList.contains('diff-empty')) {
+						if (!firstLineNum) {
+							firstLineNum = i === 0 ? 1 : i;
+						}
+						lastLineNum = i;
+					}
+				});
+				lines.length = lastLineNum || 0;
+			} else {
+				let origLines = $textarea.prop('defaultValue').replace(/\s+$/, '').split('\n');
+				firstLineNum = lines.findIndex((line, i) =&gt; line !== origLines[i]) + 1;
+				if (!firstLineNum) {
+					firstLineNum = lines.length &lt; origLines.length
+						? lines.length
+						: 1;
+				}
+				for (let i = 1, x = lines.length, y = origLines.length;
+					(section ? i &lt; x : i &lt;= x) &amp;&amp; lines[x - i] === origLines[y - i];
+					i++
+				) {
+					lines.pop();
+				}
+			}
+			let re = /^(={1,6})\s*(.+?)\s*\1\s*(?:&lt;!--.+--&gt;\s*)?$/, lowest = 7;
+			lines.slice(firstLineNum).forEach(line =&gt; {
+				let match = line.match(re);
+				if (match &amp;&amp; match[1].length &lt; lowest) {
+					lowest = match[1].length;
+				}
+			});
+			let head;
+			lines.slice(0, firstLineNum).reverse().some(line =&gt; {
+				let match = line.match(re);
+				if (match &amp;&amp; match[1].length &lt; lowest) {
+					head = match[2];
+					return true;
+				}
+			});
+			head = head ? head
+				.replace(/'''(.+?)'''|\[\[:?(?:[^|\]]+\|)?([^\]]+)\]\]|&lt;\/?(?:abbr|b|bdi|bdo|big|cite|code|data|del|dfn|em|font|i|ins|kbd|mark|nowiki|q|rb|ref|rp|rt|rtc|ruby|s|samp|small|span|strike|strong|sub|sup|templatestyles|time|translate|tt|u|var)(?:\s[^&gt;]*)?&gt;|&lt;!--.*?--&gt;|\[(?:https?:)?\/\/[^\s\[\]]+\s([^\]]+)\]/gi, '$1$2$3')
+				.replace(/''(.+?)''/g, '$1')
+				.trim() : '';
+			let match = input.getValue().match(/^(?:\/\*\s*(.*?)\s*\*\/)?\s*(.*?)$/);
+			let prev = match[1] || '';
+			if (prev === head) return;
+			if (section &lt; 1 &amp;&amp; lowest === 7 &amp;&amp; !head &amp;&amp; prev === 'top') return;
+			input.setValue((head ? '/* ' + head + ' */ ' : '') + match[2]);
+			button.setData([prev, head]).toggle(true);
+			updatePreview(head);
+		}, 500);
+		let updatePreview = head =&gt; {
+			let $preview = $('.mw-summary-preview &gt; .comment &gt; span[dir="auto"]');
+			if (!$preview.length) return;
+			let url = head &amp;&amp; mw.util.getUrl() + '#' + head.replace(/ /g, '_');
+			let text = head &amp;&amp; (document.dir === 'rtl' ? '←\u200F' : '→\u200E') + head;
+			let $ac = $preview.children('.autocomment:first-child');
+			if ($ac.length &amp;&amp; !$ac[0].previousSibling) {
+				if (head) {
+					$ac.children('a').attr('href', url).text(text);
+				} else {
+					let node = $ac[0].nextSibling;
+					if (node &amp;&amp; node.nodeType === 3) {
+						node.textContent = node.textContent.replace(/^\s+/, '');
+					}
+					$ac.remove();
+				}
+			} else if (head) {
+				$('&lt;span&gt;').addClass('autocomment').append(
+					$('&lt;a&gt;').attr({
+						href: url,
+						title: mw.config.get('wgPageName').replace(/_/g, ' ')
+					}).text(text),
+					mw.messages.get('colon-separator', ': ')
+				).prependTo($preview);
+			}
+		};
+		if (isOld) {
+			mw.hook('wikipage.diff').add(update);
+		} else {
+			$textarea.on('input', update);
+			mw.hook('ext.CodeMirror.switch').add((on, $codeMirror) =&gt; {
+				if (on &amp;&amp; $codeMirror[0].CodeMirror) {
+					$codeMirror[0].CodeMirror.on('change', update);
+				}
+			});
+			mw.hook('ext.CodeMirror.input').add(update);
+			update();
+		}
+	});
+	mw.loader.addStyleTag('.autosectionlink-button{position:absolute;top:0;right:0;margin:0}');
+});</text>
+      <sha1>cgwlzm01zi9ko23tj8oxai6j7wetk4a</sha1>
+    </revision>
+  </page>
+</mediawiki>

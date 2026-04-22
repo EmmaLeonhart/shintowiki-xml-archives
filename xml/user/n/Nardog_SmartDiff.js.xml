@@ -1,0 +1,860 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>User:Nardog/SmartDiff.js</title>
+    <ns>2</ns>
+    <id>143932</id>
+    <revision>
+      <id>3367961</id>
+      <timestamp>2026-03-02T18:44:30Z</timestamp>
+      <contributor>
+        <username>en&gt;Nardog</username>
+        <id>0</id>
+      </contributor>
+      <comment>overhaul URL parsing</comment>
+      <origin>3367961</origin>
+      <model>javascript</model>
+      <format>text/javascript</format>
+      <text bytes="13772" sha1="gl3gtu8z64ui44ysyl1l01h96qyeykv" xml:space="preserve">mw.loader.using([
+	'mediawiki.util', 'mediawiki.Title', 'mediawiki.api'
+], function smartDiff() {
+	mw.loader.addStyleTag('.smartdiff-link.extiw, .smartdiff-link.external{color:var(--color-progressive,#36c)} .smartdiff-link.extiw:visited, .smartdiff-link.external:visited{color:#795cb2} .smartdiff-link.extiw:active, .smartdiff-link.external:active{color:#faa700}');
+	class SmartDiff {
+		constructor($diff) {
+			this.$diff = $diff;
+			this.isSpecial = mw.config.get('wgNamespaceNumber') === -1;
+			this.isView = mw.config.get('wgAction') === 'view' &amp;&amp;
+				new URLSearchParams(location.search).get('diffonly') !== '1';
+			this.magicWords = [
+				'!', 'BASEPAGENAME', 'BASEPAGENAME:', 'BASEPAGENAMEE', 'BASEPAGENAMEE:',
+				'canonicalurl:', 'CURRENTDAY', 'CURRENTDAY2', 'CURRENTDAYNAME',
+				'CURRENTDOW', 'CURRENTHOUR', 'CURRENTMONTH', 'CURRENTMONTH1',
+				'CURRENTMONTHABBREV', 'CURRENTMONTHNAME', 'CURRENTMONTHNAMEGEN',
+				'CURRENTTIME', 'CURRENTTAMP', 'CURRENTVERSION', 'CURRENTWEEK',
+				'CURRENTYEAR', 'DEFAULTCATEGORYSORT:', 'DEFAULTSORT:', 'DEFAULTSORTKEY:',
+				'DISPLAYTITLE:', 'filepath:', 'formatnum:', 'FULLPAGENAME',
+				'FULLPAGENAME:', 'FULLPAGENAMEE', 'FULLPAGENAMEE:', 'fullurl:',
+				'gender:', 'int:', 'lc:', 'lcfirst:', 'LOCALDAY', 'LOCALDAY2',
+				'LOCALDAYNAME', 'LOCALDOW', 'LOCALHOUR', 'LOCALMONTH', 'LOCALMONTH1',
+				'LOCALMONTHABBREV', 'LOCALMONTHNAME', 'LOCALMONTHNAMEGEN', 'LOCALTIME',
+				'LOCALTAMP', 'LOCALWEEK', 'LOCALYEAR', 'msg:', 'msgnw:',
+				'NAMESPACE', 'NAMESPACE:', 'NAMESPACEE', 'NAMESPACEE:', 'NAMESPACENUMBER',
+				'NAMESPACENUMBER:', 'ns:', 'NUMBEROFACTIVEUSERS', 'NUMBEROFARTICLES',
+				'NUMBEROFEDITS', 'NUMBEROFFILES', 'NUMBEROFPAGES', 'NUMBEROFUSERS',
+				'padleft:', 'PAGENAME', 'PAGENAMEE', 'PAGESINCAT:', 'PAGESINCATEGORY:',
+				'plural:', 'REVISIONDAY', 'REVISIONDAY:', 'REVISIONDAY2', 'REVISIONDAY2:',
+				'REVISIONID', 'REVISIONID:', 'REVISIONMONTH', 'REVISIONMONTH:',
+				'REVISIONMONTH1', 'REVISIONMONTH1:', 'REVISIONSIZE', 'REVISIONTAMP',
+				'REVISIONTAMP:', 'REVISIONUSER', 'REVISIONUSER:', 'REVISIONYEAR',
+				'REVISIONYEAR:', 'ROOTPAGENAME', 'ROOTPAGENAME:', 'ROOTPAGENAMEE',
+				'ROOTPAGENAMEE:', 'SHORTDESC:', 'SUBJECTPAGENAME', 'SUBJECTPAGENAME:',
+				'SUBJECTPAGENAMEE', 'SUBJECTPAGENAMEE:', 'SUBJECTSPACE', 'SUBJECTSPACE:',
+				'SUBJECTSPACEE', 'SUBJECTSPACEE:', 'SUBPAGENAME', 'SUBPAGENAME:',
+				'SUBPAGENAMEE', 'SUBPAGENAMEE:', 'TALKPAGENAME', 'TALKPAGENAME:',
+				'TALKPAGENAMEE', 'TALKPAGENAMEE:', 'TALKSPACE', 'TALKSPACE:',
+				'TALKSPACEE', 'TALKSPACEE:', 'uc:', 'ucfirst:', 'urlencode:'
+			];
+			if (window.smartdiffMagicWords) {
+				this.magicWords.push(...window.smartdiffMagicWords);
+			}
+			try {
+				this.subNs = mw.config.get('wgVisualEditorConfig').namespacesWithSubpages;
+			} catch (e) {}
+			if (!this.subNs) {
+				this.subNs = Object.keys(mw.config.get('wgFormattedNamespaces'))
+					.map(k =&gt; Number(k)).filter(ns =&gt; ![0, 6, 8].includes(ns));
+			}
+			this.re = /((?:\[(?:&lt;[^&gt;]*&gt;)?\[|(?&lt;!{(?:&lt;[^&gt;]*&gt;)?){(?:&lt;[^&gt;]*&gt;)?{(?:&lt;[^&gt;]*&gt;)?(?:(?:#(?:&lt;[^&gt;]*&gt;)?invoke|(?:safe)?subst|msg(?:nw)?|raw|int)(?:&lt;[^&gt;]*&gt;)?:)?)(?:\s*(?:&lt;[^&gt;]*&gt;)?&amp;lt;(?:&lt;[^&gt;]*&gt;)?tvar(?:&lt;[^&gt;]*&gt;)?\s(?!&amp;gt;).*?&amp;gt;)?\s*)((?:(?!&amp;[gl]t;)[^\[\]{|}])+?)(?=\s*(?:(?:&lt;[^&gt;]*&gt;)?&amp;lt;(?:&lt;[^&gt;]*&gt;)?\/(?:&lt;[^&gt;]*&gt;)?tvar(?:&lt;[^&gt;]*&gt;)?&amp;gt;(?:&lt;[^&gt;]*&gt;)?\s*)?(?:\||\](?:&lt;[^&gt;]*&gt;)?\]|}(?:&lt;[^&gt;]*&gt;)?}|$))/g;
+			this.headRe = /^((?:(?:&lt;[^&gt;]*&gt;)*=){1,6}(?:&lt;[^&gt;]*&gt;)?\s*)((?:(?!&amp;[gl]t;).)+?)(?=\s*(?:(?:&lt;[^&gt;]*&gt;)?=){1,6}(?:&lt;[^&gt;]*&gt;|\s)*(?:&amp;lt;|$))/g;
+			this.urlRe = /(\[(?:&lt;[^&gt;]*&gt;)?(?=.+\]))?((\bhttps?(?:&lt;[^&gt;]*&gt;)?:)?(?:&lt;[^&gt;]*&gt;)?\/(?:&lt;[^&gt;]*&gt;)?\/(?:&lt;[^&gt;]*&gt;|(?!&amp;[gl]t;)[^\s"&lt;&gt;\[\]{|}])+)/g;
+			if (window.smartdiffTemplates) {
+				this.tempRe = /( data-smartdiff-temp="(\d+)"&gt;[^{|}]+)(\|(?:(?!&amp;[gl]t;)[^\[\]{}]|{(?:&lt;[^&gt;]*&gt;)?{(?:&lt;[^&gt;]*&gt;)?!(?:&lt;[^&gt;]*&gt;)?}(?:&lt;[^&gt;]*&gt;)?})+)(?=}(?:&lt;[^&gt;]*&gt;)?}|$)/g;
+				this.tempSubRe = /((?:\s|{(?:&lt;[^&gt;]*&gt;)?{(?:&lt;[^&gt;]*&gt;)?!(?:&lt;[^&gt;]*&gt;)?}(?:&lt;[^&gt;]*&gt;)?}[^&lt;&gt;|]*|&lt;[^&gt;]*&gt;)*(?:\|(?:\s|(?:&lt;[^&gt;]*&gt;)|\d+(?:\s|&lt;[^&gt;]*&gt;)*=|[^\d&lt;=&gt;|](?:[^&lt;=&gt;|]|&lt;[^&gt;]*&gt;)*=(?:[^&lt;=&gt;|]|&lt;[^&gt;]*&gt;)*\|?)*|$))/;
+				this.templates = window.smartdiffTemplates;
+			}
+			['rep', 'headRep', 'urlRep', 'tempRep'].forEach(fn =&gt; {
+				this[fn] = this[fn].bind(this);
+			});
+			this.side = 'old';
+			$diff.find('.diff-deletedline &gt; div').get().forEach(this.processDiv, this);
+			this.side = 'new';
+			$diff.find('.diff-addedline &gt; div').get().forEach(this.processDiv, this);
+			let $contexts = $diff.find('.diff-context &gt; div');
+			$contexts.each((i, div) =&gt; {
+				if (i % 2) {
+					this.side = 'new';
+					if (this.propUsed &amp;&amp; this.getProp() !== this.getProp('pn', 'old')) {
+						this.processDiv(div);
+					} else {
+						$contexts.eq(i).replaceWith($contexts.eq(i - 1).clone());
+					}
+				} else {
+					this.side = 'old';
+					this.propUsed = false;
+					this.processDiv(div);
+				}
+			});
+			this.links = {};
+			$diff.find('.smartdiff-link:not(.external)').each((i, link) =&gt; {
+				let title = link.title;
+				if (!title) return;
+				if (!this.links.hasOwnProperty(title)) {
+					this.links[title] = [];
+				}
+				this.links[title].push(link);
+			});
+			this.query(Object.keys(this.links).slice(0, 500));
+			if (this.hasError) {
+				mw.notify('SmartDiff error', { type: 'warn' });
+			}
+		}
+		processDiv(div) {
+			if (div.querySelector('a[href]')) return;
+			let origHtml = div.innerHTML;
+			let newHtml = origHtml.replace(this.urlRe, this.urlRep)
+				.replace(this.re, this.rep).replace(this.headRe, this.headRep);
+			if (this.tempRe) {
+				newHtml = newHtml.replace(this.tempRe, this.tempRep);
+			}
+			if (newHtml === origHtml) return;
+			newHtml = newHtml.replace(/&lt;(ins|del)(?: [^&gt;]+)?&gt;&lt;\/\1&gt;/g, '');
+			let $newDiv = $('&lt;div&gt;').html(newHtml);
+			if (this.detectErrors($newDiv, newHtml, origHtml, div)) return;
+			div.textContent = '';
+			$newDiv.contents().appendTo(div);
+		}
+		rep($0, $1, $2) {
+			if ($0.includes('&lt;a class="smartdiff-link')) {
+				return $0;
+			}
+			let [s, pre, mid, post] = this.stripTags($2, true, $1);
+			let t = mw.Title.newFromText(s), isTemp;
+			if (t) {
+				if ($1.includes('invoke')) {
+					t = mw.Title.makeTitle(828, s);
+				} else if (s[0] === '/') {
+					if (this.subNs.includes(this.getProp('ns'))) {
+						t = mw.Title.newFromText(
+							this.getProp() + s.replace(/\/+$/, '')
+						);
+					} else if ($1[0] === '{') {
+						t.namespace = 10;
+					}
+				} else if ($1[0] === '{') {
+					if (s[0] === '#') {
+						return $0;
+					}
+					if ($1.includes('int')) {
+						t = mw.Title.makeTitle(8, s);
+					} else if (!t.namespace &amp;&amp; s[0] !== ':') {
+						if (!$1.includes('msg') &amp;&amp; !$1.includes('raw')) {
+							let match = s.match(/^[^:]+(?::(?=.)|$)/);
+							if (match &amp;&amp; this.magicWords.includes(match[0])) {
+								return $0;
+							}
+						}
+						t.namespace = 10;
+						isTemp = true;
+					}
+				} else if ((this.isSpecial || !this.isView) &amp;&amp; s[0] === '#') {
+					t.title = this.getProp();
+				}
+			} else if (s.startsWith('../') &amp;&amp; this.subNs.includes(this.getProp('ns'))) {
+				let chunks = s.split('/');
+				let levelCount = chunks.findIndex(v =&gt; v !== '..');
+				let sup = this.getProp().split('/').slice(0, -levelCount).join('/');
+				if (sup) {
+					let sub = chunks.slice(levelCount).join('/').replace(/\/+$/, '');
+					t = mw.Title.newFromText(sub ? sup + '/' + sub : sup);
+				}
+			}
+			if (!t) {
+				return $0;
+			}
+			let attrs = {
+				class: 'smartdiff-link',
+				href: t.getUrl()
+			};
+			if (this.isSpecial || !this.isView || s[0] !== '#') {
+				attrs.title = t.toText();
+			}
+			if (isTemp &amp;&amp; this.tempRe) {
+				let name = t.getMainText();
+				let idx = this.templates.findIndex(temp =&gt; temp.names.includes(name));
+				if (idx !== -1) {
+					attrs['data-smartdiff-temp'] = idx;
+				}
+			}
+			return pre + $('&lt;a&gt;').attr(attrs).html(mid)[0].outerHTML + post;
+		}
+		stripTags(s, decode, pre = '', post = '') {
+			let mid = s, tags = s.match(/&lt;\/?(?:ins|del)(?: [^&gt;]+)?&gt;/g);
+			s = $($.parseHTML(s.replace(/&amp;amp;/g, '&amp;'))).text();
+			if (decode) {
+				try {
+					s = decodeURIComponent(s);
+				} catch (e) {}
+			}
+			if (tags) {
+				if (tags[0][1] === '/') {
+					pre += tags[0];
+					mid = `&lt;${tags[0].slice(2, 5)} class="diffchange diffchange-inline"&gt;` + mid;
+				}
+				let lastTag = tags.pop();
+				if (lastTag[1] !== '/') {
+					mid += `&lt;/${lastTag.slice(1, 4)}&gt;`;
+					post = lastTag + post;
+				}
+			}
+			return [s, pre, mid, post];
+		}
+		headRep($0, $1, $2) {
+			if ($0.includes('&lt;a class="smartdiff-link')) {
+				return $0;
+			}
+			let [s, pre, mid, post] = this.stripTags($2, true, $1);
+			s = s.replace(/'''(.+?)'''|&lt;\/?(?:abbr|b|bdi|bdo|big|cite|code|data|del|dfn|em|font|i|ins|kbd|mark|nowiki|q|rb|ref|rp|rt|rtc|ruby|s|samp|small|span|strike|strong|sub|sup|templatestyles|time|translate|tt|u|var)(?:\s[^&gt;]*)?&gt;/gi, '$1')
+				.replace(/''(.+?)''/g, '$1')
+				.replace(/^_+|_+$/g, '');
+			let t = mw.Title.newFromText(
+				`${this.isSpecial || !this.isView ? this.getProp() : ''}#${s}`
+			);
+			if (!t) {
+				return $0;
+			}
+			let attrs = {
+				class: 'smartdiff-link',
+				href: t.getUrl()
+			};
+			if (this.isSpecial || !this.isView) {
+				attrs.title = t.toText();
+			}
+			return pre + $('&lt;a&gt;').attr(attrs).html(mid)[0].outerHTML + post;
+		}
+		urlRep($0, $1, $2, $3) {
+			let main = $2, trail;
+			if (!$1) {
+				if (!$3) {
+					return $0;
+				}
+				let re = main.includes('(')
+					? /[!,\.:;?](?:&lt;[^&gt;]*&gt;)?$/
+					: /[!),\.:;?](?:&lt;[^&gt;]*&gt;)?$/;
+				let match = main.match(re);
+				if (match &amp;&amp;
+					!/&amp;amp(?:;(?:&lt;[^&gt;]*&gt;)?(?:[a-z]+|(?:#(?:&lt;[^&gt;]*&gt;)?(?:x[\da-f]|\d+)))(?:&lt;[^&gt;]*&gt;)?)?;$/i.test(main)
+				) {
+					trail = match[0];
+					main = main.slice(0, -trail.length);
+				}
+			}
+			let [url, pre, mid, post] = this.stripTags(main);
+			if ($1) {
+				pre = $1 + pre;
+			} else if (trail) {
+				post += trail;
+			}
+			return pre + $('&lt;a&gt;').attr({
+				class: 'smartdiff-link external',
+				href: url,
+				rel: 'nofollow'
+			}).html(mid)[0].outerHTML + post;
+		}
+		tempRep($0, $1, $2, $3) {
+			if ($3.includes('&lt;a class="smartdiff-link')) {
+				return $0;
+			}
+			let temp = this.templates[$2];
+			return $1 + $3.split(this.tempSubRe).map((os, i) =&gt; {
+				if (!os || i % 2) {
+					return os;
+				}
+				let j = i / 2;
+				if (j &lt; temp.start || j &gt; temp.end ||
+					temp.skipOdd &amp;&amp; j % 2 || temp.skipEven &amp;&amp; j % 2 === 0
+				) {
+					return os;
+				}
+				let [s, pre, mid, post] = this.stripTags(os, true);
+				if (temp.prefix) {
+					s = temp.prefix + s;
+				}
+				if (temp.suffix) {
+					s += temp.suffix;
+				}
+				let t = temp.forceNs
+					? mw.Title.makeTitle(temp.namespace, s)
+					: mw.Title.newFromText(s, temp.namespace);
+				if (!t) {
+					return os;
+				}
+				let params = (j &gt;= temp.noRedirectStart || j &lt;= temp.noRedirectEnd) &amp;&amp;
+					{ redirect: 'no' };
+				return pre + $('&lt;a&gt;').attr({
+					class: 'smartdiff-link',
+					href: t.getUrl(params),
+					title: t.toText()
+				}).html(mid)[0].outerHTML + post;
+			}).join('');
+		}
+		getProp(n = 'pn', side = this.side) {
+			this.propUsed = true;
+			if (this[side]) {
+				if (this[side][n]) {
+					return this[side][n];
+				}
+			} else {
+				this[side] = {};
+				let link = this.$diff[0].querySelector(
+					side === 'old'
+						? '#mw-diff-otitle1 a, #differences-prevlink'
+						: '#mw-diff-ntitle1 a, #differences-nextlink'
+				);
+				if (link) {
+					let pn = mw.util.getParamValue('title', link.search);
+					this[side].pn = pn;
+					this[side].ns = mw.Title.newFromText(pn).namespace;
+					return this[side][n];
+				}
+			}
+			if (this[n]) {
+				return this[n];
+			}
+			if (this.isSpecial) {
+				this.pn = '';
+				this.ns = 0;
+			} else {
+				this.pn = mw.config.get('wgPageName');
+				this.ns = mw.config.get('wgNamespaceNumber');
+			}
+			return this[n];
+		}
+		query(titles) {
+			if (!titles.length) return;
+			new mw.Api().post({
+				action: 'query',
+				titles: titles.slice(0, 50),
+				iwurl: 1,
+				prop: 'info',
+				inprop: 'linkclasses',
+				inlinkcontext: this.getProp(),
+				formatversion: 2
+			}, {
+				headers: { 'Promise-Non-Write-API-Action': 1 }
+			}).then(response =&gt; {
+				let query = response &amp;&amp; response.query;
+				if (!query) return;
+				let data = {};
+				(query.pages || []).forEach(page =&gt; {
+					let obj = { classes: page.linkclasses || [] };
+					if (page.missing &amp;&amp; !page.known) {
+						obj.classes.push('new');
+						obj.params = { action: 'edit', redlink: 1 };
+					}
+					data[page.title] = obj;
+				});
+				(query.interwiki || []).forEach(interwiki =&gt; {
+					data[interwiki.title] = {
+						classes: ['extiw'],
+						url: interwiki.url
+					};
+				});
+				(query.normalized || []).forEach(entry =&gt; {
+					if (!data.hasOwnProperty(entry.to)) return;
+					let obj = data[entry.to];
+					obj.canonical = entry.to;
+					if (!obj.url) {
+						obj.url = mw.util.getUrl(entry.to, obj.params);
+					}
+					data[entry.from] = obj;
+				});
+				Object.entries(data).forEach(([title, obj]) =&gt; {
+					if (!this.links.hasOwnProperty(title)) return;
+					let $links = $(this.links[title]).addClass(obj.classes)
+						.attr('title', obj.canonical);
+					if (obj.url) {
+						$links.attr('href', function () {
+							return obj.url + this.hash;
+						});
+					}
+				});
+				this.query(titles.slice(50));
+			});
+		}
+		detectErrors($newDiv, newHtml, origHtml, div) {
+			let comp = $newDiv.html();
+			if (comp !== newHtml) {
+				console.warn(
+					'SmartDiff syntax error at:\n',
+					div,
+					`\nNew HTML:\n${newHtml}\nCompared against:\n${comp}`
+				);
+				this.hasError = true;
+				return true;
+			}
+			let $comp = $newDiv.clone();
+			$comp.find('.smartdiff-link').contents().unwrap();
+			comp = $comp.html().replace(/&lt;\/(ins|del)&gt;&lt;\1(?: [^&gt;]+)?&gt;/g, '');
+			if (comp !== origHtml) {
+				console.warn(
+					'SmartDiff mutation error at:\n',
+					div,
+					`\nOriginal HTML:\n${origHtml}\nCompared against:\n${comp}`
+				);
+				this.hasError = true;
+				return true;
+			}
+		}
+	}
+	mw.hook('wikipage.diff').add($diff =&gt; {
+		new SmartDiff($diff);
+	});
+});</text>
+      <sha1>gl3gtu8z64ui44ysyl1l01h96qyeykv</sha1>
+    </revision>
+    <revision>
+      <id>3367962</id>
+      <parentid>3367961</parentid>
+      <timestamp>2026-03-02T18:44:31Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3367961</origin>
+      <model>javascript</model>
+      <format>text/javascript</format>
+      <text bytes="13772" sha1="gl3gtu8z64ui44ysyl1l01h96qyeykv" xml:space="preserve">mw.loader.using([
+	'mediawiki.util', 'mediawiki.Title', 'mediawiki.api'
+], function smartDiff() {
+	mw.loader.addStyleTag('.smartdiff-link.extiw, .smartdiff-link.external{color:var(--color-progressive,#36c)} .smartdiff-link.extiw:visited, .smartdiff-link.external:visited{color:#795cb2} .smartdiff-link.extiw:active, .smartdiff-link.external:active{color:#faa700}');
+	class SmartDiff {
+		constructor($diff) {
+			this.$diff = $diff;
+			this.isSpecial = mw.config.get('wgNamespaceNumber') === -1;
+			this.isView = mw.config.get('wgAction') === 'view' &amp;&amp;
+				new URLSearchParams(location.search).get('diffonly') !== '1';
+			this.magicWords = [
+				'!', 'BASEPAGENAME', 'BASEPAGENAME:', 'BASEPAGENAMEE', 'BASEPAGENAMEE:',
+				'canonicalurl:', 'CURRENTDAY', 'CURRENTDAY2', 'CURRENTDAYNAME',
+				'CURRENTDOW', 'CURRENTHOUR', 'CURRENTMONTH', 'CURRENTMONTH1',
+				'CURRENTMONTHABBREV', 'CURRENTMONTHNAME', 'CURRENTMONTHNAMEGEN',
+				'CURRENTTIME', 'CURRENTTAMP', 'CURRENTVERSION', 'CURRENTWEEK',
+				'CURRENTYEAR', 'DEFAULTCATEGORYSORT:', 'DEFAULTSORT:', 'DEFAULTSORTKEY:',
+				'DISPLAYTITLE:', 'filepath:', 'formatnum:', 'FULLPAGENAME',
+				'FULLPAGENAME:', 'FULLPAGENAMEE', 'FULLPAGENAMEE:', 'fullurl:',
+				'gender:', 'int:', 'lc:', 'lcfirst:', 'LOCALDAY', 'LOCALDAY2',
+				'LOCALDAYNAME', 'LOCALDOW', 'LOCALHOUR', 'LOCALMONTH', 'LOCALMONTH1',
+				'LOCALMONTHABBREV', 'LOCALMONTHNAME', 'LOCALMONTHNAMEGEN', 'LOCALTIME',
+				'LOCALTAMP', 'LOCALWEEK', 'LOCALYEAR', 'msg:', 'msgnw:',
+				'NAMESPACE', 'NAMESPACE:', 'NAMESPACEE', 'NAMESPACEE:', 'NAMESPACENUMBER',
+				'NAMESPACENUMBER:', 'ns:', 'NUMBEROFACTIVEUSERS', 'NUMBEROFARTICLES',
+				'NUMBEROFEDITS', 'NUMBEROFFILES', 'NUMBEROFPAGES', 'NUMBEROFUSERS',
+				'padleft:', 'PAGENAME', 'PAGENAMEE', 'PAGESINCAT:', 'PAGESINCATEGORY:',
+				'plural:', 'REVISIONDAY', 'REVISIONDAY:', 'REVISIONDAY2', 'REVISIONDAY2:',
+				'REVISIONID', 'REVISIONID:', 'REVISIONMONTH', 'REVISIONMONTH:',
+				'REVISIONMONTH1', 'REVISIONMONTH1:', 'REVISIONSIZE', 'REVISIONTAMP',
+				'REVISIONTAMP:', 'REVISIONUSER', 'REVISIONUSER:', 'REVISIONYEAR',
+				'REVISIONYEAR:', 'ROOTPAGENAME', 'ROOTPAGENAME:', 'ROOTPAGENAMEE',
+				'ROOTPAGENAMEE:', 'SHORTDESC:', 'SUBJECTPAGENAME', 'SUBJECTPAGENAME:',
+				'SUBJECTPAGENAMEE', 'SUBJECTPAGENAMEE:', 'SUBJECTSPACE', 'SUBJECTSPACE:',
+				'SUBJECTSPACEE', 'SUBJECTSPACEE:', 'SUBPAGENAME', 'SUBPAGENAME:',
+				'SUBPAGENAMEE', 'SUBPAGENAMEE:', 'TALKPAGENAME', 'TALKPAGENAME:',
+				'TALKPAGENAMEE', 'TALKPAGENAMEE:', 'TALKSPACE', 'TALKSPACE:',
+				'TALKSPACEE', 'TALKSPACEE:', 'uc:', 'ucfirst:', 'urlencode:'
+			];
+			if (window.smartdiffMagicWords) {
+				this.magicWords.push(...window.smartdiffMagicWords);
+			}
+			try {
+				this.subNs = mw.config.get('wgVisualEditorConfig').namespacesWithSubpages;
+			} catch (e) {}
+			if (!this.subNs) {
+				this.subNs = Object.keys(mw.config.get('wgFormattedNamespaces'))
+					.map(k =&gt; Number(k)).filter(ns =&gt; ![0, 6, 8].includes(ns));
+			}
+			this.re = /((?:\[(?:&lt;[^&gt;]*&gt;)?\[|(?&lt;!{(?:&lt;[^&gt;]*&gt;)?){(?:&lt;[^&gt;]*&gt;)?{(?:&lt;[^&gt;]*&gt;)?(?:(?:#(?:&lt;[^&gt;]*&gt;)?invoke|(?:safe)?subst|msg(?:nw)?|raw|int)(?:&lt;[^&gt;]*&gt;)?:)?)(?:\s*(?:&lt;[^&gt;]*&gt;)?&amp;lt;(?:&lt;[^&gt;]*&gt;)?tvar(?:&lt;[^&gt;]*&gt;)?\s(?!&amp;gt;).*?&amp;gt;)?\s*)((?:(?!&amp;[gl]t;)[^\[\]{|}])+?)(?=\s*(?:(?:&lt;[^&gt;]*&gt;)?&amp;lt;(?:&lt;[^&gt;]*&gt;)?\/(?:&lt;[^&gt;]*&gt;)?tvar(?:&lt;[^&gt;]*&gt;)?&amp;gt;(?:&lt;[^&gt;]*&gt;)?\s*)?(?:\||\](?:&lt;[^&gt;]*&gt;)?\]|}(?:&lt;[^&gt;]*&gt;)?}|$))/g;
+			this.headRe = /^((?:(?:&lt;[^&gt;]*&gt;)*=){1,6}(?:&lt;[^&gt;]*&gt;)?\s*)((?:(?!&amp;[gl]t;).)+?)(?=\s*(?:(?:&lt;[^&gt;]*&gt;)?=){1,6}(?:&lt;[^&gt;]*&gt;|\s)*(?:&amp;lt;|$))/g;
+			this.urlRe = /(\[(?:&lt;[^&gt;]*&gt;)?(?=.+\]))?((\bhttps?(?:&lt;[^&gt;]*&gt;)?:)?(?:&lt;[^&gt;]*&gt;)?\/(?:&lt;[^&gt;]*&gt;)?\/(?:&lt;[^&gt;]*&gt;|(?!&amp;[gl]t;)[^\s"&lt;&gt;\[\]{|}])+)/g;
+			if (window.smartdiffTemplates) {
+				this.tempRe = /( data-smartdiff-temp="(\d+)"&gt;[^{|}]+)(\|(?:(?!&amp;[gl]t;)[^\[\]{}]|{(?:&lt;[^&gt;]*&gt;)?{(?:&lt;[^&gt;]*&gt;)?!(?:&lt;[^&gt;]*&gt;)?}(?:&lt;[^&gt;]*&gt;)?})+)(?=}(?:&lt;[^&gt;]*&gt;)?}|$)/g;
+				this.tempSubRe = /((?:\s|{(?:&lt;[^&gt;]*&gt;)?{(?:&lt;[^&gt;]*&gt;)?!(?:&lt;[^&gt;]*&gt;)?}(?:&lt;[^&gt;]*&gt;)?}[^&lt;&gt;|]*|&lt;[^&gt;]*&gt;)*(?:\|(?:\s|(?:&lt;[^&gt;]*&gt;)|\d+(?:\s|&lt;[^&gt;]*&gt;)*=|[^\d&lt;=&gt;|](?:[^&lt;=&gt;|]|&lt;[^&gt;]*&gt;)*=(?:[^&lt;=&gt;|]|&lt;[^&gt;]*&gt;)*\|?)*|$))/;
+				this.templates = window.smartdiffTemplates;
+			}
+			['rep', 'headRep', 'urlRep', 'tempRep'].forEach(fn =&gt; {
+				this[fn] = this[fn].bind(this);
+			});
+			this.side = 'old';
+			$diff.find('.diff-deletedline &gt; div').get().forEach(this.processDiv, this);
+			this.side = 'new';
+			$diff.find('.diff-addedline &gt; div').get().forEach(this.processDiv, this);
+			let $contexts = $diff.find('.diff-context &gt; div');
+			$contexts.each((i, div) =&gt; {
+				if (i % 2) {
+					this.side = 'new';
+					if (this.propUsed &amp;&amp; this.getProp() !== this.getProp('pn', 'old')) {
+						this.processDiv(div);
+					} else {
+						$contexts.eq(i).replaceWith($contexts.eq(i - 1).clone());
+					}
+				} else {
+					this.side = 'old';
+					this.propUsed = false;
+					this.processDiv(div);
+				}
+			});
+			this.links = {};
+			$diff.find('.smartdiff-link:not(.external)').each((i, link) =&gt; {
+				let title = link.title;
+				if (!title) return;
+				if (!this.links.hasOwnProperty(title)) {
+					this.links[title] = [];
+				}
+				this.links[title].push(link);
+			});
+			this.query(Object.keys(this.links).slice(0, 500));
+			if (this.hasError) {
+				mw.notify('SmartDiff error', { type: 'warn' });
+			}
+		}
+		processDiv(div) {
+			if (div.querySelector('a[href]')) return;
+			let origHtml = div.innerHTML;
+			let newHtml = origHtml.replace(this.urlRe, this.urlRep)
+				.replace(this.re, this.rep).replace(this.headRe, this.headRep);
+			if (this.tempRe) {
+				newHtml = newHtml.replace(this.tempRe, this.tempRep);
+			}
+			if (newHtml === origHtml) return;
+			newHtml = newHtml.replace(/&lt;(ins|del)(?: [^&gt;]+)?&gt;&lt;\/\1&gt;/g, '');
+			let $newDiv = $('&lt;div&gt;').html(newHtml);
+			if (this.detectErrors($newDiv, newHtml, origHtml, div)) return;
+			div.textContent = '';
+			$newDiv.contents().appendTo(div);
+		}
+		rep($0, $1, $2) {
+			if ($0.includes('&lt;a class="smartdiff-link')) {
+				return $0;
+			}
+			let [s, pre, mid, post] = this.stripTags($2, true, $1);
+			let t = mw.Title.newFromText(s), isTemp;
+			if (t) {
+				if ($1.includes('invoke')) {
+					t = mw.Title.makeTitle(828, s);
+				} else if (s[0] === '/') {
+					if (this.subNs.includes(this.getProp('ns'))) {
+						t = mw.Title.newFromText(
+							this.getProp() + s.replace(/\/+$/, '')
+						);
+					} else if ($1[0] === '{') {
+						t.namespace = 10;
+					}
+				} else if ($1[0] === '{') {
+					if (s[0] === '#') {
+						return $0;
+					}
+					if ($1.includes('int')) {
+						t = mw.Title.makeTitle(8, s);
+					} else if (!t.namespace &amp;&amp; s[0] !== ':') {
+						if (!$1.includes('msg') &amp;&amp; !$1.includes('raw')) {
+							let match = s.match(/^[^:]+(?::(?=.)|$)/);
+							if (match &amp;&amp; this.magicWords.includes(match[0])) {
+								return $0;
+							}
+						}
+						t.namespace = 10;
+						isTemp = true;
+					}
+				} else if ((this.isSpecial || !this.isView) &amp;&amp; s[0] === '#') {
+					t.title = this.getProp();
+				}
+			} else if (s.startsWith('../') &amp;&amp; this.subNs.includes(this.getProp('ns'))) {
+				let chunks = s.split('/');
+				let levelCount = chunks.findIndex(v =&gt; v !== '..');
+				let sup = this.getProp().split('/').slice(0, -levelCount).join('/');
+				if (sup) {
+					let sub = chunks.slice(levelCount).join('/').replace(/\/+$/, '');
+					t = mw.Title.newFromText(sub ? sup + '/' + sub : sup);
+				}
+			}
+			if (!t) {
+				return $0;
+			}
+			let attrs = {
+				class: 'smartdiff-link',
+				href: t.getUrl()
+			};
+			if (this.isSpecial || !this.isView || s[0] !== '#') {
+				attrs.title = t.toText();
+			}
+			if (isTemp &amp;&amp; this.tempRe) {
+				let name = t.getMainText();
+				let idx = this.templates.findIndex(temp =&gt; temp.names.includes(name));
+				if (idx !== -1) {
+					attrs['data-smartdiff-temp'] = idx;
+				}
+			}
+			return pre + $('&lt;a&gt;').attr(attrs).html(mid)[0].outerHTML + post;
+		}
+		stripTags(s, decode, pre = '', post = '') {
+			let mid = s, tags = s.match(/&lt;\/?(?:ins|del)(?: [^&gt;]+)?&gt;/g);
+			s = $($.parseHTML(s.replace(/&amp;amp;/g, '&amp;'))).text();
+			if (decode) {
+				try {
+					s = decodeURIComponent(s);
+				} catch (e) {}
+			}
+			if (tags) {
+				if (tags[0][1] === '/') {
+					pre += tags[0];
+					mid = `&lt;${tags[0].slice(2, 5)} class="diffchange diffchange-inline"&gt;` + mid;
+				}
+				let lastTag = tags.pop();
+				if (lastTag[1] !== '/') {
+					mid += `&lt;/${lastTag.slice(1, 4)}&gt;`;
+					post = lastTag + post;
+				}
+			}
+			return [s, pre, mid, post];
+		}
+		headRep($0, $1, $2) {
+			if ($0.includes('&lt;a class="smartdiff-link')) {
+				return $0;
+			}
+			let [s, pre, mid, post] = this.stripTags($2, true, $1);
+			s = s.replace(/'''(.+?)'''|&lt;\/?(?:abbr|b|bdi|bdo|big|cite|code|data|del|dfn|em|font|i|ins|kbd|mark|nowiki|q|rb|ref|rp|rt|rtc|ruby|s|samp|small|span|strike|strong|sub|sup|templatestyles|time|translate|tt|u|var)(?:\s[^&gt;]*)?&gt;/gi, '$1')
+				.replace(/''(.+?)''/g, '$1')
+				.replace(/^_+|_+$/g, '');
+			let t = mw.Title.newFromText(
+				`${this.isSpecial || !this.isView ? this.getProp() : ''}#${s}`
+			);
+			if (!t) {
+				return $0;
+			}
+			let attrs = {
+				class: 'smartdiff-link',
+				href: t.getUrl()
+			};
+			if (this.isSpecial || !this.isView) {
+				attrs.title = t.toText();
+			}
+			return pre + $('&lt;a&gt;').attr(attrs).html(mid)[0].outerHTML + post;
+		}
+		urlRep($0, $1, $2, $3) {
+			let main = $2, trail;
+			if (!$1) {
+				if (!$3) {
+					return $0;
+				}
+				let re = main.includes('(')
+					? /[!,\.:;?](?:&lt;[^&gt;]*&gt;)?$/
+					: /[!),\.:;?](?:&lt;[^&gt;]*&gt;)?$/;
+				let match = main.match(re);
+				if (match &amp;&amp;
+					!/&amp;amp(?:;(?:&lt;[^&gt;]*&gt;)?(?:[a-z]+|(?:#(?:&lt;[^&gt;]*&gt;)?(?:x[\da-f]|\d+)))(?:&lt;[^&gt;]*&gt;)?)?;$/i.test(main)
+				) {
+					trail = match[0];
+					main = main.slice(0, -trail.length);
+				}
+			}
+			let [url, pre, mid, post] = this.stripTags(main);
+			if ($1) {
+				pre = $1 + pre;
+			} else if (trail) {
+				post += trail;
+			}
+			return pre + $('&lt;a&gt;').attr({
+				class: 'smartdiff-link external',
+				href: url,
+				rel: 'nofollow'
+			}).html(mid)[0].outerHTML + post;
+		}
+		tempRep($0, $1, $2, $3) {
+			if ($3.includes('&lt;a class="smartdiff-link')) {
+				return $0;
+			}
+			let temp = this.templates[$2];
+			return $1 + $3.split(this.tempSubRe).map((os, i) =&gt; {
+				if (!os || i % 2) {
+					return os;
+				}
+				let j = i / 2;
+				if (j &lt; temp.start || j &gt; temp.end ||
+					temp.skipOdd &amp;&amp; j % 2 || temp.skipEven &amp;&amp; j % 2 === 0
+				) {
+					return os;
+				}
+				let [s, pre, mid, post] = this.stripTags(os, true);
+				if (temp.prefix) {
+					s = temp.prefix + s;
+				}
+				if (temp.suffix) {
+					s += temp.suffix;
+				}
+				let t = temp.forceNs
+					? mw.Title.makeTitle(temp.namespace, s)
+					: mw.Title.newFromText(s, temp.namespace);
+				if (!t) {
+					return os;
+				}
+				let params = (j &gt;= temp.noRedirectStart || j &lt;= temp.noRedirectEnd) &amp;&amp;
+					{ redirect: 'no' };
+				return pre + $('&lt;a&gt;').attr({
+					class: 'smartdiff-link',
+					href: t.getUrl(params),
+					title: t.toText()
+				}).html(mid)[0].outerHTML + post;
+			}).join('');
+		}
+		getProp(n = 'pn', side = this.side) {
+			this.propUsed = true;
+			if (this[side]) {
+				if (this[side][n]) {
+					return this[side][n];
+				}
+			} else {
+				this[side] = {};
+				let link = this.$diff[0].querySelector(
+					side === 'old'
+						? '#mw-diff-otitle1 a, #differences-prevlink'
+						: '#mw-diff-ntitle1 a, #differences-nextlink'
+				);
+				if (link) {
+					let pn = mw.util.getParamValue('title', link.search);
+					this[side].pn = pn;
+					this[side].ns = mw.Title.newFromText(pn).namespace;
+					return this[side][n];
+				}
+			}
+			if (this[n]) {
+				return this[n];
+			}
+			if (this.isSpecial) {
+				this.pn = '';
+				this.ns = 0;
+			} else {
+				this.pn = mw.config.get('wgPageName');
+				this.ns = mw.config.get('wgNamespaceNumber');
+			}
+			return this[n];
+		}
+		query(titles) {
+			if (!titles.length) return;
+			new mw.Api().post({
+				action: 'query',
+				titles: titles.slice(0, 50),
+				iwurl: 1,
+				prop: 'info',
+				inprop: 'linkclasses',
+				inlinkcontext: this.getProp(),
+				formatversion: 2
+			}, {
+				headers: { 'Promise-Non-Write-API-Action': 1 }
+			}).then(response =&gt; {
+				let query = response &amp;&amp; response.query;
+				if (!query) return;
+				let data = {};
+				(query.pages || []).forEach(page =&gt; {
+					let obj = { classes: page.linkclasses || [] };
+					if (page.missing &amp;&amp; !page.known) {
+						obj.classes.push('new');
+						obj.params = { action: 'edit', redlink: 1 };
+					}
+					data[page.title] = obj;
+				});
+				(query.interwiki || []).forEach(interwiki =&gt; {
+					data[interwiki.title] = {
+						classes: ['extiw'],
+						url: interwiki.url
+					};
+				});
+				(query.normalized || []).forEach(entry =&gt; {
+					if (!data.hasOwnProperty(entry.to)) return;
+					let obj = data[entry.to];
+					obj.canonical = entry.to;
+					if (!obj.url) {
+						obj.url = mw.util.getUrl(entry.to, obj.params);
+					}
+					data[entry.from] = obj;
+				});
+				Object.entries(data).forEach(([title, obj]) =&gt; {
+					if (!this.links.hasOwnProperty(title)) return;
+					let $links = $(this.links[title]).addClass(obj.classes)
+						.attr('title', obj.canonical);
+					if (obj.url) {
+						$links.attr('href', function () {
+							return obj.url + this.hash;
+						});
+					}
+				});
+				this.query(titles.slice(50));
+			});
+		}
+		detectErrors($newDiv, newHtml, origHtml, div) {
+			let comp = $newDiv.html();
+			if (comp !== newHtml) {
+				console.warn(
+					'SmartDiff syntax error at:\n',
+					div,
+					`\nNew HTML:\n${newHtml}\nCompared against:\n${comp}`
+				);
+				this.hasError = true;
+				return true;
+			}
+			let $comp = $newDiv.clone();
+			$comp.find('.smartdiff-link').contents().unwrap();
+			comp = $comp.html().replace(/&lt;\/(ins|del)&gt;&lt;\1(?: [^&gt;]+)?&gt;/g, '');
+			if (comp !== origHtml) {
+				console.warn(
+					'SmartDiff mutation error at:\n',
+					div,
+					`\nOriginal HTML:\n${origHtml}\nCompared against:\n${comp}`
+				);
+				this.hasError = true;
+				return true;
+			}
+		}
+	}
+	mw.hook('wikipage.diff').add($diff =&gt; {
+		new SmartDiff($diff);
+	});
+});</text>
+      <sha1>gl3gtu8z64ui44ysyl1l01h96qyeykv</sha1>
+    </revision>
+  </page>
+</mediawiki>

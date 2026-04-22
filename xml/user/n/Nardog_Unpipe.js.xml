@@ -1,0 +1,214 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>User:Nardog/Unpipe.js</title>
+    <ns>2</ns>
+    <id>143935</id>
+    <revision>
+      <id>3367971</id>
+      <timestamp>2026-03-02T18:44:32Z</timestamp>
+      <contributor>
+        <username>en&gt;Nardog</username>
+        <id>0</id>
+      </contributor>
+      <comment>link to [[WP:NOPIPE]] in summary</comment>
+      <origin>3367971</origin>
+      <model>javascript</model>
+      <format>text/javascript</format>
+      <text bytes="2179" sha1="38t3q31y8l742kp77sdn0ebq0si77in" xml:space="preserve">['edit', 'submit'].includes(mw.config.get('wgAction')) &amp;&amp;
+$.when(
+	$.ajax(
+		'//tools-static.wmflabs.org/meta/scripts/pathoschild.templatescript.js',
+		{ dataType: 'script', cache: true }
+	),
+	mw.loader.using(['mediawiki.api', 'mediawiki.Title'])
+).then(function unpipe() {
+	let replace = data =&gt; {
+		Object.entries(data.tokens).forEach(([source, ts]) =&gt; {
+			if (!ts.some(t =&gt; data.redirs[t.pn])) return;
+			let links = ts.map(t =&gt; {
+				let r = data.redirs[t.pn] || {};
+				return [r.to || t.pn, t.fragment || r.tofragment].join('#');
+			});
+			if (links[0] !== links[1]) return;
+			data.repl = data.repl.split(source).join(source.replace(/^[^|]+\|/, '[['));
+		});
+		if (data.repl === data.orig) {
+			mw.notify('No change.');
+			return;
+		}
+		data.editor
+			.set(data.repl)
+			.appendEditSummary('[[WP:NOPIPE|unpiped]] links using [[User:Nardog/Unpipe|script]]')
+			.options({ minor: true })
+			.clickDiff();
+	};
+	let query = (titles, data) =&gt; {
+		if (!titles.length) {
+			replace(data);
+			return;
+		}
+		new mw.Api().post({
+			action: 'query',
+			titles: titles.slice(0, 50),
+			redirects: 1,
+			formatversion: 2
+		}, {
+			headers: { 'Promise-Non-Write-API-Action': 1 }
+		}).then(response =&gt; {
+			(response.query.redirects || []).forEach(r =&gt; {
+				data.redirs[r.from] = r;
+			});
+			query(titles.slice(50), data);
+		});
+	};
+	window.pathoschild.TemplateScript.add([{
+		name: 'Unpipe links',
+		script: editor =&gt; {
+			let orig = editor.get(), repl = orig, tokens = {};
+			let titles = new Set();
+			let match, re = /\[\[([^|\]]+)\|([^\]]+)\]\]/g;
+			while ((match = re.exec(orig))) {
+				if (tokens[match[0]]) continue;
+				let ts = match.slice(1).map(s =&gt; mw.Title.newFromText(s));
+				if (ts.some(t =&gt; !t || t.namespace)) continue;
+				let pns = ts.map(t =&gt; t.toText());
+				if (pns[0].endsWith(' (disambiguation)')) continue;
+				if (pns[0] === pns[1] &amp;&amp; ts[0].fragment === ts[1].fragment) {
+					repl = repl.split(match[0]).join(`[[${match[2]}]]`);
+					continue;
+				}
+				tokens[match[0]] = pns.map((pn, i) =&gt; {
+					titles.add(pn);
+					return { pn, fragment: ts[i].fragment };
+				});
+			}
+			query([...titles], { editor, orig, repl, tokens, redirs: {} });
+		}
+	}]);
+});</text>
+      <sha1>38t3q31y8l742kp77sdn0ebq0si77in</sha1>
+    </revision>
+    <revision>
+      <id>3367972</id>
+      <parentid>3367971</parentid>
+      <timestamp>2026-03-02T18:44:33Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3367971</origin>
+      <model>javascript</model>
+      <format>text/javascript</format>
+      <text bytes="2179" sha1="38t3q31y8l742kp77sdn0ebq0si77in" xml:space="preserve">['edit', 'submit'].includes(mw.config.get('wgAction')) &amp;&amp;
+$.when(
+	$.ajax(
+		'//tools-static.wmflabs.org/meta/scripts/pathoschild.templatescript.js',
+		{ dataType: 'script', cache: true }
+	),
+	mw.loader.using(['mediawiki.api', 'mediawiki.Title'])
+).then(function unpipe() {
+	let replace = data =&gt; {
+		Object.entries(data.tokens).forEach(([source, ts]) =&gt; {
+			if (!ts.some(t =&gt; data.redirs[t.pn])) return;
+			let links = ts.map(t =&gt; {
+				let r = data.redirs[t.pn] || {};
+				return [r.to || t.pn, t.fragment || r.tofragment].join('#');
+			});
+			if (links[0] !== links[1]) return;
+			data.repl = data.repl.split(source).join(source.replace(/^[^|]+\|/, '[['));
+		});
+		if (data.repl === data.orig) {
+			mw.notify('No change.');
+			return;
+		}
+		data.editor
+			.set(data.repl)
+			.appendEditSummary('[[WP:NOPIPE|unpiped]] links using [[User:Nardog/Unpipe|script]]')
+			.options({ minor: true })
+			.clickDiff();
+	};
+	let query = (titles, data) =&gt; {
+		if (!titles.length) {
+			replace(data);
+			return;
+		}
+		new mw.Api().post({
+			action: 'query',
+			titles: titles.slice(0, 50),
+			redirects: 1,
+			formatversion: 2
+		}, {
+			headers: { 'Promise-Non-Write-API-Action': 1 }
+		}).then(response =&gt; {
+			(response.query.redirects || []).forEach(r =&gt; {
+				data.redirs[r.from] = r;
+			});
+			query(titles.slice(50), data);
+		});
+	};
+	window.pathoschild.TemplateScript.add([{
+		name: 'Unpipe links',
+		script: editor =&gt; {
+			let orig = editor.get(), repl = orig, tokens = {};
+			let titles = new Set();
+			let match, re = /\[\[([^|\]]+)\|([^\]]+)\]\]/g;
+			while ((match = re.exec(orig))) {
+				if (tokens[match[0]]) continue;
+				let ts = match.slice(1).map(s =&gt; mw.Title.newFromText(s));
+				if (ts.some(t =&gt; !t || t.namespace)) continue;
+				let pns = ts.map(t =&gt; t.toText());
+				if (pns[0].endsWith(' (disambiguation)')) continue;
+				if (pns[0] === pns[1] &amp;&amp; ts[0].fragment === ts[1].fragment) {
+					repl = repl.split(match[0]).join(`[[${match[2]}]]`);
+					continue;
+				}
+				tokens[match[0]] = pns.map((pn, i) =&gt; {
+					titles.add(pn);
+					return { pn, fragment: ts[i].fragment };
+				});
+			}
+			query([...titles], { editor, orig, repl, tokens, redirs: {} });
+		}
+	}]);
+});</text>
+      <sha1>38t3q31y8l742kp77sdn0ebq0si77in</sha1>
+    </revision>
+  </page>
+</mediawiki>

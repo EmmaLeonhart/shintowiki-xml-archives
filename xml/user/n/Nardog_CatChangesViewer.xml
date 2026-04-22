@@ -1,0 +1,762 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>User:Nardog/CatChangesViewer</title>
+    <ns>2</ns>
+    <id>9823</id>
+    <revision>
+      <id>985958</id>
+      <timestamp>2024-07-03T08:53:50Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Nardog</username>
+        <id>0</id>
+      </contributor>
+      <comment>wow this sucks</comment>
+      <origin>985958</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="3525" sha1="pufi7chjlfz0f7vwnfb58eanrb1g3er" xml:space="preserve">{{Infobox Wikipedia user script
+|name=CatChangesViewer
+|desc=&lt;onlyinclude&gt;Lists recent category additions/removals on a category page&lt;/onlyinclude&gt;
+|browsers=Chrome, Firefox, etc. ([[ES2017]]+ needed)
+|source={{ubl|[[User:Nardog/CatChangesViewer.js]]|[[User:Nardog/CatChangesViewer-core.js]]}}
+}}
+
+You can track additions and removals of a category by adding it to your watchlist, but categories with heavy traffic can often inundate the watchlist to the point of uselessness. With this script, you can see a list of recent additions and removals of a category on the category page itself, whether it's in your watchlist or not.
+
+{{TOC right}}
+
+Clicking Search on a category page will show you something like this (taken from [[:Category:Articles with missing files]]):
+
+&lt;templatestyles src="User:Nardog/CatChangesViewer/styles.css"/&gt;
+{| class="wikitable plainlinks"
+! ±
+! Date
+! Page
+! User
+! Bot
+|- class="catchangesviewer-removal"
+| −
+| [{{fullurl:Chess symbols in Unicode|oldid=983152831}} 2020-10-12T15:23:18Z] ([{{fullurl:Chess symbols in Unicode|diff=983152831}} diff]&amp;nbsp;&amp;#124;&amp;nbsp;[{{fullurl:Chess symbols in Unicode|curid=528808&amp;action=history}} hist])
+| [[Chess symbols in Unicode]]
+| [[User:CommonsDelinker|CommonsDelinker]] ([[User talk:CommonsDelinker|talk]]&amp;nbsp;&amp;#124;&amp;nbsp;[[Special:Contributions/CommonsDelinker|contribs]])
+| Yes
+|- class="catchangesviewer-removal"
+| −
+| [{{fullurl:Seth Curry|oldid=983151168}} 2020-10-12T15:10:28Z] ([{{fullurl:Seth Curry|diff=983151168}} diff]&amp;nbsp;&amp;#124;&amp;nbsp;[{{fullurl:Seth Curry|curid=21713373&amp;action=history}} hist])
+| [[Seth Curry]]
+| [[User:LuK3|LuK3]] ([[User talk:LuK3|talk]]&amp;nbsp;&amp;#124;&amp;nbsp;[[Special:Contributions/LuK3|contribs]])
+| No
+|- class="catchangesviewer-addition"
+| +
+| [{{fullurl:Seth Curry|oldid=983151142}} 2020-10-12T15:10:13Z] ([{{fullurl:Seth Curry|diff=983151142}} diff]&amp;nbsp;&amp;#124;&amp;nbsp;[{{fullurl:Seth Curry|curid=21713373&amp;action=history}} hist])
+| [[Seth Curry]]
+| [[Special:Contributions/52.144.111.240|52.144.111.240]] ([[User talk:52.144.111.240|talk]])
+| No
+|}
+
+==Installation==
+Add the following to [[Special:MyPage/common.js|your common.js]] or [[meta:Special:MyPage/global.js|global.js]]:
+&lt;syntaxhighlight lang="javascript"&gt;
+mw.loader.load('//en.wikipedia.org/w/index.php?title=User:Nardog/CatChangesViewer.js&amp;action=raw&amp;ctype=text/javascript');
+&lt;/syntaxhighlight&gt;
+
+Or you may enable the [[User:Enterprisey/script-installer|script installer]] in {{myprefs|Gadgets}} and click "Install" in the infobox on this page.
+
+==Usage==
+If "Duplicates" is checked, only the most recent change on each page will appear (takes precedence over the other checkboxes).
+
+==Customization==
+The default number of changes to retrieve at a time, 50 by default (max: 500), and the number of lines per page, 20 by default, can be modified by adding lines like below to your common.js or global.js (this example doubles the numbers):
+&lt;syntaxhighlight lang="javascript"&gt;
+window.catchangesviewerDefaultLimit = 100;
+window.catchangesviewerChangesPerPage = 40;
+&lt;/syntaxhighlight&gt;
+
+==Limitations==
+*Changes older than 30 days cannot be retrieved.
+*Changes through transcluded pages are not detected. A flipside of this is that if a template is edited so that it starts or ceases to categorize a page that trancludes it, but the cache of the page does not get purged until an edit is made, that edit gets registered as adding or removing the category even if it didn't change the transcluding part.
+
+==See also==
+*[[phab:T130134]]
+
+{{User:Nardog/scripts}}</text>
+      <sha1>pufi7chjlfz0f7vwnfb58eanrb1g3er</sha1>
+    </revision>
+    <revision>
+      <id>985959</id>
+      <parentid>985958</parentid>
+      <timestamp>2025-01-19T18:12:19Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:User:Nardog/CatChangesViewer]]</comment>
+      <origin>985958</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="3525" sha1="pufi7chjlfz0f7vwnfb58eanrb1g3er" xml:space="preserve">{{Infobox Wikipedia user script
+|name=CatChangesViewer
+|desc=&lt;onlyinclude&gt;Lists recent category additions/removals on a category page&lt;/onlyinclude&gt;
+|browsers=Chrome, Firefox, etc. ([[ES2017]]+ needed)
+|source={{ubl|[[User:Nardog/CatChangesViewer.js]]|[[User:Nardog/CatChangesViewer-core.js]]}}
+}}
+
+You can track additions and removals of a category by adding it to your watchlist, but categories with heavy traffic can often inundate the watchlist to the point of uselessness. With this script, you can see a list of recent additions and removals of a category on the category page itself, whether it's in your watchlist or not.
+
+{{TOC right}}
+
+Clicking Search on a category page will show you something like this (taken from [[:Category:Articles with missing files]]):
+
+&lt;templatestyles src="User:Nardog/CatChangesViewer/styles.css"/&gt;
+{| class="wikitable plainlinks"
+! ±
+! Date
+! Page
+! User
+! Bot
+|- class="catchangesviewer-removal"
+| −
+| [{{fullurl:Chess symbols in Unicode|oldid=983152831}} 2020-10-12T15:23:18Z] ([{{fullurl:Chess symbols in Unicode|diff=983152831}} diff]&amp;nbsp;&amp;#124;&amp;nbsp;[{{fullurl:Chess symbols in Unicode|curid=528808&amp;action=history}} hist])
+| [[Chess symbols in Unicode]]
+| [[User:CommonsDelinker|CommonsDelinker]] ([[User talk:CommonsDelinker|talk]]&amp;nbsp;&amp;#124;&amp;nbsp;[[Special:Contributions/CommonsDelinker|contribs]])
+| Yes
+|- class="catchangesviewer-removal"
+| −
+| [{{fullurl:Seth Curry|oldid=983151168}} 2020-10-12T15:10:28Z] ([{{fullurl:Seth Curry|diff=983151168}} diff]&amp;nbsp;&amp;#124;&amp;nbsp;[{{fullurl:Seth Curry|curid=21713373&amp;action=history}} hist])
+| [[Seth Curry]]
+| [[User:LuK3|LuK3]] ([[User talk:LuK3|talk]]&amp;nbsp;&amp;#124;&amp;nbsp;[[Special:Contributions/LuK3|contribs]])
+| No
+|- class="catchangesviewer-addition"
+| +
+| [{{fullurl:Seth Curry|oldid=983151142}} 2020-10-12T15:10:13Z] ([{{fullurl:Seth Curry|diff=983151142}} diff]&amp;nbsp;&amp;#124;&amp;nbsp;[{{fullurl:Seth Curry|curid=21713373&amp;action=history}} hist])
+| [[Seth Curry]]
+| [[Special:Contributions/52.144.111.240|52.144.111.240]] ([[User talk:52.144.111.240|talk]])
+| No
+|}
+
+==Installation==
+Add the following to [[Special:MyPage/common.js|your common.js]] or [[meta:Special:MyPage/global.js|global.js]]:
+&lt;syntaxhighlight lang="javascript"&gt;
+mw.loader.load('//en.wikipedia.org/w/index.php?title=User:Nardog/CatChangesViewer.js&amp;action=raw&amp;ctype=text/javascript');
+&lt;/syntaxhighlight&gt;
+
+Or you may enable the [[User:Enterprisey/script-installer|script installer]] in {{myprefs|Gadgets}} and click "Install" in the infobox on this page.
+
+==Usage==
+If "Duplicates" is checked, only the most recent change on each page will appear (takes precedence over the other checkboxes).
+
+==Customization==
+The default number of changes to retrieve at a time, 50 by default (max: 500), and the number of lines per page, 20 by default, can be modified by adding lines like below to your common.js or global.js (this example doubles the numbers):
+&lt;syntaxhighlight lang="javascript"&gt;
+window.catchangesviewerDefaultLimit = 100;
+window.catchangesviewerChangesPerPage = 40;
+&lt;/syntaxhighlight&gt;
+
+==Limitations==
+*Changes older than 30 days cannot be retrieved.
+*Changes through transcluded pages are not detected. A flipside of this is that if a template is edited so that it starts or ceases to categorize a page that trancludes it, but the cache of the page does not get purged until an edit is made, that edit gets registered as adding or removing the category even if it didn't change the transcluding part.
+
+==See also==
+*[[phab:T130134]]
+
+{{User:Nardog/scripts}}</text>
+      <sha1>pufi7chjlfz0f7vwnfb58eanrb1g3er</sha1>
+    </revision>
+    <revision>
+      <id>985960</id>
+      <parentid>985959</parentid>
+      <timestamp>2025-05-19T16:56:36Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>985960</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="3536" sha1="nel5vji3ncveyufo3xax6lqi1tqympz" xml:space="preserve">{{Infobox Wikipedia user script
+|name=CatChangesViewer
+|desc=&lt;onlyinclude&gt;Lists recent category additions/removals on a category page&lt;/onlyinclude&gt;
+|browsers=Chrome, Firefox, etc. ([[:en:ES2017|ES2017]]+ needed)
+|source={{ubl|[[User:Nardog/CatChangesViewer.js]]|[[User:Nardog/CatChangesViewer-core.js]]}}
+}}
+
+You can track additions and removals of a category by adding it to your watchlist, but categories with heavy traffic can often inundate the watchlist to the point of uselessness. With this script, you can see a list of recent additions and removals of a category on the category page itself, whether it's in your watchlist or not.
+
+{{TOC right}}
+
+Clicking Search on a category page will show you something like this (taken from [[:Category:Articles with missing files]]):
+
+&lt;templatestyles src="User:Nardog/CatChangesViewer/styles.css"/&gt;
+{| class="wikitable plainlinks"
+! ±
+! Date
+! Page
+! User
+! Bot
+|- class="catchangesviewer-removal"
+| −
+| [{{fullurl:Chess symbols in Unicode|oldid=983152831}} 2020-10-12T15:23:18Z] ([{{fullurl:Chess symbols in Unicode|diff=983152831}} diff]&amp;nbsp;&amp;#124;&amp;nbsp;[{{fullurl:Chess symbols in Unicode|curid=528808&amp;action=history}} hist])
+| [[Chess symbols in Unicode]]
+| [[User:CommonsDelinker|CommonsDelinker]] ([[User talk:CommonsDelinker|talk]]&amp;nbsp;&amp;#124;&amp;nbsp;[[Special:Contributions/CommonsDelinker|contribs]])
+| Yes
+|- class="catchangesviewer-removal"
+| −
+| [{{fullurl:Seth Curry|oldid=983151168}} 2020-10-12T15:10:28Z] ([{{fullurl:Seth Curry|diff=983151168}} diff]&amp;nbsp;&amp;#124;&amp;nbsp;[{{fullurl:Seth Curry|curid=21713373&amp;action=history}} hist])
+| [[Seth Curry]]
+| [[User:LuK3|LuK3]] ([[User talk:LuK3|talk]]&amp;nbsp;&amp;#124;&amp;nbsp;[[Special:Contributions/LuK3|contribs]])
+| No
+|- class="catchangesviewer-addition"
+| +
+| [{{fullurl:Seth Curry|oldid=983151142}} 2020-10-12T15:10:13Z] ([{{fullurl:Seth Curry|diff=983151142}} diff]&amp;nbsp;&amp;#124;&amp;nbsp;[{{fullurl:Seth Curry|curid=21713373&amp;action=history}} hist])
+| [[Seth Curry]]
+| [[Special:Contributions/52.144.111.240|52.144.111.240]] ([[User talk:52.144.111.240|talk]])
+| No
+|}
+
+==Installation==
+Add the following to [[Special:MyPage/common.js|your common.js]] or [[meta:Special:MyPage/global.js|global.js]]:
+&lt;syntaxhighlight lang="javascript"&gt;
+mw.loader.load('//en.wikipedia.org/w/index.php?title=User:Nardog/CatChangesViewer.js&amp;action=raw&amp;ctype=text/javascript');
+&lt;/syntaxhighlight&gt;
+
+Or you may enable the [[User:Enterprisey/script-installer|script installer]] in {{myprefs|Gadgets}} and click "Install" in the infobox on this page.
+
+==Usage==
+If "Duplicates" is checked, only the most recent change on each page will appear (takes precedence over the other checkboxes).
+
+==Customization==
+The default number of changes to retrieve at a time, 50 by default (max: 500), and the number of lines per page, 20 by default, can be modified by adding lines like below to your common.js or global.js (this example doubles the numbers):
+&lt;syntaxhighlight lang="javascript"&gt;
+window.catchangesviewerDefaultLimit = 100;
+window.catchangesviewerChangesPerPage = 40;
+&lt;/syntaxhighlight&gt;
+
+==Limitations==
+*Changes older than 30 days cannot be retrieved.
+*Changes through transcluded pages are not detected. A flipside of this is that if a template is edited so that it starts or ceases to categorize a page that trancludes it, but the cache of the page does not get purged until an edit is made, that edit gets registered as adding or removing the category even if it didn't change the transcluding part.
+
+==See also==
+*[[phab:T130134]]
+
+{{User:Nardog/scripts}}</text>
+      <sha1>nel5vji3ncveyufo3xax6lqi1tqympz</sha1>
+    </revision>
+    <revision>
+      <id>985961</id>
+      <parentid>985960</parentid>
+      <timestamp>2025-05-19T19:32:10Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>985961</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="3565" sha1="h1b1wll6w3u6xxm799ehimcf7sez3rp" xml:space="preserve">{{Infobox Wikipedia user script
+|name=CatChangesViewer
+|desc=&lt;onlyinclude&gt;Lists recent category additions/removals on a category page&lt;/onlyinclude&gt;
+|browsers=Chrome, Firefox, etc. ([[:en:ES2017|ES2017]]+ needed)
+|source={{ubl|[[User:Nardog/CatChangesViewer.js]]|[[User:Nardog/CatChangesViewer-core.js]]}}
+}}
+
+You can track additions and removals of a category by adding it to your watchlist, but categories with heavy traffic can often inundate the watchlist to the point of uselessness. With this script, you can see a list of recent additions and removals of a category on the category page itself, whether it's in your watchlist or not.
+
+{{TOC right}}
+
+Clicking Search on a category page will show you something like this (taken from [[:Category:Articles with missing files]]):
+
+&lt;templatestyles src="User:Nardog/CatChangesViewer/styles.css"/&gt;
+{| class="wikitable plainlinks"
+! ±
+! Date
+! Page
+! User
+! Bot
+|- class="catchangesviewer-removal"
+| −
+| [{{fullurl:Chess symbols in Unicode|oldid=983152831}} 2020-10-12T15:23:18Z] ([{{fullurl:Chess symbols in Unicode|diff=983152831}} diff]&amp;nbsp;&amp;#124;&amp;nbsp;[{{fullurl:Chess symbols in Unicode|curid=528808&amp;action=history}} hist])
+| [[:en:Chess symbols in Unicode|Chess symbols in Unicode]]
+| [[User:CommonsDelinker|CommonsDelinker]] ([[User talk:CommonsDelinker|talk]]&amp;nbsp;&amp;#124;&amp;nbsp;[[Special:Contributions/CommonsDelinker|contribs]])
+| Yes
+|- class="catchangesviewer-removal"
+| −
+| [{{fullurl:Seth Curry|oldid=983151168}} 2020-10-12T15:10:28Z] ([{{fullurl:Seth Curry|diff=983151168}} diff]&amp;nbsp;&amp;#124;&amp;nbsp;[{{fullurl:Seth Curry|curid=21713373&amp;action=history}} hist])
+| [[Seth Curry]]
+| [[User:LuK3|LuK3]] ([[User talk:LuK3|talk]]&amp;nbsp;&amp;#124;&amp;nbsp;[[Special:Contributions/LuK3|contribs]])
+| No
+|- class="catchangesviewer-addition"
+| +
+| [{{fullurl:Seth Curry|oldid=983151142}} 2020-10-12T15:10:13Z] ([{{fullurl:Seth Curry|diff=983151142}} diff]&amp;nbsp;&amp;#124;&amp;nbsp;[{{fullurl:Seth Curry|curid=21713373&amp;action=history}} hist])
+| [[Seth Curry]]
+| [[Special:Contributions/52.144.111.240|52.144.111.240]] ([[User talk:52.144.111.240|talk]])
+| No
+|}
+
+==Installation==
+Add the following to [[Special:MyPage/common.js|your common.js]] or [[meta:Special:MyPage/global.js|global.js]]:
+&lt;syntaxhighlight lang="javascript"&gt;
+mw.loader.load('//en.wikipedia.org/w/index.php?title=User:Nardog/CatChangesViewer.js&amp;action=raw&amp;ctype=text/javascript');
+&lt;/syntaxhighlight&gt;
+
+Or you may enable the [[User:Enterprisey/script-installer|script installer]] in {{myprefs|Gadgets}} and click "Install" in the infobox on this page.
+
+==Usage==
+If "Duplicates" is checked, only the most recent change on each page will appear (takes precedence over the other checkboxes).
+
+==Customization==
+The default number of changes to retrieve at a time, 50 by default (max: 500), and the number of lines per page, 20 by default, can be modified by adding lines like below to your common.js or global.js (this example doubles the numbers):
+&lt;syntaxhighlight lang="javascript"&gt;
+window.catchangesviewerDefaultLimit = 100;
+window.catchangesviewerChangesPerPage = 40;
+&lt;/syntaxhighlight&gt;
+
+==Limitations==
+*Changes older than 30 days cannot be retrieved.
+*Changes through transcluded pages are not detected. A flipside of this is that if a template is edited so that it starts or ceases to categorize a page that trancludes it, but the cache of the page does not get purged until an edit is made, that edit gets registered as adding or removing the category even if it didn't change the transcluding part.
+
+==See also==
+*[[phab:T130134]]
+
+{{User:Nardog/scripts}}</text>
+      <sha1>h1b1wll6w3u6xxm799ehimcf7sez3rp</sha1>
+    </revision>
+    <revision>
+      <id>9824</id>
+      <timestamp>2025-05-25T03:01:20Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Bot: convert local link → enwiki interwiki</comment>
+      <origin>9824</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="3595" sha1="9c123adzqnodq0ec5apvz7dz2a5uivj" xml:space="preserve">{{Infobox Wikipedia user script
+|name=CatChangesViewer
+|desc=&lt;onlyinclude&gt;Lists recent category additions/removals on a category page&lt;/onlyinclude&gt;
+|browsers=Chrome, Firefox, etc. ([[:en:ES2017|ES2017]]+ needed)
+|source={{ubl|[[User:Nardog/CatChangesViewer.js]]|[[User:Nardog/CatChangesViewer-core.js]]}}
+}}
+
+You can track additions and removals of a category by adding it to your watchlist, but categories with heavy traffic can often inundate the watchlist to the point of uselessness. With this script, you can see a list of recent additions and removals of a category on the category page itself, whether it's in your watchlist or not.
+
+{{TOC right}}
+
+Clicking Search on a category page will show you something like this (taken from [[:Category:Articles with missing files]]):
+
+&lt;templatestyles src="User:Nardog/CatChangesViewer/styles.css"/&gt;
+{| class="wikitable plainlinks"
+! ±
+! Date
+! Page
+! User
+! Bot
+|- class="catchangesviewer-removal"
+| −
+| [{{fullurl:Chess symbols in Unicode|oldid=983152831}} 2020-10-12T15:23:18Z] ([{{fullurl:Chess symbols in Unicode|diff=983152831}} diff]&amp;nbsp;&amp;#124;&amp;nbsp;[{{fullurl:Chess symbols in Unicode|curid=528808&amp;action=history}} hist])
+| [[:en:Chess symbols in Unicode|Chess symbols in Unicode]]
+| [[User:CommonsDelinker|CommonsDelinker]] ([[User talk:CommonsDelinker|talk]]&amp;nbsp;&amp;#124;&amp;nbsp;[[Special:Contributions/CommonsDelinker|contribs]])
+| Yes
+|- class="catchangesviewer-removal"
+| −
+| [{{fullurl:Seth Curry|oldid=983151168}} 2020-10-12T15:10:28Z] ([{{fullurl:Seth Curry|diff=983151168}} diff]&amp;nbsp;&amp;#124;&amp;nbsp;[{{fullurl:Seth Curry|curid=21713373&amp;action=history}} hist])
+| [[:en:Seth Curry|Seth Curry]]
+| [[User:LuK3|LuK3]] ([[User talk:LuK3|talk]]&amp;nbsp;&amp;#124;&amp;nbsp;[[Special:Contributions/LuK3|contribs]])
+| No
+|- class="catchangesviewer-addition"
+| +
+| [{{fullurl:Seth Curry|oldid=983151142}} 2020-10-12T15:10:13Z] ([{{fullurl:Seth Curry|diff=983151142}} diff]&amp;nbsp;&amp;#124;&amp;nbsp;[{{fullurl:Seth Curry|curid=21713373&amp;action=history}} hist])
+| [[:en:Seth Curry|Seth Curry]]
+| [[Special:Contributions/52.144.111.240|52.144.111.240]] ([[User talk:52.144.111.240|talk]])
+| No
+|}
+
+==Installation==
+Add the following to [[Special:MyPage/common.js|your common.js]] or [[meta:Special:MyPage/global.js|global.js]]:
+&lt;syntaxhighlight lang="javascript"&gt;
+mw.loader.load('//en.wikipedia.org/w/index.php?title=User:Nardog/CatChangesViewer.js&amp;action=raw&amp;ctype=text/javascript');
+&lt;/syntaxhighlight&gt;
+
+Or you may enable the [[User:Enterprisey/script-installer|script installer]] in {{myprefs|Gadgets}} and click "Install" in the infobox on this page.
+
+==Usage==
+If "Duplicates" is checked, only the most recent change on each page will appear (takes precedence over the other checkboxes).
+
+==Customization==
+The default number of changes to retrieve at a time, 50 by default (max: 500), and the number of lines per page, 20 by default, can be modified by adding lines like below to your common.js or global.js (this example doubles the numbers):
+&lt;syntaxhighlight lang="javascript"&gt;
+window.catchangesviewerDefaultLimit = 100;
+window.catchangesviewerChangesPerPage = 40;
+&lt;/syntaxhighlight&gt;
+
+==Limitations==
+*Changes older than 30 days cannot be retrieved.
+*Changes through transcluded pages are not detected. A flipside of this is that if a template is edited so that it starts or ceases to categorize a page that trancludes it, but the cache of the page does not get purged until an edit is made, that edit gets registered as adding or removing the category even if it didn't change the transcluding part.
+
+==See also==
+*[[phab:T130134]]
+
+{{User:Nardog/scripts}}</text>
+      <sha1>9c123adzqnodq0ec5apvz7dz2a5uivj</sha1>
+    </revision>
+    <revision>
+      <id>3243798</id>
+      <parentid>9824</parentid>
+      <timestamp>2026-02-26T04:43:49Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <origin>3243798</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="3616" sha1="qi30p8ro4b908lode3srtricazkyjh4" xml:space="preserve">{{Infobox Wikipedia user script
+|name=CatChangesViewer
+|desc=&lt;onlyinclude&gt;Lists recent category additions/removals on a category page&lt;/onlyinclude&gt;
+|browsers=Chrome, Firefox, etc. ([[:en:ES2017|ES2017]]+ needed)
+|source={{ubl|[[User:Nardog/CatChangesViewer.js]]|[[User:Nardog/CatChangesViewer-core.js]]}}
+}}
+
+You can track additions and removals of a category by adding it to your watchlist, but categories with heavy traffic can often inundate the watchlist to the point of uselessness. With this script, you can see a list of recent additions and removals of a category on the category page itself, whether it's in your watchlist or not.
+
+{{TOC right}}
+
+Clicking Search on a category page will show you something like this (taken from [[:Category:Articles with missing files]]):
+
+&lt;templatestyles src="User:Nardog/CatChangesViewer/styles.css"/&gt;
+{| class="wikitable plainlinks"
+! ±
+! Date
+! Page
+! User
+! Bot
+|- class="catchangesviewer-removal"
+| −
+| [{{fullurl:Chess symbols in Unicode|oldid=983152831}} 2020-10-12T15:23:18Z] ([{{fullurl:Chess symbols in Unicode|diff=983152831}} diff]&amp;nbsp;&amp;#124;&amp;nbsp;[{{fullurl:Chess symbols in Unicode|curid=528808&amp;action=history}} hist])
+| [[:en:Chess symbols in Unicode|Chess symbols in Unicode]]
+| [[User:CommonsDelinker|CommonsDelinker]] ([[User talk:CommonsDelinker|talk]]&amp;nbsp;&amp;#124;&amp;nbsp;[[Special:Contributions/CommonsDelinker|contribs]])
+| Yes
+|- class="catchangesviewer-removal"
+| −
+| [{{fullurl:Seth Curry|oldid=983151168}} 2020-10-12T15:10:28Z] ([{{fullurl:Seth Curry|diff=983151168}} diff]&amp;nbsp;&amp;#124;&amp;nbsp;[{{fullurl:Seth Curry|curid=21713373&amp;action=history}} hist])
+| [[:en:Seth Curry|Seth Curry]]
+| [[User:LuK3|LuK3]] ([[User talk:LuK3|talk]]&amp;nbsp;&amp;#124;&amp;nbsp;[[Special:Contributions/LuK3|contribs]])
+| No
+|- class="catchangesviewer-addition"
+| +
+| [{{fullurl:Seth Curry|oldid=983151142}} 2020-10-12T15:10:13Z] ([{{fullurl:Seth Curry|diff=983151142}} diff]&amp;nbsp;&amp;#124;&amp;nbsp;[{{fullurl:Seth Curry|curid=21713373&amp;action=history}} hist])
+| [[:en:Seth Curry|Seth Curry]]
+| [[Special:Contributions/52.144.111.240|52.144.111.240]] ([[User talk:52.144.111.240|talk]])
+| No
+|}
+
+==Installation==
+Add the following to [[Special:MyPage/common.js|your common.js]] or [[meta:Special:MyPage/global.js|global.js]]:
+&lt;syntaxhighlight lang="javascript"&gt;
+mw.loader.load('//en.wikipedia.org/w/index.php?title=User:Nardog/CatChangesViewer.js&amp;action=raw&amp;ctype=text/javascript');
+&lt;/syntaxhighlight&gt;
+
+Or you may enable the [[User:Enterprisey/script-installer|script installer]] in {{myprefs|Gadgets}} and click "Install" in the infobox on this page.
+
+==Usage==
+If "Duplicates" is checked, only the most recent change on each page will appear (takes precedence over the other checkboxes).
+
+==Customization==
+The default number of changes to retrieve at a time, 50 by default (max: 500), and the number of lines per page, 20 by default, can be modified by adding lines like below to your common.js or global.js (this example doubles the numbers):
+&lt;syntaxhighlight lang="javascript"&gt;
+window.catchangesviewerDefaultLimit = 100;
+window.catchangesviewerChangesPerPage = 40;
+&lt;/syntaxhighlight&gt;
+
+==Limitations==
+*Changes older than 30 days cannot be retrieved.
+*Changes through transcluded pages are not detected. A flipside of this is that if a template is edited so that it starts or ceases to categorize a page that trancludes it, but the cache of the page does not get purged until an edit is made, that edit gets registered as adding or removing the category even if it didn't change the transcluding part.
+
+==See also==
+*[[phab:T130134]]
+
+{{User:Nardog/scripts}}[[Category:reimport]]</text>
+      <sha1>qi30p8ro4b908lode3srtricazkyjh4</sha1>
+    </revision>
+    <revision>
+      <id>3367684</id>
+      <parentid>3243798</parentid>
+      <timestamp>2026-03-02T18:43:27Z</timestamp>
+      <contributor>
+        <username>en&gt;Nardog</username>
+        <id>0</id>
+      </contributor>
+      <comment>upd</comment>
+      <origin>3367684</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="3531" sha1="g24hb5kl6ebb4xbcjxubi6wzm3162vb" xml:space="preserve">{{Infobox Wikipedia user script
+|name=CatChangesViewer
+|desc=&lt;onlyinclude&gt;Lists recent category additions/removals on a category page&lt;/onlyinclude&gt;
+|browsers=Chrome, Firefox, etc. ([[ES2022]]+ needed)
+|source={{ubl|[[User:Nardog/CatChangesViewer.js]]|[[User:Nardog/CatChangesViewer-core.js]]}}
+}}
+
+You can track additions and removals of a category by adding it to your watchlist, but categories with heavy traffic can often inundate the watchlist to the point of uselessness. With this script, you can see a list of recent additions and removals of a category on the category page itself, whether it's in your watchlist or not.
+
+{{TOC right}}
+
+Clicking Search on a category page will show you something like this (taken from [[:Category:Articles with missing files]]):
+
+&lt;templatestyles src="User:Nardog/CatChangesViewer/styles.css"/&gt;
+{| class="wikitable plainlinks"
+! ±
+! Date
+! Page
+! User
+! Bot
+|- class="catchangesviewer-removal"
+| −
+| [{{fullurl:Chess symbols in Unicode|oldid=983152831}} 15:23, 12 October 2020] ([{{fullurl:Chess symbols in Unicode|diff=983152831}} diff]&amp;nbsp;&amp;#124;&amp;nbsp;[{{fullurl:Chess symbols in Unicode|curid=528808&amp;action=history}} hist])
+| [[Chess symbols in Unicode]]
+| [[User:CommonsDelinker|CommonsDelinker]] ([[User talk:CommonsDelinker|talk]]&amp;nbsp;&amp;#124;&amp;nbsp;[[Special:Contributions/CommonsDelinker|contribs]])
+| Yes
+|- class="catchangesviewer-removal"
+| −
+| [{{fullurl:Seth Curry|oldid=983151168}} 15:10, 12 October 2020] ([{{fullurl:Seth Curry|diff=983151168}} diff]&amp;nbsp;&amp;#124;&amp;nbsp;[{{fullurl:Seth Curry|curid=21713373&amp;action=history}} hist])
+| [[Seth Curry]]
+| [[User:LuK3|LuK3]] ([[User talk:LuK3|talk]]&amp;nbsp;&amp;#124;&amp;nbsp;[[Special:Contributions/LuK3|contribs]])
+| No
+|- class="catchangesviewer-addition"
+| +
+| [{{fullurl:Seth Curry|oldid=983151142}} 15:10, 12 October 2020] ([{{fullurl:Seth Curry|diff=983151142}} diff]&amp;nbsp;&amp;#124;&amp;nbsp;[{{fullurl:Seth Curry|curid=21713373&amp;action=history}} hist])
+| [[Seth Curry]]
+| [[Special:Contributions/52.144.111.240|52.144.111.240]] ([[User talk:52.144.111.240|talk]])
+| No
+|}
+
+==Installation==
+Add the following to [[Special:MyPage/common.js|your common.js]] or [[meta:Special:MyPage/global.js|global.js]]:
+&lt;syntaxhighlight lang="javascript"&gt;
+mw.loader.load('//en.wikipedia.org/w/index.php?title=User:Nardog/CatChangesViewer.js&amp;action=raw&amp;ctype=text/javascript');
+&lt;/syntaxhighlight&gt;
+
+Or you may enable the [[User:Enterprisey/script-installer|script installer]] in {{myprefs|Gadgets}} and click "Install" in the infobox on this page.
+
+==Usage==
+If "Duplicates" is checked, only the most recent change on each page will appear (takes precedence over the other checkboxes).
+
+==Customization==
+The default number of changes to retrieve at a time, 50 by default (max: 500), and the number of lines per page, 20 by default, can be modified by adding lines like below to your common.js or global.js (this example doubles the numbers):
+&lt;syntaxhighlight lang="javascript"&gt;
+window.catchangesviewerDefaultLimit = 100;
+window.catchangesviewerChangesPerPage = 40;
+&lt;/syntaxhighlight&gt;
+
+==Limitations==
+*Changes older than 30 days cannot be retrieved.
+*Changes through transcluded pages are not detected. A flipside of this is that if a template is edited so that it starts or ceases to categorize a page that trancludes it, but the cache of the page does not get purged until an edit is made, that edit gets registered as adding or removing the category even if it didn't change the transcluding part.
+
+==See also==
+*[[phab:T130134]]
+
+{{User:Nardog/scripts}}</text>
+      <sha1>g24hb5kl6ebb4xbcjxubi6wzm3162vb</sha1>
+    </revision>
+    <revision>
+      <id>3367685</id>
+      <parentid>3367684</parentid>
+      <timestamp>2026-03-02T18:43:27Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3367684</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="3531" sha1="g24hb5kl6ebb4xbcjxubi6wzm3162vb" xml:space="preserve">{{Infobox Wikipedia user script
+|name=CatChangesViewer
+|desc=&lt;onlyinclude&gt;Lists recent category additions/removals on a category page&lt;/onlyinclude&gt;
+|browsers=Chrome, Firefox, etc. ([[ES2022]]+ needed)
+|source={{ubl|[[User:Nardog/CatChangesViewer.js]]|[[User:Nardog/CatChangesViewer-core.js]]}}
+}}
+
+You can track additions and removals of a category by adding it to your watchlist, but categories with heavy traffic can often inundate the watchlist to the point of uselessness. With this script, you can see a list of recent additions and removals of a category on the category page itself, whether it's in your watchlist or not.
+
+{{TOC right}}
+
+Clicking Search on a category page will show you something like this (taken from [[:Category:Articles with missing files]]):
+
+&lt;templatestyles src="User:Nardog/CatChangesViewer/styles.css"/&gt;
+{| class="wikitable plainlinks"
+! ±
+! Date
+! Page
+! User
+! Bot
+|- class="catchangesviewer-removal"
+| −
+| [{{fullurl:Chess symbols in Unicode|oldid=983152831}} 15:23, 12 October 2020] ([{{fullurl:Chess symbols in Unicode|diff=983152831}} diff]&amp;nbsp;&amp;#124;&amp;nbsp;[{{fullurl:Chess symbols in Unicode|curid=528808&amp;action=history}} hist])
+| [[Chess symbols in Unicode]]
+| [[User:CommonsDelinker|CommonsDelinker]] ([[User talk:CommonsDelinker|talk]]&amp;nbsp;&amp;#124;&amp;nbsp;[[Special:Contributions/CommonsDelinker|contribs]])
+| Yes
+|- class="catchangesviewer-removal"
+| −
+| [{{fullurl:Seth Curry|oldid=983151168}} 15:10, 12 October 2020] ([{{fullurl:Seth Curry|diff=983151168}} diff]&amp;nbsp;&amp;#124;&amp;nbsp;[{{fullurl:Seth Curry|curid=21713373&amp;action=history}} hist])
+| [[Seth Curry]]
+| [[User:LuK3|LuK3]] ([[User talk:LuK3|talk]]&amp;nbsp;&amp;#124;&amp;nbsp;[[Special:Contributions/LuK3|contribs]])
+| No
+|- class="catchangesviewer-addition"
+| +
+| [{{fullurl:Seth Curry|oldid=983151142}} 15:10, 12 October 2020] ([{{fullurl:Seth Curry|diff=983151142}} diff]&amp;nbsp;&amp;#124;&amp;nbsp;[{{fullurl:Seth Curry|curid=21713373&amp;action=history}} hist])
+| [[Seth Curry]]
+| [[Special:Contributions/52.144.111.240|52.144.111.240]] ([[User talk:52.144.111.240|talk]])
+| No
+|}
+
+==Installation==
+Add the following to [[Special:MyPage/common.js|your common.js]] or [[meta:Special:MyPage/global.js|global.js]]:
+&lt;syntaxhighlight lang="javascript"&gt;
+mw.loader.load('//en.wikipedia.org/w/index.php?title=User:Nardog/CatChangesViewer.js&amp;action=raw&amp;ctype=text/javascript');
+&lt;/syntaxhighlight&gt;
+
+Or you may enable the [[User:Enterprisey/script-installer|script installer]] in {{myprefs|Gadgets}} and click "Install" in the infobox on this page.
+
+==Usage==
+If "Duplicates" is checked, only the most recent change on each page will appear (takes precedence over the other checkboxes).
+
+==Customization==
+The default number of changes to retrieve at a time, 50 by default (max: 500), and the number of lines per page, 20 by default, can be modified by adding lines like below to your common.js or global.js (this example doubles the numbers):
+&lt;syntaxhighlight lang="javascript"&gt;
+window.catchangesviewerDefaultLimit = 100;
+window.catchangesviewerChangesPerPage = 40;
+&lt;/syntaxhighlight&gt;
+
+==Limitations==
+*Changes older than 30 days cannot be retrieved.
+*Changes through transcluded pages are not detected. A flipside of this is that if a template is edited so that it starts or ceases to categorize a page that trancludes it, but the cache of the page does not get purged until an edit is made, that edit gets registered as adding or removing the category even if it didn't change the transcluding part.
+
+==See also==
+*[[phab:T130134]]
+
+{{User:Nardog/scripts}}</text>
+      <sha1>g24hb5kl6ebb4xbcjxubi6wzm3162vb</sha1>
+    </revision>
+    <revision>
+      <id>3621323</id>
+      <parentid>3367685</parentid>
+      <timestamp>2026-04-22T20:42:50Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <comment>[[Project:History cleanup|Offloading history due to miraheze stability concerns]] many contributors, see [https://emmaleonhart.github.io/shintowiki-scripts/wikihistory.html?page=Nardog%2FCatChangesViewer here] for full history [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/24796114356|commit triggered pipeline]]</comment>
+      <origin>3621323</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="3894" sha1="g15ud13pjpgx25uwe7zjzbva2agwp8f" xml:space="preserve">&lt;!-- History offloaded: due to miraheze stability concerns, the edit history of this page has been offloaded to the XML archive. See https://emmaleonhart.github.io/shintowiki-scripts/wikihistory.html?page=Nardog%2FCatChangesViewer for full history. Last refreshed: [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/24796114356|commit triggered pipeline]] --&gt;
+{{Infobox Wikipedia user script
+|name=CatChangesViewer
+|desc=&lt;onlyinclude&gt;Lists recent category additions/removals on a category page&lt;/onlyinclude&gt;
+|browsers=Chrome, Firefox, etc. ([[ES2022]]+ needed)
+|source={{ubl|[[User:Nardog/CatChangesViewer.js]]|[[User:Nardog/CatChangesViewer-core.js]]}}
+}}
+
+You can track additions and removals of a category by adding it to your watchlist, but categories with heavy traffic can often inundate the watchlist to the point of uselessness. With this script, you can see a list of recent additions and removals of a category on the category page itself, whether it's in your watchlist or not.
+
+{{TOC right}}
+
+Clicking Search on a category page will show you something like this (taken from [[:Category:Articles with missing files]]):
+
+&lt;templatestyles src="User:Nardog/CatChangesViewer/styles.css"/&gt;
+{| class="wikitable plainlinks"
+! ±
+! Date
+! Page
+! User
+! Bot
+|- class="catchangesviewer-removal"
+| −
+| [{{fullurl:Chess symbols in Unicode|oldid=983152831}} 15:23, 12 October 2020] ([{{fullurl:Chess symbols in Unicode|diff=983152831}} diff]&amp;nbsp;&amp;#124;&amp;nbsp;[{{fullurl:Chess symbols in Unicode|curid=528808&amp;action=history}} hist])
+| [[Chess symbols in Unicode]]
+| [[User:CommonsDelinker|CommonsDelinker]] ([[User talk:CommonsDelinker|talk]]&amp;nbsp;&amp;#124;&amp;nbsp;[[Special:Contributions/CommonsDelinker|contribs]])
+| Yes
+|- class="catchangesviewer-removal"
+| −
+| [{{fullurl:Seth Curry|oldid=983151168}} 15:10, 12 October 2020] ([{{fullurl:Seth Curry|diff=983151168}} diff]&amp;nbsp;&amp;#124;&amp;nbsp;[{{fullurl:Seth Curry|curid=21713373&amp;action=history}} hist])
+| [[Seth Curry]]
+| [[User:LuK3|LuK3]] ([[User talk:LuK3|talk]]&amp;nbsp;&amp;#124;&amp;nbsp;[[Special:Contributions/LuK3|contribs]])
+| No
+|- class="catchangesviewer-addition"
+| +
+| [{{fullurl:Seth Curry|oldid=983151142}} 15:10, 12 October 2020] ([{{fullurl:Seth Curry|diff=983151142}} diff]&amp;nbsp;&amp;#124;&amp;nbsp;[{{fullurl:Seth Curry|curid=21713373&amp;action=history}} hist])
+| [[Seth Curry]]
+| [[Special:Contributions/52.144.111.240|52.144.111.240]] ([[User talk:52.144.111.240|talk]])
+| No
+|}
+
+==Installation==
+Add the following to [[Special:MyPage/common.js|your common.js]] or [[meta:Special:MyPage/global.js|global.js]]:
+&lt;syntaxhighlight lang="javascript"&gt;
+mw.loader.load('//en.wikipedia.org/w/index.php?title=User:Nardog/CatChangesViewer.js&amp;action=raw&amp;ctype=text/javascript');
+&lt;/syntaxhighlight&gt;
+
+Or you may enable the [[User:Enterprisey/script-installer|script installer]] in {{myprefs|Gadgets}} and click "Install" in the infobox on this page.
+
+==Usage==
+If "Duplicates" is checked, only the most recent change on each page will appear (takes precedence over the other checkboxes).
+
+==Customization==
+The default number of changes to retrieve at a time, 50 by default (max: 500), and the number of lines per page, 20 by default, can be modified by adding lines like below to your common.js or global.js (this example doubles the numbers):
+&lt;syntaxhighlight lang="javascript"&gt;
+window.catchangesviewerDefaultLimit = 100;
+window.catchangesviewerChangesPerPage = 40;
+&lt;/syntaxhighlight&gt;
+
+==Limitations==
+*Changes older than 30 days cannot be retrieved.
+*Changes through transcluded pages are not detected. A flipside of this is that if a template is edited so that it starts or ceases to categorize a page that trancludes it, but the cache of the page does not get purged until an edit is made, that edit gets registered as adding or removing the category even if it didn't change the transcluding part.
+
+==See also==
+*[[phab:T130134]]
+
+{{User:Nardog/scripts}}</text>
+      <sha1>g15ud13pjpgx25uwe7zjzbva2agwp8f</sha1>
+    </revision>
+  </page>
+</mediawiki>

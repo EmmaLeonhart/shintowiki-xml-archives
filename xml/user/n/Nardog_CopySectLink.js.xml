@@ -1,0 +1,256 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>User:Nardog/CopySectLink.js</title>
+    <ns>2</ns>
+    <id>143920</id>
+    <revision>
+      <id>3367835</id>
+      <timestamp>2026-03-02T18:44:05Z</timestamp>
+      <contributor>
+        <username>en&gt;Nardog</username>
+        <id>0</id>
+      </contributor>
+      <comment>Minerva fix</comment>
+      <origin>3367835</origin>
+      <model>javascript</model>
+      <format>text/javascript</format>
+      <text bytes="3529" sha1="0m2bdivhczjztudzcxn39f9vjctt5wf" xml:space="preserve">(function copySectLink() {
+	let dependencies = ['mediawiki.util'];
+	let classes = 'copysectlink';
+	let css;
+	switch (mw.config.get('skin')) {
+		case 'minerva':
+			classes += ' cdx-button cdx-button--size-large cdx-button--fake-button cdx-button--fake-button--enabled cdx-button--icon-only cdx-button--weight-quiet';
+			css = '.copysectlink{opacity:0.65;font-size:1rem;margin-right:0 !important} .collapsible-heading:not(.open-block) .copysectlink{visibility:hidden} .copysectlink &gt; .minerva-icon{background-color:transparent} .copysectlink &gt; span + span{display:block;position:absolute;clip:rect(1px,1px,1px,1px);width:1px;height:1px;margin:-1px;border:0;padding:0;overflow:hidden}';
+			break;
+		case 'timeless':
+			classes += ' mw-ui-icon-copy';
+			css = '.copysectlink{background-color:var(--background-color-base,#fff);margin-left:-1em} .copysectlink:first-of-type{margin-left:-20px;padding-left:0} .copysectlink::before{content:"";display:inline-block;width:16px;height:16px;background-size:16px 16px;vertical-align:bottom;opacity:0.33}';
+	}
+	if (css) {
+		mw.loader.addStyleTag(css);
+		dependencies.push('oojs-ui.styles.icons-editing-advanced');
+	}
+	let handler = function (e) {
+		e.preventDefault();
+		e.stopPropagation();
+		let text = (mw.config.get('wgPageName') + (this.hash ? decodeURI(this.hash).replace(
+			/[\[\]{|}]/g,
+			s =&gt; '&amp;#' + s.codePointAt(0) + ';'
+		) : '')).replace(/_/g, ' ');
+		let $input = $('&lt;input&gt;').attr({
+			type: 'text',
+			readonly: '',
+			style: 'position:fixed;top:-100%'
+		}).val(text).appendTo(document.body);
+		$input[0].select();
+		let copied;
+		try {
+			copied = document.execCommand('copy');
+		} catch (e) {}
+		$input.remove();
+		if (copied) {
+			mw.notify(`Copied "${text}"`);
+		} else {
+			mw.notify('Copy failed', { type: 'error' });
+		}
+	};
+	let addButton = (block, id) =&gt; {
+		let $button = $('&lt;a&gt;').attr({
+			class: classes + (id ? ' mw-selflink-fragment' : ''),
+			href: mw.util.getUrl() + (id ? '#' + encodeURI(id): ''),
+			role: 'button'
+		}).text('copy').on('click', handler);
+		if (mw.config.get('skin') === 'minerva') {
+			$button.attr('title', 'Copy').wrapInner('&lt;span&gt;')
+				.prepend($('&lt;span&gt;').addClass('minerva-icon oo-ui-icon-copy skin-invert'));
+			let wrapper = block.querySelector('.mw-editsection');
+			if (wrapper) {
+				$button.prependTo(wrapper);
+			} else {
+				$button.appendTo(block);
+			}
+		} else {
+			let bracket = block.querySelector('.mw-editsection-bracket:last-child');
+			if (bracket) {
+				bracket.before(' | ', $button[0]);
+			} else {
+				$('&lt;span&gt;').addClass('mw-editsection').append(
+					$('&lt;span&gt;').addClass('mw-editsection-bracket').text('['),
+					$button,
+					$('&lt;span&gt;').addClass('mw-editsection-bracket').text(']')
+				).appendTo(block);
+			}
+		}
+	};
+	if (['view', 'purge'].includes(mw.config.get('wgAction'))) {
+		['ext.gadget.edittop', 'ext.gadget.edit0'].forEach(m =&gt; {
+			let state = mw.loader.getState(m);
+			if (state &amp;&amp; state !== 'registered') {
+				dependencies.push(m);
+			}
+		});
+	}
+	$.when($.ready, mw.loader.using(dependencies)).then(() =&gt; {
+		if (mw.config.get('wgNamespaceNumber') &gt;= 0) {
+			addButton(document.getElementById('firstHeading'));
+		}
+		mw.hook('wikipage.content').add($content =&gt; {
+			$content.find('.mw-heading &gt; :is(h1, h2, h3, h4, h5, h6)[id]').each(function () {
+				addButton(this.parentElement, this.id);
+			});
+			$content.find(
+				':is(h1, h2, h3, h4, h5, h6):not(.mw-heading &gt; *, #mw-toc-heading, .wb-sitelinks-heading)[id]'
+			).each(function () {
+				addButton(this, this.id);
+			});
+		});
+	});
+}());</text>
+      <sha1>0m2bdivhczjztudzcxn39f9vjctt5wf</sha1>
+    </revision>
+    <revision>
+      <id>3367836</id>
+      <parentid>3367835</parentid>
+      <timestamp>2026-03-02T18:44:06Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3367835</origin>
+      <model>javascript</model>
+      <format>text/javascript</format>
+      <text bytes="3529" sha1="0m2bdivhczjztudzcxn39f9vjctt5wf" xml:space="preserve">(function copySectLink() {
+	let dependencies = ['mediawiki.util'];
+	let classes = 'copysectlink';
+	let css;
+	switch (mw.config.get('skin')) {
+		case 'minerva':
+			classes += ' cdx-button cdx-button--size-large cdx-button--fake-button cdx-button--fake-button--enabled cdx-button--icon-only cdx-button--weight-quiet';
+			css = '.copysectlink{opacity:0.65;font-size:1rem;margin-right:0 !important} .collapsible-heading:not(.open-block) .copysectlink{visibility:hidden} .copysectlink &gt; .minerva-icon{background-color:transparent} .copysectlink &gt; span + span{display:block;position:absolute;clip:rect(1px,1px,1px,1px);width:1px;height:1px;margin:-1px;border:0;padding:0;overflow:hidden}';
+			break;
+		case 'timeless':
+			classes += ' mw-ui-icon-copy';
+			css = '.copysectlink{background-color:var(--background-color-base,#fff);margin-left:-1em} .copysectlink:first-of-type{margin-left:-20px;padding-left:0} .copysectlink::before{content:"";display:inline-block;width:16px;height:16px;background-size:16px 16px;vertical-align:bottom;opacity:0.33}';
+	}
+	if (css) {
+		mw.loader.addStyleTag(css);
+		dependencies.push('oojs-ui.styles.icons-editing-advanced');
+	}
+	let handler = function (e) {
+		e.preventDefault();
+		e.stopPropagation();
+		let text = (mw.config.get('wgPageName') + (this.hash ? decodeURI(this.hash).replace(
+			/[\[\]{|}]/g,
+			s =&gt; '&amp;#' + s.codePointAt(0) + ';'
+		) : '')).replace(/_/g, ' ');
+		let $input = $('&lt;input&gt;').attr({
+			type: 'text',
+			readonly: '',
+			style: 'position:fixed;top:-100%'
+		}).val(text).appendTo(document.body);
+		$input[0].select();
+		let copied;
+		try {
+			copied = document.execCommand('copy');
+		} catch (e) {}
+		$input.remove();
+		if (copied) {
+			mw.notify(`Copied "${text}"`);
+		} else {
+			mw.notify('Copy failed', { type: 'error' });
+		}
+	};
+	let addButton = (block, id) =&gt; {
+		let $button = $('&lt;a&gt;').attr({
+			class: classes + (id ? ' mw-selflink-fragment' : ''),
+			href: mw.util.getUrl() + (id ? '#' + encodeURI(id): ''),
+			role: 'button'
+		}).text('copy').on('click', handler);
+		if (mw.config.get('skin') === 'minerva') {
+			$button.attr('title', 'Copy').wrapInner('&lt;span&gt;')
+				.prepend($('&lt;span&gt;').addClass('minerva-icon oo-ui-icon-copy skin-invert'));
+			let wrapper = block.querySelector('.mw-editsection');
+			if (wrapper) {
+				$button.prependTo(wrapper);
+			} else {
+				$button.appendTo(block);
+			}
+		} else {
+			let bracket = block.querySelector('.mw-editsection-bracket:last-child');
+			if (bracket) {
+				bracket.before(' | ', $button[0]);
+			} else {
+				$('&lt;span&gt;').addClass('mw-editsection').append(
+					$('&lt;span&gt;').addClass('mw-editsection-bracket').text('['),
+					$button,
+					$('&lt;span&gt;').addClass('mw-editsection-bracket').text(']')
+				).appendTo(block);
+			}
+		}
+	};
+	if (['view', 'purge'].includes(mw.config.get('wgAction'))) {
+		['ext.gadget.edittop', 'ext.gadget.edit0'].forEach(m =&gt; {
+			let state = mw.loader.getState(m);
+			if (state &amp;&amp; state !== 'registered') {
+				dependencies.push(m);
+			}
+		});
+	}
+	$.when($.ready, mw.loader.using(dependencies)).then(() =&gt; {
+		if (mw.config.get('wgNamespaceNumber') &gt;= 0) {
+			addButton(document.getElementById('firstHeading'));
+		}
+		mw.hook('wikipage.content').add($content =&gt; {
+			$content.find('.mw-heading &gt; :is(h1, h2, h3, h4, h5, h6)[id]').each(function () {
+				addButton(this.parentElement, this.id);
+			});
+			$content.find(
+				':is(h1, h2, h3, h4, h5, h6):not(.mw-heading &gt; *, #mw-toc-heading, .wb-sitelinks-heading)[id]'
+			).each(function () {
+				addButton(this, this.id);
+			});
+		});
+	});
+}());</text>
+      <sha1>0m2bdivhczjztudzcxn39f9vjctt5wf</sha1>
+    </revision>
+  </page>
+</mediawiki>

@@ -1,0 +1,841 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Help:Switch parser function</title>
+    <ns>12</ns>
+    <id>4886</id>
+    <revision>
+      <id>778695</id>
+      <timestamp>2024-12-09T07:56:17Z</timestamp>
+      <contributor>
+        <username>en&gt;.hecko</username>
+        <id>0</id>
+      </contributor>
+      <comment>/* Using switches as if-elseif-elseif */pedantic correction</comment>
+      <origin>778695</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="6519" sha1="jcer6eshol1ng39qxz7z46akxr8gw5v" xml:space="preserve">{{Wikipedia how-to|H:SWITCH}}
+{{see also|:mw:Help:Extension:ParserFunction##switch}}
+The '''switch parser function''', coded as "'''#switch'''", selects the first matching branch in a list of choices, acting as a [[case statement]]. 
+
+Each branch can be a [[value (computer science)|value]], an [[expression (computer science)|expression]] ([[Help:Calculation|calculation]]), or a [[Wikipedia:Templates|template]] call,&lt;ref&gt;A '''template call''' (also known as '''template tag''') has two "braces" on either side of the template page name and does not require the "Template:" prefix. For example, the following are equivalent template calls: {{tlc|Template:Foobar}} and {{tlc|Foobar}}.&lt;/ref&gt; evaluated and compared to match the value of the switch. Although many #switch structures are used to branch among a simple set of values, the branches can also include [[boolean expression]]s to act as a set of pre-conditions to be tested until one tests true, acting as an ''if-elseif-elseif-elseif-else'' structure.
+
+A #switch can contain over 1,000 branches, but for better speed should be split to have less than 100 branches, in each of multiple or nested parts. The upper branches execute faster, and the bottom branches must wait for comparisons of all higher branches. Because it is a [[wp:Parser function|parser function]], a #switch can be used inside any page, even in article text, but in most cases, a #switch is typically used inside a [[wp:template|template]], to branch depending on a [[Help:Template#Parameters|parameter]] value passed to the template.
+
+== General format ==
+The {{mono|#switch}} function can be a one-line form:
+
+&lt;syntaxhighlight lang="wikitext"&gt;
+{{#switch: {{{x}}} |1=one |2=two |3|4|5=range 3–5 |other}}
+&lt;/syntaxhighlight&gt;
+
+That one-line {{mono|#switch}} would read the value of {{mono|&lt;nowiki&gt;{{{x}}}&lt;/nowiki&gt;}}. For a value of 1 it would return "one". For a value of 2 it would return "two". For the values 3, 4 or 5 it would return "range 3–5". For any other value, or a null value, it would return "other".
+
+However, in many cases, the {{mono|#switch}} function is a multi-line form, with each branch on a different line, as follows:
+
+&lt;syntaxhighlight lang="html"&gt;
+{{#switch: {{{x}}}
+ | 1 = one
+ | 2 = two
+ | #default = other
+ | 3|4|5 = any of 3–5
+ | {{#expr: 2*3}} = six
+ | {{#expr: 2*3+1}} = {{lc:SEVEN}} &lt;!--lowercase--&gt;
+}}
+&lt;/syntaxhighlight&gt;
+
+This illustrates an alternative method of specifying the default case, which can appear first, last, or anywhere in between.
+
+If no default is specified and no case matches the supplied value, a null value is returned.
+
+For each branch of a {{mono|#switch}}, either side of an equals-sign "=" can be a simple value, an expression, or a template call.
+
+== Using switches as if-elseif-elseif ==
+A #switch function can be structured as a set of pre-conditions which are tested until one is true (equal to "1"). For example to pre-screen numbers to avoid division by zero, in formula:&amp;nbsp;{{code|x/x2 + y/y2|style=white-space:nowrap;}}
+&lt;syntaxhighlight lang="wikitext"&gt;
+{{#switch: 1
+| {{#ifeq:{{{x2|none}}}|none|1|0}} = Parameter x2 has no data.
+| {{#ifeq:{{{y2|none}}}|none|1|0}} = Parameter y2 has no data.
+| {{#expr: {{{x2}}} = 0}} = Parameter x2 is 0 – cannot divide.
+| {{#expr: {{{y2}}} = 0}} = Parameter y2 is 0 – cannot divide.
+| 1 = {{#expr: {{{x}}}/{{{x2}}} + {{{y}}}/{{{y2}}}}}
+}}
+&lt;/syntaxhighlight&gt;
+When testing x2 and y2, if either of them is empty or zero, then the #switch ends with a warning message, rather than calculating the [[weighted average]] of the two amounts x, y, with x2 and y2. Each branch acts as a pre-condition, so the whole #switch structure performs as equivalent to ''if-elseif-elseif-elseif-else'', even though an #if-function structure cannot have an "elseif" clause. Note the 2 types of data compared:
+
+; Alphabetic data
+: An alpha character string can be compared in the &lt;code&gt;#switch&lt;/code&gt; by using &lt;code&gt;#ifeq:&lt;/code&gt; {{nowrap|as follows:{{nb5}}&lt;syntaxhighlight lang="wikitext" inline&gt;{{#ifeq:{{{x2|none}}}|none|1|0}}&lt;/syntaxhighlight&gt;,}}
+: where the result would be "1" when true, or "0" when false.
+; Numeric data
+: Some numbers can be compared in the &lt;code&gt;#switch&lt;/code&gt; by using &lt;code&gt;#expr:&lt;/code&gt; {{nowrap|as follows:{{nb5}}&lt;syntaxhighlight lang="wikitext" inline&gt;{{#expr: {{{y2}}} = 0}}&lt;/syntaxhighlight&gt; or &lt;syntaxhighlight lang="wikitext" inline&gt;{{#expr: {{{x}}} &lt; 41500}},&lt;/syntaxhighlight&gt;}}
+: where each result would be "1" when true, or "0" when false.
+
+Another example, to test an amount "n" to determine the number of decimal digits:
+&lt;syntaxhighlight lang="wikitext"&gt;
+{{#switch: 1
+| {{#expr: floor({{{n}}}*100) &lt;&gt; {{{n}}}*100}} = 3
+| {{#expr: floor({{{n}}}*10) &lt;&gt; {{{n}}}*10}} = 2
+| {{#expr: floor( {{{n}}} ) &lt;&gt; {{{n}}} }} = 1
+| {{#expr: {{{n}}} mod 1000 = 0}} = −3
+| {{#expr: {{{n}}} mod 100 = 0 }} = −2
+| {{#expr: {{{n}}} mod 10 = 0 }} = −1
+| 1 = 0
+}}
+&lt;/syntaxhighlight&gt;
+That is another example, using "#switch: 1" to stack a set of pre-conditions which are tested, in sequence, until one is true (equal to "1").
+
+== Performance considerations ==
+Templates using such convoluted switch statements as to suffer significant performance issues should be translated to [[WP:Lua|Lua]], if that will make them simpler or significantly faster. The below discussion should rarely be relevant but is preserved for reference.
+
+A #switch can contain over 1,000–2,000 branches, but should be split to have less than 100 branches, in multiple or nested parts. In some cases, it might be possible to split into multiple #switch structures, such as when many cases use the same first letter. Then, using &lt;syntaxhighlight lang="wikitext" inline&gt;{{padleft:|1|{{{value}}} }}&lt;/syntaxhighlight&gt; can extract the first letter of &lt;syntaxhighlight lang="wikitext" inline&gt;{{{value}}}&lt;/syntaxhighlight&gt; to be used in a higher #switch which branches by most-frequent letter, followed by all others at the bottom or "#default" branch. Another common split might be to separate numeric values into frequent ranges, followed by all other.
+
+The upper branches of a #switch execute faster, and the bottom branches must wait for comparisons of all higher branches. Hence, the top branch should be the most-used case, unless pre-screening of data is done in the early branches.
+
+== Notes ==
+&lt;references /&gt;
+== See also ==
+* [[Wikipedia:Parser function]]
+* [[Help:Conditional expressions]]
+* [[Relational operator]]
+* {{section link|Help:Magic words#Variables}}
+
+{{Wikipedia technical help|collapsed}}</text>
+      <sha1>jcer6eshol1ng39qxz7z46akxr8gw5v</sha1>
+    </revision>
+    <revision>
+      <id>778696</id>
+      <parentid>778695</parentid>
+      <timestamp>2024-12-19T20:11:15Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: mass importing wikipedia pages</comment>
+      <origin>778695</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="6519" sha1="jcer6eshol1ng39qxz7z46akxr8gw5v" xml:space="preserve">{{Wikipedia how-to|H:SWITCH}}
+{{see also|:mw:Help:Extension:ParserFunction##switch}}
+The '''switch parser function''', coded as "'''#switch'''", selects the first matching branch in a list of choices, acting as a [[case statement]]. 
+
+Each branch can be a [[value (computer science)|value]], an [[expression (computer science)|expression]] ([[Help:Calculation|calculation]]), or a [[Wikipedia:Templates|template]] call,&lt;ref&gt;A '''template call''' (also known as '''template tag''') has two "braces" on either side of the template page name and does not require the "Template:" prefix. For example, the following are equivalent template calls: {{tlc|Template:Foobar}} and {{tlc|Foobar}}.&lt;/ref&gt; evaluated and compared to match the value of the switch. Although many #switch structures are used to branch among a simple set of values, the branches can also include [[boolean expression]]s to act as a set of pre-conditions to be tested until one tests true, acting as an ''if-elseif-elseif-elseif-else'' structure.
+
+A #switch can contain over 1,000 branches, but for better speed should be split to have less than 100 branches, in each of multiple or nested parts. The upper branches execute faster, and the bottom branches must wait for comparisons of all higher branches. Because it is a [[wp:Parser function|parser function]], a #switch can be used inside any page, even in article text, but in most cases, a #switch is typically used inside a [[wp:template|template]], to branch depending on a [[Help:Template#Parameters|parameter]] value passed to the template.
+
+== General format ==
+The {{mono|#switch}} function can be a one-line form:
+
+&lt;syntaxhighlight lang="wikitext"&gt;
+{{#switch: {{{x}}} |1=one |2=two |3|4|5=range 3–5 |other}}
+&lt;/syntaxhighlight&gt;
+
+That one-line {{mono|#switch}} would read the value of {{mono|&lt;nowiki&gt;{{{x}}}&lt;/nowiki&gt;}}. For a value of 1 it would return "one". For a value of 2 it would return "two". For the values 3, 4 or 5 it would return "range 3–5". For any other value, or a null value, it would return "other".
+
+However, in many cases, the {{mono|#switch}} function is a multi-line form, with each branch on a different line, as follows:
+
+&lt;syntaxhighlight lang="html"&gt;
+{{#switch: {{{x}}}
+ | 1 = one
+ | 2 = two
+ | #default = other
+ | 3|4|5 = any of 3–5
+ | {{#expr: 2*3}} = six
+ | {{#expr: 2*3+1}} = {{lc:SEVEN}} &lt;!--lowercase--&gt;
+}}
+&lt;/syntaxhighlight&gt;
+
+This illustrates an alternative method of specifying the default case, which can appear first, last, or anywhere in between.
+
+If no default is specified and no case matches the supplied value, a null value is returned.
+
+For each branch of a {{mono|#switch}}, either side of an equals-sign "=" can be a simple value, an expression, or a template call.
+
+== Using switches as if-elseif-elseif ==
+A #switch function can be structured as a set of pre-conditions which are tested until one is true (equal to "1"). For example to pre-screen numbers to avoid division by zero, in formula:&amp;nbsp;{{code|x/x2 + y/y2|style=white-space:nowrap;}}
+&lt;syntaxhighlight lang="wikitext"&gt;
+{{#switch: 1
+| {{#ifeq:{{{x2|none}}}|none|1|0}} = Parameter x2 has no data.
+| {{#ifeq:{{{y2|none}}}|none|1|0}} = Parameter y2 has no data.
+| {{#expr: {{{x2}}} = 0}} = Parameter x2 is 0 – cannot divide.
+| {{#expr: {{{y2}}} = 0}} = Parameter y2 is 0 – cannot divide.
+| 1 = {{#expr: {{{x}}}/{{{x2}}} + {{{y}}}/{{{y2}}}}}
+}}
+&lt;/syntaxhighlight&gt;
+When testing x2 and y2, if either of them is empty or zero, then the #switch ends with a warning message, rather than calculating the [[weighted average]] of the two amounts x, y, with x2 and y2. Each branch acts as a pre-condition, so the whole #switch structure performs as equivalent to ''if-elseif-elseif-elseif-else'', even though an #if-function structure cannot have an "elseif" clause. Note the 2 types of data compared:
+
+; Alphabetic data
+: An alpha character string can be compared in the &lt;code&gt;#switch&lt;/code&gt; by using &lt;code&gt;#ifeq:&lt;/code&gt; {{nowrap|as follows:{{nb5}}&lt;syntaxhighlight lang="wikitext" inline&gt;{{#ifeq:{{{x2|none}}}|none|1|0}}&lt;/syntaxhighlight&gt;,}}
+: where the result would be "1" when true, or "0" when false.
+; Numeric data
+: Some numbers can be compared in the &lt;code&gt;#switch&lt;/code&gt; by using &lt;code&gt;#expr:&lt;/code&gt; {{nowrap|as follows:{{nb5}}&lt;syntaxhighlight lang="wikitext" inline&gt;{{#expr: {{{y2}}} = 0}}&lt;/syntaxhighlight&gt; or &lt;syntaxhighlight lang="wikitext" inline&gt;{{#expr: {{{x}}} &lt; 41500}},&lt;/syntaxhighlight&gt;}}
+: where each result would be "1" when true, or "0" when false.
+
+Another example, to test an amount "n" to determine the number of decimal digits:
+&lt;syntaxhighlight lang="wikitext"&gt;
+{{#switch: 1
+| {{#expr: floor({{{n}}}*100) &lt;&gt; {{{n}}}*100}} = 3
+| {{#expr: floor({{{n}}}*10) &lt;&gt; {{{n}}}*10}} = 2
+| {{#expr: floor( {{{n}}} ) &lt;&gt; {{{n}}} }} = 1
+| {{#expr: {{{n}}} mod 1000 = 0}} = −3
+| {{#expr: {{{n}}} mod 100 = 0 }} = −2
+| {{#expr: {{{n}}} mod 10 = 0 }} = −1
+| 1 = 0
+}}
+&lt;/syntaxhighlight&gt;
+That is another example, using "#switch: 1" to stack a set of pre-conditions which are tested, in sequence, until one is true (equal to "1").
+
+== Performance considerations ==
+Templates using such convoluted switch statements as to suffer significant performance issues should be translated to [[WP:Lua|Lua]], if that will make them simpler or significantly faster. The below discussion should rarely be relevant but is preserved for reference.
+
+A #switch can contain over 1,000–2,000 branches, but should be split to have less than 100 branches, in multiple or nested parts. In some cases, it might be possible to split into multiple #switch structures, such as when many cases use the same first letter. Then, using &lt;syntaxhighlight lang="wikitext" inline&gt;{{padleft:|1|{{{value}}} }}&lt;/syntaxhighlight&gt; can extract the first letter of &lt;syntaxhighlight lang="wikitext" inline&gt;{{{value}}}&lt;/syntaxhighlight&gt; to be used in a higher #switch which branches by most-frequent letter, followed by all others at the bottom or "#default" branch. Another common split might be to separate numeric values into frequent ranges, followed by all other.
+
+The upper branches of a #switch execute faster, and the bottom branches must wait for comparisons of all higher branches. Hence, the top branch should be the most-used case, unless pre-screening of data is done in the early branches.
+
+== Notes ==
+&lt;references /&gt;
+== See also ==
+* [[Wikipedia:Parser function]]
+* [[Help:Conditional expressions]]
+* [[Relational operator]]
+* {{section link|Help:Magic words#Variables}}
+
+{{Wikipedia technical help|collapsed}}</text>
+      <sha1>jcer6eshol1ng39qxz7z46akxr8gw5v</sha1>
+    </revision>
+    <revision>
+      <id>778697</id>
+      <parentid>778696</parentid>
+      <timestamp>2025-05-19T18:09:03Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>778697</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="6538" sha1="p10f3iif0so7k51jbud3ya8q74c4x9a" xml:space="preserve">{{Wikipedia how-to|H:SWITCH}}
+{{see also|:mw:Help:Extension:ParserFunction##switch}}
+The '''switch parser function''', coded as "'''#switch'''", selects the first matching branch in a list of choices, acting as a [[:en:Case statement|Case statement]]. 
+
+Each branch can be a [[value (computer science)|value]], an [[expression (computer science)|expression]] ([[Help:Calculation|calculation]]), or a [[Wikipedia:Templates|template]] call,&lt;ref&gt;A '''template call''' (also known as '''template tag''') has two "braces" on either side of the template page name and does not require the "Template:" prefix. For example, the following are equivalent template calls: {{tlc|Template:Foobar}} and {{tlc|Foobar}}.&lt;/ref&gt; evaluated and compared to match the value of the switch. Although many #switch structures are used to branch among a simple set of values, the branches can also include [[boolean expression]]s to act as a set of pre-conditions to be tested until one tests true, acting as an ''if-elseif-elseif-elseif-else'' structure.
+
+A #switch can contain over 1,000 branches, but for better speed should be split to have less than 100 branches, in each of multiple or nested parts. The upper branches execute faster, and the bottom branches must wait for comparisons of all higher branches. Because it is a [[wp:Parser function|parser function]], a #switch can be used inside any page, even in article text, but in most cases, a #switch is typically used inside a [[wp:template|template]], to branch depending on a [[Help:Template#Parameters|parameter]] value passed to the template.
+
+== General format ==
+The {{mono|#switch}} function can be a one-line form:
+
+&lt;syntaxhighlight lang="wikitext"&gt;
+{{#switch: {{{x}}} |1=one |2=two |3|4|5=range 3–5 |other}}
+&lt;/syntaxhighlight&gt;
+
+That one-line {{mono|#switch}} would read the value of {{mono|&lt;nowiki&gt;{{{x}}}&lt;/nowiki&gt;}}. For a value of 1 it would return "one". For a value of 2 it would return "two". For the values 3, 4 or 5 it would return "range 3–5". For any other value, or a null value, it would return "other".
+
+However, in many cases, the {{mono|#switch}} function is a multi-line form, with each branch on a different line, as follows:
+
+&lt;syntaxhighlight lang="html"&gt;
+{{#switch: {{{x}}}
+ | 1 = one
+ | 2 = two
+ | #default = other
+ | 3|4|5 = any of 3–5
+ | {{#expr: 2*3}} = six
+ | {{#expr: 2*3+1}} = {{lc:SEVEN}} &lt;!--lowercase--&gt;
+}}
+&lt;/syntaxhighlight&gt;
+
+This illustrates an alternative method of specifying the default case, which can appear first, last, or anywhere in between.
+
+If no default is specified and no case matches the supplied value, a null value is returned.
+
+For each branch of a {{mono|#switch}}, either side of an equals-sign "=" can be a simple value, an expression, or a template call.
+
+== Using switches as if-elseif-elseif ==
+A #switch function can be structured as a set of pre-conditions which are tested until one is true (equal to "1"). For example to pre-screen numbers to avoid division by zero, in formula:&amp;nbsp;{{code|x/x2 + y/y2|style=white-space:nowrap;}}
+&lt;syntaxhighlight lang="wikitext"&gt;
+{{#switch: 1
+| {{#ifeq:{{{x2|none}}}|none|1|0}} = Parameter x2 has no data.
+| {{#ifeq:{{{y2|none}}}|none|1|0}} = Parameter y2 has no data.
+| {{#expr: {{{x2}}} = 0}} = Parameter x2 is 0 – cannot divide.
+| {{#expr: {{{y2}}} = 0}} = Parameter y2 is 0 – cannot divide.
+| 1 = {{#expr: {{{x}}}/{{{x2}}} + {{{y}}}/{{{y2}}}}}
+}}
+&lt;/syntaxhighlight&gt;
+When testing x2 and y2, if either of them is empty or zero, then the #switch ends with a warning message, rather than calculating the [[weighted average]] of the two amounts x, y, with x2 and y2. Each branch acts as a pre-condition, so the whole #switch structure performs as equivalent to ''if-elseif-elseif-elseif-else'', even though an #if-function structure cannot have an "elseif" clause. Note the 2 types of data compared:
+
+; Alphabetic data
+: An alpha character string can be compared in the &lt;code&gt;#switch&lt;/code&gt; by using &lt;code&gt;#ifeq:&lt;/code&gt; {{nowrap|as follows:{{nb5}}&lt;syntaxhighlight lang="wikitext" inline&gt;{{#ifeq:{{{x2|none}}}|none|1|0}}&lt;/syntaxhighlight&gt;,}}
+: where the result would be "1" when true, or "0" when false.
+; Numeric data
+: Some numbers can be compared in the &lt;code&gt;#switch&lt;/code&gt; by using &lt;code&gt;#expr:&lt;/code&gt; {{nowrap|as follows:{{nb5}}&lt;syntaxhighlight lang="wikitext" inline&gt;{{#expr: {{{y2}}} = 0}}&lt;/syntaxhighlight&gt; or &lt;syntaxhighlight lang="wikitext" inline&gt;{{#expr: {{{x}}} &lt; 41500}},&lt;/syntaxhighlight&gt;}}
+: where each result would be "1" when true, or "0" when false.
+
+Another example, to test an amount "n" to determine the number of decimal digits:
+&lt;syntaxhighlight lang="wikitext"&gt;
+{{#switch: 1
+| {{#expr: floor({{{n}}}*100) &lt;&gt; {{{n}}}*100}} = 3
+| {{#expr: floor({{{n}}}*10) &lt;&gt; {{{n}}}*10}} = 2
+| {{#expr: floor( {{{n}}} ) &lt;&gt; {{{n}}} }} = 1
+| {{#expr: {{{n}}} mod 1000 = 0}} = −3
+| {{#expr: {{{n}}} mod 100 = 0 }} = −2
+| {{#expr: {{{n}}} mod 10 = 0 }} = −1
+| 1 = 0
+}}
+&lt;/syntaxhighlight&gt;
+That is another example, using "#switch: 1" to stack a set of pre-conditions which are tested, in sequence, until one is true (equal to "1").
+
+== Performance considerations ==
+Templates using such convoluted switch statements as to suffer significant performance issues should be translated to [[WP:Lua|Lua]], if that will make them simpler or significantly faster. The below discussion should rarely be relevant but is preserved for reference.
+
+A #switch can contain over 1,000–2,000 branches, but should be split to have less than 100 branches, in multiple or nested parts. In some cases, it might be possible to split into multiple #switch structures, such as when many cases use the same first letter. Then, using &lt;syntaxhighlight lang="wikitext" inline&gt;{{padleft:|1|{{{value}}} }}&lt;/syntaxhighlight&gt; can extract the first letter of &lt;syntaxhighlight lang="wikitext" inline&gt;{{{value}}}&lt;/syntaxhighlight&gt; to be used in a higher #switch which branches by most-frequent letter, followed by all others at the bottom or "#default" branch. Another common split might be to separate numeric values into frequent ranges, followed by all other.
+
+The upper branches of a #switch execute faster, and the bottom branches must wait for comparisons of all higher branches. Hence, the top branch should be the most-used case, unless pre-screening of data is done in the early branches.
+
+== Notes ==
+&lt;references /&gt;
+== See also ==
+* [[Wikipedia:Parser function]]
+* [[Help:Conditional expressions]]
+* [[Relational operator]]
+* {{section link|Help:Magic words#Variables}}
+
+{{Wikipedia technical help|collapsed}}</text>
+      <sha1>p10f3iif0so7k51jbud3ya8q74c4x9a</sha1>
+    </revision>
+    <revision>
+      <id>778698</id>
+      <parentid>778697</parentid>
+      <timestamp>2025-05-19T21:47:14Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>778698</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="6561" sha1="m76err1kgxvmbkeshxg4afl24weyd5m" xml:space="preserve">{{Wikipedia how-to|H:SWITCH}}
+{{see also|:mw:Help:Extension:ParserFunction##switch}}
+The '''switch parser function''', coded as "'''#switch'''", selects the first matching branch in a list of choices, acting as a [[:en:Case statement|Case statement]]. 
+
+Each branch can be a [[value (computer science)|value]], an [[expression (computer science)|expression]] ([[Help:Calculation|calculation]]), or a [[Wikipedia:Templates|template]] call,&lt;ref&gt;A '''template call''' (also known as '''template tag''') has two "braces" on either side of the template page name and does not require the "Template:" prefix. For example, the following are equivalent template calls: {{tlc|Template:Foobar}} and {{tlc|Foobar}}.&lt;/ref&gt; evaluated and compared to match the value of the switch. Although many #switch structures are used to branch among a simple set of values, the branches can also include [[:en:Boolean expression|Boolean expression]]s to act as a set of pre-conditions to be tested until one tests true, acting as an ''if-elseif-elseif-elseif-else'' structure.
+
+A #switch can contain over 1,000 branches, but for better speed should be split to have less than 100 branches, in each of multiple or nested parts. The upper branches execute faster, and the bottom branches must wait for comparisons of all higher branches. Because it is a [[wp:Parser function|parser function]], a #switch can be used inside any page, even in article text, but in most cases, a #switch is typically used inside a [[wp:template|template]], to branch depending on a [[Help:Template#Parameters|parameter]] value passed to the template.
+
+== General format ==
+The {{mono|#switch}} function can be a one-line form:
+
+&lt;syntaxhighlight lang="wikitext"&gt;
+{{#switch: {{{x}}} |1=one |2=two |3|4|5=range 3–5 |other}}
+&lt;/syntaxhighlight&gt;
+
+That one-line {{mono|#switch}} would read the value of {{mono|&lt;nowiki&gt;{{{x}}}&lt;/nowiki&gt;}}. For a value of 1 it would return "one". For a value of 2 it would return "two". For the values 3, 4 or 5 it would return "range 3–5". For any other value, or a null value, it would return "other".
+
+However, in many cases, the {{mono|#switch}} function is a multi-line form, with each branch on a different line, as follows:
+
+&lt;syntaxhighlight lang="html"&gt;
+{{#switch: {{{x}}}
+ | 1 = one
+ | 2 = two
+ | #default = other
+ | 3|4|5 = any of 3–5
+ | {{#expr: 2*3}} = six
+ | {{#expr: 2*3+1}} = {{lc:SEVEN}} &lt;!--lowercase--&gt;
+}}
+&lt;/syntaxhighlight&gt;
+
+This illustrates an alternative method of specifying the default case, which can appear first, last, or anywhere in between.
+
+If no default is specified and no case matches the supplied value, a null value is returned.
+
+For each branch of a {{mono|#switch}}, either side of an equals-sign "=" can be a simple value, an expression, or a template call.
+
+== Using switches as if-elseif-elseif ==
+A #switch function can be structured as a set of pre-conditions which are tested until one is true (equal to "1"). For example to pre-screen numbers to avoid division by zero, in formula:&amp;nbsp;{{code|x/x2 + y/y2|style=white-space:nowrap;}}
+&lt;syntaxhighlight lang="wikitext"&gt;
+{{#switch: 1
+| {{#ifeq:{{{x2|none}}}|none|1|0}} = Parameter x2 has no data.
+| {{#ifeq:{{{y2|none}}}|none|1|0}} = Parameter y2 has no data.
+| {{#expr: {{{x2}}} = 0}} = Parameter x2 is 0 – cannot divide.
+| {{#expr: {{{y2}}} = 0}} = Parameter y2 is 0 – cannot divide.
+| 1 = {{#expr: {{{x}}}/{{{x2}}} + {{{y}}}/{{{y2}}}}}
+}}
+&lt;/syntaxhighlight&gt;
+When testing x2 and y2, if either of them is empty or zero, then the #switch ends with a warning message, rather than calculating the [[weighted average]] of the two amounts x, y, with x2 and y2. Each branch acts as a pre-condition, so the whole #switch structure performs as equivalent to ''if-elseif-elseif-elseif-else'', even though an #if-function structure cannot have an "elseif" clause. Note the 2 types of data compared:
+
+; Alphabetic data
+: An alpha character string can be compared in the &lt;code&gt;#switch&lt;/code&gt; by using &lt;code&gt;#ifeq:&lt;/code&gt; {{nowrap|as follows:{{nb5}}&lt;syntaxhighlight lang="wikitext" inline&gt;{{#ifeq:{{{x2|none}}}|none|1|0}}&lt;/syntaxhighlight&gt;,}}
+: where the result would be "1" when true, or "0" when false.
+; Numeric data
+: Some numbers can be compared in the &lt;code&gt;#switch&lt;/code&gt; by using &lt;code&gt;#expr:&lt;/code&gt; {{nowrap|as follows:{{nb5}}&lt;syntaxhighlight lang="wikitext" inline&gt;{{#expr: {{{y2}}} = 0}}&lt;/syntaxhighlight&gt; or &lt;syntaxhighlight lang="wikitext" inline&gt;{{#expr: {{{x}}} &lt; 41500}},&lt;/syntaxhighlight&gt;}}
+: where each result would be "1" when true, or "0" when false.
+
+Another example, to test an amount "n" to determine the number of decimal digits:
+&lt;syntaxhighlight lang="wikitext"&gt;
+{{#switch: 1
+| {{#expr: floor({{{n}}}*100) &lt;&gt; {{{n}}}*100}} = 3
+| {{#expr: floor({{{n}}}*10) &lt;&gt; {{{n}}}*10}} = 2
+| {{#expr: floor( {{{n}}} ) &lt;&gt; {{{n}}} }} = 1
+| {{#expr: {{{n}}} mod 1000 = 0}} = −3
+| {{#expr: {{{n}}} mod 100 = 0 }} = −2
+| {{#expr: {{{n}}} mod 10 = 0 }} = −1
+| 1 = 0
+}}
+&lt;/syntaxhighlight&gt;
+That is another example, using "#switch: 1" to stack a set of pre-conditions which are tested, in sequence, until one is true (equal to "1").
+
+== Performance considerations ==
+Templates using such convoluted switch statements as to suffer significant performance issues should be translated to [[WP:Lua|Lua]], if that will make them simpler or significantly faster. The below discussion should rarely be relevant but is preserved for reference.
+
+A #switch can contain over 1,000–2,000 branches, but should be split to have less than 100 branches, in multiple or nested parts. In some cases, it might be possible to split into multiple #switch structures, such as when many cases use the same first letter. Then, using &lt;syntaxhighlight lang="wikitext" inline&gt;{{padleft:|1|{{{value}}} }}&lt;/syntaxhighlight&gt; can extract the first letter of &lt;syntaxhighlight lang="wikitext" inline&gt;{{{value}}}&lt;/syntaxhighlight&gt; to be used in a higher #switch which branches by most-frequent letter, followed by all others at the bottom or "#default" branch. Another common split might be to separate numeric values into frequent ranges, followed by all other.
+
+The upper branches of a #switch execute faster, and the bottom branches must wait for comparisons of all higher branches. Hence, the top branch should be the most-used case, unless pre-screening of data is done in the early branches.
+
+== Notes ==
+&lt;references /&gt;
+== See also ==
+* [[Wikipedia:Parser function]]
+* [[Help:Conditional expressions]]
+* [[Relational operator]]
+* {{section link|Help:Magic words#Variables}}
+
+{{Wikipedia technical help|collapsed}}</text>
+      <sha1>m76err1kgxvmbkeshxg4afl24weyd5m</sha1>
+    </revision>
+    <revision>
+      <id>778699</id>
+      <parentid>778698</parentid>
+      <timestamp>2025-05-19T22:47:58Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>778699</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="6565" sha1="dsbv70owonly2nz5f56pktb1smc94zu" xml:space="preserve">{{Wikipedia how-to|H:SWITCH}}
+{{see also|:mw:Help:Extension:ParserFunction##switch}}
+The '''switch parser function''', coded as "'''#switch'''", selects the first matching branch in a list of choices, acting as a [[:en:Case statement|Case statement]]. 
+
+Each branch can be a [[value (computer science)|value]], an [[:en:Expression (computer science)|expression]] ([[Help:Calculation|calculation]]), or a [[Wikipedia:Templates|template]] call,&lt;ref&gt;A '''template call''' (also known as '''template tag''') has two "braces" on either side of the template page name and does not require the "Template:" prefix. For example, the following are equivalent template calls: {{tlc|Template:Foobar}} and {{tlc|Foobar}}.&lt;/ref&gt; evaluated and compared to match the value of the switch. Although many #switch structures are used to branch among a simple set of values, the branches can also include [[:en:Boolean expression|Boolean expression]]s to act as a set of pre-conditions to be tested until one tests true, acting as an ''if-elseif-elseif-elseif-else'' structure.
+
+A #switch can contain over 1,000 branches, but for better speed should be split to have less than 100 branches, in each of multiple or nested parts. The upper branches execute faster, and the bottom branches must wait for comparisons of all higher branches. Because it is a [[wp:Parser function|parser function]], a #switch can be used inside any page, even in article text, but in most cases, a #switch is typically used inside a [[wp:template|template]], to branch depending on a [[Help:Template#Parameters|parameter]] value passed to the template.
+
+== General format ==
+The {{mono|#switch}} function can be a one-line form:
+
+&lt;syntaxhighlight lang="wikitext"&gt;
+{{#switch: {{{x}}} |1=one |2=two |3|4|5=range 3–5 |other}}
+&lt;/syntaxhighlight&gt;
+
+That one-line {{mono|#switch}} would read the value of {{mono|&lt;nowiki&gt;{{{x}}}&lt;/nowiki&gt;}}. For a value of 1 it would return "one". For a value of 2 it would return "two". For the values 3, 4 or 5 it would return "range 3–5". For any other value, or a null value, it would return "other".
+
+However, in many cases, the {{mono|#switch}} function is a multi-line form, with each branch on a different line, as follows:
+
+&lt;syntaxhighlight lang="html"&gt;
+{{#switch: {{{x}}}
+ | 1 = one
+ | 2 = two
+ | #default = other
+ | 3|4|5 = any of 3–5
+ | {{#expr: 2*3}} = six
+ | {{#expr: 2*3+1}} = {{lc:SEVEN}} &lt;!--lowercase--&gt;
+}}
+&lt;/syntaxhighlight&gt;
+
+This illustrates an alternative method of specifying the default case, which can appear first, last, or anywhere in between.
+
+If no default is specified and no case matches the supplied value, a null value is returned.
+
+For each branch of a {{mono|#switch}}, either side of an equals-sign "=" can be a simple value, an expression, or a template call.
+
+== Using switches as if-elseif-elseif ==
+A #switch function can be structured as a set of pre-conditions which are tested until one is true (equal to "1"). For example to pre-screen numbers to avoid division by zero, in formula:&amp;nbsp;{{code|x/x2 + y/y2|style=white-space:nowrap;}}
+&lt;syntaxhighlight lang="wikitext"&gt;
+{{#switch: 1
+| {{#ifeq:{{{x2|none}}}|none|1|0}} = Parameter x2 has no data.
+| {{#ifeq:{{{y2|none}}}|none|1|0}} = Parameter y2 has no data.
+| {{#expr: {{{x2}}} = 0}} = Parameter x2 is 0 – cannot divide.
+| {{#expr: {{{y2}}} = 0}} = Parameter y2 is 0 – cannot divide.
+| 1 = {{#expr: {{{x}}}/{{{x2}}} + {{{y}}}/{{{y2}}}}}
+}}
+&lt;/syntaxhighlight&gt;
+When testing x2 and y2, if either of them is empty or zero, then the #switch ends with a warning message, rather than calculating the [[weighted average]] of the two amounts x, y, with x2 and y2. Each branch acts as a pre-condition, so the whole #switch structure performs as equivalent to ''if-elseif-elseif-elseif-else'', even though an #if-function structure cannot have an "elseif" clause. Note the 2 types of data compared:
+
+; Alphabetic data
+: An alpha character string can be compared in the &lt;code&gt;#switch&lt;/code&gt; by using &lt;code&gt;#ifeq:&lt;/code&gt; {{nowrap|as follows:{{nb5}}&lt;syntaxhighlight lang="wikitext" inline&gt;{{#ifeq:{{{x2|none}}}|none|1|0}}&lt;/syntaxhighlight&gt;,}}
+: where the result would be "1" when true, or "0" when false.
+; Numeric data
+: Some numbers can be compared in the &lt;code&gt;#switch&lt;/code&gt; by using &lt;code&gt;#expr:&lt;/code&gt; {{nowrap|as follows:{{nb5}}&lt;syntaxhighlight lang="wikitext" inline&gt;{{#expr: {{{y2}}} = 0}}&lt;/syntaxhighlight&gt; or &lt;syntaxhighlight lang="wikitext" inline&gt;{{#expr: {{{x}}} &lt; 41500}},&lt;/syntaxhighlight&gt;}}
+: where each result would be "1" when true, or "0" when false.
+
+Another example, to test an amount "n" to determine the number of decimal digits:
+&lt;syntaxhighlight lang="wikitext"&gt;
+{{#switch: 1
+| {{#expr: floor({{{n}}}*100) &lt;&gt; {{{n}}}*100}} = 3
+| {{#expr: floor({{{n}}}*10) &lt;&gt; {{{n}}}*10}} = 2
+| {{#expr: floor( {{{n}}} ) &lt;&gt; {{{n}}} }} = 1
+| {{#expr: {{{n}}} mod 1000 = 0}} = −3
+| {{#expr: {{{n}}} mod 100 = 0 }} = −2
+| {{#expr: {{{n}}} mod 10 = 0 }} = −1
+| 1 = 0
+}}
+&lt;/syntaxhighlight&gt;
+That is another example, using "#switch: 1" to stack a set of pre-conditions which are tested, in sequence, until one is true (equal to "1").
+
+== Performance considerations ==
+Templates using such convoluted switch statements as to suffer significant performance issues should be translated to [[WP:Lua|Lua]], if that will make them simpler or significantly faster. The below discussion should rarely be relevant but is preserved for reference.
+
+A #switch can contain over 1,000–2,000 branches, but should be split to have less than 100 branches, in multiple or nested parts. In some cases, it might be possible to split into multiple #switch structures, such as when many cases use the same first letter. Then, using &lt;syntaxhighlight lang="wikitext" inline&gt;{{padleft:|1|{{{value}}} }}&lt;/syntaxhighlight&gt; can extract the first letter of &lt;syntaxhighlight lang="wikitext" inline&gt;{{{value}}}&lt;/syntaxhighlight&gt; to be used in a higher #switch which branches by most-frequent letter, followed by all others at the bottom or "#default" branch. Another common split might be to separate numeric values into frequent ranges, followed by all other.
+
+The upper branches of a #switch execute faster, and the bottom branches must wait for comparisons of all higher branches. Hence, the top branch should be the most-used case, unless pre-screening of data is done in the early branches.
+
+== Notes ==
+&lt;references /&gt;
+== See also ==
+* [[Wikipedia:Parser function]]
+* [[Help:Conditional expressions]]
+* [[Relational operator]]
+* {{section link|Help:Magic words#Variables}}
+
+{{Wikipedia technical help|collapsed}}</text>
+      <sha1>dsbv70owonly2nz5f56pktb1smc94zu</sha1>
+    </revision>
+    <revision>
+      <id>778700</id>
+      <parentid>778699</parentid>
+      <timestamp>2025-05-24T19:45:31Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>778700</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="6589" sha1="ny7f2kpj12mq6jolrhom3tlctab6f2e" xml:space="preserve">{{Wikipedia how-to|H:SWITCH}}
+{{see also|:mw:Help:Extension:ParserFunction##switch}}
+The '''switch parser function''', coded as "'''#switch'''", selects the first matching branch in a list of choices, acting as a [[:en:Case statement|Case statement]]. 
+
+Each branch can be a [[value (computer science)|value]], an [[:en:Expression (computer science)|expression]] ([[Help:Calculation|calculation]]), or a [[Wikipedia:Templates|template]] call,&lt;ref&gt;A '''template call''' (also known as '''template tag''') has two "braces" on either side of the template page name and does not require the "Template:" prefix. For example, the following are equivalent template calls: {{tlc|Template:Foobar}} and {{tlc|Foobar}}.&lt;/ref&gt; evaluated and compared to match the value of the switch. Although many #switch structures are used to branch among a simple set of values, the branches can also include [[:en:Boolean expression|Boolean expression]]s to act as a set of pre-conditions to be tested until one tests true, acting as an ''if-elseif-elseif-elseif-else'' structure.
+
+A #switch can contain over 1,000 branches, but for better speed should be split to have less than 100 branches, in each of multiple or nested parts. The upper branches execute faster, and the bottom branches must wait for comparisons of all higher branches. Because it is a [[wp:Parser function|parser function]], a #switch can be used inside any page, even in article text, but in most cases, a #switch is typically used inside a [[wp:template|template]], to branch depending on a [[Help:Template#Parameters|parameter]] value passed to the template.
+
+== General format ==
+The {{mono|#switch}} function can be a one-line form:
+
+&lt;syntaxhighlight lang="wikitext"&gt;
+{{#switch: {{{x}}} |1=one |2=two |3|4|5=range 3–5 |other}}
+&lt;/syntaxhighlight&gt;
+
+That one-line {{mono|#switch}} would read the value of {{mono|&lt;nowiki&gt;{{{x}}}&lt;/nowiki&gt;}}. For a value of 1 it would return "one". For a value of 2 it would return "two". For the values 3, 4 or 5 it would return "range 3–5". For any other value, or a null value, it would return "other".
+
+However, in many cases, the {{mono|#switch}} function is a multi-line form, with each branch on a different line, as follows:
+
+&lt;syntaxhighlight lang="html"&gt;
+{{#switch: {{{x}}}
+ | 1 = one
+ | 2 = two
+ | #default = other
+ | 3|4|5 = any of 3–5
+ | {{#expr: 2*3}} = six
+ | {{#expr: 2*3+1}} = {{lc:SEVEN}} &lt;!--lowercase--&gt;
+}}
+&lt;/syntaxhighlight&gt;
+
+This illustrates an alternative method of specifying the default case, which can appear first, last, or anywhere in between.
+
+If no default is specified and no case matches the supplied value, a null value is returned.
+
+For each branch of a {{mono|#switch}}, either side of an equals-sign "=" can be a simple value, an expression, or a template call.
+
+== Using switches as if-elseif-elseif ==
+A #switch function can be structured as a set of pre-conditions which are tested until one is true (equal to "1"). For example to pre-screen numbers to avoid division by zero, in formula:&amp;nbsp;{{code|x/x2 + y/y2|style=white-space:nowrap;}}
+&lt;syntaxhighlight lang="wikitext"&gt;
+{{#switch: 1
+| {{#ifeq:{{{x2|none}}}|none|1|0}} = Parameter x2 has no data.
+| {{#ifeq:{{{y2|none}}}|none|1|0}} = Parameter y2 has no data.
+| {{#expr: {{{x2}}} = 0}} = Parameter x2 is 0 – cannot divide.
+| {{#expr: {{{y2}}} = 0}} = Parameter y2 is 0 – cannot divide.
+| 1 = {{#expr: {{{x}}}/{{{x2}}} + {{{y}}}/{{{y2}}}}}
+}}
+&lt;/syntaxhighlight&gt;
+When testing x2 and y2, if either of them is empty or zero, then the #switch ends with a warning message, rather than calculating the [[weighted average]] of the two amounts x, y, with x2 and y2. Each branch acts as a pre-condition, so the whole #switch structure performs as equivalent to ''if-elseif-elseif-elseif-else'', even though an #if-function structure cannot have an "elseif" clause. Note the 2 types of data compared:
+
+; Alphabetic data
+: An alpha character string can be compared in the &lt;code&gt;#switch&lt;/code&gt; by using &lt;code&gt;#ifeq:&lt;/code&gt; {{nowrap|as follows:{{nb5}}&lt;syntaxhighlight lang="wikitext" inline&gt;{{#ifeq:{{{x2|none}}}|none|1|0}}&lt;/syntaxhighlight&gt;,}}
+: where the result would be "1" when true, or "0" when false.
+; Numeric data
+: Some numbers can be compared in the &lt;code&gt;#switch&lt;/code&gt; by using &lt;code&gt;#expr:&lt;/code&gt; {{nowrap|as follows:{{nb5}}&lt;syntaxhighlight lang="wikitext" inline&gt;{{#expr: {{{y2}}} = 0}}&lt;/syntaxhighlight&gt; or &lt;syntaxhighlight lang="wikitext" inline&gt;{{#expr: {{{x}}} &lt; 41500}},&lt;/syntaxhighlight&gt;}}
+: where each result would be "1" when true, or "0" when false.
+
+Another example, to test an amount "n" to determine the number of decimal digits:
+&lt;syntaxhighlight lang="wikitext"&gt;
+{{#switch: 1
+| {{#expr: floor({{{n}}}*100) &lt;&gt; {{{n}}}*100}} = 3
+| {{#expr: floor({{{n}}}*10) &lt;&gt; {{{n}}}*10}} = 2
+| {{#expr: floor( {{{n}}} ) &lt;&gt; {{{n}}} }} = 1
+| {{#expr: {{{n}}} mod 1000 = 0}} = −3
+| {{#expr: {{{n}}} mod 100 = 0 }} = −2
+| {{#expr: {{{n}}} mod 10 = 0 }} = −1
+| 1 = 0
+}}
+&lt;/syntaxhighlight&gt;
+That is another example, using "#switch: 1" to stack a set of pre-conditions which are tested, in sequence, until one is true (equal to "1").
+
+== Performance considerations ==
+Templates using such convoluted switch statements as to suffer significant performance issues should be translated to [[WP:Lua|Lua]], if that will make them simpler or significantly faster. The below discussion should rarely be relevant but is preserved for reference.
+
+A #switch can contain over 1,000–2,000 branches, but should be split to have less than 100 branches, in multiple or nested parts. In some cases, it might be possible to split into multiple #switch structures, such as when many cases use the same first letter. Then, using &lt;syntaxhighlight lang="wikitext" inline&gt;{{padleft:|1|{{{value}}} }}&lt;/syntaxhighlight&gt; can extract the first letter of &lt;syntaxhighlight lang="wikitext" inline&gt;{{{value}}}&lt;/syntaxhighlight&gt; to be used in a higher #switch which branches by most-frequent letter, followed by all others at the bottom or "#default" branch. Another common split might be to separate numeric values into frequent ranges, followed by all other.
+
+The upper branches of a #switch execute faster, and the bottom branches must wait for comparisons of all higher branches. Hence, the top branch should be the most-used case, unless pre-screening of data is done in the early branches.
+
+== Notes ==
+&lt;references /&gt;
+== See also ==
+* [[Wikipedia:Parser function]]
+* [[Help:Conditional expressions]]
+* [[:en:Relational operator|Relational operator]]
+* {{section link|Help:Magic words#Variables}}
+
+{{Wikipedia technical help|collapsed}}</text>
+      <sha1>ny7f2kpj12mq6jolrhom3tlctab6f2e</sha1>
+    </revision>
+    <revision>
+      <id>778701</id>
+      <parentid>778700</parentid>
+      <timestamp>2025-05-24T20:57:31Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>778701</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="6610" sha1="hb0b37pkkomgx4d3cxxroonfpswicfh" xml:space="preserve">{{Wikipedia how-to|H:SWITCH}}
+{{see also|:mw:Help:Extension:ParserFunction##switch}}
+The '''switch parser function''', coded as "'''#switch'''", selects the first matching branch in a list of choices, acting as a [[:en:Case statement|Case statement]]. 
+
+Each branch can be a [[value (computer science)|value]], an [[:en:Expression (computer science)|expression]] ([[Help:Calculation|calculation]]), or a [[Wikipedia:Templates|template]] call,&lt;ref&gt;A '''template call''' (also known as '''template tag''') has two "braces" on either side of the template page name and does not require the "Template:" prefix. For example, the following are equivalent template calls: {{tlc|Template:Foobar}} and {{tlc|Foobar}}.&lt;/ref&gt; evaluated and compared to match the value of the switch. Although many #switch structures are used to branch among a simple set of values, the branches can also include [[:en:Boolean expression|Boolean expression]]s to act as a set of pre-conditions to be tested until one tests true, acting as an ''if-elseif-elseif-elseif-else'' structure.
+
+A #switch can contain over 1,000 branches, but for better speed should be split to have less than 100 branches, in each of multiple or nested parts. The upper branches execute faster, and the bottom branches must wait for comparisons of all higher branches. Because it is a [[wp:Parser function|parser function]], a #switch can be used inside any page, even in article text, but in most cases, a #switch is typically used inside a [[wp:template|template]], to branch depending on a [[Help:Template#Parameters|parameter]] value passed to the template.
+
+== General format ==
+The {{mono|#switch}} function can be a one-line form:
+
+&lt;syntaxhighlight lang="wikitext"&gt;
+{{#switch: {{{x}}} |1=one |2=two |3|4|5=range 3–5 |other}}
+&lt;/syntaxhighlight&gt;
+
+That one-line {{mono|#switch}} would read the value of {{mono|&lt;nowiki&gt;{{{x}}}&lt;/nowiki&gt;}}. For a value of 1 it would return "one". For a value of 2 it would return "two". For the values 3, 4 or 5 it would return "range 3–5". For any other value, or a null value, it would return "other".
+
+However, in many cases, the {{mono|#switch}} function is a multi-line form, with each branch on a different line, as follows:
+
+&lt;syntaxhighlight lang="html"&gt;
+{{#switch: {{{x}}}
+ | 1 = one
+ | 2 = two
+ | #default = other
+ | 3|4|5 = any of 3–5
+ | {{#expr: 2*3}} = six
+ | {{#expr: 2*3+1}} = {{lc:SEVEN}} &lt;!--lowercase--&gt;
+}}
+&lt;/syntaxhighlight&gt;
+
+This illustrates an alternative method of specifying the default case, which can appear first, last, or anywhere in between.
+
+If no default is specified and no case matches the supplied value, a null value is returned.
+
+For each branch of a {{mono|#switch}}, either side of an equals-sign "=" can be a simple value, an expression, or a template call.
+
+== Using switches as if-elseif-elseif ==
+A #switch function can be structured as a set of pre-conditions which are tested until one is true (equal to "1"). For example to pre-screen numbers to avoid division by zero, in formula:&amp;nbsp;{{code|x/x2 + y/y2|style=white-space:nowrap;}}
+&lt;syntaxhighlight lang="wikitext"&gt;
+{{#switch: 1
+| {{#ifeq:{{{x2|none}}}|none|1|0}} = Parameter x2 has no data.
+| {{#ifeq:{{{y2|none}}}|none|1|0}} = Parameter y2 has no data.
+| {{#expr: {{{x2}}} = 0}} = Parameter x2 is 0 – cannot divide.
+| {{#expr: {{{y2}}} = 0}} = Parameter y2 is 0 – cannot divide.
+| 1 = {{#expr: {{{x}}}/{{{x2}}} + {{{y}}}/{{{y2}}}}}
+}}
+&lt;/syntaxhighlight&gt;
+When testing x2 and y2, if either of them is empty or zero, then the #switch ends with a warning message, rather than calculating the [[:en:Weighted average|Weighted average]] of the two amounts x, y, with x2 and y2. Each branch acts as a pre-condition, so the whole #switch structure performs as equivalent to ''if-elseif-elseif-elseif-else'', even though an #if-function structure cannot have an "elseif" clause. Note the 2 types of data compared:
+
+; Alphabetic data
+: An alpha character string can be compared in the &lt;code&gt;#switch&lt;/code&gt; by using &lt;code&gt;#ifeq:&lt;/code&gt; {{nowrap|as follows:{{nb5}}&lt;syntaxhighlight lang="wikitext" inline&gt;{{#ifeq:{{{x2|none}}}|none|1|0}}&lt;/syntaxhighlight&gt;,}}
+: where the result would be "1" when true, or "0" when false.
+; Numeric data
+: Some numbers can be compared in the &lt;code&gt;#switch&lt;/code&gt; by using &lt;code&gt;#expr:&lt;/code&gt; {{nowrap|as follows:{{nb5}}&lt;syntaxhighlight lang="wikitext" inline&gt;{{#expr: {{{y2}}} = 0}}&lt;/syntaxhighlight&gt; or &lt;syntaxhighlight lang="wikitext" inline&gt;{{#expr: {{{x}}} &lt; 41500}},&lt;/syntaxhighlight&gt;}}
+: where each result would be "1" when true, or "0" when false.
+
+Another example, to test an amount "n" to determine the number of decimal digits:
+&lt;syntaxhighlight lang="wikitext"&gt;
+{{#switch: 1
+| {{#expr: floor({{{n}}}*100) &lt;&gt; {{{n}}}*100}} = 3
+| {{#expr: floor({{{n}}}*10) &lt;&gt; {{{n}}}*10}} = 2
+| {{#expr: floor( {{{n}}} ) &lt;&gt; {{{n}}} }} = 1
+| {{#expr: {{{n}}} mod 1000 = 0}} = −3
+| {{#expr: {{{n}}} mod 100 = 0 }} = −2
+| {{#expr: {{{n}}} mod 10 = 0 }} = −1
+| 1 = 0
+}}
+&lt;/syntaxhighlight&gt;
+That is another example, using "#switch: 1" to stack a set of pre-conditions which are tested, in sequence, until one is true (equal to "1").
+
+== Performance considerations ==
+Templates using such convoluted switch statements as to suffer significant performance issues should be translated to [[WP:Lua|Lua]], if that will make them simpler or significantly faster. The below discussion should rarely be relevant but is preserved for reference.
+
+A #switch can contain over 1,000–2,000 branches, but should be split to have less than 100 branches, in multiple or nested parts. In some cases, it might be possible to split into multiple #switch structures, such as when many cases use the same first letter. Then, using &lt;syntaxhighlight lang="wikitext" inline&gt;{{padleft:|1|{{{value}}} }}&lt;/syntaxhighlight&gt; can extract the first letter of &lt;syntaxhighlight lang="wikitext" inline&gt;{{{value}}}&lt;/syntaxhighlight&gt; to be used in a higher #switch which branches by most-frequent letter, followed by all others at the bottom or "#default" branch. Another common split might be to separate numeric values into frequent ranges, followed by all other.
+
+The upper branches of a #switch execute faster, and the bottom branches must wait for comparisons of all higher branches. Hence, the top branch should be the most-used case, unless pre-screening of data is done in the early branches.
+
+== Notes ==
+&lt;references /&gt;
+== See also ==
+* [[Wikipedia:Parser function]]
+* [[Help:Conditional expressions]]
+* [[:en:Relational operator|Relational operator]]
+* {{section link|Help:Magic words#Variables}}
+
+{{Wikipedia technical help|collapsed}}</text>
+      <sha1>hb0b37pkkomgx4d3cxxroonfpswicfh</sha1>
+    </revision>
+    <revision>
+      <id>4887</id>
+      <timestamp>2025-05-24T22:55:56Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Bot: convert local link → enwiki interwiki</comment>
+      <origin>4887</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="6614" sha1="9g9r8hd3qdjgmhd3beop8pvqmbfpk73" xml:space="preserve">{{Wikipedia how-to|H:SWITCH}}
+{{see also|:mw:Help:Extension:ParserFunction##switch}}
+The '''switch parser function''', coded as "'''#switch'''", selects the first matching branch in a list of choices, acting as a [[:en:Case statement|Case statement]]. 
+
+Each branch can be a [[:en:Value (computer science)|value]], an [[:en:Expression (computer science)|expression]] ([[Help:Calculation|calculation]]), or a [[Wikipedia:Templates|template]] call,&lt;ref&gt;A '''template call''' (also known as '''template tag''') has two "braces" on either side of the template page name and does not require the "Template:" prefix. For example, the following are equivalent template calls: {{tlc|Template:Foobar}} and {{tlc|Foobar}}.&lt;/ref&gt; evaluated and compared to match the value of the switch. Although many #switch structures are used to branch among a simple set of values, the branches can also include [[:en:Boolean expression|Boolean expression]]s to act as a set of pre-conditions to be tested until one tests true, acting as an ''if-elseif-elseif-elseif-else'' structure.
+
+A #switch can contain over 1,000 branches, but for better speed should be split to have less than 100 branches, in each of multiple or nested parts. The upper branches execute faster, and the bottom branches must wait for comparisons of all higher branches. Because it is a [[wp:Parser function|parser function]], a #switch can be used inside any page, even in article text, but in most cases, a #switch is typically used inside a [[wp:template|template]], to branch depending on a [[Help:Template#Parameters|parameter]] value passed to the template.
+
+== General format ==
+The {{mono|#switch}} function can be a one-line form:
+
+&lt;syntaxhighlight lang="wikitext"&gt;
+{{#switch: {{{x}}} |1=one |2=two |3|4|5=range 3–5 |other}}
+&lt;/syntaxhighlight&gt;
+
+That one-line {{mono|#switch}} would read the value of {{mono|&lt;nowiki&gt;{{{x}}}&lt;/nowiki&gt;}}. For a value of 1 it would return "one". For a value of 2 it would return "two". For the values 3, 4 or 5 it would return "range 3–5". For any other value, or a null value, it would return "other".
+
+However, in many cases, the {{mono|#switch}} function is a multi-line form, with each branch on a different line, as follows:
+
+&lt;syntaxhighlight lang="html"&gt;
+{{#switch: {{{x}}}
+ | 1 = one
+ | 2 = two
+ | #default = other
+ | 3|4|5 = any of 3–5
+ | {{#expr: 2*3}} = six
+ | {{#expr: 2*3+1}} = {{lc:SEVEN}} &lt;!--lowercase--&gt;
+}}
+&lt;/syntaxhighlight&gt;
+
+This illustrates an alternative method of specifying the default case, which can appear first, last, or anywhere in between.
+
+If no default is specified and no case matches the supplied value, a null value is returned.
+
+For each branch of a {{mono|#switch}}, either side of an equals-sign "=" can be a simple value, an expression, or a template call.
+
+== Using switches as if-elseif-elseif ==
+A #switch function can be structured as a set of pre-conditions which are tested until one is true (equal to "1"). For example to pre-screen numbers to avoid division by zero, in formula:&amp;nbsp;{{code|x/x2 + y/y2|style=white-space:nowrap;}}
+&lt;syntaxhighlight lang="wikitext"&gt;
+{{#switch: 1
+| {{#ifeq:{{{x2|none}}}|none|1|0}} = Parameter x2 has no data.
+| {{#ifeq:{{{y2|none}}}|none|1|0}} = Parameter y2 has no data.
+| {{#expr: {{{x2}}} = 0}} = Parameter x2 is 0 – cannot divide.
+| {{#expr: {{{y2}}} = 0}} = Parameter y2 is 0 – cannot divide.
+| 1 = {{#expr: {{{x}}}/{{{x2}}} + {{{y}}}/{{{y2}}}}}
+}}
+&lt;/syntaxhighlight&gt;
+When testing x2 and y2, if either of them is empty or zero, then the #switch ends with a warning message, rather than calculating the [[:en:Weighted average|Weighted average]] of the two amounts x, y, with x2 and y2. Each branch acts as a pre-condition, so the whole #switch structure performs as equivalent to ''if-elseif-elseif-elseif-else'', even though an #if-function structure cannot have an "elseif" clause. Note the 2 types of data compared:
+
+; Alphabetic data
+: An alpha character string can be compared in the &lt;code&gt;#switch&lt;/code&gt; by using &lt;code&gt;#ifeq:&lt;/code&gt; {{nowrap|as follows:{{nb5}}&lt;syntaxhighlight lang="wikitext" inline&gt;{{#ifeq:{{{x2|none}}}|none|1|0}}&lt;/syntaxhighlight&gt;,}}
+: where the result would be "1" when true, or "0" when false.
+; Numeric data
+: Some numbers can be compared in the &lt;code&gt;#switch&lt;/code&gt; by using &lt;code&gt;#expr:&lt;/code&gt; {{nowrap|as follows:{{nb5}}&lt;syntaxhighlight lang="wikitext" inline&gt;{{#expr: {{{y2}}} = 0}}&lt;/syntaxhighlight&gt; or &lt;syntaxhighlight lang="wikitext" inline&gt;{{#expr: {{{x}}} &lt; 41500}},&lt;/syntaxhighlight&gt;}}
+: where each result would be "1" when true, or "0" when false.
+
+Another example, to test an amount "n" to determine the number of decimal digits:
+&lt;syntaxhighlight lang="wikitext"&gt;
+{{#switch: 1
+| {{#expr: floor({{{n}}}*100) &lt;&gt; {{{n}}}*100}} = 3
+| {{#expr: floor({{{n}}}*10) &lt;&gt; {{{n}}}*10}} = 2
+| {{#expr: floor( {{{n}}} ) &lt;&gt; {{{n}}} }} = 1
+| {{#expr: {{{n}}} mod 1000 = 0}} = −3
+| {{#expr: {{{n}}} mod 100 = 0 }} = −2
+| {{#expr: {{{n}}} mod 10 = 0 }} = −1
+| 1 = 0
+}}
+&lt;/syntaxhighlight&gt;
+That is another example, using "#switch: 1" to stack a set of pre-conditions which are tested, in sequence, until one is true (equal to "1").
+
+== Performance considerations ==
+Templates using such convoluted switch statements as to suffer significant performance issues should be translated to [[WP:Lua|Lua]], if that will make them simpler or significantly faster. The below discussion should rarely be relevant but is preserved for reference.
+
+A #switch can contain over 1,000–2,000 branches, but should be split to have less than 100 branches, in multiple or nested parts. In some cases, it might be possible to split into multiple #switch structures, such as when many cases use the same first letter. Then, using &lt;syntaxhighlight lang="wikitext" inline&gt;{{padleft:|1|{{{value}}} }}&lt;/syntaxhighlight&gt; can extract the first letter of &lt;syntaxhighlight lang="wikitext" inline&gt;{{{value}}}&lt;/syntaxhighlight&gt; to be used in a higher #switch which branches by most-frequent letter, followed by all others at the bottom or "#default" branch. Another common split might be to separate numeric values into frequent ranges, followed by all other.
+
+The upper branches of a #switch execute faster, and the bottom branches must wait for comparisons of all higher branches. Hence, the top branch should be the most-used case, unless pre-screening of data is done in the early branches.
+
+== Notes ==
+&lt;references /&gt;
+== See also ==
+* [[Wikipedia:Parser function]]
+* [[Help:Conditional expressions]]
+* [[:en:Relational operator|Relational operator]]
+* {{section link|Help:Magic words#Variables}}
+
+{{Wikipedia technical help|collapsed}}</text>
+      <sha1>9g9r8hd3qdjgmhd3beop8pvqmbfpk73</sha1>
+    </revision>
+  </page>
+</mediawiki>

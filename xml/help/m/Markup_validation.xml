@@ -1,0 +1,1303 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Help:Markup validation</title>
+    <ns>12</ns>
+    <id>4865</id>
+    <revision>
+      <id>778053</id>
+      <timestamp>2024-08-08T15:00:30Z</timestamp>
+      <contributor>
+        <username>en&gt;Annh07</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Reverted edit by [[Special:Contribs/49.186.89.209|49.186.89.209]] ([[User talk:49.186.89.209|talk]]) to last version by Shellwood</comment>
+      <origin>778053</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="9355" sha1="ip58lou1icijdpawntmp7nlkuk34uxc" xml:space="preserve">{{information page|H:MARKV}}
+The [[W3C Markup Validation Service]] lets editors check web pages for conformance to [[HTML]] and [[XHTML]] standards. It is helpful for catching minor problems such as duplicate section names or citation IDs. Although most major browsers will tolerate many of the errors, and will display a document successfully even if it contains errors, they may misbehave on documents that contain the errors: for example, they may go to the wrong section or citation if you click the mouse on a wikilink. Checking that a page contains valid HTML can thus fix these minor glitches while also increasing portability to unusual browsers.
+
+To check the HTML for a Wikipedia article ''XYZ'', visit the service's home page and enter the text "&lt;code&gt;&lt;span class="plainlinks"&gt;{{canonicalurl:XYZ}}&lt;/span&gt;&lt;/code&gt;".
+
+== Current issues ==
+{{shortcut|WP:HTMLBUGS}}
+These errors require developer fixes and should be ignored by editors. When checking for endemic errors, ensure a blank page is used, such as [[Special:BlankPage]].
+* {{W3C validation|Special:BlankPage}}
+
+Any page with an edit link:
+{{tracked|40385}}
+* &lt;code&gt;Bad value edit for attribute rel on element link: Keyword edit is not registered.&lt;/code&gt; This issue does not show for [[Special:BlankPage]].
+
+Any page with a file (image):
+* &lt;code&gt;Attribute srcset not allowed on element img at this point.&lt;/code&gt;
+:This is allowed per the [http://www.whatwg.org/specs/web-apps/current-work/multipage/embedded-content-1.html#the-img-element HTML Living Standard]. &lt;code&gt;srcset&lt;/code&gt; allows the MediaWiki software to render alternate images based on the device capabilities. The W3C HTML validator has not yet been updated to support this and throws an error.
+
+Any page with a nonstandard language code:
+* &lt;code&gt;Bad value &lt;var&gt;xxx&lt;/var&gt; for attribute lang on element a: The language subtag &lt;var&gt;xxx&lt;/var&gt; is not a valid ISO language part of a language tag.&lt;/code&gt;
+:Some Wikipedias use language codes that are not listed per RFC 5646. See the deprecated and nonstandard languages at [[m:List of Wikipedias|List of Wikipedias]]. See also [[Help:Interlanguage links]].
+
+== Valid HTML ==
+While current browsers are quite forgiving of HTML errors, invalid HTML can cause issues with accessibility, search engines and portability. Various browsers may handle errors differently, thus the display may differ.
+
+For most editors, creating valid HTML is not an issue. The [[MediaWiki]] software converts wikimarkup into valid HTML (with occasional bugs). The English Wikipedia has used [[HTML Tidy]], a now-outdated HTML4 library, to help ensure that common typos and mistakes are converted into proper HTML4.  However, Tidy could not fix all problems, there is no way to disable it for testing and validation will not show issues fixed by Tidy.  Furthermore, Tidy is [[:mw:Parsing/Replacing Tidy|slated for removal]] at Wikipedia, so previously overlooked errors need to be fixed.
+
+Portability issues occur when pages are exported to other wikis that do not use HTML Tidy and HTML errors are exposed.
+
+Editors who use referencing methods such as [[Wikipedia:Footnote3|Footnote3]] should always validate pages. Use of these templates make it very easy for an editor to create duplicate HTML ids, causing invalid HTML and in-page linking issues – this is probably the most common validation issue on Wikipedia. There is little or no error checking for manual templates.
+
+Editors who develop templates should always test various uses and ensure they render valid HTML.
+
+== Validation tools ==
+The [[World Wide Web Consortium|W3C]] is the main international standards organization for the internet— they provide the [[W3C Markup Validation Service]]. Simply copy the full URL of the page to be validated and paste in into the validator. There is also a [[favelet]] that you can add to your browser bookmarks that will validate the current page.
+
+The WDG HTML Validator has a batch mode that allows a list of URLS to be validated.
+
+== Common diagnostics and how to fix them ==
+This section gives examples of diagnostics generated by the markup validation service, and suggests possible fixes. Diagnostics are by line and column of the generated HTML for the page. It may be helpful to obtain the HTML in order to understand the diagnostic. For example, if you using the [[Firefox]] browser, you can type control-U to see the HTML.
+
+=== ID already defined ===
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 630, Column 88'': '''ID "CITEREFBarker2008" already defined'''
+: &lt;code&gt;&lt;nowiki&gt;...&lt;/a&gt;&lt;/b&gt; &lt;span class="citation" id="&lt;/nowiki&gt;&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;C&lt;/strong&gt;&lt;/abbr&gt;ITEREFBarker2008"&gt;Barker, Janice (2008-0&lt;/code&gt;
+:: &lt;small&gt;An "id" is a unique identifier. Each time this attribute is used in a document it must have a different value. If you are using this attribute as a hook for style sheets it may be more appropriate to use classes (which group elements) than id (which are used to identify exactly one element).&lt;/small&gt;
+
+This error occurs if an article contains multiple invocations of the {{tl|citation}} template with the same author and year; the above error was prompted by an article that cited two different documents, both written by Barker in 2008. Disambiguate the citations by putting letters after the years (''e.g.'', {{para|year|2008a}}, {{para|year|2008b}}), or by using the [[Template:Citation#Anchored citations|&lt;code&gt;ref=&lt;/code&gt; parameter of {{tlf|citation}}]].
+
+HTML ids are only needed when using [[Help:Shortened footnotes|Shortened footnotes]] or [[WP:Parenthetical referencing|Parenthetical referencing]]. The {{tl|citation}} template always generates an HTML id; with [[Help:Citation Style 1|Citation Style 1]], this is optional and [[Help:Citation Style Vancouver|Citation Style Vancouver]] never creates ids.
+
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 93, Column 231'': '''ID "ref_1" already defined'''
+: &lt;code&gt;...ence plainlinks nourlexpansion" id="&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;r&lt;/strong&gt;&lt;/abbr&gt;&lt;nowiki&gt;ef_1"&gt;&lt;a href="#endnote_1"&gt;1&lt;/a&gt;&lt;/sup&gt;&lt;...&lt;/nowiki&gt;&lt;/code&gt;
+:: &lt;small&gt;An "id" is a unique identifier. Each time this attribute is used in a document it must have a different value. If you are using this attribute as a hook for style sheets it may be more appropriate to use classes (which group elements) than id (which are used to identify exactly one element).&lt;/small&gt;
+
+This similar diagnostic occurs if an article contains multiple invocations of {{tl|ref}} with the same ID, for example, two instances of "&lt;code&gt;&lt;nowiki&gt;{{ref|1|1}}&lt;/nowiki&gt;&lt;/code&gt;". To fix the problem, use different IDs. Templates using the &lt;var&gt;ref_&lt;/var&gt; id prefix include {{tl|ref}}, {{tl|ref label}}, {{tl|cref}} and {{tl|cref2}}.
+
+=== Missing alt text ===
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 135, Column 108'': '''required attribute "alt" not specified'''
+
+: &lt;code&gt;&lt;nowiki&gt;...,107" title="Hurricane Ida (2009)" /&lt;/nowiki&gt;&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;&amp;gt;&lt;/strong&gt;&lt;/abbr&gt;&lt;/code&gt;
+:: &lt;small&gt;The attribute given above is required for an element that you've used, but you have omitted it. For instance, in most HTML and XHTML document types the "type" attribute is required on the "script" element and the "alt" attribute is required for the "img" element....&lt;/small&gt;
+
+This diagnostic can result from use of the [[:mw:Extension:EasyTimeline/syntax|EasyTimeline]] extension, which does not support [[Wikipedia:Accessibility|accessibility]] and does not generate [[Wikipedia:Alternative text for images|alternative text]] for visually impaired readers. Such a problem can be fixed by redoing the timeline as text, as an image, or as an [[mw:Extension:ImageMap|image map]].
+
+=== Element dl is missing a required instance of child element dd ===
+
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Error Line 78, Column 5'': '''Element dl is missing a required instance of child element dd.'''
+: &lt;code&gt;&lt;/dl&lt;span style="color:red"&gt;&lt;strong&gt;&amp;gt;&lt;/strong&gt;&lt;/span&gt;&lt;/code&gt;
+:: &lt;small&gt;Content model for element dl:&lt;/small&gt;
+::: &lt;small&gt;Zero or more groups each consisting of one or more dt elements followed by one or more dd elements.&lt;/small&gt;
+
+Definition lists are created with the wikimarkup &lt;code&gt;;&lt;/code&gt; to define a definition list and &lt;code&gt;:&lt;/code&gt; to define the item in the list. This diagnostic results when the &lt;code&gt;:&lt;/code&gt; is missing.
+
+* Indentation is created using the &lt;code&gt;:&lt;/code&gt; markup. This creates a definition list with no child element. {{phab|6521}}
+* This also occurs when &lt;code&gt;;&lt;/code&gt; is misused to bold a line. Use the wikimarkup &lt;code&gt;&lt;nowiki&gt;'''&lt;/nowiki&gt;&lt;/code&gt; to bold characters.
+
+== CSS validation ==
+The W3C also has a CSS validator, but this is less of an issue when editing Wikipedia pages, as CSS is an option and CSS validation errors typically are due to problems with skins, not problems in individual pages.
+
+== See also ==
+* Template {{tl|W3C validation}}
+
+== External links ==
+*[http://validator.w3.org/ The W3C Markup Validation Service]
+
+*[http://validator.w3.org/favelets.html The W3C Markup Validation Service— Favelets For The Validator]
+
+*[http://jigsaw.w3.org/css-validator/ The W3C CSS Validation Service]
+
+{{Wikipedia technical help|collapsed}}
+[[Category:Wikipedia editor help]]</text>
+      <sha1>ip58lou1icijdpawntmp7nlkuk34uxc</sha1>
+    </revision>
+    <revision>
+      <id>778054</id>
+      <parentid>778053</parentid>
+      <timestamp>2024-12-19T20:10:54Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: mass importing wikipedia pages</comment>
+      <origin>778053</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="9355" sha1="ip58lou1icijdpawntmp7nlkuk34uxc" xml:space="preserve">{{information page|H:MARKV}}
+The [[W3C Markup Validation Service]] lets editors check web pages for conformance to [[HTML]] and [[XHTML]] standards. It is helpful for catching minor problems such as duplicate section names or citation IDs. Although most major browsers will tolerate many of the errors, and will display a document successfully even if it contains errors, they may misbehave on documents that contain the errors: for example, they may go to the wrong section or citation if you click the mouse on a wikilink. Checking that a page contains valid HTML can thus fix these minor glitches while also increasing portability to unusual browsers.
+
+To check the HTML for a Wikipedia article ''XYZ'', visit the service's home page and enter the text "&lt;code&gt;&lt;span class="plainlinks"&gt;{{canonicalurl:XYZ}}&lt;/span&gt;&lt;/code&gt;".
+
+== Current issues ==
+{{shortcut|WP:HTMLBUGS}}
+These errors require developer fixes and should be ignored by editors. When checking for endemic errors, ensure a blank page is used, such as [[Special:BlankPage]].
+* {{W3C validation|Special:BlankPage}}
+
+Any page with an edit link:
+{{tracked|40385}}
+* &lt;code&gt;Bad value edit for attribute rel on element link: Keyword edit is not registered.&lt;/code&gt; This issue does not show for [[Special:BlankPage]].
+
+Any page with a file (image):
+* &lt;code&gt;Attribute srcset not allowed on element img at this point.&lt;/code&gt;
+:This is allowed per the [http://www.whatwg.org/specs/web-apps/current-work/multipage/embedded-content-1.html#the-img-element HTML Living Standard]. &lt;code&gt;srcset&lt;/code&gt; allows the MediaWiki software to render alternate images based on the device capabilities. The W3C HTML validator has not yet been updated to support this and throws an error.
+
+Any page with a nonstandard language code:
+* &lt;code&gt;Bad value &lt;var&gt;xxx&lt;/var&gt; for attribute lang on element a: The language subtag &lt;var&gt;xxx&lt;/var&gt; is not a valid ISO language part of a language tag.&lt;/code&gt;
+:Some Wikipedias use language codes that are not listed per RFC 5646. See the deprecated and nonstandard languages at [[m:List of Wikipedias|List of Wikipedias]]. See also [[Help:Interlanguage links]].
+
+== Valid HTML ==
+While current browsers are quite forgiving of HTML errors, invalid HTML can cause issues with accessibility, search engines and portability. Various browsers may handle errors differently, thus the display may differ.
+
+For most editors, creating valid HTML is not an issue. The [[MediaWiki]] software converts wikimarkup into valid HTML (with occasional bugs). The English Wikipedia has used [[HTML Tidy]], a now-outdated HTML4 library, to help ensure that common typos and mistakes are converted into proper HTML4.  However, Tidy could not fix all problems, there is no way to disable it for testing and validation will not show issues fixed by Tidy.  Furthermore, Tidy is [[:mw:Parsing/Replacing Tidy|slated for removal]] at Wikipedia, so previously overlooked errors need to be fixed.
+
+Portability issues occur when pages are exported to other wikis that do not use HTML Tidy and HTML errors are exposed.
+
+Editors who use referencing methods such as [[Wikipedia:Footnote3|Footnote3]] should always validate pages. Use of these templates make it very easy for an editor to create duplicate HTML ids, causing invalid HTML and in-page linking issues – this is probably the most common validation issue on Wikipedia. There is little or no error checking for manual templates.
+
+Editors who develop templates should always test various uses and ensure they render valid HTML.
+
+== Validation tools ==
+The [[World Wide Web Consortium|W3C]] is the main international standards organization for the internet— they provide the [[W3C Markup Validation Service]]. Simply copy the full URL of the page to be validated and paste in into the validator. There is also a [[favelet]] that you can add to your browser bookmarks that will validate the current page.
+
+The WDG HTML Validator has a batch mode that allows a list of URLS to be validated.
+
+== Common diagnostics and how to fix them ==
+This section gives examples of diagnostics generated by the markup validation service, and suggests possible fixes. Diagnostics are by line and column of the generated HTML for the page. It may be helpful to obtain the HTML in order to understand the diagnostic. For example, if you using the [[Firefox]] browser, you can type control-U to see the HTML.
+
+=== ID already defined ===
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 630, Column 88'': '''ID "CITEREFBarker2008" already defined'''
+: &lt;code&gt;&lt;nowiki&gt;...&lt;/a&gt;&lt;/b&gt; &lt;span class="citation" id="&lt;/nowiki&gt;&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;C&lt;/strong&gt;&lt;/abbr&gt;ITEREFBarker2008"&gt;Barker, Janice (2008-0&lt;/code&gt;
+:: &lt;small&gt;An "id" is a unique identifier. Each time this attribute is used in a document it must have a different value. If you are using this attribute as a hook for style sheets it may be more appropriate to use classes (which group elements) than id (which are used to identify exactly one element).&lt;/small&gt;
+
+This error occurs if an article contains multiple invocations of the {{tl|citation}} template with the same author and year; the above error was prompted by an article that cited two different documents, both written by Barker in 2008. Disambiguate the citations by putting letters after the years (''e.g.'', {{para|year|2008a}}, {{para|year|2008b}}), or by using the [[Template:Citation#Anchored citations|&lt;code&gt;ref=&lt;/code&gt; parameter of {{tlf|citation}}]].
+
+HTML ids are only needed when using [[Help:Shortened footnotes|Shortened footnotes]] or [[WP:Parenthetical referencing|Parenthetical referencing]]. The {{tl|citation}} template always generates an HTML id; with [[Help:Citation Style 1|Citation Style 1]], this is optional and [[Help:Citation Style Vancouver|Citation Style Vancouver]] never creates ids.
+
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 93, Column 231'': '''ID "ref_1" already defined'''
+: &lt;code&gt;...ence plainlinks nourlexpansion" id="&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;r&lt;/strong&gt;&lt;/abbr&gt;&lt;nowiki&gt;ef_1"&gt;&lt;a href="#endnote_1"&gt;1&lt;/a&gt;&lt;/sup&gt;&lt;...&lt;/nowiki&gt;&lt;/code&gt;
+:: &lt;small&gt;An "id" is a unique identifier. Each time this attribute is used in a document it must have a different value. If you are using this attribute as a hook for style sheets it may be more appropriate to use classes (which group elements) than id (which are used to identify exactly one element).&lt;/small&gt;
+
+This similar diagnostic occurs if an article contains multiple invocations of {{tl|ref}} with the same ID, for example, two instances of "&lt;code&gt;&lt;nowiki&gt;{{ref|1|1}}&lt;/nowiki&gt;&lt;/code&gt;". To fix the problem, use different IDs. Templates using the &lt;var&gt;ref_&lt;/var&gt; id prefix include {{tl|ref}}, {{tl|ref label}}, {{tl|cref}} and {{tl|cref2}}.
+
+=== Missing alt text ===
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 135, Column 108'': '''required attribute "alt" not specified'''
+
+: &lt;code&gt;&lt;nowiki&gt;...,107" title="Hurricane Ida (2009)" /&lt;/nowiki&gt;&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;&amp;gt;&lt;/strong&gt;&lt;/abbr&gt;&lt;/code&gt;
+:: &lt;small&gt;The attribute given above is required for an element that you've used, but you have omitted it. For instance, in most HTML and XHTML document types the "type" attribute is required on the "script" element and the "alt" attribute is required for the "img" element....&lt;/small&gt;
+
+This diagnostic can result from use of the [[:mw:Extension:EasyTimeline/syntax|EasyTimeline]] extension, which does not support [[Wikipedia:Accessibility|accessibility]] and does not generate [[Wikipedia:Alternative text for images|alternative text]] for visually impaired readers. Such a problem can be fixed by redoing the timeline as text, as an image, or as an [[mw:Extension:ImageMap|image map]].
+
+=== Element dl is missing a required instance of child element dd ===
+
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Error Line 78, Column 5'': '''Element dl is missing a required instance of child element dd.'''
+: &lt;code&gt;&lt;/dl&lt;span style="color:red"&gt;&lt;strong&gt;&amp;gt;&lt;/strong&gt;&lt;/span&gt;&lt;/code&gt;
+:: &lt;small&gt;Content model for element dl:&lt;/small&gt;
+::: &lt;small&gt;Zero or more groups each consisting of one or more dt elements followed by one or more dd elements.&lt;/small&gt;
+
+Definition lists are created with the wikimarkup &lt;code&gt;;&lt;/code&gt; to define a definition list and &lt;code&gt;:&lt;/code&gt; to define the item in the list. This diagnostic results when the &lt;code&gt;:&lt;/code&gt; is missing.
+
+* Indentation is created using the &lt;code&gt;:&lt;/code&gt; markup. This creates a definition list with no child element. {{phab|6521}}
+* This also occurs when &lt;code&gt;;&lt;/code&gt; is misused to bold a line. Use the wikimarkup &lt;code&gt;&lt;nowiki&gt;'''&lt;/nowiki&gt;&lt;/code&gt; to bold characters.
+
+== CSS validation ==
+The W3C also has a CSS validator, but this is less of an issue when editing Wikipedia pages, as CSS is an option and CSS validation errors typically are due to problems with skins, not problems in individual pages.
+
+== See also ==
+* Template {{tl|W3C validation}}
+
+== External links ==
+*[http://validator.w3.org/ The W3C Markup Validation Service]
+
+*[http://validator.w3.org/favelets.html The W3C Markup Validation Service— Favelets For The Validator]
+
+*[http://jigsaw.w3.org/css-validator/ The W3C CSS Validation Service]
+
+{{Wikipedia technical help|collapsed}}
+[[Category:Wikipedia editor help]]</text>
+      <sha1>ip58lou1icijdpawntmp7nlkuk34uxc</sha1>
+    </revision>
+    <revision>
+      <id>778055</id>
+      <parentid>778054</parentid>
+      <timestamp>2025-03-12T19:19:12Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <origin>778055</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="9372" sha1="lub6bu0oo6pyejq7m699tvlqr4zoit6" xml:space="preserve">{{information page|H:MARKV}}
+The [[W3C Markup Validation Service]] lets editors check web pages for conformance to [[HTML]] and [[XHTML]] standards. It is helpful for catching minor problems such as duplicate section names or citation IDs. Although most major browsers will tolerate many of the errors, and will display a document successfully even if it contains errors, they may misbehave on documents that contain the errors: for example, they may go to the wrong section or citation if you click the mouse on a wikilink. Checking that a page contains valid HTML can thus fix these minor glitches while also increasing portability to unusual browsers.
+
+To check the HTML for a Wikipedia article ''XYZ'', visit the service's home page and enter the text "&lt;code&gt;&lt;span class="plainlinks"&gt;{{canonicalurl:XYZ}}&lt;/span&gt;&lt;/code&gt;".
+
+== Current issues ==
+{{shortcut|WP:HTMLBUGS}}
+These errors require developer fixes and should be ignored by editors. When checking for endemic errors, ensure a blank page is used, such as [[Special:BlankPage]].
+* {{W3C validation|Special:BlankPage}}
+
+Any page with an edit link:
+{{tracked|40385}}
+* &lt;code&gt;Bad value edit for attribute rel on element link: Keyword edit is not registered.&lt;/code&gt; This issue does not show for [[Special:BlankPage]].
+
+Any page with a file (image):
+* &lt;code&gt;Attribute srcset not allowed on element img at this point.&lt;/code&gt;
+:This is allowed per the [http://www.whatwg.org/specs/web-apps/current-work/multipage/embedded-content-1.html#the-img-element HTML Living Standard]. &lt;code&gt;srcset&lt;/code&gt; allows the MediaWiki software to render alternate images based on the device capabilities. The W3C HTML validator has not yet been updated to support this and throws an error.
+
+Any page with a nonstandard language code:
+* &lt;code&gt;Bad value &lt;var&gt;xxx&lt;/var&gt; for attribute lang on element a: The language subtag &lt;var&gt;xxx&lt;/var&gt; is not a valid ISO language part of a language tag.&lt;/code&gt;
+:Some Wikipedias use language codes that are not listed per RFC 5646. See the deprecated and nonstandard languages at [[m:List of Wikipedias|List of Wikipedias]]. See also [[Help:Interlanguage links]].
+
+== Valid HTML ==
+While current browsers are quite forgiving of HTML errors, invalid HTML can cause issues with accessibility, search engines and portability. Various browsers may handle errors differently, thus the display may differ.
+
+For most editors, creating valid HTML is not an issue. The [[MediaWiki]] software converts wikimarkup into valid HTML (with occasional bugs). The English Wikipedia has used [[HTML Tidy]], a now-outdated HTML4 library, to help ensure that common typos and mistakes are converted into proper HTML4.  However, Tidy could not fix all problems, there is no way to disable it for testing and validation will not show issues fixed by Tidy.  Furthermore, Tidy is [[:mw:Parsing/Replacing Tidy|slated for removal]] at Wikipedia, so previously overlooked errors need to be fixed.
+
+Portability issues occur when pages are exported to other wikis that do not use HTML Tidy and HTML errors are exposed.
+
+Editors who use referencing methods such as [[Wikipedia:Footnote3|Footnote3]] should always validate pages. Use of these templates make it very easy for an editor to create duplicate HTML ids, causing invalid HTML and in-page linking issues – this is probably the most common validation issue on Wikipedia. There is little or no error checking for manual templates.
+
+Editors who develop templates should always test various uses and ensure they render valid HTML.
+
+== Validation tools ==
+The [[World Wide Web Consortium|W3C]] is the main international standards organization for the internet— they provide the [[W3C Markup Validation Service]]. Simply copy the full URL of the page to be validated and paste in into the validator. There is also a [[favelet]] that you can add to your browser bookmarks that will validate the current page.
+
+The WDG HTML Validator has a batch mode that allows a list of URLS to be validated.
+
+== Common diagnostics and how to fix them ==
+This section gives examples of diagnostics generated by the markup validation service, and suggests possible fixes. Diagnostics are by line and column of the generated HTML for the page. It may be helpful to obtain the HTML in order to understand the diagnostic. For example, if you using the [[Firefox]] browser, you can type control-U to see the HTML.
+
+=== ID already defined ===
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 630, Column 88'': '''ID "CITEREFBarker2008" already defined'''
+: &lt;code&gt;&lt;nowiki&gt;...&lt;/a&gt;&lt;/b&gt; &lt;span class="citation" id="&lt;/nowiki&gt;&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;C&lt;/strong&gt;&lt;/abbr&gt;ITEREFBarker2008"&gt;Barker, Janice (2008-0&lt;/code&gt;
+:: &lt;small&gt;An "id" is a unique identifier. Each time this attribute is used in a document it must have a different value. If you are using this attribute as a hook for style sheets it may be more appropriate to use classes (which group elements) than id (which are used to identify exactly one element).&lt;/small&gt;
+
+This error occurs if an article contains multiple invocations of the {{tl|citation}} template with the same author and year; the above error was prompted by an article that cited two different documents, both written by Barker in 2008. Disambiguate the citations by putting letters after the years (''e.g.'', {{para|year|2008a}}, {{para|year|2008b}}), or by using the [[Template:Citation#Anchored citations|&lt;code&gt;ref=&lt;/code&gt; parameter of {{tlf|citation}}]].
+
+HTML ids are only needed when using [[Help:Shortened footnotes|Shortened footnotes]] or [[WP:Parenthetical referencing|Parenthetical referencing]]. The {{tl|citation}} template always generates an HTML id; with [[Help:Citation Style 1|Citation Style 1]], this is optional and [[Help:Citation Style Vancouver|Citation Style Vancouver]] never creates ids.
+
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 93, Column 231'': '''ID "ref_1" already defined'''
+: &lt;code&gt;...ence plainlinks nourlexpansion" id="&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;r&lt;/strong&gt;&lt;/abbr&gt;&lt;nowiki&gt;ef_1"&gt;&lt;a href="#endnote_1"&gt;1&lt;/a&gt;&lt;/sup&gt;&lt;...&lt;/nowiki&gt;&lt;/code&gt;
+:: &lt;small&gt;An "id" is a unique identifier. Each time this attribute is used in a document it must have a different value. If you are using this attribute as a hook for style sheets it may be more appropriate to use classes (which group elements) than id (which are used to identify exactly one element).&lt;/small&gt;
+
+This similar diagnostic occurs if an article contains multiple invocations of {{tl|ref}} with the same ID, for example, two instances of "&lt;code&gt;&lt;nowiki&gt;{{ref|1|1}}&lt;/nowiki&gt;&lt;/code&gt;". To fix the problem, use different IDs. Templates using the &lt;var&gt;ref_&lt;/var&gt; id prefix include {{tl|ref}}, {{tl|ref label}}, {{tl|cref}} and {{tl|cref2}}.
+
+=== Missing alt text ===
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 135, Column 108'': '''required attribute "alt" not specified'''
+
+: &lt;code&gt;&lt;nowiki&gt;...,107" title="Hurricane Ida (2009)" /&lt;/nowiki&gt;&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;&amp;gt;&lt;/strong&gt;&lt;/abbr&gt;&lt;/code&gt;
+:: &lt;small&gt;The attribute given above is required for an element that you've used, but you have omitted it. For instance, in most HTML and XHTML document types the "type" attribute is required on the "script" element and the "alt" attribute is required for the "img" element....&lt;/small&gt;
+
+This diagnostic can result from use of the [[:mw:Extension:EasyTimeline/syntax|EasyTimeline]] extension, which does not support [[Wikipedia:Accessibility|accessibility]] and does not generate [[Wikipedia:Alternative text for images|alternative text]] for visually impaired readers. Such a problem can be fixed by redoing the timeline as text, as an image, or as an [[mw:Extension:ImageMap|image map]].
+
+=== Element dl is missing a required instance of child element dd ===
+
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Error Line 78, Column 5'': '''Element dl is missing a required instance of child element dd.'''
+: &lt;code&gt;&lt;/dl&lt;span style="color:red"&gt;&lt;strong&gt;&amp;gt;&lt;/strong&gt;&lt;/span&gt;&lt;/code&gt;
+:: &lt;small&gt;Content model for element dl:&lt;/small&gt;
+::: &lt;small&gt;Zero or more groups each consisting of one or more dt elements followed by one or more dd elements.&lt;/small&gt;
+
+Definition lists are created with the wikimarkup &lt;code&gt;;&lt;/code&gt; to define a definition list and &lt;code&gt;:&lt;/code&gt; to define the item in the list. This diagnostic results when the &lt;code&gt;:&lt;/code&gt; is missing.
+
+* Indentation is created using the &lt;code&gt;:&lt;/code&gt; markup. This creates a definition list with no child element. {{phab|6521}}
+* This also occurs when &lt;code&gt;;&lt;/code&gt; is misused to bold a line. Use the wikimarkup &lt;code&gt;&lt;nowiki&gt;'''&lt;/nowiki&gt;&lt;/code&gt; to bold characters.
+
+== CSS validation ==
+The W3C also has a CSS validator, but this is less of an issue when editing Wikipedia pages, as CSS is an option and CSS validation errors typically are due to problems with skins, not problems in individual pages.
+
+== See also ==
+* Template {{tl|W3C validation}}
+
+== External links ==
+*[http://validator.w3.org/ The W3C Markup Validation Service]
+
+*[http://validator.w3.org/favelets.html The W3C Markup Validation Service— Favelets For The Validator]
+
+*[http://jigsaw.w3.org/css-validator/ The W3C CSS Validation Service]
+
+{{Wikipedia technical help|collapsed}}
+[[Category:Wikipedia editor help]]
+[[Category:New]]</text>
+      <sha1>lub6bu0oo6pyejq7m699tvlqr4zoit6</sha1>
+    </revision>
+    <revision>
+      <id>778056</id>
+      <parentid>778055</parentid>
+      <timestamp>2025-04-29T11:56:01Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "[[Category:New]]" to ""</comment>
+      <origin>778056</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="9355" sha1="ip58lou1icijdpawntmp7nlkuk34uxc" xml:space="preserve">{{information page|H:MARKV}}
+The [[W3C Markup Validation Service]] lets editors check web pages for conformance to [[HTML]] and [[XHTML]] standards. It is helpful for catching minor problems such as duplicate section names or citation IDs. Although most major browsers will tolerate many of the errors, and will display a document successfully even if it contains errors, they may misbehave on documents that contain the errors: for example, they may go to the wrong section or citation if you click the mouse on a wikilink. Checking that a page contains valid HTML can thus fix these minor glitches while also increasing portability to unusual browsers.
+
+To check the HTML for a Wikipedia article ''XYZ'', visit the service's home page and enter the text "&lt;code&gt;&lt;span class="plainlinks"&gt;{{canonicalurl:XYZ}}&lt;/span&gt;&lt;/code&gt;".
+
+== Current issues ==
+{{shortcut|WP:HTMLBUGS}}
+These errors require developer fixes and should be ignored by editors. When checking for endemic errors, ensure a blank page is used, such as [[Special:BlankPage]].
+* {{W3C validation|Special:BlankPage}}
+
+Any page with an edit link:
+{{tracked|40385}}
+* &lt;code&gt;Bad value edit for attribute rel on element link: Keyword edit is not registered.&lt;/code&gt; This issue does not show for [[Special:BlankPage]].
+
+Any page with a file (image):
+* &lt;code&gt;Attribute srcset not allowed on element img at this point.&lt;/code&gt;
+:This is allowed per the [http://www.whatwg.org/specs/web-apps/current-work/multipage/embedded-content-1.html#the-img-element HTML Living Standard]. &lt;code&gt;srcset&lt;/code&gt; allows the MediaWiki software to render alternate images based on the device capabilities. The W3C HTML validator has not yet been updated to support this and throws an error.
+
+Any page with a nonstandard language code:
+* &lt;code&gt;Bad value &lt;var&gt;xxx&lt;/var&gt; for attribute lang on element a: The language subtag &lt;var&gt;xxx&lt;/var&gt; is not a valid ISO language part of a language tag.&lt;/code&gt;
+:Some Wikipedias use language codes that are not listed per RFC 5646. See the deprecated and nonstandard languages at [[m:List of Wikipedias|List of Wikipedias]]. See also [[Help:Interlanguage links]].
+
+== Valid HTML ==
+While current browsers are quite forgiving of HTML errors, invalid HTML can cause issues with accessibility, search engines and portability. Various browsers may handle errors differently, thus the display may differ.
+
+For most editors, creating valid HTML is not an issue. The [[MediaWiki]] software converts wikimarkup into valid HTML (with occasional bugs). The English Wikipedia has used [[HTML Tidy]], a now-outdated HTML4 library, to help ensure that common typos and mistakes are converted into proper HTML4.  However, Tidy could not fix all problems, there is no way to disable it for testing and validation will not show issues fixed by Tidy.  Furthermore, Tidy is [[:mw:Parsing/Replacing Tidy|slated for removal]] at Wikipedia, so previously overlooked errors need to be fixed.
+
+Portability issues occur when pages are exported to other wikis that do not use HTML Tidy and HTML errors are exposed.
+
+Editors who use referencing methods such as [[Wikipedia:Footnote3|Footnote3]] should always validate pages. Use of these templates make it very easy for an editor to create duplicate HTML ids, causing invalid HTML and in-page linking issues – this is probably the most common validation issue on Wikipedia. There is little or no error checking for manual templates.
+
+Editors who develop templates should always test various uses and ensure they render valid HTML.
+
+== Validation tools ==
+The [[World Wide Web Consortium|W3C]] is the main international standards organization for the internet— they provide the [[W3C Markup Validation Service]]. Simply copy the full URL of the page to be validated and paste in into the validator. There is also a [[favelet]] that you can add to your browser bookmarks that will validate the current page.
+
+The WDG HTML Validator has a batch mode that allows a list of URLS to be validated.
+
+== Common diagnostics and how to fix them ==
+This section gives examples of diagnostics generated by the markup validation service, and suggests possible fixes. Diagnostics are by line and column of the generated HTML for the page. It may be helpful to obtain the HTML in order to understand the diagnostic. For example, if you using the [[Firefox]] browser, you can type control-U to see the HTML.
+
+=== ID already defined ===
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 630, Column 88'': '''ID "CITEREFBarker2008" already defined'''
+: &lt;code&gt;&lt;nowiki&gt;...&lt;/a&gt;&lt;/b&gt; &lt;span class="citation" id="&lt;/nowiki&gt;&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;C&lt;/strong&gt;&lt;/abbr&gt;ITEREFBarker2008"&gt;Barker, Janice (2008-0&lt;/code&gt;
+:: &lt;small&gt;An "id" is a unique identifier. Each time this attribute is used in a document it must have a different value. If you are using this attribute as a hook for style sheets it may be more appropriate to use classes (which group elements) than id (which are used to identify exactly one element).&lt;/small&gt;
+
+This error occurs if an article contains multiple invocations of the {{tl|citation}} template with the same author and year; the above error was prompted by an article that cited two different documents, both written by Barker in 2008. Disambiguate the citations by putting letters after the years (''e.g.'', {{para|year|2008a}}, {{para|year|2008b}}), or by using the [[Template:Citation#Anchored citations|&lt;code&gt;ref=&lt;/code&gt; parameter of {{tlf|citation}}]].
+
+HTML ids are only needed when using [[Help:Shortened footnotes|Shortened footnotes]] or [[WP:Parenthetical referencing|Parenthetical referencing]]. The {{tl|citation}} template always generates an HTML id; with [[Help:Citation Style 1|Citation Style 1]], this is optional and [[Help:Citation Style Vancouver|Citation Style Vancouver]] never creates ids.
+
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 93, Column 231'': '''ID "ref_1" already defined'''
+: &lt;code&gt;...ence plainlinks nourlexpansion" id="&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;r&lt;/strong&gt;&lt;/abbr&gt;&lt;nowiki&gt;ef_1"&gt;&lt;a href="#endnote_1"&gt;1&lt;/a&gt;&lt;/sup&gt;&lt;...&lt;/nowiki&gt;&lt;/code&gt;
+:: &lt;small&gt;An "id" is a unique identifier. Each time this attribute is used in a document it must have a different value. If you are using this attribute as a hook for style sheets it may be more appropriate to use classes (which group elements) than id (which are used to identify exactly one element).&lt;/small&gt;
+
+This similar diagnostic occurs if an article contains multiple invocations of {{tl|ref}} with the same ID, for example, two instances of "&lt;code&gt;&lt;nowiki&gt;{{ref|1|1}}&lt;/nowiki&gt;&lt;/code&gt;". To fix the problem, use different IDs. Templates using the &lt;var&gt;ref_&lt;/var&gt; id prefix include {{tl|ref}}, {{tl|ref label}}, {{tl|cref}} and {{tl|cref2}}.
+
+=== Missing alt text ===
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 135, Column 108'': '''required attribute "alt" not specified'''
+
+: &lt;code&gt;&lt;nowiki&gt;...,107" title="Hurricane Ida (2009)" /&lt;/nowiki&gt;&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;&amp;gt;&lt;/strong&gt;&lt;/abbr&gt;&lt;/code&gt;
+:: &lt;small&gt;The attribute given above is required for an element that you've used, but you have omitted it. For instance, in most HTML and XHTML document types the "type" attribute is required on the "script" element and the "alt" attribute is required for the "img" element....&lt;/small&gt;
+
+This diagnostic can result from use of the [[:mw:Extension:EasyTimeline/syntax|EasyTimeline]] extension, which does not support [[Wikipedia:Accessibility|accessibility]] and does not generate [[Wikipedia:Alternative text for images|alternative text]] for visually impaired readers. Such a problem can be fixed by redoing the timeline as text, as an image, or as an [[mw:Extension:ImageMap|image map]].
+
+=== Element dl is missing a required instance of child element dd ===
+
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Error Line 78, Column 5'': '''Element dl is missing a required instance of child element dd.'''
+: &lt;code&gt;&lt;/dl&lt;span style="color:red"&gt;&lt;strong&gt;&amp;gt;&lt;/strong&gt;&lt;/span&gt;&lt;/code&gt;
+:: &lt;small&gt;Content model for element dl:&lt;/small&gt;
+::: &lt;small&gt;Zero or more groups each consisting of one or more dt elements followed by one or more dd elements.&lt;/small&gt;
+
+Definition lists are created with the wikimarkup &lt;code&gt;;&lt;/code&gt; to define a definition list and &lt;code&gt;:&lt;/code&gt; to define the item in the list. This diagnostic results when the &lt;code&gt;:&lt;/code&gt; is missing.
+
+* Indentation is created using the &lt;code&gt;:&lt;/code&gt; markup. This creates a definition list with no child element. {{phab|6521}}
+* This also occurs when &lt;code&gt;;&lt;/code&gt; is misused to bold a line. Use the wikimarkup &lt;code&gt;&lt;nowiki&gt;'''&lt;/nowiki&gt;&lt;/code&gt; to bold characters.
+
+== CSS validation ==
+The W3C also has a CSS validator, but this is less of an issue when editing Wikipedia pages, as CSS is an option and CSS validation errors typically are due to problems with skins, not problems in individual pages.
+
+== See also ==
+* Template {{tl|W3C validation}}
+
+== External links ==
+*[http://validator.w3.org/ The W3C Markup Validation Service]
+
+*[http://validator.w3.org/favelets.html The W3C Markup Validation Service— Favelets For The Validator]
+
+*[http://jigsaw.w3.org/css-validator/ The W3C CSS Validation Service]
+
+{{Wikipedia technical help|collapsed}}
+[[Category:Wikipedia editor help]]</text>
+      <sha1>ip58lou1icijdpawntmp7nlkuk34uxc</sha1>
+    </revision>
+    <revision>
+      <id>778057</id>
+      <parentid>778056</parentid>
+      <timestamp>2025-05-19T17:42:28Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>778057</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="9367" sha1="ns6p4n5malkogewuy4jiez7nr9rychp" xml:space="preserve">{{information page|H:MARKV}}
+The [[W3C Markup Validation Service]] lets editors check web pages for conformance to [[HTML]] and [[XHTML]] standards. It is helpful for catching minor problems such as duplicate section names or citation IDs. Although most major browsers will tolerate many of the errors, and will display a document successfully even if it contains errors, they may misbehave on documents that contain the errors: for example, they may go to the wrong section or citation if you click the mouse on a wikilink. Checking that a page contains valid HTML can thus fix these minor glitches while also increasing portability to unusual browsers.
+
+To check the HTML for a Wikipedia article ''XYZ'', visit the service's home page and enter the text "&lt;code&gt;&lt;span class="plainlinks"&gt;{{canonicalurl:XYZ}}&lt;/span&gt;&lt;/code&gt;".
+
+== Current issues ==
+{{shortcut|WP:HTMLBUGS}}
+These errors require developer fixes and should be ignored by editors. When checking for endemic errors, ensure a blank page is used, such as [[Special:BlankPage]].
+* {{W3C validation|Special:BlankPage}}
+
+Any page with an edit link:
+{{tracked|40385}}
+* &lt;code&gt;Bad value edit for attribute rel on element link: Keyword edit is not registered.&lt;/code&gt; This issue does not show for [[Special:BlankPage]].
+
+Any page with a file (image):
+* &lt;code&gt;Attribute srcset not allowed on element img at this point.&lt;/code&gt;
+:This is allowed per the [http://www.whatwg.org/specs/web-apps/current-work/multipage/embedded-content-1.html#the-img-element HTML Living Standard]. &lt;code&gt;srcset&lt;/code&gt; allows the MediaWiki software to render alternate images based on the device capabilities. The W3C HTML validator has not yet been updated to support this and throws an error.
+
+Any page with a nonstandard language code:
+* &lt;code&gt;Bad value &lt;var&gt;xxx&lt;/var&gt; for attribute lang on element a: The language subtag &lt;var&gt;xxx&lt;/var&gt; is not a valid ISO language part of a language tag.&lt;/code&gt;
+:Some Wikipedias use language codes that are not listed per RFC 5646. See the deprecated and nonstandard languages at [[m:List of Wikipedias|List of Wikipedias]]. See also [[Help:Interlanguage links]].
+
+== Valid HTML ==
+While current browsers are quite forgiving of HTML errors, invalid HTML can cause issues with accessibility, search engines and portability. Various browsers may handle errors differently, thus the display may differ.
+
+For most editors, creating valid HTML is not an issue. The [[MediaWiki]] software converts wikimarkup into valid HTML (with occasional bugs). The English Wikipedia has used [[HTML Tidy]], a now-outdated HTML4 library, to help ensure that common typos and mistakes are converted into proper HTML4.  However, Tidy could not fix all problems, there is no way to disable it for testing and validation will not show issues fixed by Tidy.  Furthermore, Tidy is [[:mw:Parsing/Replacing Tidy|slated for removal]] at Wikipedia, so previously overlooked errors need to be fixed.
+
+Portability issues occur when pages are exported to other wikis that do not use HTML Tidy and HTML errors are exposed.
+
+Editors who use referencing methods such as [[Wikipedia:Footnote3|Footnote3]] should always validate pages. Use of these templates make it very easy for an editor to create duplicate HTML ids, causing invalid HTML and in-page linking issues – this is probably the most common validation issue on Wikipedia. There is little or no error checking for manual templates.
+
+Editors who develop templates should always test various uses and ensure they render valid HTML.
+
+== Validation tools ==
+The [[World Wide Web Consortium|W3C]] is the main international standards organization for the internet— they provide the [[W3C Markup Validation Service]]. Simply copy the full URL of the page to be validated and paste in into the validator. There is also a [[:en:Favelet|Favelet]] that you can add to your browser bookmarks that will validate the current page.
+
+The WDG HTML Validator has a batch mode that allows a list of URLS to be validated.
+
+== Common diagnostics and how to fix them ==
+This section gives examples of diagnostics generated by the markup validation service, and suggests possible fixes. Diagnostics are by line and column of the generated HTML for the page. It may be helpful to obtain the HTML in order to understand the diagnostic. For example, if you using the [[Firefox]] browser, you can type control-U to see the HTML.
+
+=== ID already defined ===
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 630, Column 88'': '''ID "CITEREFBarker2008" already defined'''
+: &lt;code&gt;&lt;nowiki&gt;...&lt;/a&gt;&lt;/b&gt; &lt;span class="citation" id="&lt;/nowiki&gt;&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;C&lt;/strong&gt;&lt;/abbr&gt;ITEREFBarker2008"&gt;Barker, Janice (2008-0&lt;/code&gt;
+:: &lt;small&gt;An "id" is a unique identifier. Each time this attribute is used in a document it must have a different value. If you are using this attribute as a hook for style sheets it may be more appropriate to use classes (which group elements) than id (which are used to identify exactly one element).&lt;/small&gt;
+
+This error occurs if an article contains multiple invocations of the {{tl|citation}} template with the same author and year; the above error was prompted by an article that cited two different documents, both written by Barker in 2008. Disambiguate the citations by putting letters after the years (''e.g.'', {{para|year|2008a}}, {{para|year|2008b}}), or by using the [[Template:Citation#Anchored citations|&lt;code&gt;ref=&lt;/code&gt; parameter of {{tlf|citation}}]].
+
+HTML ids are only needed when using [[Help:Shortened footnotes|Shortened footnotes]] or [[WP:Parenthetical referencing|Parenthetical referencing]]. The {{tl|citation}} template always generates an HTML id; with [[Help:Citation Style 1|Citation Style 1]], this is optional and [[Help:Citation Style Vancouver|Citation Style Vancouver]] never creates ids.
+
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 93, Column 231'': '''ID "ref_1" already defined'''
+: &lt;code&gt;...ence plainlinks nourlexpansion" id="&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;r&lt;/strong&gt;&lt;/abbr&gt;&lt;nowiki&gt;ef_1"&gt;&lt;a href="#endnote_1"&gt;1&lt;/a&gt;&lt;/sup&gt;&lt;...&lt;/nowiki&gt;&lt;/code&gt;
+:: &lt;small&gt;An "id" is a unique identifier. Each time this attribute is used in a document it must have a different value. If you are using this attribute as a hook for style sheets it may be more appropriate to use classes (which group elements) than id (which are used to identify exactly one element).&lt;/small&gt;
+
+This similar diagnostic occurs if an article contains multiple invocations of {{tl|ref}} with the same ID, for example, two instances of "&lt;code&gt;&lt;nowiki&gt;{{ref|1|1}}&lt;/nowiki&gt;&lt;/code&gt;". To fix the problem, use different IDs. Templates using the &lt;var&gt;ref_&lt;/var&gt; id prefix include {{tl|ref}}, {{tl|ref label}}, {{tl|cref}} and {{tl|cref2}}.
+
+=== Missing alt text ===
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 135, Column 108'': '''required attribute "alt" not specified'''
+
+: &lt;code&gt;&lt;nowiki&gt;...,107" title="Hurricane Ida (2009)" /&lt;/nowiki&gt;&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;&amp;gt;&lt;/strong&gt;&lt;/abbr&gt;&lt;/code&gt;
+:: &lt;small&gt;The attribute given above is required for an element that you've used, but you have omitted it. For instance, in most HTML and XHTML document types the "type" attribute is required on the "script" element and the "alt" attribute is required for the "img" element....&lt;/small&gt;
+
+This diagnostic can result from use of the [[:mw:Extension:EasyTimeline/syntax|EasyTimeline]] extension, which does not support [[Wikipedia:Accessibility|accessibility]] and does not generate [[Wikipedia:Alternative text for images|alternative text]] for visually impaired readers. Such a problem can be fixed by redoing the timeline as text, as an image, or as an [[mw:Extension:ImageMap|image map]].
+
+=== Element dl is missing a required instance of child element dd ===
+
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Error Line 78, Column 5'': '''Element dl is missing a required instance of child element dd.'''
+: &lt;code&gt;&lt;/dl&lt;span style="color:red"&gt;&lt;strong&gt;&amp;gt;&lt;/strong&gt;&lt;/span&gt;&lt;/code&gt;
+:: &lt;small&gt;Content model for element dl:&lt;/small&gt;
+::: &lt;small&gt;Zero or more groups each consisting of one or more dt elements followed by one or more dd elements.&lt;/small&gt;
+
+Definition lists are created with the wikimarkup &lt;code&gt;;&lt;/code&gt; to define a definition list and &lt;code&gt;:&lt;/code&gt; to define the item in the list. This diagnostic results when the &lt;code&gt;:&lt;/code&gt; is missing.
+
+* Indentation is created using the &lt;code&gt;:&lt;/code&gt; markup. This creates a definition list with no child element. {{phab|6521}}
+* This also occurs when &lt;code&gt;;&lt;/code&gt; is misused to bold a line. Use the wikimarkup &lt;code&gt;&lt;nowiki&gt;'''&lt;/nowiki&gt;&lt;/code&gt; to bold characters.
+
+== CSS validation ==
+The W3C also has a CSS validator, but this is less of an issue when editing Wikipedia pages, as CSS is an option and CSS validation errors typically are due to problems with skins, not problems in individual pages.
+
+== See also ==
+* Template {{tl|W3C validation}}
+
+== External links ==
+*[http://validator.w3.org/ The W3C Markup Validation Service]
+
+*[http://validator.w3.org/favelets.html The W3C Markup Validation Service— Favelets For The Validator]
+
+*[http://jigsaw.w3.org/css-validator/ The W3C CSS Validation Service]
+
+{{Wikipedia technical help|collapsed}}
+[[Category:Wikipedia editor help]]</text>
+      <sha1>ns6p4n5malkogewuy4jiez7nr9rychp</sha1>
+    </revision>
+    <revision>
+      <id>778058</id>
+      <parentid>778057</parentid>
+      <timestamp>2025-05-19T18:33:51Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>778058</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="9379" sha1="mptz5tyqzwnfi04b6m7yzzmc6q140wu" xml:space="preserve">{{information page|H:MARKV}}
+The [[W3C Markup Validation Service]] lets editors check web pages for conformance to [[HTML]] and [[XHTML]] standards. It is helpful for catching minor problems such as duplicate section names or citation IDs. Although most major browsers will tolerate many of the errors, and will display a document successfully even if it contains errors, they may misbehave on documents that contain the errors: for example, they may go to the wrong section or citation if you click the mouse on a wikilink. Checking that a page contains valid HTML can thus fix these minor glitches while also increasing portability to unusual browsers.
+
+To check the HTML for a Wikipedia article ''XYZ'', visit the service's home page and enter the text "&lt;code&gt;&lt;span class="plainlinks"&gt;{{canonicalurl:XYZ}}&lt;/span&gt;&lt;/code&gt;".
+
+== Current issues ==
+{{shortcut|WP:HTMLBUGS}}
+These errors require developer fixes and should be ignored by editors. When checking for endemic errors, ensure a blank page is used, such as [[Special:BlankPage]].
+* {{W3C validation|Special:BlankPage}}
+
+Any page with an edit link:
+{{tracked|40385}}
+* &lt;code&gt;Bad value edit for attribute rel on element link: Keyword edit is not registered.&lt;/code&gt; This issue does not show for [[Special:BlankPage]].
+
+Any page with a file (image):
+* &lt;code&gt;Attribute srcset not allowed on element img at this point.&lt;/code&gt;
+:This is allowed per the [http://www.whatwg.org/specs/web-apps/current-work/multipage/embedded-content-1.html#the-img-element HTML Living Standard]. &lt;code&gt;srcset&lt;/code&gt; allows the MediaWiki software to render alternate images based on the device capabilities. The W3C HTML validator has not yet been updated to support this and throws an error.
+
+Any page with a nonstandard language code:
+* &lt;code&gt;Bad value &lt;var&gt;xxx&lt;/var&gt; for attribute lang on element a: The language subtag &lt;var&gt;xxx&lt;/var&gt; is not a valid ISO language part of a language tag.&lt;/code&gt;
+:Some Wikipedias use language codes that are not listed per RFC 5646. See the deprecated and nonstandard languages at [[m:List of Wikipedias|List of Wikipedias]]. See also [[Help:Interlanguage links]].
+
+== Valid HTML ==
+While current browsers are quite forgiving of HTML errors, invalid HTML can cause issues with accessibility, search engines and portability. Various browsers may handle errors differently, thus the display may differ.
+
+For most editors, creating valid HTML is not an issue. The [[MediaWiki]] software converts wikimarkup into valid HTML (with occasional bugs). The English Wikipedia has used [[HTML Tidy]], a now-outdated HTML4 library, to help ensure that common typos and mistakes are converted into proper HTML4.  However, Tidy could not fix all problems, there is no way to disable it for testing and validation will not show issues fixed by Tidy.  Furthermore, Tidy is [[:mw:Parsing/Replacing Tidy|slated for removal]] at Wikipedia, so previously overlooked errors need to be fixed.
+
+Portability issues occur when pages are exported to other wikis that do not use HTML Tidy and HTML errors are exposed.
+
+Editors who use referencing methods such as [[Wikipedia:Footnote3|Footnote3]] should always validate pages. Use of these templates make it very easy for an editor to create duplicate HTML ids, causing invalid HTML and in-page linking issues – this is probably the most common validation issue on Wikipedia. There is little or no error checking for manual templates.
+
+Editors who develop templates should always test various uses and ensure they render valid HTML.
+
+== Validation tools ==
+The [[World Wide Web Consortium|W3C]] is the main international standards organization for the internet— they provide the [[W3C Markup Validation Service]]. Simply copy the full URL of the page to be validated and paste in into the validator. There is also a [[:en:Favelet|Favelet]] that you can add to your browser bookmarks that will validate the current page.
+
+The WDG HTML Validator has a batch mode that allows a list of URLS to be validated.
+
+== Common diagnostics and how to fix them ==
+This section gives examples of diagnostics generated by the markup validation service, and suggests possible fixes. Diagnostics are by line and column of the generated HTML for the page. It may be helpful to obtain the HTML in order to understand the diagnostic. For example, if you using the [[:en:Firefox|Firefox]] browser, you can type control-U to see the HTML.
+
+=== ID already defined ===
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 630, Column 88'': '''ID "CITEREFBarker2008" already defined'''
+: &lt;code&gt;&lt;nowiki&gt;...&lt;/a&gt;&lt;/b&gt; &lt;span class="citation" id="&lt;/nowiki&gt;&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;C&lt;/strong&gt;&lt;/abbr&gt;ITEREFBarker2008"&gt;Barker, Janice (2008-0&lt;/code&gt;
+:: &lt;small&gt;An "id" is a unique identifier. Each time this attribute is used in a document it must have a different value. If you are using this attribute as a hook for style sheets it may be more appropriate to use classes (which group elements) than id (which are used to identify exactly one element).&lt;/small&gt;
+
+This error occurs if an article contains multiple invocations of the {{tl|citation}} template with the same author and year; the above error was prompted by an article that cited two different documents, both written by Barker in 2008. Disambiguate the citations by putting letters after the years (''e.g.'', {{para|year|2008a}}, {{para|year|2008b}}), or by using the [[Template:Citation#Anchored citations|&lt;code&gt;ref=&lt;/code&gt; parameter of {{tlf|citation}}]].
+
+HTML ids are only needed when using [[Help:Shortened footnotes|Shortened footnotes]] or [[WP:Parenthetical referencing|Parenthetical referencing]]. The {{tl|citation}} template always generates an HTML id; with [[Help:Citation Style 1|Citation Style 1]], this is optional and [[Help:Citation Style Vancouver|Citation Style Vancouver]] never creates ids.
+
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 93, Column 231'': '''ID "ref_1" already defined'''
+: &lt;code&gt;...ence plainlinks nourlexpansion" id="&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;r&lt;/strong&gt;&lt;/abbr&gt;&lt;nowiki&gt;ef_1"&gt;&lt;a href="#endnote_1"&gt;1&lt;/a&gt;&lt;/sup&gt;&lt;...&lt;/nowiki&gt;&lt;/code&gt;
+:: &lt;small&gt;An "id" is a unique identifier. Each time this attribute is used in a document it must have a different value. If you are using this attribute as a hook for style sheets it may be more appropriate to use classes (which group elements) than id (which are used to identify exactly one element).&lt;/small&gt;
+
+This similar diagnostic occurs if an article contains multiple invocations of {{tl|ref}} with the same ID, for example, two instances of "&lt;code&gt;&lt;nowiki&gt;{{ref|1|1}}&lt;/nowiki&gt;&lt;/code&gt;". To fix the problem, use different IDs. Templates using the &lt;var&gt;ref_&lt;/var&gt; id prefix include {{tl|ref}}, {{tl|ref label}}, {{tl|cref}} and {{tl|cref2}}.
+
+=== Missing alt text ===
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 135, Column 108'': '''required attribute "alt" not specified'''
+
+: &lt;code&gt;&lt;nowiki&gt;...,107" title="Hurricane Ida (2009)" /&lt;/nowiki&gt;&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;&amp;gt;&lt;/strong&gt;&lt;/abbr&gt;&lt;/code&gt;
+:: &lt;small&gt;The attribute given above is required for an element that you've used, but you have omitted it. For instance, in most HTML and XHTML document types the "type" attribute is required on the "script" element and the "alt" attribute is required for the "img" element....&lt;/small&gt;
+
+This diagnostic can result from use of the [[:mw:Extension:EasyTimeline/syntax|EasyTimeline]] extension, which does not support [[Wikipedia:Accessibility|accessibility]] and does not generate [[Wikipedia:Alternative text for images|alternative text]] for visually impaired readers. Such a problem can be fixed by redoing the timeline as text, as an image, or as an [[mw:Extension:ImageMap|image map]].
+
+=== Element dl is missing a required instance of child element dd ===
+
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Error Line 78, Column 5'': '''Element dl is missing a required instance of child element dd.'''
+: &lt;code&gt;&lt;/dl&lt;span style="color:red"&gt;&lt;strong&gt;&amp;gt;&lt;/strong&gt;&lt;/span&gt;&lt;/code&gt;
+:: &lt;small&gt;Content model for element dl:&lt;/small&gt;
+::: &lt;small&gt;Zero or more groups each consisting of one or more dt elements followed by one or more dd elements.&lt;/small&gt;
+
+Definition lists are created with the wikimarkup &lt;code&gt;;&lt;/code&gt; to define a definition list and &lt;code&gt;:&lt;/code&gt; to define the item in the list. This diagnostic results when the &lt;code&gt;:&lt;/code&gt; is missing.
+
+* Indentation is created using the &lt;code&gt;:&lt;/code&gt; markup. This creates a definition list with no child element. {{phab|6521}}
+* This also occurs when &lt;code&gt;;&lt;/code&gt; is misused to bold a line. Use the wikimarkup &lt;code&gt;&lt;nowiki&gt;'''&lt;/nowiki&gt;&lt;/code&gt; to bold characters.
+
+== CSS validation ==
+The W3C also has a CSS validator, but this is less of an issue when editing Wikipedia pages, as CSS is an option and CSS validation errors typically are due to problems with skins, not problems in individual pages.
+
+== See also ==
+* Template {{tl|W3C validation}}
+
+== External links ==
+*[http://validator.w3.org/ The W3C Markup Validation Service]
+
+*[http://validator.w3.org/favelets.html The W3C Markup Validation Service— Favelets For The Validator]
+
+*[http://jigsaw.w3.org/css-validator/ The W3C CSS Validation Service]
+
+{{Wikipedia technical help|collapsed}}
+[[Category:Wikipedia editor help]]</text>
+      <sha1>mptz5tyqzwnfi04b6m7yzzmc6q140wu</sha1>
+    </revision>
+    <revision>
+      <id>778059</id>
+      <parentid>778058</parentid>
+      <timestamp>2025-05-20T19:31:11Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>778059</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="9388" sha1="d1zsu49pcxm4uoz1dscom8p3i0rj785" xml:space="preserve">{{information page|H:MARKV}}
+The [[W3C Markup Validation Service]] lets editors check web pages for conformance to [[:en:HTML|HTML]] and [[XHTML]] standards. It is helpful for catching minor problems such as duplicate section names or citation IDs. Although most major browsers will tolerate many of the errors, and will display a document successfully even if it contains errors, they may misbehave on documents that contain the errors: for example, they may go to the wrong section or citation if you click the mouse on a wikilink. Checking that a page contains valid HTML can thus fix these minor glitches while also increasing portability to unusual browsers.
+
+To check the HTML for a Wikipedia article ''XYZ'', visit the service's home page and enter the text "&lt;code&gt;&lt;span class="plainlinks"&gt;{{canonicalurl:XYZ}}&lt;/span&gt;&lt;/code&gt;".
+
+== Current issues ==
+{{shortcut|WP:HTMLBUGS}}
+These errors require developer fixes and should be ignored by editors. When checking for endemic errors, ensure a blank page is used, such as [[Special:BlankPage]].
+* {{W3C validation|Special:BlankPage}}
+
+Any page with an edit link:
+{{tracked|40385}}
+* &lt;code&gt;Bad value edit for attribute rel on element link: Keyword edit is not registered.&lt;/code&gt; This issue does not show for [[Special:BlankPage]].
+
+Any page with a file (image):
+* &lt;code&gt;Attribute srcset not allowed on element img at this point.&lt;/code&gt;
+:This is allowed per the [http://www.whatwg.org/specs/web-apps/current-work/multipage/embedded-content-1.html#the-img-element HTML Living Standard]. &lt;code&gt;srcset&lt;/code&gt; allows the MediaWiki software to render alternate images based on the device capabilities. The W3C HTML validator has not yet been updated to support this and throws an error.
+
+Any page with a nonstandard language code:
+* &lt;code&gt;Bad value &lt;var&gt;xxx&lt;/var&gt; for attribute lang on element a: The language subtag &lt;var&gt;xxx&lt;/var&gt; is not a valid ISO language part of a language tag.&lt;/code&gt;
+:Some Wikipedias use language codes that are not listed per RFC 5646. See the deprecated and nonstandard languages at [[m:List of Wikipedias|List of Wikipedias]]. See also [[Help:Interlanguage links]].
+
+== Valid HTML ==
+While current browsers are quite forgiving of HTML errors, invalid HTML can cause issues with accessibility, search engines and portability. Various browsers may handle errors differently, thus the display may differ.
+
+For most editors, creating valid HTML is not an issue. The [[MediaWiki]] software converts wikimarkup into valid HTML (with occasional bugs). The English Wikipedia has used [[HTML Tidy]], a now-outdated HTML4 library, to help ensure that common typos and mistakes are converted into proper HTML4.  However, Tidy could not fix all problems, there is no way to disable it for testing and validation will not show issues fixed by Tidy.  Furthermore, Tidy is [[:mw:Parsing/Replacing Tidy|slated for removal]] at Wikipedia, so previously overlooked errors need to be fixed.
+
+Portability issues occur when pages are exported to other wikis that do not use HTML Tidy and HTML errors are exposed.
+
+Editors who use referencing methods such as [[Wikipedia:Footnote3|Footnote3]] should always validate pages. Use of these templates make it very easy for an editor to create duplicate HTML ids, causing invalid HTML and in-page linking issues – this is probably the most common validation issue on Wikipedia. There is little or no error checking for manual templates.
+
+Editors who develop templates should always test various uses and ensure they render valid HTML.
+
+== Validation tools ==
+The [[World Wide Web Consortium|W3C]] is the main international standards organization for the internet— they provide the [[W3C Markup Validation Service]]. Simply copy the full URL of the page to be validated and paste in into the validator. There is also a [[:en:Favelet|Favelet]] that you can add to your browser bookmarks that will validate the current page.
+
+The WDG HTML Validator has a batch mode that allows a list of URLS to be validated.
+
+== Common diagnostics and how to fix them ==
+This section gives examples of diagnostics generated by the markup validation service, and suggests possible fixes. Diagnostics are by line and column of the generated HTML for the page. It may be helpful to obtain the HTML in order to understand the diagnostic. For example, if you using the [[:en:Firefox|Firefox]] browser, you can type control-U to see the HTML.
+
+=== ID already defined ===
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 630, Column 88'': '''ID "CITEREFBarker2008" already defined'''
+: &lt;code&gt;&lt;nowiki&gt;...&lt;/a&gt;&lt;/b&gt; &lt;span class="citation" id="&lt;/nowiki&gt;&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;C&lt;/strong&gt;&lt;/abbr&gt;ITEREFBarker2008"&gt;Barker, Janice (2008-0&lt;/code&gt;
+:: &lt;small&gt;An "id" is a unique identifier. Each time this attribute is used in a document it must have a different value. If you are using this attribute as a hook for style sheets it may be more appropriate to use classes (which group elements) than id (which are used to identify exactly one element).&lt;/small&gt;
+
+This error occurs if an article contains multiple invocations of the {{tl|citation}} template with the same author and year; the above error was prompted by an article that cited two different documents, both written by Barker in 2008. Disambiguate the citations by putting letters after the years (''e.g.'', {{para|year|2008a}}, {{para|year|2008b}}), or by using the [[Template:Citation#Anchored citations|&lt;code&gt;ref=&lt;/code&gt; parameter of {{tlf|citation}}]].
+
+HTML ids are only needed when using [[Help:Shortened footnotes|Shortened footnotes]] or [[WP:Parenthetical referencing|Parenthetical referencing]]. The {{tl|citation}} template always generates an HTML id; with [[Help:Citation Style 1|Citation Style 1]], this is optional and [[Help:Citation Style Vancouver|Citation Style Vancouver]] never creates ids.
+
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 93, Column 231'': '''ID "ref_1" already defined'''
+: &lt;code&gt;...ence plainlinks nourlexpansion" id="&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;r&lt;/strong&gt;&lt;/abbr&gt;&lt;nowiki&gt;ef_1"&gt;&lt;a href="#endnote_1"&gt;1&lt;/a&gt;&lt;/sup&gt;&lt;...&lt;/nowiki&gt;&lt;/code&gt;
+:: &lt;small&gt;An "id" is a unique identifier. Each time this attribute is used in a document it must have a different value. If you are using this attribute as a hook for style sheets it may be more appropriate to use classes (which group elements) than id (which are used to identify exactly one element).&lt;/small&gt;
+
+This similar diagnostic occurs if an article contains multiple invocations of {{tl|ref}} with the same ID, for example, two instances of "&lt;code&gt;&lt;nowiki&gt;{{ref|1|1}}&lt;/nowiki&gt;&lt;/code&gt;". To fix the problem, use different IDs. Templates using the &lt;var&gt;ref_&lt;/var&gt; id prefix include {{tl|ref}}, {{tl|ref label}}, {{tl|cref}} and {{tl|cref2}}.
+
+=== Missing alt text ===
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 135, Column 108'': '''required attribute "alt" not specified'''
+
+: &lt;code&gt;&lt;nowiki&gt;...,107" title="Hurricane Ida (2009)" /&lt;/nowiki&gt;&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;&amp;gt;&lt;/strong&gt;&lt;/abbr&gt;&lt;/code&gt;
+:: &lt;small&gt;The attribute given above is required for an element that you've used, but you have omitted it. For instance, in most HTML and XHTML document types the "type" attribute is required on the "script" element and the "alt" attribute is required for the "img" element....&lt;/small&gt;
+
+This diagnostic can result from use of the [[:mw:Extension:EasyTimeline/syntax|EasyTimeline]] extension, which does not support [[Wikipedia:Accessibility|accessibility]] and does not generate [[Wikipedia:Alternative text for images|alternative text]] for visually impaired readers. Such a problem can be fixed by redoing the timeline as text, as an image, or as an [[mw:Extension:ImageMap|image map]].
+
+=== Element dl is missing a required instance of child element dd ===
+
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Error Line 78, Column 5'': '''Element dl is missing a required instance of child element dd.'''
+: &lt;code&gt;&lt;/dl&lt;span style="color:red"&gt;&lt;strong&gt;&amp;gt;&lt;/strong&gt;&lt;/span&gt;&lt;/code&gt;
+:: &lt;small&gt;Content model for element dl:&lt;/small&gt;
+::: &lt;small&gt;Zero or more groups each consisting of one or more dt elements followed by one or more dd elements.&lt;/small&gt;
+
+Definition lists are created with the wikimarkup &lt;code&gt;;&lt;/code&gt; to define a definition list and &lt;code&gt;:&lt;/code&gt; to define the item in the list. This diagnostic results when the &lt;code&gt;:&lt;/code&gt; is missing.
+
+* Indentation is created using the &lt;code&gt;:&lt;/code&gt; markup. This creates a definition list with no child element. {{phab|6521}}
+* This also occurs when &lt;code&gt;;&lt;/code&gt; is misused to bold a line. Use the wikimarkup &lt;code&gt;&lt;nowiki&gt;'''&lt;/nowiki&gt;&lt;/code&gt; to bold characters.
+
+== CSS validation ==
+The W3C also has a CSS validator, but this is less of an issue when editing Wikipedia pages, as CSS is an option and CSS validation errors typically are due to problems with skins, not problems in individual pages.
+
+== See also ==
+* Template {{tl|W3C validation}}
+
+== External links ==
+*[http://validator.w3.org/ The W3C Markup Validation Service]
+
+*[http://validator.w3.org/favelets.html The W3C Markup Validation Service— Favelets For The Validator]
+
+*[http://jigsaw.w3.org/css-validator/ The W3C CSS Validation Service]
+
+{{Wikipedia technical help|collapsed}}
+[[Category:Wikipedia editor help]]</text>
+      <sha1>d1zsu49pcxm4uoz1dscom8p3i0rj785</sha1>
+    </revision>
+    <revision>
+      <id>778060</id>
+      <parentid>778059</parentid>
+      <timestamp>2025-05-20T19:33:23Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>778060</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="9402" sha1="ff118oh6dtm0o2qd5spnvvbsfj6i2tx" xml:space="preserve">{{information page|H:MARKV}}
+The [[W3C Markup Validation Service]] lets editors check web pages for conformance to [[:en:HTML|HTML]] and [[XHTML]] standards. It is helpful for catching minor problems such as duplicate section names or citation IDs. Although most major browsers will tolerate many of the errors, and will display a document successfully even if it contains errors, they may misbehave on documents that contain the errors: for example, they may go to the wrong section or citation if you click the mouse on a wikilink. Checking that a page contains valid HTML can thus fix these minor glitches while also increasing portability to unusual browsers.
+
+To check the HTML for a Wikipedia article ''XYZ'', visit the service's home page and enter the text "&lt;code&gt;&lt;span class="plainlinks"&gt;{{canonicalurl:XYZ}}&lt;/span&gt;&lt;/code&gt;".
+
+== Current issues ==
+{{shortcut|WP:HTMLBUGS}}
+These errors require developer fixes and should be ignored by editors. When checking for endemic errors, ensure a blank page is used, such as [[Special:BlankPage]].
+* {{W3C validation|Special:BlankPage}}
+
+Any page with an edit link:
+{{tracked|40385}}
+* &lt;code&gt;Bad value edit for attribute rel on element link: Keyword edit is not registered.&lt;/code&gt; This issue does not show for [[Special:BlankPage]].
+
+Any page with a file (image):
+* &lt;code&gt;Attribute srcset not allowed on element img at this point.&lt;/code&gt;
+:This is allowed per the [http://www.whatwg.org/specs/web-apps/current-work/multipage/embedded-content-1.html#the-img-element HTML Living Standard]. &lt;code&gt;srcset&lt;/code&gt; allows the MediaWiki software to render alternate images based on the device capabilities. The W3C HTML validator has not yet been updated to support this and throws an error.
+
+Any page with a nonstandard language code:
+* &lt;code&gt;Bad value &lt;var&gt;xxx&lt;/var&gt; for attribute lang on element a: The language subtag &lt;var&gt;xxx&lt;/var&gt; is not a valid ISO language part of a language tag.&lt;/code&gt;
+:Some Wikipedias use language codes that are not listed per RFC 5646. See the deprecated and nonstandard languages at [[m:List of Wikipedias|List of Wikipedias]]. See also [[Help:Interlanguage links]].
+
+== Valid HTML ==
+While current browsers are quite forgiving of HTML errors, invalid HTML can cause issues with accessibility, search engines and portability. Various browsers may handle errors differently, thus the display may differ.
+
+For most editors, creating valid HTML is not an issue. The [[MediaWiki]] software converts wikimarkup into valid HTML (with occasional bugs). The English Wikipedia has used [[:en:HTML Tidy|HTML Tidy]], a now-outdated HTML4 library, to help ensure that common typos and mistakes are converted into proper HTML4.  However, Tidy could not fix all problems, there is no way to disable it for testing and validation will not show issues fixed by Tidy.  Furthermore, Tidy is [[:mw:Parsing/Replacing Tidy|slated for removal]] at Wikipedia, so previously overlooked errors need to be fixed.
+
+Portability issues occur when pages are exported to other wikis that do not use HTML Tidy and HTML errors are exposed.
+
+Editors who use referencing methods such as [[Wikipedia:Footnote3|Footnote3]] should always validate pages. Use of these templates make it very easy for an editor to create duplicate HTML ids, causing invalid HTML and in-page linking issues – this is probably the most common validation issue on Wikipedia. There is little or no error checking for manual templates.
+
+Editors who develop templates should always test various uses and ensure they render valid HTML.
+
+== Validation tools ==
+The [[World Wide Web Consortium|W3C]] is the main international standards organization for the internet— they provide the [[W3C Markup Validation Service]]. Simply copy the full URL of the page to be validated and paste in into the validator. There is also a [[:en:Favelet|Favelet]] that you can add to your browser bookmarks that will validate the current page.
+
+The WDG HTML Validator has a batch mode that allows a list of URLS to be validated.
+
+== Common diagnostics and how to fix them ==
+This section gives examples of diagnostics generated by the markup validation service, and suggests possible fixes. Diagnostics are by line and column of the generated HTML for the page. It may be helpful to obtain the HTML in order to understand the diagnostic. For example, if you using the [[:en:Firefox|Firefox]] browser, you can type control-U to see the HTML.
+
+=== ID already defined ===
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 630, Column 88'': '''ID "CITEREFBarker2008" already defined'''
+: &lt;code&gt;&lt;nowiki&gt;...&lt;/a&gt;&lt;/b&gt; &lt;span class="citation" id="&lt;/nowiki&gt;&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;C&lt;/strong&gt;&lt;/abbr&gt;ITEREFBarker2008"&gt;Barker, Janice (2008-0&lt;/code&gt;
+:: &lt;small&gt;An "id" is a unique identifier. Each time this attribute is used in a document it must have a different value. If you are using this attribute as a hook for style sheets it may be more appropriate to use classes (which group elements) than id (which are used to identify exactly one element).&lt;/small&gt;
+
+This error occurs if an article contains multiple invocations of the {{tl|citation}} template with the same author and year; the above error was prompted by an article that cited two different documents, both written by Barker in 2008. Disambiguate the citations by putting letters after the years (''e.g.'', {{para|year|2008a}}, {{para|year|2008b}}), or by using the [[Template:Citation#Anchored citations|&lt;code&gt;ref=&lt;/code&gt; parameter of {{tlf|citation}}]].
+
+HTML ids are only needed when using [[Help:Shortened footnotes|Shortened footnotes]] or [[WP:Parenthetical referencing|Parenthetical referencing]]. The {{tl|citation}} template always generates an HTML id; with [[Help:Citation Style 1|Citation Style 1]], this is optional and [[Help:Citation Style Vancouver|Citation Style Vancouver]] never creates ids.
+
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 93, Column 231'': '''ID "ref_1" already defined'''
+: &lt;code&gt;...ence plainlinks nourlexpansion" id="&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;r&lt;/strong&gt;&lt;/abbr&gt;&lt;nowiki&gt;ef_1"&gt;&lt;a href="#endnote_1"&gt;1&lt;/a&gt;&lt;/sup&gt;&lt;...&lt;/nowiki&gt;&lt;/code&gt;
+:: &lt;small&gt;An "id" is a unique identifier. Each time this attribute is used in a document it must have a different value. If you are using this attribute as a hook for style sheets it may be more appropriate to use classes (which group elements) than id (which are used to identify exactly one element).&lt;/small&gt;
+
+This similar diagnostic occurs if an article contains multiple invocations of {{tl|ref}} with the same ID, for example, two instances of "&lt;code&gt;&lt;nowiki&gt;{{ref|1|1}}&lt;/nowiki&gt;&lt;/code&gt;". To fix the problem, use different IDs. Templates using the &lt;var&gt;ref_&lt;/var&gt; id prefix include {{tl|ref}}, {{tl|ref label}}, {{tl|cref}} and {{tl|cref2}}.
+
+=== Missing alt text ===
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 135, Column 108'': '''required attribute "alt" not specified'''
+
+: &lt;code&gt;&lt;nowiki&gt;...,107" title="Hurricane Ida (2009)" /&lt;/nowiki&gt;&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;&amp;gt;&lt;/strong&gt;&lt;/abbr&gt;&lt;/code&gt;
+:: &lt;small&gt;The attribute given above is required for an element that you've used, but you have omitted it. For instance, in most HTML and XHTML document types the "type" attribute is required on the "script" element and the "alt" attribute is required for the "img" element....&lt;/small&gt;
+
+This diagnostic can result from use of the [[:mw:Extension:EasyTimeline/syntax|EasyTimeline]] extension, which does not support [[Wikipedia:Accessibility|accessibility]] and does not generate [[Wikipedia:Alternative text for images|alternative text]] for visually impaired readers. Such a problem can be fixed by redoing the timeline as text, as an image, or as an [[mw:Extension:ImageMap|image map]].
+
+=== Element dl is missing a required instance of child element dd ===
+
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Error Line 78, Column 5'': '''Element dl is missing a required instance of child element dd.'''
+: &lt;code&gt;&lt;/dl&lt;span style="color:red"&gt;&lt;strong&gt;&amp;gt;&lt;/strong&gt;&lt;/span&gt;&lt;/code&gt;
+:: &lt;small&gt;Content model for element dl:&lt;/small&gt;
+::: &lt;small&gt;Zero or more groups each consisting of one or more dt elements followed by one or more dd elements.&lt;/small&gt;
+
+Definition lists are created with the wikimarkup &lt;code&gt;;&lt;/code&gt; to define a definition list and &lt;code&gt;:&lt;/code&gt; to define the item in the list. This diagnostic results when the &lt;code&gt;:&lt;/code&gt; is missing.
+
+* Indentation is created using the &lt;code&gt;:&lt;/code&gt; markup. This creates a definition list with no child element. {{phab|6521}}
+* This also occurs when &lt;code&gt;;&lt;/code&gt; is misused to bold a line. Use the wikimarkup &lt;code&gt;&lt;nowiki&gt;'''&lt;/nowiki&gt;&lt;/code&gt; to bold characters.
+
+== CSS validation ==
+The W3C also has a CSS validator, but this is less of an issue when editing Wikipedia pages, as CSS is an option and CSS validation errors typically are due to problems with skins, not problems in individual pages.
+
+== See also ==
+* Template {{tl|W3C validation}}
+
+== External links ==
+*[http://validator.w3.org/ The W3C Markup Validation Service]
+
+*[http://validator.w3.org/favelets.html The W3C Markup Validation Service— Favelets For The Validator]
+
+*[http://jigsaw.w3.org/css-validator/ The W3C CSS Validation Service]
+
+{{Wikipedia technical help|collapsed}}
+[[Category:Wikipedia editor help]]</text>
+      <sha1>ff118oh6dtm0o2qd5spnvvbsfj6i2tx</sha1>
+    </revision>
+    <revision>
+      <id>778061</id>
+      <parentid>778060</parentid>
+      <timestamp>2025-05-23T03:05:42Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>778061</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="9416" sha1="16z12tzf6zcrfn9ccqs3wjc0lw71id5" xml:space="preserve">{{information page|H:MARKV}}
+The [[W3C Markup Validation Service]] lets editors check web pages for conformance to [[:en:HTML|HTML]] and [[XHTML]] standards. It is helpful for catching minor problems such as duplicate section names or citation IDs. Although most major browsers will tolerate many of the errors, and will display a document successfully even if it contains errors, they may misbehave on documents that contain the errors: for example, they may go to the wrong section or citation if you click the mouse on a wikilink. Checking that a page contains valid HTML can thus fix these minor glitches while also increasing portability to unusual browsers.
+
+To check the HTML for a Wikipedia article ''XYZ'', visit the service's home page and enter the text "&lt;code&gt;&lt;span class="plainlinks"&gt;{{canonicalurl:XYZ}}&lt;/span&gt;&lt;/code&gt;".
+
+== Current issues ==
+{{shortcut|WP:HTMLBUGS}}
+These errors require developer fixes and should be ignored by editors. When checking for endemic errors, ensure a blank page is used, such as [[Special:BlankPage]].
+* {{W3C validation|Special:BlankPage}}
+
+Any page with an edit link:
+{{tracked|40385}}
+* &lt;code&gt;Bad value edit for attribute rel on element link: Keyword edit is not registered.&lt;/code&gt; This issue does not show for [[Special:BlankPage]].
+
+Any page with a file (image):
+* &lt;code&gt;Attribute srcset not allowed on element img at this point.&lt;/code&gt;
+:This is allowed per the [http://www.whatwg.org/specs/web-apps/current-work/multipage/embedded-content-1.html#the-img-element HTML Living Standard]. &lt;code&gt;srcset&lt;/code&gt; allows the MediaWiki software to render alternate images based on the device capabilities. The W3C HTML validator has not yet been updated to support this and throws an error.
+
+Any page with a nonstandard language code:
+* &lt;code&gt;Bad value &lt;var&gt;xxx&lt;/var&gt; for attribute lang on element a: The language subtag &lt;var&gt;xxx&lt;/var&gt; is not a valid ISO language part of a language tag.&lt;/code&gt;
+:Some Wikipedias use language codes that are not listed per RFC 5646. See the deprecated and nonstandard languages at [[m:List of Wikipedias|List of Wikipedias]]. See also [[Help:Interlanguage links]].
+
+== Valid HTML ==
+While current browsers are quite forgiving of HTML errors, invalid HTML can cause issues with accessibility, search engines and portability. Various browsers may handle errors differently, thus the display may differ.
+
+For most editors, creating valid HTML is not an issue. The [[:en:MediaWiki|MediaWiki]] software converts wikimarkup into valid HTML (with occasional bugs). The English Wikipedia has used [[:en:HTML Tidy|HTML Tidy]], a now-outdated HTML4 library, to help ensure that common typos and mistakes are converted into proper HTML4.  However, Tidy could not fix all problems, there is no way to disable it for testing and validation will not show issues fixed by Tidy.  Furthermore, Tidy is [[:mw:Parsing/Replacing Tidy|slated for removal]] at Wikipedia, so previously overlooked errors need to be fixed.
+
+Portability issues occur when pages are exported to other wikis that do not use HTML Tidy and HTML errors are exposed.
+
+Editors who use referencing methods such as [[Wikipedia:Footnote3|Footnote3]] should always validate pages. Use of these templates make it very easy for an editor to create duplicate HTML ids, causing invalid HTML and in-page linking issues – this is probably the most common validation issue on Wikipedia. There is little or no error checking for manual templates.
+
+Editors who develop templates should always test various uses and ensure they render valid HTML.
+
+== Validation tools ==
+The [[World Wide Web Consortium|W3C]] is the main international standards organization for the internet— they provide the [[W3C Markup Validation Service]]. Simply copy the full URL of the page to be validated and paste in into the validator. There is also a [[:en:Favelet|Favelet]] that you can add to your browser bookmarks that will validate the current page.
+
+The WDG HTML Validator has a batch mode that allows a list of URLS to be validated.
+
+== Common diagnostics and how to fix them ==
+This section gives examples of diagnostics generated by the markup validation service, and suggests possible fixes. Diagnostics are by line and column of the generated HTML for the page. It may be helpful to obtain the HTML in order to understand the diagnostic. For example, if you using the [[:en:Firefox|Firefox]] browser, you can type control-U to see the HTML.
+
+=== ID already defined ===
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 630, Column 88'': '''ID "CITEREFBarker2008" already defined'''
+: &lt;code&gt;&lt;nowiki&gt;...&lt;/a&gt;&lt;/b&gt; &lt;span class="citation" id="&lt;/nowiki&gt;&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;C&lt;/strong&gt;&lt;/abbr&gt;ITEREFBarker2008"&gt;Barker, Janice (2008-0&lt;/code&gt;
+:: &lt;small&gt;An "id" is a unique identifier. Each time this attribute is used in a document it must have a different value. If you are using this attribute as a hook for style sheets it may be more appropriate to use classes (which group elements) than id (which are used to identify exactly one element).&lt;/small&gt;
+
+This error occurs if an article contains multiple invocations of the {{tl|citation}} template with the same author and year; the above error was prompted by an article that cited two different documents, both written by Barker in 2008. Disambiguate the citations by putting letters after the years (''e.g.'', {{para|year|2008a}}, {{para|year|2008b}}), or by using the [[Template:Citation#Anchored citations|&lt;code&gt;ref=&lt;/code&gt; parameter of {{tlf|citation}}]].
+
+HTML ids are only needed when using [[Help:Shortened footnotes|Shortened footnotes]] or [[WP:Parenthetical referencing|Parenthetical referencing]]. The {{tl|citation}} template always generates an HTML id; with [[Help:Citation Style 1|Citation Style 1]], this is optional and [[Help:Citation Style Vancouver|Citation Style Vancouver]] never creates ids.
+
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 93, Column 231'': '''ID "ref_1" already defined'''
+: &lt;code&gt;...ence plainlinks nourlexpansion" id="&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;r&lt;/strong&gt;&lt;/abbr&gt;&lt;nowiki&gt;ef_1"&gt;&lt;a href="#endnote_1"&gt;1&lt;/a&gt;&lt;/sup&gt;&lt;...&lt;/nowiki&gt;&lt;/code&gt;
+:: &lt;small&gt;An "id" is a unique identifier. Each time this attribute is used in a document it must have a different value. If you are using this attribute as a hook for style sheets it may be more appropriate to use classes (which group elements) than id (which are used to identify exactly one element).&lt;/small&gt;
+
+This similar diagnostic occurs if an article contains multiple invocations of {{tl|ref}} with the same ID, for example, two instances of "&lt;code&gt;&lt;nowiki&gt;{{ref|1|1}}&lt;/nowiki&gt;&lt;/code&gt;". To fix the problem, use different IDs. Templates using the &lt;var&gt;ref_&lt;/var&gt; id prefix include {{tl|ref}}, {{tl|ref label}}, {{tl|cref}} and {{tl|cref2}}.
+
+=== Missing alt text ===
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 135, Column 108'': '''required attribute "alt" not specified'''
+
+: &lt;code&gt;&lt;nowiki&gt;...,107" title="Hurricane Ida (2009)" /&lt;/nowiki&gt;&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;&amp;gt;&lt;/strong&gt;&lt;/abbr&gt;&lt;/code&gt;
+:: &lt;small&gt;The attribute given above is required for an element that you've used, but you have omitted it. For instance, in most HTML and XHTML document types the "type" attribute is required on the "script" element and the "alt" attribute is required for the "img" element....&lt;/small&gt;
+
+This diagnostic can result from use of the [[:mw:Extension:EasyTimeline/syntax|EasyTimeline]] extension, which does not support [[Wikipedia:Accessibility|accessibility]] and does not generate [[Wikipedia:Alternative text for images|alternative text]] for visually impaired readers. Such a problem can be fixed by redoing the timeline as text, as an image, or as an [[mw:Extension:ImageMap|image map]].
+
+=== Element dl is missing a required instance of child element dd ===
+
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Error Line 78, Column 5'': '''Element dl is missing a required instance of child element dd.'''
+: &lt;code&gt;&lt;/dl&lt;span style="color:red"&gt;&lt;strong&gt;&amp;gt;&lt;/strong&gt;&lt;/span&gt;&lt;/code&gt;
+:: &lt;small&gt;Content model for element dl:&lt;/small&gt;
+::: &lt;small&gt;Zero or more groups each consisting of one or more dt elements followed by one or more dd elements.&lt;/small&gt;
+
+Definition lists are created with the wikimarkup &lt;code&gt;;&lt;/code&gt; to define a definition list and &lt;code&gt;:&lt;/code&gt; to define the item in the list. This diagnostic results when the &lt;code&gt;:&lt;/code&gt; is missing.
+
+* Indentation is created using the &lt;code&gt;:&lt;/code&gt; markup. This creates a definition list with no child element. {{phab|6521}}
+* This also occurs when &lt;code&gt;;&lt;/code&gt; is misused to bold a line. Use the wikimarkup &lt;code&gt;&lt;nowiki&gt;'''&lt;/nowiki&gt;&lt;/code&gt; to bold characters.
+
+== CSS validation ==
+The W3C also has a CSS validator, but this is less of an issue when editing Wikipedia pages, as CSS is an option and CSS validation errors typically are due to problems with skins, not problems in individual pages.
+
+== See also ==
+* Template {{tl|W3C validation}}
+
+== External links ==
+*[http://validator.w3.org/ The W3C Markup Validation Service]
+
+*[http://validator.w3.org/favelets.html The W3C Markup Validation Service— Favelets For The Validator]
+
+*[http://jigsaw.w3.org/css-validator/ The W3C CSS Validation Service]
+
+{{Wikipedia technical help|collapsed}}
+[[Category:Wikipedia editor help]]</text>
+      <sha1>16z12tzf6zcrfn9ccqs3wjc0lw71id5</sha1>
+    </revision>
+    <revision>
+      <id>778062</id>
+      <parentid>778061</parentid>
+      <timestamp>2025-05-24T17:54:41Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>778062</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="9484" sha1="5gzhzvgrz81riyzphktg3citr4u3u1i" xml:space="preserve">{{information page|H:MARKV}}
+The [[:en:W3C Markup Validation Service|W3C Markup Validation Service]] lets editors check web pages for conformance to [[:en:HTML|HTML]] and [[XHTML]] standards. It is helpful for catching minor problems such as duplicate section names or citation IDs. Although most major browsers will tolerate many of the errors, and will display a document successfully even if it contains errors, they may misbehave on documents that contain the errors: for example, they may go to the wrong section or citation if you click the mouse on a wikilink. Checking that a page contains valid HTML can thus fix these minor glitches while also increasing portability to unusual browsers.
+
+To check the HTML for a Wikipedia article ''XYZ'', visit the service's home page and enter the text "&lt;code&gt;&lt;span class="plainlinks"&gt;{{canonicalurl:XYZ}}&lt;/span&gt;&lt;/code&gt;".
+
+== Current issues ==
+{{shortcut|WP:HTMLBUGS}}
+These errors require developer fixes and should be ignored by editors. When checking for endemic errors, ensure a blank page is used, such as [[Special:BlankPage]].
+* {{W3C validation|Special:BlankPage}}
+
+Any page with an edit link:
+{{tracked|40385}}
+* &lt;code&gt;Bad value edit for attribute rel on element link: Keyword edit is not registered.&lt;/code&gt; This issue does not show for [[Special:BlankPage]].
+
+Any page with a file (image):
+* &lt;code&gt;Attribute srcset not allowed on element img at this point.&lt;/code&gt;
+:This is allowed per the [http://www.whatwg.org/specs/web-apps/current-work/multipage/embedded-content-1.html#the-img-element HTML Living Standard]. &lt;code&gt;srcset&lt;/code&gt; allows the MediaWiki software to render alternate images based on the device capabilities. The W3C HTML validator has not yet been updated to support this and throws an error.
+
+Any page with a nonstandard language code:
+* &lt;code&gt;Bad value &lt;var&gt;xxx&lt;/var&gt; for attribute lang on element a: The language subtag &lt;var&gt;xxx&lt;/var&gt; is not a valid ISO language part of a language tag.&lt;/code&gt;
+:Some Wikipedias use language codes that are not listed per RFC 5646. See the deprecated and nonstandard languages at [[m:List of Wikipedias|List of Wikipedias]]. See also [[Help:Interlanguage links]].
+
+== Valid HTML ==
+While current browsers are quite forgiving of HTML errors, invalid HTML can cause issues with accessibility, search engines and portability. Various browsers may handle errors differently, thus the display may differ.
+
+For most editors, creating valid HTML is not an issue. The [[:en:MediaWiki|MediaWiki]] software converts wikimarkup into valid HTML (with occasional bugs). The English Wikipedia has used [[:en:HTML Tidy|HTML Tidy]], a now-outdated HTML4 library, to help ensure that common typos and mistakes are converted into proper HTML4.  However, Tidy could not fix all problems, there is no way to disable it for testing and validation will not show issues fixed by Tidy.  Furthermore, Tidy is [[:mw:Parsing/Replacing Tidy|slated for removal]] at Wikipedia, so previously overlooked errors need to be fixed.
+
+Portability issues occur when pages are exported to other wikis that do not use HTML Tidy and HTML errors are exposed.
+
+Editors who use referencing methods such as [[Wikipedia:Footnote3|Footnote3]] should always validate pages. Use of these templates make it very easy for an editor to create duplicate HTML ids, causing invalid HTML and in-page linking issues – this is probably the most common validation issue on Wikipedia. There is little or no error checking for manual templates.
+
+Editors who develop templates should always test various uses and ensure they render valid HTML.
+
+== Validation tools ==
+The [[World Wide Web Consortium|W3C]] is the main international standards organization for the internet— they provide the [[:en:W3C Markup Validation Service|W3C Markup Validation Service]]. Simply copy the full URL of the page to be validated and paste in into the validator. There is also a [[:en:Favelet|Favelet]] that you can add to your browser bookmarks that will validate the current page.
+
+The WDG HTML Validator has a batch mode that allows a list of URLS to be validated.
+
+== Common diagnostics and how to fix them ==
+This section gives examples of diagnostics generated by the markup validation service, and suggests possible fixes. Diagnostics are by line and column of the generated HTML for the page. It may be helpful to obtain the HTML in order to understand the diagnostic. For example, if you using the [[:en:Firefox|Firefox]] browser, you can type control-U to see the HTML.
+
+=== ID already defined ===
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 630, Column 88'': '''ID "CITEREFBarker2008" already defined'''
+: &lt;code&gt;&lt;nowiki&gt;...&lt;/a&gt;&lt;/b&gt; &lt;span class="citation" id="&lt;/nowiki&gt;&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;C&lt;/strong&gt;&lt;/abbr&gt;ITEREFBarker2008"&gt;Barker, Janice (2008-0&lt;/code&gt;
+:: &lt;small&gt;An "id" is a unique identifier. Each time this attribute is used in a document it must have a different value. If you are using this attribute as a hook for style sheets it may be more appropriate to use classes (which group elements) than id (which are used to identify exactly one element).&lt;/small&gt;
+
+This error occurs if an article contains multiple invocations of the {{tl|citation}} template with the same author and year; the above error was prompted by an article that cited two different documents, both written by Barker in 2008. Disambiguate the citations by putting letters after the years (''e.g.'', {{para|year|2008a}}, {{para|year|2008b}}), or by using the [[Template:Citation#Anchored citations|&lt;code&gt;ref=&lt;/code&gt; parameter of {{tlf|citation}}]].
+
+HTML ids are only needed when using [[Help:Shortened footnotes|Shortened footnotes]] or [[WP:Parenthetical referencing|Parenthetical referencing]]. The {{tl|citation}} template always generates an HTML id; with [[Help:Citation Style 1|Citation Style 1]], this is optional and [[Help:Citation Style Vancouver|Citation Style Vancouver]] never creates ids.
+
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 93, Column 231'': '''ID "ref_1" already defined'''
+: &lt;code&gt;...ence plainlinks nourlexpansion" id="&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;r&lt;/strong&gt;&lt;/abbr&gt;&lt;nowiki&gt;ef_1"&gt;&lt;a href="#endnote_1"&gt;1&lt;/a&gt;&lt;/sup&gt;&lt;...&lt;/nowiki&gt;&lt;/code&gt;
+:: &lt;small&gt;An "id" is a unique identifier. Each time this attribute is used in a document it must have a different value. If you are using this attribute as a hook for style sheets it may be more appropriate to use classes (which group elements) than id (which are used to identify exactly one element).&lt;/small&gt;
+
+This similar diagnostic occurs if an article contains multiple invocations of {{tl|ref}} with the same ID, for example, two instances of "&lt;code&gt;&lt;nowiki&gt;{{ref|1|1}}&lt;/nowiki&gt;&lt;/code&gt;". To fix the problem, use different IDs. Templates using the &lt;var&gt;ref_&lt;/var&gt; id prefix include {{tl|ref}}, {{tl|ref label}}, {{tl|cref}} and {{tl|cref2}}.
+
+=== Missing alt text ===
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 135, Column 108'': '''required attribute "alt" not specified'''
+
+: &lt;code&gt;&lt;nowiki&gt;...,107" title="Hurricane Ida (2009)" /&lt;/nowiki&gt;&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;&amp;gt;&lt;/strong&gt;&lt;/abbr&gt;&lt;/code&gt;
+:: &lt;small&gt;The attribute given above is required for an element that you've used, but you have omitted it. For instance, in most HTML and XHTML document types the "type" attribute is required on the "script" element and the "alt" attribute is required for the "img" element....&lt;/small&gt;
+
+This diagnostic can result from use of the [[:mw:Extension:EasyTimeline/syntax|EasyTimeline]] extension, which does not support [[Wikipedia:Accessibility|accessibility]] and does not generate [[Wikipedia:Alternative text for images|alternative text]] for visually impaired readers. Such a problem can be fixed by redoing the timeline as text, as an image, or as an [[mw:Extension:ImageMap|image map]].
+
+=== Element dl is missing a required instance of child element dd ===
+
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Error Line 78, Column 5'': '''Element dl is missing a required instance of child element dd.'''
+: &lt;code&gt;&lt;/dl&lt;span style="color:red"&gt;&lt;strong&gt;&amp;gt;&lt;/strong&gt;&lt;/span&gt;&lt;/code&gt;
+:: &lt;small&gt;Content model for element dl:&lt;/small&gt;
+::: &lt;small&gt;Zero or more groups each consisting of one or more dt elements followed by one or more dd elements.&lt;/small&gt;
+
+Definition lists are created with the wikimarkup &lt;code&gt;;&lt;/code&gt; to define a definition list and &lt;code&gt;:&lt;/code&gt; to define the item in the list. This diagnostic results when the &lt;code&gt;:&lt;/code&gt; is missing.
+
+* Indentation is created using the &lt;code&gt;:&lt;/code&gt; markup. This creates a definition list with no child element. {{phab|6521}}
+* This also occurs when &lt;code&gt;;&lt;/code&gt; is misused to bold a line. Use the wikimarkup &lt;code&gt;&lt;nowiki&gt;'''&lt;/nowiki&gt;&lt;/code&gt; to bold characters.
+
+== CSS validation ==
+The W3C also has a CSS validator, but this is less of an issue when editing Wikipedia pages, as CSS is an option and CSS validation errors typically are due to problems with skins, not problems in individual pages.
+
+== See also ==
+* Template {{tl|W3C validation}}
+
+== External links ==
+*[http://validator.w3.org/ The W3C Markup Validation Service]
+
+*[http://validator.w3.org/favelets.html The W3C Markup Validation Service— Favelets For The Validator]
+
+*[http://jigsaw.w3.org/css-validator/ The W3C CSS Validation Service]
+
+{{Wikipedia technical help|collapsed}}
+[[Category:Wikipedia editor help]]</text>
+      <sha1>5gzhzvgrz81riyzphktg3citr4u3u1i</sha1>
+    </revision>
+    <revision>
+      <id>778063</id>
+      <parentid>778062</parentid>
+      <timestamp>2025-05-24T18:48:42Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>778063</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="9494" sha1="70v8cfp5lx9bmu0knar2ylg0106xend" xml:space="preserve">{{information page|H:MARKV}}
+The [[:en:W3C Markup Validation Service|W3C Markup Validation Service]] lets editors check web pages for conformance to [[:en:HTML|HTML]] and [[:en:XHTML|XHTML]] standards. It is helpful for catching minor problems such as duplicate section names or citation IDs. Although most major browsers will tolerate many of the errors, and will display a document successfully even if it contains errors, they may misbehave on documents that contain the errors: for example, they may go to the wrong section or citation if you click the mouse on a wikilink. Checking that a page contains valid HTML can thus fix these minor glitches while also increasing portability to unusual browsers.
+
+To check the HTML for a Wikipedia article ''XYZ'', visit the service's home page and enter the text "&lt;code&gt;&lt;span class="plainlinks"&gt;{{canonicalurl:XYZ}}&lt;/span&gt;&lt;/code&gt;".
+
+== Current issues ==
+{{shortcut|WP:HTMLBUGS}}
+These errors require developer fixes and should be ignored by editors. When checking for endemic errors, ensure a blank page is used, such as [[Special:BlankPage]].
+* {{W3C validation|Special:BlankPage}}
+
+Any page with an edit link:
+{{tracked|40385}}
+* &lt;code&gt;Bad value edit for attribute rel on element link: Keyword edit is not registered.&lt;/code&gt; This issue does not show for [[Special:BlankPage]].
+
+Any page with a file (image):
+* &lt;code&gt;Attribute srcset not allowed on element img at this point.&lt;/code&gt;
+:This is allowed per the [http://www.whatwg.org/specs/web-apps/current-work/multipage/embedded-content-1.html#the-img-element HTML Living Standard]. &lt;code&gt;srcset&lt;/code&gt; allows the MediaWiki software to render alternate images based on the device capabilities. The W3C HTML validator has not yet been updated to support this and throws an error.
+
+Any page with a nonstandard language code:
+* &lt;code&gt;Bad value &lt;var&gt;xxx&lt;/var&gt; for attribute lang on element a: The language subtag &lt;var&gt;xxx&lt;/var&gt; is not a valid ISO language part of a language tag.&lt;/code&gt;
+:Some Wikipedias use language codes that are not listed per RFC 5646. See the deprecated and nonstandard languages at [[m:List of Wikipedias|List of Wikipedias]]. See also [[Help:Interlanguage links]].
+
+== Valid HTML ==
+While current browsers are quite forgiving of HTML errors, invalid HTML can cause issues with accessibility, search engines and portability. Various browsers may handle errors differently, thus the display may differ.
+
+For most editors, creating valid HTML is not an issue. The [[:en:MediaWiki|MediaWiki]] software converts wikimarkup into valid HTML (with occasional bugs). The English Wikipedia has used [[:en:HTML Tidy|HTML Tidy]], a now-outdated HTML4 library, to help ensure that common typos and mistakes are converted into proper HTML4.  However, Tidy could not fix all problems, there is no way to disable it for testing and validation will not show issues fixed by Tidy.  Furthermore, Tidy is [[:mw:Parsing/Replacing Tidy|slated for removal]] at Wikipedia, so previously overlooked errors need to be fixed.
+
+Portability issues occur when pages are exported to other wikis that do not use HTML Tidy and HTML errors are exposed.
+
+Editors who use referencing methods such as [[Wikipedia:Footnote3|Footnote3]] should always validate pages. Use of these templates make it very easy for an editor to create duplicate HTML ids, causing invalid HTML and in-page linking issues – this is probably the most common validation issue on Wikipedia. There is little or no error checking for manual templates.
+
+Editors who develop templates should always test various uses and ensure they render valid HTML.
+
+== Validation tools ==
+The [[World Wide Web Consortium|W3C]] is the main international standards organization for the internet— they provide the [[:en:W3C Markup Validation Service|W3C Markup Validation Service]]. Simply copy the full URL of the page to be validated and paste in into the validator. There is also a [[:en:Favelet|Favelet]] that you can add to your browser bookmarks that will validate the current page.
+
+The WDG HTML Validator has a batch mode that allows a list of URLS to be validated.
+
+== Common diagnostics and how to fix them ==
+This section gives examples of diagnostics generated by the markup validation service, and suggests possible fixes. Diagnostics are by line and column of the generated HTML for the page. It may be helpful to obtain the HTML in order to understand the diagnostic. For example, if you using the [[:en:Firefox|Firefox]] browser, you can type control-U to see the HTML.
+
+=== ID already defined ===
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 630, Column 88'': '''ID "CITEREFBarker2008" already defined'''
+: &lt;code&gt;&lt;nowiki&gt;...&lt;/a&gt;&lt;/b&gt; &lt;span class="citation" id="&lt;/nowiki&gt;&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;C&lt;/strong&gt;&lt;/abbr&gt;ITEREFBarker2008"&gt;Barker, Janice (2008-0&lt;/code&gt;
+:: &lt;small&gt;An "id" is a unique identifier. Each time this attribute is used in a document it must have a different value. If you are using this attribute as a hook for style sheets it may be more appropriate to use classes (which group elements) than id (which are used to identify exactly one element).&lt;/small&gt;
+
+This error occurs if an article contains multiple invocations of the {{tl|citation}} template with the same author and year; the above error was prompted by an article that cited two different documents, both written by Barker in 2008. Disambiguate the citations by putting letters after the years (''e.g.'', {{para|year|2008a}}, {{para|year|2008b}}), or by using the [[Template:Citation#Anchored citations|&lt;code&gt;ref=&lt;/code&gt; parameter of {{tlf|citation}}]].
+
+HTML ids are only needed when using [[Help:Shortened footnotes|Shortened footnotes]] or [[WP:Parenthetical referencing|Parenthetical referencing]]. The {{tl|citation}} template always generates an HTML id; with [[Help:Citation Style 1|Citation Style 1]], this is optional and [[Help:Citation Style Vancouver|Citation Style Vancouver]] never creates ids.
+
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 93, Column 231'': '''ID "ref_1" already defined'''
+: &lt;code&gt;...ence plainlinks nourlexpansion" id="&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;r&lt;/strong&gt;&lt;/abbr&gt;&lt;nowiki&gt;ef_1"&gt;&lt;a href="#endnote_1"&gt;1&lt;/a&gt;&lt;/sup&gt;&lt;...&lt;/nowiki&gt;&lt;/code&gt;
+:: &lt;small&gt;An "id" is a unique identifier. Each time this attribute is used in a document it must have a different value. If you are using this attribute as a hook for style sheets it may be more appropriate to use classes (which group elements) than id (which are used to identify exactly one element).&lt;/small&gt;
+
+This similar diagnostic occurs if an article contains multiple invocations of {{tl|ref}} with the same ID, for example, two instances of "&lt;code&gt;&lt;nowiki&gt;{{ref|1|1}}&lt;/nowiki&gt;&lt;/code&gt;". To fix the problem, use different IDs. Templates using the &lt;var&gt;ref_&lt;/var&gt; id prefix include {{tl|ref}}, {{tl|ref label}}, {{tl|cref}} and {{tl|cref2}}.
+
+=== Missing alt text ===
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 135, Column 108'': '''required attribute "alt" not specified'''
+
+: &lt;code&gt;&lt;nowiki&gt;...,107" title="Hurricane Ida (2009)" /&lt;/nowiki&gt;&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;&amp;gt;&lt;/strong&gt;&lt;/abbr&gt;&lt;/code&gt;
+:: &lt;small&gt;The attribute given above is required for an element that you've used, but you have omitted it. For instance, in most HTML and XHTML document types the "type" attribute is required on the "script" element and the "alt" attribute is required for the "img" element....&lt;/small&gt;
+
+This diagnostic can result from use of the [[:mw:Extension:EasyTimeline/syntax|EasyTimeline]] extension, which does not support [[Wikipedia:Accessibility|accessibility]] and does not generate [[Wikipedia:Alternative text for images|alternative text]] for visually impaired readers. Such a problem can be fixed by redoing the timeline as text, as an image, or as an [[mw:Extension:ImageMap|image map]].
+
+=== Element dl is missing a required instance of child element dd ===
+
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Error Line 78, Column 5'': '''Element dl is missing a required instance of child element dd.'''
+: &lt;code&gt;&lt;/dl&lt;span style="color:red"&gt;&lt;strong&gt;&amp;gt;&lt;/strong&gt;&lt;/span&gt;&lt;/code&gt;
+:: &lt;small&gt;Content model for element dl:&lt;/small&gt;
+::: &lt;small&gt;Zero or more groups each consisting of one or more dt elements followed by one or more dd elements.&lt;/small&gt;
+
+Definition lists are created with the wikimarkup &lt;code&gt;;&lt;/code&gt; to define a definition list and &lt;code&gt;:&lt;/code&gt; to define the item in the list. This diagnostic results when the &lt;code&gt;:&lt;/code&gt; is missing.
+
+* Indentation is created using the &lt;code&gt;:&lt;/code&gt; markup. This creates a definition list with no child element. {{phab|6521}}
+* This also occurs when &lt;code&gt;;&lt;/code&gt; is misused to bold a line. Use the wikimarkup &lt;code&gt;&lt;nowiki&gt;'''&lt;/nowiki&gt;&lt;/code&gt; to bold characters.
+
+== CSS validation ==
+The W3C also has a CSS validator, but this is less of an issue when editing Wikipedia pages, as CSS is an option and CSS validation errors typically are due to problems with skins, not problems in individual pages.
+
+== See also ==
+* Template {{tl|W3C validation}}
+
+== External links ==
+*[http://validator.w3.org/ The W3C Markup Validation Service]
+
+*[http://validator.w3.org/favelets.html The W3C Markup Validation Service— Favelets For The Validator]
+
+*[http://jigsaw.w3.org/css-validator/ The W3C CSS Validation Service]
+
+{{Wikipedia technical help|collapsed}}
+[[Category:Wikipedia editor help]]</text>
+      <sha1>70v8cfp5lx9bmu0knar2ylg0106xend</sha1>
+    </revision>
+    <revision>
+      <id>4866</id>
+      <timestamp>2025-05-24T23:17:19Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Bot: convert local link → enwiki interwiki</comment>
+      <origin>4866</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="9498" sha1="drr8pfyquvslflhvuqkp6zjo9ceccti" xml:space="preserve">{{information page|H:MARKV}}
+The [[:en:W3C Markup Validation Service|W3C Markup Validation Service]] lets editors check web pages for conformance to [[:en:HTML|HTML]] and [[:en:XHTML|XHTML]] standards. It is helpful for catching minor problems such as duplicate section names or citation IDs. Although most major browsers will tolerate many of the errors, and will display a document successfully even if it contains errors, they may misbehave on documents that contain the errors: for example, they may go to the wrong section or citation if you click the mouse on a wikilink. Checking that a page contains valid HTML can thus fix these minor glitches while also increasing portability to unusual browsers.
+
+To check the HTML for a Wikipedia article ''XYZ'', visit the service's home page and enter the text "&lt;code&gt;&lt;span class="plainlinks"&gt;{{canonicalurl:XYZ}}&lt;/span&gt;&lt;/code&gt;".
+
+== Current issues ==
+{{shortcut|WP:HTMLBUGS}}
+These errors require developer fixes and should be ignored by editors. When checking for endemic errors, ensure a blank page is used, such as [[Special:BlankPage]].
+* {{W3C validation|Special:BlankPage}}
+
+Any page with an edit link:
+{{tracked|40385}}
+* &lt;code&gt;Bad value edit for attribute rel on element link: Keyword edit is not registered.&lt;/code&gt; This issue does not show for [[Special:BlankPage]].
+
+Any page with a file (image):
+* &lt;code&gt;Attribute srcset not allowed on element img at this point.&lt;/code&gt;
+:This is allowed per the [http://www.whatwg.org/specs/web-apps/current-work/multipage/embedded-content-1.html#the-img-element HTML Living Standard]. &lt;code&gt;srcset&lt;/code&gt; allows the MediaWiki software to render alternate images based on the device capabilities. The W3C HTML validator has not yet been updated to support this and throws an error.
+
+Any page with a nonstandard language code:
+* &lt;code&gt;Bad value &lt;var&gt;xxx&lt;/var&gt; for attribute lang on element a: The language subtag &lt;var&gt;xxx&lt;/var&gt; is not a valid ISO language part of a language tag.&lt;/code&gt;
+:Some Wikipedias use language codes that are not listed per RFC 5646. See the deprecated and nonstandard languages at [[m:List of Wikipedias|List of Wikipedias]]. See also [[Help:Interlanguage links]].
+
+== Valid HTML ==
+While current browsers are quite forgiving of HTML errors, invalid HTML can cause issues with accessibility, search engines and portability. Various browsers may handle errors differently, thus the display may differ.
+
+For most editors, creating valid HTML is not an issue. The [[:en:MediaWiki|MediaWiki]] software converts wikimarkup into valid HTML (with occasional bugs). The English Wikipedia has used [[:en:HTML Tidy|HTML Tidy]], a now-outdated HTML4 library, to help ensure that common typos and mistakes are converted into proper HTML4.  However, Tidy could not fix all problems, there is no way to disable it for testing and validation will not show issues fixed by Tidy.  Furthermore, Tidy is [[:mw:Parsing/Replacing Tidy|slated for removal]] at Wikipedia, so previously overlooked errors need to be fixed.
+
+Portability issues occur when pages are exported to other wikis that do not use HTML Tidy and HTML errors are exposed.
+
+Editors who use referencing methods such as [[Wikipedia:Footnote3|Footnote3]] should always validate pages. Use of these templates make it very easy for an editor to create duplicate HTML ids, causing invalid HTML and in-page linking issues – this is probably the most common validation issue on Wikipedia. There is little or no error checking for manual templates.
+
+Editors who develop templates should always test various uses and ensure they render valid HTML.
+
+== Validation tools ==
+The [[:en:World Wide Web Consortium|W3C]] is the main international standards organization for the internet— they provide the [[:en:W3C Markup Validation Service|W3C Markup Validation Service]]. Simply copy the full URL of the page to be validated and paste in into the validator. There is also a [[:en:Favelet|Favelet]] that you can add to your browser bookmarks that will validate the current page.
+
+The WDG HTML Validator has a batch mode that allows a list of URLS to be validated.
+
+== Common diagnostics and how to fix them ==
+This section gives examples of diagnostics generated by the markup validation service, and suggests possible fixes. Diagnostics are by line and column of the generated HTML for the page. It may be helpful to obtain the HTML in order to understand the diagnostic. For example, if you using the [[:en:Firefox|Firefox]] browser, you can type control-U to see the HTML.
+
+=== ID already defined ===
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 630, Column 88'': '''ID "CITEREFBarker2008" already defined'''
+: &lt;code&gt;&lt;nowiki&gt;...&lt;/a&gt;&lt;/b&gt; &lt;span class="citation" id="&lt;/nowiki&gt;&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;C&lt;/strong&gt;&lt;/abbr&gt;ITEREFBarker2008"&gt;Barker, Janice (2008-0&lt;/code&gt;
+:: &lt;small&gt;An "id" is a unique identifier. Each time this attribute is used in a document it must have a different value. If you are using this attribute as a hook for style sheets it may be more appropriate to use classes (which group elements) than id (which are used to identify exactly one element).&lt;/small&gt;
+
+This error occurs if an article contains multiple invocations of the {{tl|citation}} template with the same author and year; the above error was prompted by an article that cited two different documents, both written by Barker in 2008. Disambiguate the citations by putting letters after the years (''e.g.'', {{para|year|2008a}}, {{para|year|2008b}}), or by using the [[Template:Citation#Anchored citations|&lt;code&gt;ref=&lt;/code&gt; parameter of {{tlf|citation}}]].
+
+HTML ids are only needed when using [[Help:Shortened footnotes|Shortened footnotes]] or [[WP:Parenthetical referencing|Parenthetical referencing]]. The {{tl|citation}} template always generates an HTML id; with [[Help:Citation Style 1|Citation Style 1]], this is optional and [[Help:Citation Style Vancouver|Citation Style Vancouver]] never creates ids.
+
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 93, Column 231'': '''ID "ref_1" already defined'''
+: &lt;code&gt;...ence plainlinks nourlexpansion" id="&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;r&lt;/strong&gt;&lt;/abbr&gt;&lt;nowiki&gt;ef_1"&gt;&lt;a href="#endnote_1"&gt;1&lt;/a&gt;&lt;/sup&gt;&lt;...&lt;/nowiki&gt;&lt;/code&gt;
+:: &lt;small&gt;An "id" is a unique identifier. Each time this attribute is used in a document it must have a different value. If you are using this attribute as a hook for style sheets it may be more appropriate to use classes (which group elements) than id (which are used to identify exactly one element).&lt;/small&gt;
+
+This similar diagnostic occurs if an article contains multiple invocations of {{tl|ref}} with the same ID, for example, two instances of "&lt;code&gt;&lt;nowiki&gt;{{ref|1|1}}&lt;/nowiki&gt;&lt;/code&gt;". To fix the problem, use different IDs. Templates using the &lt;var&gt;ref_&lt;/var&gt; id prefix include {{tl|ref}}, {{tl|ref label}}, {{tl|cref}} and {{tl|cref2}}.
+
+=== Missing alt text ===
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Line 135, Column 108'': '''required attribute "alt" not specified'''
+
+: &lt;code&gt;&lt;nowiki&gt;...,107" title="Hurricane Ida (2009)" /&lt;/nowiki&gt;&lt;abbr title="Position where error was detected." style="color:red"&gt;&lt;strong&gt;&amp;gt;&lt;/strong&gt;&lt;/abbr&gt;&lt;/code&gt;
+:: &lt;small&gt;The attribute given above is required for an element that you've used, but you have omitted it. For instance, in most HTML and XHTML document types the "type" attribute is required on the "script" element and the "alt" attribute is required for the "img" element....&lt;/small&gt;
+
+This diagnostic can result from use of the [[:mw:Extension:EasyTimeline/syntax|EasyTimeline]] extension, which does not support [[Wikipedia:Accessibility|accessibility]] and does not generate [[Wikipedia:Alternative text for images|alternative text]] for visually impaired readers. Such a problem can be fixed by redoing the timeline as text, as an image, or as an [[mw:Extension:ImageMap|image map]].
+
+=== Element dl is missing a required instance of child element dd ===
+
+:[[File:Deletion icon.svg|x15px|alt=|link=]] ''Error Line 78, Column 5'': '''Element dl is missing a required instance of child element dd.'''
+: &lt;code&gt;&lt;/dl&lt;span style="color:red"&gt;&lt;strong&gt;&amp;gt;&lt;/strong&gt;&lt;/span&gt;&lt;/code&gt;
+:: &lt;small&gt;Content model for element dl:&lt;/small&gt;
+::: &lt;small&gt;Zero or more groups each consisting of one or more dt elements followed by one or more dd elements.&lt;/small&gt;
+
+Definition lists are created with the wikimarkup &lt;code&gt;;&lt;/code&gt; to define a definition list and &lt;code&gt;:&lt;/code&gt; to define the item in the list. This diagnostic results when the &lt;code&gt;:&lt;/code&gt; is missing.
+
+* Indentation is created using the &lt;code&gt;:&lt;/code&gt; markup. This creates a definition list with no child element. {{phab|6521}}
+* This also occurs when &lt;code&gt;;&lt;/code&gt; is misused to bold a line. Use the wikimarkup &lt;code&gt;&lt;nowiki&gt;'''&lt;/nowiki&gt;&lt;/code&gt; to bold characters.
+
+== CSS validation ==
+The W3C also has a CSS validator, but this is less of an issue when editing Wikipedia pages, as CSS is an option and CSS validation errors typically are due to problems with skins, not problems in individual pages.
+
+== See also ==
+* Template {{tl|W3C validation}}
+
+== External links ==
+*[http://validator.w3.org/ The W3C Markup Validation Service]
+
+*[http://validator.w3.org/favelets.html The W3C Markup Validation Service— Favelets For The Validator]
+
+*[http://jigsaw.w3.org/css-validator/ The W3C CSS Validation Service]
+
+{{Wikipedia technical help|collapsed}}
+[[Category:Wikipedia editor help]]</text>
+      <sha1>drr8pfyquvslflhvuqkp6zjo9ceccti</sha1>
+    </revision>
+  </page>
+</mediawiki>

@@ -1,0 +1,306 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>User:Nardog/ExpandContractions.js</title>
+    <ns>2</ns>
+    <id>143924</id>
+    <revision>
+      <id>3367857</id>
+      <timestamp>2026-03-02T18:44:09Z</timestamp>
+      <contributor>
+        <username>en&gt;Nardog</username>
+        <id>0</id>
+      </contributor>
+      <comment>no*</comment>
+      <origin>3367857</origin>
+      <model>javascript</model>
+      <format>text/javascript</format>
+      <text bytes="6646" sha1="qow4y0y50m3m4l8urntqo4e7zd362ch" xml:space="preserve">['edit', 'submit'].includes(mw.config.get('wgAction')) &amp;&amp;
+$.ajax(
+	'//tools-static.wmflabs.org/meta/scripts/pathoschild.templatescript.js',
+	{ dataType: 'script', cache: true }
+).then(function expandContractions() {
+	let re;
+	let edit = editor =&gt; {
+		let escaped = [];
+		let escape = $0 =&gt; `\x7f\x7f\x7f${escaped.push($0) - 1}\x7f\x7f\x7f`;
+		let unescapeRe = /\x7f{3}(\d+)\x7f{3}/g;
+		let unescape = ($0, $1) =&gt; escaped[$1];
+		let reps = new Set();
+		let makeCallback = (w, c) =&gt; ($0, $1) =&gt; {
+			reps.add(c);
+			return $1 + ' ' + w;
+		};
+		let orig = editor.get();
+		let repl = orig
+			.replace(re, escape)
+			.replace(
+				/&lt;!--[^]+?--&gt;|&lt;ref\s[^&gt;]*\/&gt;|&lt;(blockquote|ref|poem)(?:\s?[^&gt;]*)?&gt;[^]+?&lt;\/\1&gt;|\[\[[^\[\]]+?\]\]|["“].+?["”]|(''+).+?\2|^===?\s*(?:References|Sources|Bibliography|Further reading|External links)\s*==[^]+|^=+.+=/gim,
+				escape
+			)
+			.replace(
+				/\|\s*(?:explain|filename|image|name|reason|song|title)\d*\s*=[^|}]+?(?=[|}])/gi,
+				escape
+			)
+			.replace(
+				/\b([Hh]e|[Ss]he|[Ii]t|[Tt]hat|[Tt]here|[Ww]hat(?:ever)?|[Ww]ho(?:ever)?|[Ww]here(?:ver)?|(?:[Aa]ny|[Ee]very|[Nn]o|[Ss]ome)thing)['’]s(?=,? (?:(?:not|n?ever|n?either|again|all|almost|already|also|always|earlier|even|far|forever|hence|however|indeed|instead|just|later|least|less|likewise|meanwhile|more|most|much|now|often|once|otherwise|perhaps|quite|rather|seldom|since|so|somehow|some|soon|sooner|still|that|then|thereby|therefore|thus|today|together|too|twice|very|(?!(?:ally|anomaly|apply|assembly|belly|bully|butterfly|chilly|comply|costly|cuddly|curly|disassembly|family|firefly|folly|gainly|gnarly|gully|holy|hurly|imply|jelly|lily|lonely|measly|melancholy|monopoly|multiply|oily|panoply|rally|reassembly|rely|reply|sally|scholarly|silly|sully|supply|surly|tally|ugly|unholy|unruly) )[a-z]{2,}ly),? )*(?:appeared|arisen|arrived|become|been|begun|behaved|belonged|come|consisted|departed|died|disappeared|elapsed|emerged|existed|expired|got|gotten|had|happened|lacked|lain|lasted|lingered|occurred|persisted|remained|resembled|resulted|seemed|stayed|stood|strive[dn]|struggled|thrived|vanished|waited)\b)/g,
+				makeCallback('has', 's')
+			)
+			.replace(
+				/\b([Hh]e|[Ss]he|[Ii]t|[Tt]hat|[Tt]here|[Ww]hat(?:ever)?|[Ww]ho(?:ever)?|[Ww]here(?:ver)?|(?:[Aa]ny|[Ee]very|[Nn]o|[Ss]ome)thing)['’]s\b/g,
+				makeCallback('is', 's')
+			)
+			.replace(/\b([Cc])an['’]t\b/g, '$1annot')
+			.replace(/\b([Ww])on['’]t\b/g, '$1ill not')
+			.replace(/\b((?![Aa]i)[A-Z]?[a-z]+)n['’]t\b/g, '$1 not')
+			.replace(
+				/\b([Ww]e|[Hh]e|[Ss]he|[Ii]t|[Tt]hey|[Tt]hat|[Tt]here|[Ww]hat(?:ever)?|[Ww]ho(?:ever)?|[Ww]here(?:ver)?|(?:[Aa]ny|[Ee]very|[Ss]ome)(?:body|one|thing)|[Nn]o(?:body|[ -]one|thing))['’]d(?=,? (?:(?:not|n?ever|n?either|again|all|almost|already|also|always|earlier|even|far|forever|hence|however|indeed|instead|just|later|least|less|likewise|meanwhile|more|most|much|now|often|once|otherwise|perhaps|quite|rather|seldom|since|so|somehow|some|soon|sooner|still|that|then|thereby|therefore|thus|today|together|too|twice|very|(?!(?:ally|anomaly|apply|assembly|belly|bully|butterfly|chilly|comply|costly|cuddly|curly|disassembly|family|firefly|folly|gainly|gnarly|gully|holy|hurly|imply|jelly|lily|lonely|measly|melancholy|monopoly|multiply|oily|panoply|rally|reassembly|rely|reply|sally|scholarly|silly|sully|supply|surly|tally|ugly|unholy|unruly) )[a-z]{2,}ly),? )*(?:agreed|arisen|awoken|beaten|been|begun|bent|bitten|blown|borne?|bought|broken|brought|built|burnt|caught|chosen|clung|crept|dealt|decreed|disagreed|done|drawn|dreamt|driven|drunk|dug|dwelt|eaten|fallen|fed|felt|flown|forbidden|foreseen|forgiven|forgot|forgotten|fought|found|freed|frozen|given|gone|got|gotten|grown|guaranteed|had|heard|held|hidden|hung|kept|known|laid|lain|leapt|learnt|led|left|lent|lit|lost|made|meant|met|misheard|mistaken|misunderstood|overheard|overseen|overtaken|paid|partaken|proven|rebuilt|rewound|rewritten|ridden|risen|rung|said|sank|sat|seen|sent|sewn|shaken|shone|shot|shown|shrunk|slain|slept|slid|snuck|sold|sought|sown|spat|spent|spilt|spoken|sprung|spun|stolen|stood|stricken|struck|strung|stuck|stung|sung|sunk|swept|sworn|swum|swung|taken|taught|thought|thrown|told|torn|undergone|understood|undone|unwound|upheld|withdrawn|withheld|woken|won|worn|woven|written|wrought|(?![^aeiou]+ed\b|embed\b)[a-z]+[a-df-z]ed)\b)/g,
+				makeCallback('had', 'd')
+			)
+			.replace(
+				/\b([Ww]e|[Hh]e|[Ss]he|[Ii]t|[Tt]hey|[Tt]hat|[Tt]here|[Ww]hat(?:ever)?|[Ww]ho(?:ever)?|[Ww]here(?:ver)?|(?:[Aa]ny|[Ee]very|[Ss]ome)(?:body|one|thing)|[Nn]o(?:body|[ -]one|thing))['’]d\b/g,
+				makeCallback('would', 'd')
+			)
+			.replace(/([a-z])['’]re\b/g, '$1 are')
+			.replace(/([a-z])['’]ve\b/g, '$1 have')
+			.replace(/([a-z])['’]ll\b/g, '$1 will')
+			.replace(unescapeRe, unescape)
+			.replace(unescapeRe, unescape)
+			.replace(unescapeRe, unescape);
+		if (repl === orig) {
+			mw.notify('No change.');
+			return;
+		}
+		let iw = mw.config.get('wgWikiID') === 'enwiki' ? '' : 'w:en:';
+		editor
+			.set(repl)
+			.appendEditSummary(`expanded contractions using [[${iw}User:Nardog/ExpandContractions|script]]`)
+			.options({ minor: true })
+			.clickDiff();
+		if (reps.size) {
+			mw.notify(
+				`Replacements include "'${[...reps].join(`" and "'`)}". Review them before saving.`,
+				{ type: 'warn' }
+			);
+		}
+	};
+	let clicked;
+	window.pathoschild.TemplateScript.add([{
+		name: 'Expand contractions',
+		script: editor =&gt; {
+			if (clicked) {
+				if (re) edit(editor);
+				return;
+			}
+			clicked = true;
+			let templates = [
+				'Blockquote', 'Cquote', 'Quote frame', 'Rquote', 'Quote box',
+				'Poem', 'Poem quote', 'About', 'For', 'Other uses', 'Redirect',
+				'Distinguish', 'Main', 'Further', 'See also', 'Lang',
+				'Interlanguage link'
+			];
+			let prefix = mw.config.get('wgFormattedNamespaces')[10] + ':';
+			new mw.Api().get({
+				action: 'query',
+				titles: templates.map(n =&gt; prefix + n),
+				redirects: 1,
+				prop: 'redirects',
+				rdprop: 'title',
+				rdnamespace: 10,
+				rdshow: '!fragment',
+				rdlimit: 'max',
+				formatversion: 2
+			}).always(response =&gt; {
+				let set = new Set(templates);
+				(((response || {}).query || {}).pages || []).forEach(page =&gt; {
+					[page, ...(page.redirects || [])].forEach(o =&gt; {
+						set.add(o.title.slice(prefix.length));
+					});
+				});
+				re = new RegExp(
+					`\\{\\{\\s*(?:${
+						[...set].map(n =&gt; {
+							n = mw.util.escapeRegExp(n);
+							return n[0].toLowerCase() === n[0]
+								? n
+								: '[' + n[0] + n[0].toLowerCase() + ']' + n.slice(1);
+						}).join('|').replace(/ /g, '[ _]')
+					})\\s*\\|(?:\\{\\{[^]+?\\}\\}|[^])*?\\}\\}`,
+					'g'
+				);
+				edit(editor);
+			});
+		}
+	}]);
+});</text>
+      <sha1>qow4y0y50m3m4l8urntqo4e7zd362ch</sha1>
+    </revision>
+    <revision>
+      <id>3367858</id>
+      <parentid>3367857</parentid>
+      <timestamp>2026-03-02T18:44:10Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3367857</origin>
+      <model>javascript</model>
+      <format>text/javascript</format>
+      <text bytes="6646" sha1="qow4y0y50m3m4l8urntqo4e7zd362ch" xml:space="preserve">['edit', 'submit'].includes(mw.config.get('wgAction')) &amp;&amp;
+$.ajax(
+	'//tools-static.wmflabs.org/meta/scripts/pathoschild.templatescript.js',
+	{ dataType: 'script', cache: true }
+).then(function expandContractions() {
+	let re;
+	let edit = editor =&gt; {
+		let escaped = [];
+		let escape = $0 =&gt; `\x7f\x7f\x7f${escaped.push($0) - 1}\x7f\x7f\x7f`;
+		let unescapeRe = /\x7f{3}(\d+)\x7f{3}/g;
+		let unescape = ($0, $1) =&gt; escaped[$1];
+		let reps = new Set();
+		let makeCallback = (w, c) =&gt; ($0, $1) =&gt; {
+			reps.add(c);
+			return $1 + ' ' + w;
+		};
+		let orig = editor.get();
+		let repl = orig
+			.replace(re, escape)
+			.replace(
+				/&lt;!--[^]+?--&gt;|&lt;ref\s[^&gt;]*\/&gt;|&lt;(blockquote|ref|poem)(?:\s?[^&gt;]*)?&gt;[^]+?&lt;\/\1&gt;|\[\[[^\[\]]+?\]\]|["“].+?["”]|(''+).+?\2|^===?\s*(?:References|Sources|Bibliography|Further reading|External links)\s*==[^]+|^=+.+=/gim,
+				escape
+			)
+			.replace(
+				/\|\s*(?:explain|filename|image|name|reason|song|title)\d*\s*=[^|}]+?(?=[|}])/gi,
+				escape
+			)
+			.replace(
+				/\b([Hh]e|[Ss]he|[Ii]t|[Tt]hat|[Tt]here|[Ww]hat(?:ever)?|[Ww]ho(?:ever)?|[Ww]here(?:ver)?|(?:[Aa]ny|[Ee]very|[Nn]o|[Ss]ome)thing)['’]s(?=,? (?:(?:not|n?ever|n?either|again|all|almost|already|also|always|earlier|even|far|forever|hence|however|indeed|instead|just|later|least|less|likewise|meanwhile|more|most|much|now|often|once|otherwise|perhaps|quite|rather|seldom|since|so|somehow|some|soon|sooner|still|that|then|thereby|therefore|thus|today|together|too|twice|very|(?!(?:ally|anomaly|apply|assembly|belly|bully|butterfly|chilly|comply|costly|cuddly|curly|disassembly|family|firefly|folly|gainly|gnarly|gully|holy|hurly|imply|jelly|lily|lonely|measly|melancholy|monopoly|multiply|oily|panoply|rally|reassembly|rely|reply|sally|scholarly|silly|sully|supply|surly|tally|ugly|unholy|unruly) )[a-z]{2,}ly),? )*(?:appeared|arisen|arrived|become|been|begun|behaved|belonged|come|consisted|departed|died|disappeared|elapsed|emerged|existed|expired|got|gotten|had|happened|lacked|lain|lasted|lingered|occurred|persisted|remained|resembled|resulted|seemed|stayed|stood|strive[dn]|struggled|thrived|vanished|waited)\b)/g,
+				makeCallback('has', 's')
+			)
+			.replace(
+				/\b([Hh]e|[Ss]he|[Ii]t|[Tt]hat|[Tt]here|[Ww]hat(?:ever)?|[Ww]ho(?:ever)?|[Ww]here(?:ver)?|(?:[Aa]ny|[Ee]very|[Nn]o|[Ss]ome)thing)['’]s\b/g,
+				makeCallback('is', 's')
+			)
+			.replace(/\b([Cc])an['’]t\b/g, '$1annot')
+			.replace(/\b([Ww])on['’]t\b/g, '$1ill not')
+			.replace(/\b((?![Aa]i)[A-Z]?[a-z]+)n['’]t\b/g, '$1 not')
+			.replace(
+				/\b([Ww]e|[Hh]e|[Ss]he|[Ii]t|[Tt]hey|[Tt]hat|[Tt]here|[Ww]hat(?:ever)?|[Ww]ho(?:ever)?|[Ww]here(?:ver)?|(?:[Aa]ny|[Ee]very|[Ss]ome)(?:body|one|thing)|[Nn]o(?:body|[ -]one|thing))['’]d(?=,? (?:(?:not|n?ever|n?either|again|all|almost|already|also|always|earlier|even|far|forever|hence|however|indeed|instead|just|later|least|less|likewise|meanwhile|more|most|much|now|often|once|otherwise|perhaps|quite|rather|seldom|since|so|somehow|some|soon|sooner|still|that|then|thereby|therefore|thus|today|together|too|twice|very|(?!(?:ally|anomaly|apply|assembly|belly|bully|butterfly|chilly|comply|costly|cuddly|curly|disassembly|family|firefly|folly|gainly|gnarly|gully|holy|hurly|imply|jelly|lily|lonely|measly|melancholy|monopoly|multiply|oily|panoply|rally|reassembly|rely|reply|sally|scholarly|silly|sully|supply|surly|tally|ugly|unholy|unruly) )[a-z]{2,}ly),? )*(?:agreed|arisen|awoken|beaten|been|begun|bent|bitten|blown|borne?|bought|broken|brought|built|burnt|caught|chosen|clung|crept|dealt|decreed|disagreed|done|drawn|dreamt|driven|drunk|dug|dwelt|eaten|fallen|fed|felt|flown|forbidden|foreseen|forgiven|forgot|forgotten|fought|found|freed|frozen|given|gone|got|gotten|grown|guaranteed|had|heard|held|hidden|hung|kept|known|laid|lain|leapt|learnt|led|left|lent|lit|lost|made|meant|met|misheard|mistaken|misunderstood|overheard|overseen|overtaken|paid|partaken|proven|rebuilt|rewound|rewritten|ridden|risen|rung|said|sank|sat|seen|sent|sewn|shaken|shone|shot|shown|shrunk|slain|slept|slid|snuck|sold|sought|sown|spat|spent|spilt|spoken|sprung|spun|stolen|stood|stricken|struck|strung|stuck|stung|sung|sunk|swept|sworn|swum|swung|taken|taught|thought|thrown|told|torn|undergone|understood|undone|unwound|upheld|withdrawn|withheld|woken|won|worn|woven|written|wrought|(?![^aeiou]+ed\b|embed\b)[a-z]+[a-df-z]ed)\b)/g,
+				makeCallback('had', 'd')
+			)
+			.replace(
+				/\b([Ww]e|[Hh]e|[Ss]he|[Ii]t|[Tt]hey|[Tt]hat|[Tt]here|[Ww]hat(?:ever)?|[Ww]ho(?:ever)?|[Ww]here(?:ver)?|(?:[Aa]ny|[Ee]very|[Ss]ome)(?:body|one|thing)|[Nn]o(?:body|[ -]one|thing))['’]d\b/g,
+				makeCallback('would', 'd')
+			)
+			.replace(/([a-z])['’]re\b/g, '$1 are')
+			.replace(/([a-z])['’]ve\b/g, '$1 have')
+			.replace(/([a-z])['’]ll\b/g, '$1 will')
+			.replace(unescapeRe, unescape)
+			.replace(unescapeRe, unescape)
+			.replace(unescapeRe, unescape);
+		if (repl === orig) {
+			mw.notify('No change.');
+			return;
+		}
+		let iw = mw.config.get('wgWikiID') === 'enwiki' ? '' : 'w:en:';
+		editor
+			.set(repl)
+			.appendEditSummary(`expanded contractions using [[${iw}User:Nardog/ExpandContractions|script]]`)
+			.options({ minor: true })
+			.clickDiff();
+		if (reps.size) {
+			mw.notify(
+				`Replacements include "'${[...reps].join(`" and "'`)}". Review them before saving.`,
+				{ type: 'warn' }
+			);
+		}
+	};
+	let clicked;
+	window.pathoschild.TemplateScript.add([{
+		name: 'Expand contractions',
+		script: editor =&gt; {
+			if (clicked) {
+				if (re) edit(editor);
+				return;
+			}
+			clicked = true;
+			let templates = [
+				'Blockquote', 'Cquote', 'Quote frame', 'Rquote', 'Quote box',
+				'Poem', 'Poem quote', 'About', 'For', 'Other uses', 'Redirect',
+				'Distinguish', 'Main', 'Further', 'See also', 'Lang',
+				'Interlanguage link'
+			];
+			let prefix = mw.config.get('wgFormattedNamespaces')[10] + ':';
+			new mw.Api().get({
+				action: 'query',
+				titles: templates.map(n =&gt; prefix + n),
+				redirects: 1,
+				prop: 'redirects',
+				rdprop: 'title',
+				rdnamespace: 10,
+				rdshow: '!fragment',
+				rdlimit: 'max',
+				formatversion: 2
+			}).always(response =&gt; {
+				let set = new Set(templates);
+				(((response || {}).query || {}).pages || []).forEach(page =&gt; {
+					[page, ...(page.redirects || [])].forEach(o =&gt; {
+						set.add(o.title.slice(prefix.length));
+					});
+				});
+				re = new RegExp(
+					`\\{\\{\\s*(?:${
+						[...set].map(n =&gt; {
+							n = mw.util.escapeRegExp(n);
+							return n[0].toLowerCase() === n[0]
+								? n
+								: '[' + n[0] + n[0].toLowerCase() + ']' + n.slice(1);
+						}).join('|').replace(/ /g, '[ _]')
+					})\\s*\\|(?:\\{\\{[^]+?\\}\\}|[^])*?\\}\\}`,
+					'g'
+				);
+				edit(editor);
+			});
+		}
+	}]);
+});</text>
+      <sha1>qow4y0y50m3m4l8urntqo4e7zd362ch</sha1>
+    </revision>
+  </page>
+</mediawiki>

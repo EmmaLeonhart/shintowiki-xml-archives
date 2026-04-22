@@ -1,0 +1,642 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>User:Nardog/Consecudiff.js</title>
+    <ns>2</ns>
+    <id>143918</id>
+    <revision>
+      <id>3367831</id>
+      <timestamp>2026-03-02T18:44:04Z</timestamp>
+      <contributor>
+        <username>en&gt;Nardog</username>
+        <id>0</id>
+      </contributor>
+      <comment>exclude GlobalContributions</comment>
+      <origin>3367831</origin>
+      <model>javascript</model>
+      <format>text/javascript</format>
+      <text bytes="8284" sha1="5qp3pbs4rm0mth3u2xllaxb82y2cvbt" xml:space="preserve">(mw.config.get('wgNamespaceNumber') || mw.config.get('wgAction') !== 'view') &amp;&amp;
+mw.config.get('wgCanonicalSpecialPageName') !== 'GlobalContributions' &amp;&amp;
+(function consecudiff() {
+	mw.loader.addStyleTag('.consecudiff::before{content:" ["} .consecudiff::after{content:"]"} .consecudiff-top::before{content:" ⟨"} .consecudiff-top::after{content:"⟩"}');
+	let isHist = mw.config.get('wgAction') === 'history';
+	class Consecudiff {
+		constructor(lis, isContribs) {
+			this.isContribs = isContribs;
+			this.isEnhanced = !isHist &amp;&amp; !isContribs &amp;&amp;
+				lis[0].classList.contains('mw-enhanced-rc');
+			this.threshold = isContribs ? window.consecudiffContribsThreshold || 120
+				: isHist ? window.consecudiffHistThreshold || 720
+				: window.consecudiffThreshold || 720;
+			this.strictMode = !isContribs &amp;&amp;
+				!!window.consecudiffDetectInterruptions;
+			this.diffSelector = isHist
+				? 'a.mw-history-histlinks-previous'
+				: '.mw-changeslist-diff';
+			this.permaSelector = this.isEnhanced &amp;&amp; '.mw-enhanced-rc-time &gt; a' ||
+				(isHist || isContribs) &amp;&amp; 'a.mw-changeslist-date';
+			this.hybridSelector = this.diffSelector;
+			if (this.permaSelector) {
+				this.hybridSelector += ', ' + this.permaSelector;
+			}
+			this.topClass = isContribs
+				? 'mw-contributions-current'
+				: 'mw-changeslist-last';
+			let dependencies = ['mediawiki.util'];
+			if ((isHist || isContribs) &amp;&amp; mw.config.get('wgUserLanguage') !== 'en') {
+				dependencies.push('mediawiki.language.months');
+			}
+			mw.loader.using(dependencies, () =&gt; {
+				let chunks;
+				if (isHist) {
+					chunks = this.chunkByUser(lis);
+				} else {
+					chunks = [];
+					this.groupByTitle(lis).forEach(group =&gt; {
+						chunks.push(...this.chunkByUser(group));
+					});
+				}
+				let subchunks = [];
+				chunks.forEach(chunk =&gt; {
+					subchunks.push(...this.divideByDate(chunk));
+				});
+				let linkPairs = [];
+				subchunks.forEach(subchunk =&gt; {
+					linkPairs.push(...this.makeLinks(subchunk));
+				});
+				linkPairs.forEach(([$span, parent]) =&gt; {
+					$span.appendTo(parent);
+				});
+			});
+		}
+		groupByTitle(lis) {
+			let selector = this.isContribs
+				? '.mw-contributions-title'
+				: '.mw-changeslist-title';
+			let lisByTitle = {};
+			lis.forEach(li =&gt; {
+				let link = (this.isEnhanced ? li.closest('table') : li)
+					.querySelector(selector);
+				if (!link) return;
+				let title = link.textContent;
+				if (!lisByTitle.hasOwnProperty(title)) {
+					lisByTitle[title] = [];
+				}
+				lisByTitle[title].push(li);
+			});
+			return Object.values(lisByTitle).filter(group =&gt; group.length &gt; 1);
+		}
+		chunkByUser(lis) {
+			if (this.isSingleContribs) {
+				return [lis];
+			}
+			let chunks = [], lastSplitAt = 0, prevUser;
+			this.isSingleContribs = lis.some((li, i) =&gt; {
+				let link = li.querySelector('.mw-userlink');
+				if (!link &amp;&amp; this.isContribs) {
+					return true;
+				}
+				let user = link &amp;&amp; link.textContent;
+				if (!link || i &amp;&amp; user !== prevUser) {
+					chunks.push(lis.slice(lastSplitAt, i));
+					lastSplitAt = i;
+				}
+				prevUser = user;
+			});
+			if (this.isSingleContribs) {
+				return [lis];
+			}
+			chunks.push(lis.slice(lastSplitAt));
+			return chunks.filter(chunk =&gt; chunk.length &gt; 1);
+		}
+		divideByDate(lis) {
+			let chunks = [], lastSplitAt = 0, prevDate;
+			lis.forEach((li, i) =&gt; {
+				let date;
+				if (isHist || this.isContribs) {
+					date = this.parseDate(
+						li.querySelector('.mw-changeslist-date').textContent
+					);
+				} else {
+					date = Date.parse(
+						li.dataset.mwTs.replace(/(....)(..)(..)(..)(..)(..)/, '$1-$2-$3T$4:$5:$6Z')
+					);
+				}
+				if (date) {
+					date = date / 60000;
+				}
+				if (i &amp;&amp; prevDate - date &gt; this.threshold) {
+					chunks.push(lis.slice(lastSplitAt, i));
+					lastSplitAt = i;
+				}
+				prevDate = date;
+				if (!this.strictMode || lastSplitAt === i) return;
+				let prevDiff = lis[i - 1].querySelector(this.diffSelector);
+				if (prevDiff) {
+					let prevNext = mw.util.getParamValue('oldid', prevDiff.search);
+					if (prevNext !== li.dataset.mwRevid) {
+						chunks.push(lis.slice(lastSplitAt, i));
+						lastSplitAt = i;
+					}
+				}
+			});
+			chunks.push(lis.slice(lastSplitAt));
+			return chunks.filter(chunk =&gt; chunk.length &gt; 1);
+		}
+		makeLinks(lis) {
+			let count = lis.length;
+			let firstPerma;
+			let start = lis.findIndex(li =&gt; (
+				firstPerma = li.querySelector(this.hybridSelector)
+			));
+			if (start === -1 || count - start &lt; 2) return [];
+			let end, lastDiff;
+			for (let i = count - 1; i &gt; start; i--) {
+				if (!isHist &amp;&amp; !this.isContribs) {
+					lastDiff = lis[i].querySelector(this.diffSelector);
+					if (lastDiff ||
+						lis[i].classList.contains('mw-changeslist-src-mw-new')
+					) {
+						end = i + 1;
+						break;
+					}
+				}
+				if (this.permaSelector &amp;&amp; lis[i].querySelector(this.permaSelector)) {
+					end = i + 1;
+					break;
+				}
+			}
+			if (!end) return [];
+			count = end - start;
+			let params = { diff: lis[start].dataset.mwRevid };
+			if (lastDiff) {
+				params.oldid = mw.util.getParamValue('oldid', lastDiff.search);
+			} else {
+				params.oldid = lis[end - 1].dataset.mwRevid;
+				if (isHist &amp;&amp; lis[end - 1].querySelector(this.diffSelector) ||
+					this.isContribs &amp;&amp; !lis[end - 1].querySelector('.newpage')
+				) {
+					params.direction = 'prev';
+				}
+			}
+			let title = !isHist &amp;&amp; mw.util.getParamValue('title', firstPerma.search);
+			let url = mw.util.getUrl(title, params);
+			let classes = 'consecudiff';
+			if (!isHist &amp;&amp; lis[start].classList.contains(this.topClass)) {
+				classes += ' consecudiff-top';
+			}
+			return lis.slice(start, end).map((li, i) =&gt; [
+				$('&lt;span&gt;').addClass(classes).append(
+					$('&lt;a&gt;')
+						.attr('href', url)
+						.text(this.convertNumber(count - i + '/' + count))
+				),
+				this.isEnhanced
+					? li.tagName === 'TR'
+						? li.lastElementChild
+						: li.querySelector('.mw-changeslist-line-inner')
+					: li
+			]);
+		}
+		parseDate(s) {
+			let date = Date.parse(s);
+			if (date) {
+				return date;
+			}
+			if (s.includes(',')) date = Date.parse(s.replace(',', ''));
+			if (date) {
+				return date;
+			}
+			if (mw.loader.getState('mediawiki.language.months') !== 'ready') return;
+			s = s.replace(/\D/g, c =&gt; {
+				let n = mw.language.convertNumber(c, true);
+				return Number.isNaN(n) ? c : n;
+			});
+			let h, m;
+			s = s.replace(/(\d\d?)[.:h](\d\d?)/, ($0, $1, $2) =&gt; {
+				h = $1;
+				m = $2;
+				return ' ';
+			});
+			if (!h) return;
+			let y, dateFirst;
+			s = s.replace(/^(.*?)(\d{4})(?!\d)/, ($0, $1, $2) =&gt; {
+				y = $2;
+				dateFirst = /\d/.test($1);
+				return $1 + ' ';
+			});
+			if (!y) return;
+			let mo, d;
+			if (dateFirst) {
+				[d, s] = this.getDate(s);
+				if (!d) return;
+				[mo, s] = this.getMonth(s);
+				if (mo === -1) return;
+			} else {
+				[mo, s] = this.getMonth(s);
+				if (mo === -1) return;
+				[d, s] = this.getDate(s);
+				if (!d) return;
+			}
+			return new Date(y, mo, d, h, m).getTime();
+		}
+		getMonth(s) {
+			if (!this.months) {
+				this.months = mw.language.months.abbrev
+					.concat(mw.language.months.names, mw.language.months.genitive)
+					.reverse();
+			}
+			let mo = this.months.findIndex(mn =&gt; {
+				let temp = s.replace(mn, ' ');
+				if (temp !== s) {
+					s = temp;
+					return true;
+				}
+			});
+			if (mo === -1) {
+				let [numeric, temp] = this.getDate(s);
+				numeric = parseInt(numeric);
+				if (numeric &gt; 0 &amp;&amp; numeric &lt; 13) {
+					mo = numeric - 1;
+					s = temp;
+				}
+			} else {
+				mo = 11 - mo % 12;
+			}
+			return [mo, s];
+		}
+		getDate(s) {
+			let d;
+			s = s.replace(/(^|\D)(\d\d?)(?!\d)/, ($0, $1, $2) =&gt; {
+				d = $2;
+				return $1 + ' ';
+			});
+			return [d, s];
+		}
+		convertNumber(num) {
+			try {
+				return mw.language.convertNumber(num);
+			} catch (e) {
+				return num;
+			}
+		}
+	}
+	mw.hook('wikipage.content').add($content =&gt; {
+		$content.find('.mw-pager-body').each(function () {
+			let lis = this.querySelectorAll('.mw-contributions-list &gt; li');
+			if (lis.length &gt; 1) {
+				new Consecudiff([...lis], !isHist);
+			}
+		});
+		if (isHist) return;
+		let $lists = $content.filter('.mw-changeslist');
+		if (!$lists.length) {
+			$lists = $content.find('.mw-changeslist');
+		}
+		$lists.each(function () {
+			let lis = this.querySelectorAll('.mw-changeslist-edit:not(.mw-changeslist-src-mw-categorize)[data-mw-revid]');
+			if (lis.length &gt; 1) {
+				new Consecudiff([...lis]);
+			}
+		});
+	});
+}());</text>
+      <sha1>5qp3pbs4rm0mth3u2xllaxb82y2cvbt</sha1>
+    </revision>
+    <revision>
+      <id>3367832</id>
+      <parentid>3367831</parentid>
+      <timestamp>2026-03-02T18:44:05Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3367831</origin>
+      <model>javascript</model>
+      <format>text/javascript</format>
+      <text bytes="8284" sha1="5qp3pbs4rm0mth3u2xllaxb82y2cvbt" xml:space="preserve">(mw.config.get('wgNamespaceNumber') || mw.config.get('wgAction') !== 'view') &amp;&amp;
+mw.config.get('wgCanonicalSpecialPageName') !== 'GlobalContributions' &amp;&amp;
+(function consecudiff() {
+	mw.loader.addStyleTag('.consecudiff::before{content:" ["} .consecudiff::after{content:"]"} .consecudiff-top::before{content:" ⟨"} .consecudiff-top::after{content:"⟩"}');
+	let isHist = mw.config.get('wgAction') === 'history';
+	class Consecudiff {
+		constructor(lis, isContribs) {
+			this.isContribs = isContribs;
+			this.isEnhanced = !isHist &amp;&amp; !isContribs &amp;&amp;
+				lis[0].classList.contains('mw-enhanced-rc');
+			this.threshold = isContribs ? window.consecudiffContribsThreshold || 120
+				: isHist ? window.consecudiffHistThreshold || 720
+				: window.consecudiffThreshold || 720;
+			this.strictMode = !isContribs &amp;&amp;
+				!!window.consecudiffDetectInterruptions;
+			this.diffSelector = isHist
+				? 'a.mw-history-histlinks-previous'
+				: '.mw-changeslist-diff';
+			this.permaSelector = this.isEnhanced &amp;&amp; '.mw-enhanced-rc-time &gt; a' ||
+				(isHist || isContribs) &amp;&amp; 'a.mw-changeslist-date';
+			this.hybridSelector = this.diffSelector;
+			if (this.permaSelector) {
+				this.hybridSelector += ', ' + this.permaSelector;
+			}
+			this.topClass = isContribs
+				? 'mw-contributions-current'
+				: 'mw-changeslist-last';
+			let dependencies = ['mediawiki.util'];
+			if ((isHist || isContribs) &amp;&amp; mw.config.get('wgUserLanguage') !== 'en') {
+				dependencies.push('mediawiki.language.months');
+			}
+			mw.loader.using(dependencies, () =&gt; {
+				let chunks;
+				if (isHist) {
+					chunks = this.chunkByUser(lis);
+				} else {
+					chunks = [];
+					this.groupByTitle(lis).forEach(group =&gt; {
+						chunks.push(...this.chunkByUser(group));
+					});
+				}
+				let subchunks = [];
+				chunks.forEach(chunk =&gt; {
+					subchunks.push(...this.divideByDate(chunk));
+				});
+				let linkPairs = [];
+				subchunks.forEach(subchunk =&gt; {
+					linkPairs.push(...this.makeLinks(subchunk));
+				});
+				linkPairs.forEach(([$span, parent]) =&gt; {
+					$span.appendTo(parent);
+				});
+			});
+		}
+		groupByTitle(lis) {
+			let selector = this.isContribs
+				? '.mw-contributions-title'
+				: '.mw-changeslist-title';
+			let lisByTitle = {};
+			lis.forEach(li =&gt; {
+				let link = (this.isEnhanced ? li.closest('table') : li)
+					.querySelector(selector);
+				if (!link) return;
+				let title = link.textContent;
+				if (!lisByTitle.hasOwnProperty(title)) {
+					lisByTitle[title] = [];
+				}
+				lisByTitle[title].push(li);
+			});
+			return Object.values(lisByTitle).filter(group =&gt; group.length &gt; 1);
+		}
+		chunkByUser(lis) {
+			if (this.isSingleContribs) {
+				return [lis];
+			}
+			let chunks = [], lastSplitAt = 0, prevUser;
+			this.isSingleContribs = lis.some((li, i) =&gt; {
+				let link = li.querySelector('.mw-userlink');
+				if (!link &amp;&amp; this.isContribs) {
+					return true;
+				}
+				let user = link &amp;&amp; link.textContent;
+				if (!link || i &amp;&amp; user !== prevUser) {
+					chunks.push(lis.slice(lastSplitAt, i));
+					lastSplitAt = i;
+				}
+				prevUser = user;
+			});
+			if (this.isSingleContribs) {
+				return [lis];
+			}
+			chunks.push(lis.slice(lastSplitAt));
+			return chunks.filter(chunk =&gt; chunk.length &gt; 1);
+		}
+		divideByDate(lis) {
+			let chunks = [], lastSplitAt = 0, prevDate;
+			lis.forEach((li, i) =&gt; {
+				let date;
+				if (isHist || this.isContribs) {
+					date = this.parseDate(
+						li.querySelector('.mw-changeslist-date').textContent
+					);
+				} else {
+					date = Date.parse(
+						li.dataset.mwTs.replace(/(....)(..)(..)(..)(..)(..)/, '$1-$2-$3T$4:$5:$6Z')
+					);
+				}
+				if (date) {
+					date = date / 60000;
+				}
+				if (i &amp;&amp; prevDate - date &gt; this.threshold) {
+					chunks.push(lis.slice(lastSplitAt, i));
+					lastSplitAt = i;
+				}
+				prevDate = date;
+				if (!this.strictMode || lastSplitAt === i) return;
+				let prevDiff = lis[i - 1].querySelector(this.diffSelector);
+				if (prevDiff) {
+					let prevNext = mw.util.getParamValue('oldid', prevDiff.search);
+					if (prevNext !== li.dataset.mwRevid) {
+						chunks.push(lis.slice(lastSplitAt, i));
+						lastSplitAt = i;
+					}
+				}
+			});
+			chunks.push(lis.slice(lastSplitAt));
+			return chunks.filter(chunk =&gt; chunk.length &gt; 1);
+		}
+		makeLinks(lis) {
+			let count = lis.length;
+			let firstPerma;
+			let start = lis.findIndex(li =&gt; (
+				firstPerma = li.querySelector(this.hybridSelector)
+			));
+			if (start === -1 || count - start &lt; 2) return [];
+			let end, lastDiff;
+			for (let i = count - 1; i &gt; start; i--) {
+				if (!isHist &amp;&amp; !this.isContribs) {
+					lastDiff = lis[i].querySelector(this.diffSelector);
+					if (lastDiff ||
+						lis[i].classList.contains('mw-changeslist-src-mw-new')
+					) {
+						end = i + 1;
+						break;
+					}
+				}
+				if (this.permaSelector &amp;&amp; lis[i].querySelector(this.permaSelector)) {
+					end = i + 1;
+					break;
+				}
+			}
+			if (!end) return [];
+			count = end - start;
+			let params = { diff: lis[start].dataset.mwRevid };
+			if (lastDiff) {
+				params.oldid = mw.util.getParamValue('oldid', lastDiff.search);
+			} else {
+				params.oldid = lis[end - 1].dataset.mwRevid;
+				if (isHist &amp;&amp; lis[end - 1].querySelector(this.diffSelector) ||
+					this.isContribs &amp;&amp; !lis[end - 1].querySelector('.newpage')
+				) {
+					params.direction = 'prev';
+				}
+			}
+			let title = !isHist &amp;&amp; mw.util.getParamValue('title', firstPerma.search);
+			let url = mw.util.getUrl(title, params);
+			let classes = 'consecudiff';
+			if (!isHist &amp;&amp; lis[start].classList.contains(this.topClass)) {
+				classes += ' consecudiff-top';
+			}
+			return lis.slice(start, end).map((li, i) =&gt; [
+				$('&lt;span&gt;').addClass(classes).append(
+					$('&lt;a&gt;')
+						.attr('href', url)
+						.text(this.convertNumber(count - i + '/' + count))
+				),
+				this.isEnhanced
+					? li.tagName === 'TR'
+						? li.lastElementChild
+						: li.querySelector('.mw-changeslist-line-inner')
+					: li
+			]);
+		}
+		parseDate(s) {
+			let date = Date.parse(s);
+			if (date) {
+				return date;
+			}
+			if (s.includes(',')) date = Date.parse(s.replace(',', ''));
+			if (date) {
+				return date;
+			}
+			if (mw.loader.getState('mediawiki.language.months') !== 'ready') return;
+			s = s.replace(/\D/g, c =&gt; {
+				let n = mw.language.convertNumber(c, true);
+				return Number.isNaN(n) ? c : n;
+			});
+			let h, m;
+			s = s.replace(/(\d\d?)[.:h](\d\d?)/, ($0, $1, $2) =&gt; {
+				h = $1;
+				m = $2;
+				return ' ';
+			});
+			if (!h) return;
+			let y, dateFirst;
+			s = s.replace(/^(.*?)(\d{4})(?!\d)/, ($0, $1, $2) =&gt; {
+				y = $2;
+				dateFirst = /\d/.test($1);
+				return $1 + ' ';
+			});
+			if (!y) return;
+			let mo, d;
+			if (dateFirst) {
+				[d, s] = this.getDate(s);
+				if (!d) return;
+				[mo, s] = this.getMonth(s);
+				if (mo === -1) return;
+			} else {
+				[mo, s] = this.getMonth(s);
+				if (mo === -1) return;
+				[d, s] = this.getDate(s);
+				if (!d) return;
+			}
+			return new Date(y, mo, d, h, m).getTime();
+		}
+		getMonth(s) {
+			if (!this.months) {
+				this.months = mw.language.months.abbrev
+					.concat(mw.language.months.names, mw.language.months.genitive)
+					.reverse();
+			}
+			let mo = this.months.findIndex(mn =&gt; {
+				let temp = s.replace(mn, ' ');
+				if (temp !== s) {
+					s = temp;
+					return true;
+				}
+			});
+			if (mo === -1) {
+				let [numeric, temp] = this.getDate(s);
+				numeric = parseInt(numeric);
+				if (numeric &gt; 0 &amp;&amp; numeric &lt; 13) {
+					mo = numeric - 1;
+					s = temp;
+				}
+			} else {
+				mo = 11 - mo % 12;
+			}
+			return [mo, s];
+		}
+		getDate(s) {
+			let d;
+			s = s.replace(/(^|\D)(\d\d?)(?!\d)/, ($0, $1, $2) =&gt; {
+				d = $2;
+				return $1 + ' ';
+			});
+			return [d, s];
+		}
+		convertNumber(num) {
+			try {
+				return mw.language.convertNumber(num);
+			} catch (e) {
+				return num;
+			}
+		}
+	}
+	mw.hook('wikipage.content').add($content =&gt; {
+		$content.find('.mw-pager-body').each(function () {
+			let lis = this.querySelectorAll('.mw-contributions-list &gt; li');
+			if (lis.length &gt; 1) {
+				new Consecudiff([...lis], !isHist);
+			}
+		});
+		if (isHist) return;
+		let $lists = $content.filter('.mw-changeslist');
+		if (!$lists.length) {
+			$lists = $content.find('.mw-changeslist');
+		}
+		$lists.each(function () {
+			let lis = this.querySelectorAll('.mw-changeslist-edit:not(.mw-changeslist-src-mw-categorize)[data-mw-revid]');
+			if (lis.length &gt; 1) {
+				new Consecudiff([...lis]);
+			}
+		});
+	});
+}());</text>
+      <sha1>5qp3pbs4rm0mth3u2xllaxb82y2cvbt</sha1>
+    </revision>
+  </page>
+</mediawiki>

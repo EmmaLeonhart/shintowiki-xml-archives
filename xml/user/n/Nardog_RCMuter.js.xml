@@ -1,0 +1,354 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>User:Nardog/RCMuter.js</title>
+    <ns>2</ns>
+    <id>143930</id>
+    <revision>
+      <id>3367899</id>
+      <timestamp>2026-03-02T18:44:20Z</timestamp>
+      <contributor>
+        <username>en&gt;Nardog</username>
+        <id>0</id>
+      </contributor>
+      <comment>no longer needed</comment>
+      <origin>3367899</origin>
+      <model>javascript</model>
+      <format>text/javascript</format>
+      <text bytes="4883" sha1="bvgsx0yy0v4q5tjrfavcm0v036vx3dd" xml:space="preserve">['Recentchanges', 'Recentchangeslinked', 'Watchlist'].includes(mw.config.get('wgCanonicalSpecialPageName')) &amp;&amp;
+$.when($.ready, mw.loader.using([
+	'user.options', 'mediawiki.util', 'mediawiki.api'
+])).then(function rcMuter() {
+	let os = mw.user.options.get('userjs-rcmuter');
+	let set = new Set(os &amp;&amp; os.split('|'));
+	let save = () =&gt; {
+		let ns = [...set].join('|');
+		if (ns === mw.user.options.get('userjs-rcmuter')) return;
+		new mw.Api().saveOption('userjs-rcmuter', ns);
+		mw.user.options.set('userjs-rcmuter', ns);
+		$edit.attr('data-rcmuter', set.size);
+	};
+	mw.loader.addStyleTag('body:not(.rcmuter-disabled) .rcmuter-muted{display:none !important} .rcmuter-edit::after, .rcmuter-togglemuted::after{content:": " attr(data-rcmuter)}');
+	let $edit = $('&lt;a&gt;').attr({
+		class: 'rcmuter-edit',
+		href: '#',
+		'data-rcmuter': set.size
+	}).text('Edit muted').on('click', e =&gt; {
+		e.preventDefault();
+		mw.loader.using([
+			'oojs-ui-windows', 'mediawiki.widgets.UsersMultiselectWidget'
+		]).then(() =&gt; OO.ui.getWindowManager().getWindow('message')).then(dialog =&gt; {
+			let multiselect = new mw.widgets.UsersMultiselectWidget({
+				$overlay: dialog.$overlay,
+				ipAllowed: true,
+				selected: [...set]
+			}).connect(dialog, { change: 'updateSize', reorder: 'updateSize' });
+			let instance = dialog.open({
+				message: $([
+					document.createTextNode('Muted users:'),
+					multiselect.$element[0]
+				]),
+				size: 'medium'
+			});
+			instance.opened.then(() =&gt; {
+				setTimeout(() =&gt; {
+					multiselect.focus().menu.toggle(false);
+				});
+			});
+			instance.closed.then(result =&gt; {
+				if (!result || result.action !== 'accept') return;
+				set = new Set(multiselect.getSelectedUsernames());
+				save();
+				mw.notify('Changes will take effect in next load.', {
+					tag: 'rcmuter'
+				});
+			});
+		});
+	});
+	let buttonsShown;
+	let $toggleButtons = $('&lt;a&gt;').attr('href', '#').text('Show toggle buttons').on('click', function (e) {
+		e.preventDefault();
+		if (buttonsShown) {
+			mw.hook('wikipage.content').remove(addButtons);
+			$('.rcmuter-toggle').remove();
+			this.textContent = 'Show toggle buttons';
+		} else {
+			mw.hook('wikipage.content').add(addButtons);
+			this.textContent = 'Hide toggle buttons';
+		}
+		buttonsShown = !buttonsShown;
+	});
+	let $toggle = $('&lt;a&gt;').attr({
+		class: 'rcmuter-togglemuted',
+		href: '#'
+	}).text('Show muted').on('click', function (e) {
+		e.preventDefault();
+		this.textContent = document.body.classList.toggle('rcmuter-disabled')
+			? 'Hide muted'
+			: 'Show muted';
+	});
+	let $toggleSpan = $('&lt;span&gt;').hide().append($toggle);
+	mw.util.addSubtitle(
+		$('&lt;span&gt;').addClass('mw-changeslist-links').append(
+			$('&lt;span&gt;').append($edit),
+			$('&lt;span&gt;').append($toggleButtons),
+			$toggleSpan
+		)[0]
+	);
+	let toggle = function (e) {
+		e.preventDefault();
+		let user = $(this)
+			.closest('.mw-userlink ~ .mw-usertoollinks, .mw-changeslist-line-inner-userLink ~ .mw-changeslist-line-inner-userTalkLink')
+			.prevAll('.mw-userlink, .mw-changeslist-line-inner-userLink')
+			.last().text().trim();
+		if (!user) {
+			mw.notify('Can\'t retrieve the username.', {
+				tag: 'rcmuter',
+				type: 'error'
+			});
+			return;
+		}
+		let muting = this.parentElement.classList.toggle('rcmuter-unmute');
+		set[muting ? 'add' : 'delete'](user);
+		save();
+		this.textContent = muting ? 'unmute' : 'mute';
+		mw.notify(`${muting ? 'Muting' : 'Unmuting'} ${user} from next load.`, {
+			tag: 'rcmuter'
+		});
+	};
+	let addButtons = $content =&gt; {
+		if (!$content.is('#mw-content-text, .mw-changeslist')) {
+			$content = $('#mw-content-text');
+			if ($content.has('.rcmuter-toggle').length) return;
+		}
+		let $tools = $content.find('.mw-usertoollinks.mw-changeslist-links');
+		let $muted = $tools.filter('.rcmuter-muted *');
+		$tools.not($muted).append(
+			$('&lt;span&gt;').addClass('rcmuter-toggle').append(
+				$('&lt;a&gt;').attr('href', '#').text('mute').on('click', toggle)
+			)
+		);
+		if (!$muted.length) return;
+		$muted.append(
+			$('&lt;span&gt;').addClass('rcmuter-toggle rcmuter-unmute').append(
+				$('&lt;a&gt;').attr('href', '#').text('unmute').on('click', toggle)
+			)
+		);
+	};
+	let mutedCount;
+	let filter = function () {
+		let muted = set.has(this.textContent);
+		if (muted) mutedCount++;
+		return muted;
+	};
+	mw.hook('wikipage.content').add($content =&gt; {
+		if (!$content.is('#mw-content-text, .mw-changeslist')) return;
+		if (!set.size) {
+			$toggleSpan.hide();
+			return;
+		}
+		mutedCount = 0;
+		$content.find('.changedby &gt; .mw-userlink:only-child')
+			.filter(filter).closest('table').addClass('rcmuter-muted');
+		$content.find('.mw-userlink:not(.changedby &gt; *, .comment *, .rcmuter-muted *)')
+			.filter(filter).closest('.mw-changeslist-line, table').addClass('rcmuter-muted')
+			.closest('table.mw-enhanced-rc').find('.changedby &gt; .mw-userlink').filter(filter).addClass('rcmuter-muted');
+		$toggleSpan.toggle(!!mutedCount);
+		$toggle.attr('data-rcmuter', mutedCount);
+	});
+});</text>
+      <sha1>bvgsx0yy0v4q5tjrfavcm0v036vx3dd</sha1>
+    </revision>
+    <revision>
+      <id>3367900</id>
+      <parentid>3367899</parentid>
+      <timestamp>2026-03-02T18:44:21Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3367899</origin>
+      <model>javascript</model>
+      <format>text/javascript</format>
+      <text bytes="4883" sha1="bvgsx0yy0v4q5tjrfavcm0v036vx3dd" xml:space="preserve">['Recentchanges', 'Recentchangeslinked', 'Watchlist'].includes(mw.config.get('wgCanonicalSpecialPageName')) &amp;&amp;
+$.when($.ready, mw.loader.using([
+	'user.options', 'mediawiki.util', 'mediawiki.api'
+])).then(function rcMuter() {
+	let os = mw.user.options.get('userjs-rcmuter');
+	let set = new Set(os &amp;&amp; os.split('|'));
+	let save = () =&gt; {
+		let ns = [...set].join('|');
+		if (ns === mw.user.options.get('userjs-rcmuter')) return;
+		new mw.Api().saveOption('userjs-rcmuter', ns);
+		mw.user.options.set('userjs-rcmuter', ns);
+		$edit.attr('data-rcmuter', set.size);
+	};
+	mw.loader.addStyleTag('body:not(.rcmuter-disabled) .rcmuter-muted{display:none !important} .rcmuter-edit::after, .rcmuter-togglemuted::after{content:": " attr(data-rcmuter)}');
+	let $edit = $('&lt;a&gt;').attr({
+		class: 'rcmuter-edit',
+		href: '#',
+		'data-rcmuter': set.size
+	}).text('Edit muted').on('click', e =&gt; {
+		e.preventDefault();
+		mw.loader.using([
+			'oojs-ui-windows', 'mediawiki.widgets.UsersMultiselectWidget'
+		]).then(() =&gt; OO.ui.getWindowManager().getWindow('message')).then(dialog =&gt; {
+			let multiselect = new mw.widgets.UsersMultiselectWidget({
+				$overlay: dialog.$overlay,
+				ipAllowed: true,
+				selected: [...set]
+			}).connect(dialog, { change: 'updateSize', reorder: 'updateSize' });
+			let instance = dialog.open({
+				message: $([
+					document.createTextNode('Muted users:'),
+					multiselect.$element[0]
+				]),
+				size: 'medium'
+			});
+			instance.opened.then(() =&gt; {
+				setTimeout(() =&gt; {
+					multiselect.focus().menu.toggle(false);
+				});
+			});
+			instance.closed.then(result =&gt; {
+				if (!result || result.action !== 'accept') return;
+				set = new Set(multiselect.getSelectedUsernames());
+				save();
+				mw.notify('Changes will take effect in next load.', {
+					tag: 'rcmuter'
+				});
+			});
+		});
+	});
+	let buttonsShown;
+	let $toggleButtons = $('&lt;a&gt;').attr('href', '#').text('Show toggle buttons').on('click', function (e) {
+		e.preventDefault();
+		if (buttonsShown) {
+			mw.hook('wikipage.content').remove(addButtons);
+			$('.rcmuter-toggle').remove();
+			this.textContent = 'Show toggle buttons';
+		} else {
+			mw.hook('wikipage.content').add(addButtons);
+			this.textContent = 'Hide toggle buttons';
+		}
+		buttonsShown = !buttonsShown;
+	});
+	let $toggle = $('&lt;a&gt;').attr({
+		class: 'rcmuter-togglemuted',
+		href: '#'
+	}).text('Show muted').on('click', function (e) {
+		e.preventDefault();
+		this.textContent = document.body.classList.toggle('rcmuter-disabled')
+			? 'Hide muted'
+			: 'Show muted';
+	});
+	let $toggleSpan = $('&lt;span&gt;').hide().append($toggle);
+	mw.util.addSubtitle(
+		$('&lt;span&gt;').addClass('mw-changeslist-links').append(
+			$('&lt;span&gt;').append($edit),
+			$('&lt;span&gt;').append($toggleButtons),
+			$toggleSpan
+		)[0]
+	);
+	let toggle = function (e) {
+		e.preventDefault();
+		let user = $(this)
+			.closest('.mw-userlink ~ .mw-usertoollinks, .mw-changeslist-line-inner-userLink ~ .mw-changeslist-line-inner-userTalkLink')
+			.prevAll('.mw-userlink, .mw-changeslist-line-inner-userLink')
+			.last().text().trim();
+		if (!user) {
+			mw.notify('Can\'t retrieve the username.', {
+				tag: 'rcmuter',
+				type: 'error'
+			});
+			return;
+		}
+		let muting = this.parentElement.classList.toggle('rcmuter-unmute');
+		set[muting ? 'add' : 'delete'](user);
+		save();
+		this.textContent = muting ? 'unmute' : 'mute';
+		mw.notify(`${muting ? 'Muting' : 'Unmuting'} ${user} from next load.`, {
+			tag: 'rcmuter'
+		});
+	};
+	let addButtons = $content =&gt; {
+		if (!$content.is('#mw-content-text, .mw-changeslist')) {
+			$content = $('#mw-content-text');
+			if ($content.has('.rcmuter-toggle').length) return;
+		}
+		let $tools = $content.find('.mw-usertoollinks.mw-changeslist-links');
+		let $muted = $tools.filter('.rcmuter-muted *');
+		$tools.not($muted).append(
+			$('&lt;span&gt;').addClass('rcmuter-toggle').append(
+				$('&lt;a&gt;').attr('href', '#').text('mute').on('click', toggle)
+			)
+		);
+		if (!$muted.length) return;
+		$muted.append(
+			$('&lt;span&gt;').addClass('rcmuter-toggle rcmuter-unmute').append(
+				$('&lt;a&gt;').attr('href', '#').text('unmute').on('click', toggle)
+			)
+		);
+	};
+	let mutedCount;
+	let filter = function () {
+		let muted = set.has(this.textContent);
+		if (muted) mutedCount++;
+		return muted;
+	};
+	mw.hook('wikipage.content').add($content =&gt; {
+		if (!$content.is('#mw-content-text, .mw-changeslist')) return;
+		if (!set.size) {
+			$toggleSpan.hide();
+			return;
+		}
+		mutedCount = 0;
+		$content.find('.changedby &gt; .mw-userlink:only-child')
+			.filter(filter).closest('table').addClass('rcmuter-muted');
+		$content.find('.mw-userlink:not(.changedby &gt; *, .comment *, .rcmuter-muted *)')
+			.filter(filter).closest('.mw-changeslist-line, table').addClass('rcmuter-muted')
+			.closest('table.mw-enhanced-rc').find('.changedby &gt; .mw-userlink').filter(filter).addClass('rcmuter-muted');
+		$toggleSpan.toggle(!!mutedCount);
+		$toggle.attr('data-rcmuter', mutedCount);
+	});
+});</text>
+      <sha1>bvgsx0yy0v4q5tjrfavcm0v036vx3dd</sha1>
+    </revision>
+  </page>
+</mediawiki>

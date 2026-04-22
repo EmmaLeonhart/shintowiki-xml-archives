@@ -1,0 +1,1980 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Help:Conditional tables</title>
+    <ns>12</ns>
+    <id>4829</id>
+    <revision>
+      <id>777594</id>
+      <timestamp>2024-11-30T23:18:49Z</timestamp>
+      <contributor>
+        <username>Timeshifter</username>
+        <id>403</id>
+      </contributor>
+      <comment>/* Notes and references */ [[Category:Wikipedia tables]]</comment>
+      <origin>777594</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="9871" sha1="0vj1ix3t9jbn5bdmzycvn3dzwdg6znf" xml:space="preserve">{{Table help}}
+{{Wikipedia how to|WP:CTB}}
+
+[[mw:Help:Extension:ParserFunctions|ParserFunctions]] allow for the conditional display of table rows, columns or cells (and really, just about anything else). But Parser functions have some limits.
+
+==Basic use==
+{{ombox | text =Make sure that the [https://www.mediawiki.org/wiki/Extension:ParserFunctions ParserFunctions] plugin is enabled before continuing.}}
+
+The following example shows a basic use for &lt;code&gt;#if&lt;/code&gt; that is available from the extension [[mw:Help:Extension:ParserFunctions|ParserFunctions]]:
+&lt;syntaxhighlight lang="wikitext"&gt;
+ {{#if:{{{variable_foo|}}}
+ |foo is set to '''{{{variable_foo}}}'''
+ |foo is ''blank''}}
+&lt;/syntaxhighlight&gt;
+Here, &lt;code&gt;{{{variable_foo}}}&lt;/code&gt; is checked to see if it is defined with a non-blank value. The table below shows the output from a template call (we'll call the template {{tlx|Conditional tables/example 1}}) with different values for &lt;code&gt;{{{variable_foo}}}&lt;/code&gt;:
+&lt;!-- NOTES:
+&amp;#61;  is an equal sign (=)
+&amp;#124; is a pipe symbol (|)
+--&gt;
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tlx|Conditional tables/example 1}}
+| {{Conditional tables/example 1}}
+|-
+| {{tlx|Conditional tables/example 1|variable_foo&amp;#61;}}
+| {{Conditional tables/example 1|variable_foo=}}
+|-
+| {{tlx|Conditional tables/example 1|variable_foo&amp;#61;value}}
+| {{Conditional tables/example 1|variable_foo=value}}
+|}
+
+Positional parameters &lt;code&gt;{{{1}}}&lt;/code&gt; etc. work like named parameters:
+&lt;syntaxhighlight lang="wikitext"&gt;
+ {{#if:{{{1|}}}
+ |1st parameter is '''{{{1}}}'''
+ |1st parameter is ''blank''}}
+&lt;/syntaxhighlight&gt;
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tlx|Conditional tables/example 1b| &amp;#124;bar}}
+| {{Conditional tables/example 1b| |bar}}
+|-
+| {{tlx|Conditional tables/example 1b|foo&amp;#124;bar}}
+| {{Conditional tables/example 1b|foo|bar}}
+|-
+| {{tlx|Conditional tables/example 1b|[&amp;#91;m:&amp;#124;not empty&amp;#93;]}}
+| {{Conditional tables/example 1b|[[m:|not empty]]}}
+|-
+| {{tlx|Conditional tables/example 1b|bad&amp;#61;idea}}
+| {{Conditional tables/example 1b|bad=idea}}
+|-
+| {{tlx|Conditional tables/example 1b|1&amp;#61;ok&amp;#61;yes}}
+| {{Conditional tables/example 1b|1=ok=yes}}
+|}
+
+Note how the ''pipe symbol'' (vertical bar) in the link works as is, it's not quite that easy within Wiki tables, see below.
+
+==Hiding rows entirely==
+It's also possible to hide rows of data within a table, however, there are issues you should be aware of.
+
+===Incorrect usage===
+Unfortunately &lt;code&gt;#if&lt;/code&gt; and the MediaWiki table syntax do not work together well. For example, the following, {{tl|Conditional tables/example 2}} is '''invalid''' and will not work:
+
+&lt;syntaxhighlight lang="wikitext"&gt;{| class="wikitable"
+{{#if:{{{variable_foo|}}}
+|
+|-
+! Foo
+| {{{variable_foo}}}
+}}
+|-
+! Bar
+| {{{variable_bar}}}
+|}&lt;/syntaxhighlight&gt;
+
+The table below demonstrates the effect when {{tl|Conditional tables/example 2}} is used:
+
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tl|Conditional tables/example 2}}
+| {{Conditional tables/example 2}}
+|-
+| {{tlp|Conditional tables/example 2|variable_foo&amp;#61;}}
+| {{Conditional tables/example 2|variable_foo=}}
+|-
+| {{tlp|Conditional tables/example 2|variable_foo&amp;#61;&amp;#124;variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2|variable_foo=|variable_bar=bar}}
+|-
+| {{tlp|Conditional tables/example 2|variable_foo&amp;#61;value}}
+| {{Conditional tables/example 2|variable_foo=value}}
+|-
+| {{tlp|Conditional tables/example 2|variable_foo&amp;#61;value&amp;#124;variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2|variable_foo=value|variable_bar=bar}}
+|}
+
+The problem is with the usage of the pipe character (&lt;code&gt;|&lt;/code&gt;). This character, in template calls, is used to separate parameters and so is invalid.
+
+===Correct usage===
+====Plan A====
+
+One method of hiding rows in tables (or other structures within tables) uses HTML directly.&lt;ref name="not_portable"&gt;Using HTML table code in templates can make them non-portable to other [[MediaWiki]] [[wiki]]s. This is because Wikipedia and other Wikimedia Foundation wikis process wikitext through [[HTML Tidy]]; most other wikis do not have the same setup, and the HTML table tags do not render. See [[Wikipedia:WikiProject Transwiki#Special templates]].&lt;/ref&gt; HTML is more complicated than MediaWiki table syntax, but not much more so. In general, there are only a handful of HTML tags you need to be aware of
+
+* &lt;code&gt;&lt;nowiki&gt;&lt;tr&gt;&lt;/nowiki&gt;&lt;/code&gt; - this tag creates a new row (similar to &lt;code&gt;|-&lt;/code&gt; in MediaWiki table syntax)
+* &lt;code&gt;&lt;nowiki&gt;&lt;th&gt;&lt;/nowiki&gt;&lt;/code&gt; - this tag creates a new header cell within a row (similar to &lt;code&gt;!&lt;/code&gt; in MediaWiki table syntax)
+* &lt;code&gt;&lt;nowiki&gt;&lt;td&gt;&lt;/nowiki&gt;&lt;/code&gt; - this tag creates a new cell within a row (similar to &lt;code&gt;|&lt;/code&gt; in MediaWiki table syntax)
+* &lt;code&gt;&lt;nowiki&gt;&lt;caption&gt;&lt;/nowiki&gt;&lt;/code&gt; - this tag creates a caption (similar to &lt;code&gt;|+&lt;/code&gt; in MediaWiki table syntax)
+
+Working from the invalid template example above, by switching to HTML we end up with the following code:
+
+&lt;syntaxhighlight lang="wikitext"&gt;{| class="wikitable"
+{{#if:{{{variable_foo|}}}
+|&lt;tr&gt;&lt;th&gt;Foo&lt;/th&gt;&lt;td&gt;{{{variable_foo}}}&lt;/td&gt;&lt;/tr&gt;}}
+|-
+! Bar
+| {{{variable_bar}}}
+|}&lt;/syntaxhighlight&gt;
+
+The code above is in {{tl|Conditional tables/example 2a}}. As before, the table below demonstrates the effect when it's used:
+
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tl|Conditional tables/example 2a}}
+| {{Conditional tables/example 2a}}
+|-
+| {{tlp|Conditional tables/example 2a|variable_foo&amp;#61;}}
+| {{Conditional tables/example 2a|variable_foo=}}
+|-
+| {{tlp|Conditional tables/example 2a|variable_foo&amp;#61;&amp;#124;variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2a|variable_foo=|variable_bar=bar}}
+|-
+| {{tlp|Conditional tables/example 2a|variable_foo&amp;#61;value}}
+| {{Conditional tables/example 2a|variable_foo=value}}
+|-
+| {{tlp|Conditional tables/example 2a|variable_foo&amp;#61;value&amp;#124;variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2a|variable_foo=value|variable_bar=bar}}
+|}
+
+====Plan B====
+As noted above the only problem is the vertical bar or
+''pipe symbol'' within a template. Often it's good enough to
+replace problematic characters by numeric references, 
+e.g. "{" by &lt;kbd&gt;&amp;amp;#123;&lt;/kbd&gt;, "|" by 
+&lt;kbd&gt;&amp;amp;#124;&lt;/kbd&gt;, and "}" by &lt;kbd&gt;&amp;amp;#125;&lt;/kbd&gt;.
+But for Wiki tables a real "|" delimiter is required &amp;mdash;
+using &lt;kbd&gt;&amp;amp;#124;&lt;/kbd&gt; doesn't work as delimiter.
+
+A simple trick allows to protect the "|" in template 
+parameter values while still arriving as real "|" 
+delimiter in the Wiki table, see the [[mw:Help:Magic_words#Other|magic word &lt;nowiki&gt;{{!}}&lt;/nowiki&gt;]]. Note that
+"!" (exclamation mark) has no problems with templates,
+it's the other delimiter used in Wiki tables.
+Here's the code for plan B:
+
+&lt;syntaxhighlight lang="wikitext"&gt;
+{| class="wikitable"
+{{#if:{{{foo|}}}|
+{{!}}-
+! Foo
+{{!}} {{{foo}}}
+}}
+|-
+! Bar
+| {{{bar}}}
+|}
+&lt;/syntaxhighlight&gt;
+
+The code above is in {{tl|Conditional tables/example 2b}}. As before, 
+the table below demonstrates the effect when it's used:
+
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tlx|Conditional tables/example 2b|bar&amp;#61;nobar}}
+| {{Conditional tables/example 2b|bar=nobar}}
+|-
+| {{tlx|Conditional tables/example 2b|foo&amp;#61;|bar&amp;#61;vbar}}
+| {{Conditional tables/example 2b|foo=|bar=vbar}}
+|-
+| {{tlx|Conditional tables/example 2b|foo&amp;#61;value}}
+| {{Conditional tables/example 2b|foo=value}}
+|-
+| {{tlx|Conditional tables/example 2b|foo&amp;#61;value|bar&amp;#61;vbar}}
+| {{Conditional tables/example 2b|foo=value|bar=vbar}}
+|}
+
+====Plan C====
+
+Perhaps the simplest option is to use the conditional with the CSS "display: none" property as follows:
+
+&lt;syntaxhighlight lang="wikitext"&gt;{| class="wikitable"
+|- {{#if: {{{variable_foo|}}} | | style="display: none;" }}
+! Foo
+| {{{variable_foo}}}
+|-
+! Bar
+| {{{variable_bar}}}
+|}&lt;/syntaxhighlight&gt;
+
+In this way there is no need for the wikitables pipe character to appear in the #if conditional. However, sources and notes referred to in the muted cells won't get suppressed with the other contents, to the effect that they continue to be listed at the end of an article without any references to them occurring in the article's text. Also, this method only works with browsers supporting CSS.
+
+The code above is in {{tl|Conditional tables/example 2c}}. As before, 
+the table below demonstrates the effect when it's used:
+
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tlx|Conditional tables/example 2c|variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2c|variable_bar=bar}}
+|-
+| {{tlx|Conditional tables/example 2c|variable_foo&amp;#61;|variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2c|variable_foo=|variable_bar=bar}}
+|-
+| {{tlx|Conditional tables/example 2c|variable_foo&amp;#61;foo}}
+| {{Conditional tables/example 2c|variable_foo=foo}}
+|-
+| {{tlx|Conditional tables/example 2c|variable_foo&amp;#61;foo|variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2c|variable_foo=foo|variable_bar=bar}}
+|}
+
+==Getting help==
+If you find yourself unable to get a template to behave how you like, you can try asking on [[Wikipedia:Village pump (technical)|Village pump]], placing a request at [[Wikipedia:Requested templates|Requested templates]], or contacting an editor via [[WP:IRC|IRC]].
+
+==See also==
+For avoiding blank rows in the case of successive optional rows, see [[m:Help:Table#Conditional table row]].
+
+For more information on &lt;code&gt;#if&lt;/code&gt; (and other # functions), see:
+
+* [[mw:Help:Extension:ParserFunctions]]
+
+The following help topics deal with templates:
+
+* [[m:Help:Template]]
+* [[m:Help:Advanced templates]]
+
+This help topic deals with table design (since most templates use tables, this may be useful):
+
+* [[Help:Table]]
+
+And finally:
+
+* [[Help:Conditional expressions]]
+
+==Notes and references ==
+{{reflist}}
+{{Wikipedia technical help|collapsed}}
+
+[[Category:Wikipedia tables]]</text>
+      <sha1>0vj1ix3t9jbn5bdmzycvn3dzwdg6znf</sha1>
+    </revision>
+    <revision>
+      <id>777595</id>
+      <parentid>777594</parentid>
+      <timestamp>2024-12-19T02:12:08Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: importing wikipedia</comment>
+      <origin>777594</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="9871" sha1="0vj1ix3t9jbn5bdmzycvn3dzwdg6znf" xml:space="preserve">{{Table help}}
+{{Wikipedia how to|WP:CTB}}
+
+[[mw:Help:Extension:ParserFunctions|ParserFunctions]] allow for the conditional display of table rows, columns or cells (and really, just about anything else). But Parser functions have some limits.
+
+==Basic use==
+{{ombox | text =Make sure that the [https://www.mediawiki.org/wiki/Extension:ParserFunctions ParserFunctions] plugin is enabled before continuing.}}
+
+The following example shows a basic use for &lt;code&gt;#if&lt;/code&gt; that is available from the extension [[mw:Help:Extension:ParserFunctions|ParserFunctions]]:
+&lt;syntaxhighlight lang="wikitext"&gt;
+ {{#if:{{{variable_foo|}}}
+ |foo is set to '''{{{variable_foo}}}'''
+ |foo is ''blank''}}
+&lt;/syntaxhighlight&gt;
+Here, &lt;code&gt;{{{variable_foo}}}&lt;/code&gt; is checked to see if it is defined with a non-blank value. The table below shows the output from a template call (we'll call the template {{tlx|Conditional tables/example 1}}) with different values for &lt;code&gt;{{{variable_foo}}}&lt;/code&gt;:
+&lt;!-- NOTES:
+&amp;#61;  is an equal sign (=)
+&amp;#124; is a pipe symbol (|)
+--&gt;
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tlx|Conditional tables/example 1}}
+| {{Conditional tables/example 1}}
+|-
+| {{tlx|Conditional tables/example 1|variable_foo&amp;#61;}}
+| {{Conditional tables/example 1|variable_foo=}}
+|-
+| {{tlx|Conditional tables/example 1|variable_foo&amp;#61;value}}
+| {{Conditional tables/example 1|variable_foo=value}}
+|}
+
+Positional parameters &lt;code&gt;{{{1}}}&lt;/code&gt; etc. work like named parameters:
+&lt;syntaxhighlight lang="wikitext"&gt;
+ {{#if:{{{1|}}}
+ |1st parameter is '''{{{1}}}'''
+ |1st parameter is ''blank''}}
+&lt;/syntaxhighlight&gt;
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tlx|Conditional tables/example 1b| &amp;#124;bar}}
+| {{Conditional tables/example 1b| |bar}}
+|-
+| {{tlx|Conditional tables/example 1b|foo&amp;#124;bar}}
+| {{Conditional tables/example 1b|foo|bar}}
+|-
+| {{tlx|Conditional tables/example 1b|[&amp;#91;m:&amp;#124;not empty&amp;#93;]}}
+| {{Conditional tables/example 1b|[[m:|not empty]]}}
+|-
+| {{tlx|Conditional tables/example 1b|bad&amp;#61;idea}}
+| {{Conditional tables/example 1b|bad=idea}}
+|-
+| {{tlx|Conditional tables/example 1b|1&amp;#61;ok&amp;#61;yes}}
+| {{Conditional tables/example 1b|1=ok=yes}}
+|}
+
+Note how the ''pipe symbol'' (vertical bar) in the link works as is, it's not quite that easy within Wiki tables, see below.
+
+==Hiding rows entirely==
+It's also possible to hide rows of data within a table, however, there are issues you should be aware of.
+
+===Incorrect usage===
+Unfortunately &lt;code&gt;#if&lt;/code&gt; and the MediaWiki table syntax do not work together well. For example, the following, {{tl|Conditional tables/example 2}} is '''invalid''' and will not work:
+
+&lt;syntaxhighlight lang="wikitext"&gt;{| class="wikitable"
+{{#if:{{{variable_foo|}}}
+|
+|-
+! Foo
+| {{{variable_foo}}}
+}}
+|-
+! Bar
+| {{{variable_bar}}}
+|}&lt;/syntaxhighlight&gt;
+
+The table below demonstrates the effect when {{tl|Conditional tables/example 2}} is used:
+
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tl|Conditional tables/example 2}}
+| {{Conditional tables/example 2}}
+|-
+| {{tlp|Conditional tables/example 2|variable_foo&amp;#61;}}
+| {{Conditional tables/example 2|variable_foo=}}
+|-
+| {{tlp|Conditional tables/example 2|variable_foo&amp;#61;&amp;#124;variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2|variable_foo=|variable_bar=bar}}
+|-
+| {{tlp|Conditional tables/example 2|variable_foo&amp;#61;value}}
+| {{Conditional tables/example 2|variable_foo=value}}
+|-
+| {{tlp|Conditional tables/example 2|variable_foo&amp;#61;value&amp;#124;variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2|variable_foo=value|variable_bar=bar}}
+|}
+
+The problem is with the usage of the pipe character (&lt;code&gt;|&lt;/code&gt;). This character, in template calls, is used to separate parameters and so is invalid.
+
+===Correct usage===
+====Plan A====
+
+One method of hiding rows in tables (or other structures within tables) uses HTML directly.&lt;ref name="not_portable"&gt;Using HTML table code in templates can make them non-portable to other [[MediaWiki]] [[wiki]]s. This is because Wikipedia and other Wikimedia Foundation wikis process wikitext through [[HTML Tidy]]; most other wikis do not have the same setup, and the HTML table tags do not render. See [[Wikipedia:WikiProject Transwiki#Special templates]].&lt;/ref&gt; HTML is more complicated than MediaWiki table syntax, but not much more so. In general, there are only a handful of HTML tags you need to be aware of
+
+* &lt;code&gt;&lt;nowiki&gt;&lt;tr&gt;&lt;/nowiki&gt;&lt;/code&gt; - this tag creates a new row (similar to &lt;code&gt;|-&lt;/code&gt; in MediaWiki table syntax)
+* &lt;code&gt;&lt;nowiki&gt;&lt;th&gt;&lt;/nowiki&gt;&lt;/code&gt; - this tag creates a new header cell within a row (similar to &lt;code&gt;!&lt;/code&gt; in MediaWiki table syntax)
+* &lt;code&gt;&lt;nowiki&gt;&lt;td&gt;&lt;/nowiki&gt;&lt;/code&gt; - this tag creates a new cell within a row (similar to &lt;code&gt;|&lt;/code&gt; in MediaWiki table syntax)
+* &lt;code&gt;&lt;nowiki&gt;&lt;caption&gt;&lt;/nowiki&gt;&lt;/code&gt; - this tag creates a caption (similar to &lt;code&gt;|+&lt;/code&gt; in MediaWiki table syntax)
+
+Working from the invalid template example above, by switching to HTML we end up with the following code:
+
+&lt;syntaxhighlight lang="wikitext"&gt;{| class="wikitable"
+{{#if:{{{variable_foo|}}}
+|&lt;tr&gt;&lt;th&gt;Foo&lt;/th&gt;&lt;td&gt;{{{variable_foo}}}&lt;/td&gt;&lt;/tr&gt;}}
+|-
+! Bar
+| {{{variable_bar}}}
+|}&lt;/syntaxhighlight&gt;
+
+The code above is in {{tl|Conditional tables/example 2a}}. As before, the table below demonstrates the effect when it's used:
+
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tl|Conditional tables/example 2a}}
+| {{Conditional tables/example 2a}}
+|-
+| {{tlp|Conditional tables/example 2a|variable_foo&amp;#61;}}
+| {{Conditional tables/example 2a|variable_foo=}}
+|-
+| {{tlp|Conditional tables/example 2a|variable_foo&amp;#61;&amp;#124;variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2a|variable_foo=|variable_bar=bar}}
+|-
+| {{tlp|Conditional tables/example 2a|variable_foo&amp;#61;value}}
+| {{Conditional tables/example 2a|variable_foo=value}}
+|-
+| {{tlp|Conditional tables/example 2a|variable_foo&amp;#61;value&amp;#124;variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2a|variable_foo=value|variable_bar=bar}}
+|}
+
+====Plan B====
+As noted above the only problem is the vertical bar or
+''pipe symbol'' within a template. Often it's good enough to
+replace problematic characters by numeric references, 
+e.g. "{" by &lt;kbd&gt;&amp;amp;#123;&lt;/kbd&gt;, "|" by 
+&lt;kbd&gt;&amp;amp;#124;&lt;/kbd&gt;, and "}" by &lt;kbd&gt;&amp;amp;#125;&lt;/kbd&gt;.
+But for Wiki tables a real "|" delimiter is required &amp;mdash;
+using &lt;kbd&gt;&amp;amp;#124;&lt;/kbd&gt; doesn't work as delimiter.
+
+A simple trick allows to protect the "|" in template 
+parameter values while still arriving as real "|" 
+delimiter in the Wiki table, see the [[mw:Help:Magic_words#Other|magic word &lt;nowiki&gt;{{!}}&lt;/nowiki&gt;]]. Note that
+"!" (exclamation mark) has no problems with templates,
+it's the other delimiter used in Wiki tables.
+Here's the code for plan B:
+
+&lt;syntaxhighlight lang="wikitext"&gt;
+{| class="wikitable"
+{{#if:{{{foo|}}}|
+{{!}}-
+! Foo
+{{!}} {{{foo}}}
+}}
+|-
+! Bar
+| {{{bar}}}
+|}
+&lt;/syntaxhighlight&gt;
+
+The code above is in {{tl|Conditional tables/example 2b}}. As before, 
+the table below demonstrates the effect when it's used:
+
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tlx|Conditional tables/example 2b|bar&amp;#61;nobar}}
+| {{Conditional tables/example 2b|bar=nobar}}
+|-
+| {{tlx|Conditional tables/example 2b|foo&amp;#61;|bar&amp;#61;vbar}}
+| {{Conditional tables/example 2b|foo=|bar=vbar}}
+|-
+| {{tlx|Conditional tables/example 2b|foo&amp;#61;value}}
+| {{Conditional tables/example 2b|foo=value}}
+|-
+| {{tlx|Conditional tables/example 2b|foo&amp;#61;value|bar&amp;#61;vbar}}
+| {{Conditional tables/example 2b|foo=value|bar=vbar}}
+|}
+
+====Plan C====
+
+Perhaps the simplest option is to use the conditional with the CSS "display: none" property as follows:
+
+&lt;syntaxhighlight lang="wikitext"&gt;{| class="wikitable"
+|- {{#if: {{{variable_foo|}}} | | style="display: none;" }}
+! Foo
+| {{{variable_foo}}}
+|-
+! Bar
+| {{{variable_bar}}}
+|}&lt;/syntaxhighlight&gt;
+
+In this way there is no need for the wikitables pipe character to appear in the #if conditional. However, sources and notes referred to in the muted cells won't get suppressed with the other contents, to the effect that they continue to be listed at the end of an article without any references to them occurring in the article's text. Also, this method only works with browsers supporting CSS.
+
+The code above is in {{tl|Conditional tables/example 2c}}. As before, 
+the table below demonstrates the effect when it's used:
+
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tlx|Conditional tables/example 2c|variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2c|variable_bar=bar}}
+|-
+| {{tlx|Conditional tables/example 2c|variable_foo&amp;#61;|variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2c|variable_foo=|variable_bar=bar}}
+|-
+| {{tlx|Conditional tables/example 2c|variable_foo&amp;#61;foo}}
+| {{Conditional tables/example 2c|variable_foo=foo}}
+|-
+| {{tlx|Conditional tables/example 2c|variable_foo&amp;#61;foo|variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2c|variable_foo=foo|variable_bar=bar}}
+|}
+
+==Getting help==
+If you find yourself unable to get a template to behave how you like, you can try asking on [[Wikipedia:Village pump (technical)|Village pump]], placing a request at [[Wikipedia:Requested templates|Requested templates]], or contacting an editor via [[WP:IRC|IRC]].
+
+==See also==
+For avoiding blank rows in the case of successive optional rows, see [[m:Help:Table#Conditional table row]].
+
+For more information on &lt;code&gt;#if&lt;/code&gt; (and other # functions), see:
+
+* [[mw:Help:Extension:ParserFunctions]]
+
+The following help topics deal with templates:
+
+* [[m:Help:Template]]
+* [[m:Help:Advanced templates]]
+
+This help topic deals with table design (since most templates use tables, this may be useful):
+
+* [[Help:Table]]
+
+And finally:
+
+* [[Help:Conditional expressions]]
+
+==Notes and references ==
+{{reflist}}
+{{Wikipedia technical help|collapsed}}
+
+[[Category:Wikipedia tables]]</text>
+      <sha1>0vj1ix3t9jbn5bdmzycvn3dzwdg6znf</sha1>
+    </revision>
+    <revision>
+      <id>777596</id>
+      <parentid>777595</parentid>
+      <timestamp>2025-03-22T06:43:33Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <origin>777596</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="9888" sha1="c2k12ln7yg6bwmvkbqq5j7xdjabhcvf" xml:space="preserve">{{Table help}}
+{{Wikipedia how to|WP:CTB}}
+
+[[mw:Help:Extension:ParserFunctions|ParserFunctions]] allow for the conditional display of table rows, columns or cells (and really, just about anything else). But Parser functions have some limits.
+
+==Basic use==
+{{ombox | text =Make sure that the [https://www.mediawiki.org/wiki/Extension:ParserFunctions ParserFunctions] plugin is enabled before continuing.}}
+
+The following example shows a basic use for &lt;code&gt;#if&lt;/code&gt; that is available from the extension [[mw:Help:Extension:ParserFunctions|ParserFunctions]]:
+&lt;syntaxhighlight lang="wikitext"&gt;
+ {{#if:{{{variable_foo|}}}
+ |foo is set to '''{{{variable_foo}}}'''
+ |foo is ''blank''}}
+&lt;/syntaxhighlight&gt;
+Here, &lt;code&gt;{{{variable_foo}}}&lt;/code&gt; is checked to see if it is defined with a non-blank value. The table below shows the output from a template call (we'll call the template {{tlx|Conditional tables/example 1}}) with different values for &lt;code&gt;{{{variable_foo}}}&lt;/code&gt;:
+&lt;!-- NOTES:
+&amp;#61;  is an equal sign (=)
+&amp;#124; is a pipe symbol (|)
+--&gt;
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tlx|Conditional tables/example 1}}
+| {{Conditional tables/example 1}}
+|-
+| {{tlx|Conditional tables/example 1|variable_foo&amp;#61;}}
+| {{Conditional tables/example 1|variable_foo=}}
+|-
+| {{tlx|Conditional tables/example 1|variable_foo&amp;#61;value}}
+| {{Conditional tables/example 1|variable_foo=value}}
+|}
+
+Positional parameters &lt;code&gt;{{{1}}}&lt;/code&gt; etc. work like named parameters:
+&lt;syntaxhighlight lang="wikitext"&gt;
+ {{#if:{{{1|}}}
+ |1st parameter is '''{{{1}}}'''
+ |1st parameter is ''blank''}}
+&lt;/syntaxhighlight&gt;
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tlx|Conditional tables/example 1b| &amp;#124;bar}}
+| {{Conditional tables/example 1b| |bar}}
+|-
+| {{tlx|Conditional tables/example 1b|foo&amp;#124;bar}}
+| {{Conditional tables/example 1b|foo|bar}}
+|-
+| {{tlx|Conditional tables/example 1b|[&amp;#91;m:&amp;#124;not empty&amp;#93;]}}
+| {{Conditional tables/example 1b|[[m:|not empty]]}}
+|-
+| {{tlx|Conditional tables/example 1b|bad&amp;#61;idea}}
+| {{Conditional tables/example 1b|bad=idea}}
+|-
+| {{tlx|Conditional tables/example 1b|1&amp;#61;ok&amp;#61;yes}}
+| {{Conditional tables/example 1b|1=ok=yes}}
+|}
+
+Note how the ''pipe symbol'' (vertical bar) in the link works as is, it's not quite that easy within Wiki tables, see below.
+
+==Hiding rows entirely==
+It's also possible to hide rows of data within a table, however, there are issues you should be aware of.
+
+===Incorrect usage===
+Unfortunately &lt;code&gt;#if&lt;/code&gt; and the MediaWiki table syntax do not work together well. For example, the following, {{tl|Conditional tables/example 2}} is '''invalid''' and will not work:
+
+&lt;syntaxhighlight lang="wikitext"&gt;{| class="wikitable"
+{{#if:{{{variable_foo|}}}
+|
+|-
+! Foo
+| {{{variable_foo}}}
+}}
+|-
+! Bar
+| {{{variable_bar}}}
+|}&lt;/syntaxhighlight&gt;
+
+The table below demonstrates the effect when {{tl|Conditional tables/example 2}} is used:
+
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tl|Conditional tables/example 2}}
+| {{Conditional tables/example 2}}
+|-
+| {{tlp|Conditional tables/example 2|variable_foo&amp;#61;}}
+| {{Conditional tables/example 2|variable_foo=}}
+|-
+| {{tlp|Conditional tables/example 2|variable_foo&amp;#61;&amp;#124;variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2|variable_foo=|variable_bar=bar}}
+|-
+| {{tlp|Conditional tables/example 2|variable_foo&amp;#61;value}}
+| {{Conditional tables/example 2|variable_foo=value}}
+|-
+| {{tlp|Conditional tables/example 2|variable_foo&amp;#61;value&amp;#124;variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2|variable_foo=value|variable_bar=bar}}
+|}
+
+The problem is with the usage of the pipe character (&lt;code&gt;|&lt;/code&gt;). This character, in template calls, is used to separate parameters and so is invalid.
+
+===Correct usage===
+====Plan A====
+
+One method of hiding rows in tables (or other structures within tables) uses HTML directly.&lt;ref name="not_portable"&gt;Using HTML table code in templates can make them non-portable to other [[MediaWiki]] [[wiki]]s. This is because Wikipedia and other Wikimedia Foundation wikis process wikitext through [[HTML Tidy]]; most other wikis do not have the same setup, and the HTML table tags do not render. See [[Wikipedia:WikiProject Transwiki#Special templates]].&lt;/ref&gt; HTML is more complicated than MediaWiki table syntax, but not much more so. In general, there are only a handful of HTML tags you need to be aware of
+
+* &lt;code&gt;&lt;nowiki&gt;&lt;tr&gt;&lt;/nowiki&gt;&lt;/code&gt; - this tag creates a new row (similar to &lt;code&gt;|-&lt;/code&gt; in MediaWiki table syntax)
+* &lt;code&gt;&lt;nowiki&gt;&lt;th&gt;&lt;/nowiki&gt;&lt;/code&gt; - this tag creates a new header cell within a row (similar to &lt;code&gt;!&lt;/code&gt; in MediaWiki table syntax)
+* &lt;code&gt;&lt;nowiki&gt;&lt;td&gt;&lt;/nowiki&gt;&lt;/code&gt; - this tag creates a new cell within a row (similar to &lt;code&gt;|&lt;/code&gt; in MediaWiki table syntax)
+* &lt;code&gt;&lt;nowiki&gt;&lt;caption&gt;&lt;/nowiki&gt;&lt;/code&gt; - this tag creates a caption (similar to &lt;code&gt;|+&lt;/code&gt; in MediaWiki table syntax)
+
+Working from the invalid template example above, by switching to HTML we end up with the following code:
+
+&lt;syntaxhighlight lang="wikitext"&gt;{| class="wikitable"
+{{#if:{{{variable_foo|}}}
+|&lt;tr&gt;&lt;th&gt;Foo&lt;/th&gt;&lt;td&gt;{{{variable_foo}}}&lt;/td&gt;&lt;/tr&gt;}}
+|-
+! Bar
+| {{{variable_bar}}}
+|}&lt;/syntaxhighlight&gt;
+
+The code above is in {{tl|Conditional tables/example 2a}}. As before, the table below demonstrates the effect when it's used:
+
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tl|Conditional tables/example 2a}}
+| {{Conditional tables/example 2a}}
+|-
+| {{tlp|Conditional tables/example 2a|variable_foo&amp;#61;}}
+| {{Conditional tables/example 2a|variable_foo=}}
+|-
+| {{tlp|Conditional tables/example 2a|variable_foo&amp;#61;&amp;#124;variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2a|variable_foo=|variable_bar=bar}}
+|-
+| {{tlp|Conditional tables/example 2a|variable_foo&amp;#61;value}}
+| {{Conditional tables/example 2a|variable_foo=value}}
+|-
+| {{tlp|Conditional tables/example 2a|variable_foo&amp;#61;value&amp;#124;variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2a|variable_foo=value|variable_bar=bar}}
+|}
+
+====Plan B====
+As noted above the only problem is the vertical bar or
+''pipe symbol'' within a template. Often it's good enough to
+replace problematic characters by numeric references, 
+e.g. "{" by &lt;kbd&gt;&amp;amp;#123;&lt;/kbd&gt;, "|" by 
+&lt;kbd&gt;&amp;amp;#124;&lt;/kbd&gt;, and "}" by &lt;kbd&gt;&amp;amp;#125;&lt;/kbd&gt;.
+But for Wiki tables a real "|" delimiter is required &amp;mdash;
+using &lt;kbd&gt;&amp;amp;#124;&lt;/kbd&gt; doesn't work as delimiter.
+
+A simple trick allows to protect the "|" in template 
+parameter values while still arriving as real "|" 
+delimiter in the Wiki table, see the [[mw:Help:Magic_words#Other|magic word &lt;nowiki&gt;{{!}}&lt;/nowiki&gt;]]. Note that
+"!" (exclamation mark) has no problems with templates,
+it's the other delimiter used in Wiki tables.
+Here's the code for plan B:
+
+&lt;syntaxhighlight lang="wikitext"&gt;
+{| class="wikitable"
+{{#if:{{{foo|}}}|
+{{!}}-
+! Foo
+{{!}} {{{foo}}}
+}}
+|-
+! Bar
+| {{{bar}}}
+|}
+&lt;/syntaxhighlight&gt;
+
+The code above is in {{tl|Conditional tables/example 2b}}. As before, 
+the table below demonstrates the effect when it's used:
+
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tlx|Conditional tables/example 2b|bar&amp;#61;nobar}}
+| {{Conditional tables/example 2b|bar=nobar}}
+|-
+| {{tlx|Conditional tables/example 2b|foo&amp;#61;|bar&amp;#61;vbar}}
+| {{Conditional tables/example 2b|foo=|bar=vbar}}
+|-
+| {{tlx|Conditional tables/example 2b|foo&amp;#61;value}}
+| {{Conditional tables/example 2b|foo=value}}
+|-
+| {{tlx|Conditional tables/example 2b|foo&amp;#61;value|bar&amp;#61;vbar}}
+| {{Conditional tables/example 2b|foo=value|bar=vbar}}
+|}
+
+====Plan C====
+
+Perhaps the simplest option is to use the conditional with the CSS "display: none" property as follows:
+
+&lt;syntaxhighlight lang="wikitext"&gt;{| class="wikitable"
+|- {{#if: {{{variable_foo|}}} | | style="display: none;" }}
+! Foo
+| {{{variable_foo}}}
+|-
+! Bar
+| {{{variable_bar}}}
+|}&lt;/syntaxhighlight&gt;
+
+In this way there is no need for the wikitables pipe character to appear in the #if conditional. However, sources and notes referred to in the muted cells won't get suppressed with the other contents, to the effect that they continue to be listed at the end of an article without any references to them occurring in the article's text. Also, this method only works with browsers supporting CSS.
+
+The code above is in {{tl|Conditional tables/example 2c}}. As before, 
+the table below demonstrates the effect when it's used:
+
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tlx|Conditional tables/example 2c|variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2c|variable_bar=bar}}
+|-
+| {{tlx|Conditional tables/example 2c|variable_foo&amp;#61;|variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2c|variable_foo=|variable_bar=bar}}
+|-
+| {{tlx|Conditional tables/example 2c|variable_foo&amp;#61;foo}}
+| {{Conditional tables/example 2c|variable_foo=foo}}
+|-
+| {{tlx|Conditional tables/example 2c|variable_foo&amp;#61;foo|variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2c|variable_foo=foo|variable_bar=bar}}
+|}
+
+==Getting help==
+If you find yourself unable to get a template to behave how you like, you can try asking on [[Wikipedia:Village pump (technical)|Village pump]], placing a request at [[Wikipedia:Requested templates|Requested templates]], or contacting an editor via [[WP:IRC|IRC]].
+
+==See also==
+For avoiding blank rows in the case of successive optional rows, see [[m:Help:Table#Conditional table row]].
+
+For more information on &lt;code&gt;#if&lt;/code&gt; (and other # functions), see:
+
+* [[mw:Help:Extension:ParserFunctions]]
+
+The following help topics deal with templates:
+
+* [[m:Help:Template]]
+* [[m:Help:Advanced templates]]
+
+This help topic deals with table design (since most templates use tables, this may be useful):
+
+* [[Help:Table]]
+
+And finally:
+
+* [[Help:Conditional expressions]]
+
+==Notes and references ==
+{{reflist}}
+{{Wikipedia technical help|collapsed}}
+
+[[Category:Wikipedia tables]]
+[[Category:New]]</text>
+      <sha1>c2k12ln7yg6bwmvkbqq5j7xdjabhcvf</sha1>
+    </revision>
+    <revision>
+      <id>777597</id>
+      <parentid>777596</parentid>
+      <timestamp>2025-04-09T05:30:42Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Removing from [[Category:New]] on using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>777597</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="9871" sha1="0vj1ix3t9jbn5bdmzycvn3dzwdg6znf" xml:space="preserve">{{Table help}}
+{{Wikipedia how to|WP:CTB}}
+
+[[mw:Help:Extension:ParserFunctions|ParserFunctions]] allow for the conditional display of table rows, columns or cells (and really, just about anything else). But Parser functions have some limits.
+
+==Basic use==
+{{ombox | text =Make sure that the [https://www.mediawiki.org/wiki/Extension:ParserFunctions ParserFunctions] plugin is enabled before continuing.}}
+
+The following example shows a basic use for &lt;code&gt;#if&lt;/code&gt; that is available from the extension [[mw:Help:Extension:ParserFunctions|ParserFunctions]]:
+&lt;syntaxhighlight lang="wikitext"&gt;
+ {{#if:{{{variable_foo|}}}
+ |foo is set to '''{{{variable_foo}}}'''
+ |foo is ''blank''}}
+&lt;/syntaxhighlight&gt;
+Here, &lt;code&gt;{{{variable_foo}}}&lt;/code&gt; is checked to see if it is defined with a non-blank value. The table below shows the output from a template call (we'll call the template {{tlx|Conditional tables/example 1}}) with different values for &lt;code&gt;{{{variable_foo}}}&lt;/code&gt;:
+&lt;!-- NOTES:
+&amp;#61;  is an equal sign (=)
+&amp;#124; is a pipe symbol (|)
+--&gt;
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tlx|Conditional tables/example 1}}
+| {{Conditional tables/example 1}}
+|-
+| {{tlx|Conditional tables/example 1|variable_foo&amp;#61;}}
+| {{Conditional tables/example 1|variable_foo=}}
+|-
+| {{tlx|Conditional tables/example 1|variable_foo&amp;#61;value}}
+| {{Conditional tables/example 1|variable_foo=value}}
+|}
+
+Positional parameters &lt;code&gt;{{{1}}}&lt;/code&gt; etc. work like named parameters:
+&lt;syntaxhighlight lang="wikitext"&gt;
+ {{#if:{{{1|}}}
+ |1st parameter is '''{{{1}}}'''
+ |1st parameter is ''blank''}}
+&lt;/syntaxhighlight&gt;
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tlx|Conditional tables/example 1b| &amp;#124;bar}}
+| {{Conditional tables/example 1b| |bar}}
+|-
+| {{tlx|Conditional tables/example 1b|foo&amp;#124;bar}}
+| {{Conditional tables/example 1b|foo|bar}}
+|-
+| {{tlx|Conditional tables/example 1b|[&amp;#91;m:&amp;#124;not empty&amp;#93;]}}
+| {{Conditional tables/example 1b|[[m:|not empty]]}}
+|-
+| {{tlx|Conditional tables/example 1b|bad&amp;#61;idea}}
+| {{Conditional tables/example 1b|bad=idea}}
+|-
+| {{tlx|Conditional tables/example 1b|1&amp;#61;ok&amp;#61;yes}}
+| {{Conditional tables/example 1b|1=ok=yes}}
+|}
+
+Note how the ''pipe symbol'' (vertical bar) in the link works as is, it's not quite that easy within Wiki tables, see below.
+
+==Hiding rows entirely==
+It's also possible to hide rows of data within a table, however, there are issues you should be aware of.
+
+===Incorrect usage===
+Unfortunately &lt;code&gt;#if&lt;/code&gt; and the MediaWiki table syntax do not work together well. For example, the following, {{tl|Conditional tables/example 2}} is '''invalid''' and will not work:
+
+&lt;syntaxhighlight lang="wikitext"&gt;{| class="wikitable"
+{{#if:{{{variable_foo|}}}
+|
+|-
+! Foo
+| {{{variable_foo}}}
+}}
+|-
+! Bar
+| {{{variable_bar}}}
+|}&lt;/syntaxhighlight&gt;
+
+The table below demonstrates the effect when {{tl|Conditional tables/example 2}} is used:
+
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tl|Conditional tables/example 2}}
+| {{Conditional tables/example 2}}
+|-
+| {{tlp|Conditional tables/example 2|variable_foo&amp;#61;}}
+| {{Conditional tables/example 2|variable_foo=}}
+|-
+| {{tlp|Conditional tables/example 2|variable_foo&amp;#61;&amp;#124;variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2|variable_foo=|variable_bar=bar}}
+|-
+| {{tlp|Conditional tables/example 2|variable_foo&amp;#61;value}}
+| {{Conditional tables/example 2|variable_foo=value}}
+|-
+| {{tlp|Conditional tables/example 2|variable_foo&amp;#61;value&amp;#124;variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2|variable_foo=value|variable_bar=bar}}
+|}
+
+The problem is with the usage of the pipe character (&lt;code&gt;|&lt;/code&gt;). This character, in template calls, is used to separate parameters and so is invalid.
+
+===Correct usage===
+====Plan A====
+
+One method of hiding rows in tables (or other structures within tables) uses HTML directly.&lt;ref name="not_portable"&gt;Using HTML table code in templates can make them non-portable to other [[MediaWiki]] [[wiki]]s. This is because Wikipedia and other Wikimedia Foundation wikis process wikitext through [[HTML Tidy]]; most other wikis do not have the same setup, and the HTML table tags do not render. See [[Wikipedia:WikiProject Transwiki#Special templates]].&lt;/ref&gt; HTML is more complicated than MediaWiki table syntax, but not much more so. In general, there are only a handful of HTML tags you need to be aware of
+
+* &lt;code&gt;&lt;nowiki&gt;&lt;tr&gt;&lt;/nowiki&gt;&lt;/code&gt; - this tag creates a new row (similar to &lt;code&gt;|-&lt;/code&gt; in MediaWiki table syntax)
+* &lt;code&gt;&lt;nowiki&gt;&lt;th&gt;&lt;/nowiki&gt;&lt;/code&gt; - this tag creates a new header cell within a row (similar to &lt;code&gt;!&lt;/code&gt; in MediaWiki table syntax)
+* &lt;code&gt;&lt;nowiki&gt;&lt;td&gt;&lt;/nowiki&gt;&lt;/code&gt; - this tag creates a new cell within a row (similar to &lt;code&gt;|&lt;/code&gt; in MediaWiki table syntax)
+* &lt;code&gt;&lt;nowiki&gt;&lt;caption&gt;&lt;/nowiki&gt;&lt;/code&gt; - this tag creates a caption (similar to &lt;code&gt;|+&lt;/code&gt; in MediaWiki table syntax)
+
+Working from the invalid template example above, by switching to HTML we end up with the following code:
+
+&lt;syntaxhighlight lang="wikitext"&gt;{| class="wikitable"
+{{#if:{{{variable_foo|}}}
+|&lt;tr&gt;&lt;th&gt;Foo&lt;/th&gt;&lt;td&gt;{{{variable_foo}}}&lt;/td&gt;&lt;/tr&gt;}}
+|-
+! Bar
+| {{{variable_bar}}}
+|}&lt;/syntaxhighlight&gt;
+
+The code above is in {{tl|Conditional tables/example 2a}}. As before, the table below demonstrates the effect when it's used:
+
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tl|Conditional tables/example 2a}}
+| {{Conditional tables/example 2a}}
+|-
+| {{tlp|Conditional tables/example 2a|variable_foo&amp;#61;}}
+| {{Conditional tables/example 2a|variable_foo=}}
+|-
+| {{tlp|Conditional tables/example 2a|variable_foo&amp;#61;&amp;#124;variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2a|variable_foo=|variable_bar=bar}}
+|-
+| {{tlp|Conditional tables/example 2a|variable_foo&amp;#61;value}}
+| {{Conditional tables/example 2a|variable_foo=value}}
+|-
+| {{tlp|Conditional tables/example 2a|variable_foo&amp;#61;value&amp;#124;variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2a|variable_foo=value|variable_bar=bar}}
+|}
+
+====Plan B====
+As noted above the only problem is the vertical bar or
+''pipe symbol'' within a template. Often it's good enough to
+replace problematic characters by numeric references, 
+e.g. "{" by &lt;kbd&gt;&amp;amp;#123;&lt;/kbd&gt;, "|" by 
+&lt;kbd&gt;&amp;amp;#124;&lt;/kbd&gt;, and "}" by &lt;kbd&gt;&amp;amp;#125;&lt;/kbd&gt;.
+But for Wiki tables a real "|" delimiter is required &amp;mdash;
+using &lt;kbd&gt;&amp;amp;#124;&lt;/kbd&gt; doesn't work as delimiter.
+
+A simple trick allows to protect the "|" in template 
+parameter values while still arriving as real "|" 
+delimiter in the Wiki table, see the [[mw:Help:Magic_words#Other|magic word &lt;nowiki&gt;{{!}}&lt;/nowiki&gt;]]. Note that
+"!" (exclamation mark) has no problems with templates,
+it's the other delimiter used in Wiki tables.
+Here's the code for plan B:
+
+&lt;syntaxhighlight lang="wikitext"&gt;
+{| class="wikitable"
+{{#if:{{{foo|}}}|
+{{!}}-
+! Foo
+{{!}} {{{foo}}}
+}}
+|-
+! Bar
+| {{{bar}}}
+|}
+&lt;/syntaxhighlight&gt;
+
+The code above is in {{tl|Conditional tables/example 2b}}. As before, 
+the table below demonstrates the effect when it's used:
+
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tlx|Conditional tables/example 2b|bar&amp;#61;nobar}}
+| {{Conditional tables/example 2b|bar=nobar}}
+|-
+| {{tlx|Conditional tables/example 2b|foo&amp;#61;|bar&amp;#61;vbar}}
+| {{Conditional tables/example 2b|foo=|bar=vbar}}
+|-
+| {{tlx|Conditional tables/example 2b|foo&amp;#61;value}}
+| {{Conditional tables/example 2b|foo=value}}
+|-
+| {{tlx|Conditional tables/example 2b|foo&amp;#61;value|bar&amp;#61;vbar}}
+| {{Conditional tables/example 2b|foo=value|bar=vbar}}
+|}
+
+====Plan C====
+
+Perhaps the simplest option is to use the conditional with the CSS "display: none" property as follows:
+
+&lt;syntaxhighlight lang="wikitext"&gt;{| class="wikitable"
+|- {{#if: {{{variable_foo|}}} | | style="display: none;" }}
+! Foo
+| {{{variable_foo}}}
+|-
+! Bar
+| {{{variable_bar}}}
+|}&lt;/syntaxhighlight&gt;
+
+In this way there is no need for the wikitables pipe character to appear in the #if conditional. However, sources and notes referred to in the muted cells won't get suppressed with the other contents, to the effect that they continue to be listed at the end of an article without any references to them occurring in the article's text. Also, this method only works with browsers supporting CSS.
+
+The code above is in {{tl|Conditional tables/example 2c}}. As before, 
+the table below demonstrates the effect when it's used:
+
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tlx|Conditional tables/example 2c|variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2c|variable_bar=bar}}
+|-
+| {{tlx|Conditional tables/example 2c|variable_foo&amp;#61;|variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2c|variable_foo=|variable_bar=bar}}
+|-
+| {{tlx|Conditional tables/example 2c|variable_foo&amp;#61;foo}}
+| {{Conditional tables/example 2c|variable_foo=foo}}
+|-
+| {{tlx|Conditional tables/example 2c|variable_foo&amp;#61;foo|variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2c|variable_foo=foo|variable_bar=bar}}
+|}
+
+==Getting help==
+If you find yourself unable to get a template to behave how you like, you can try asking on [[Wikipedia:Village pump (technical)|Village pump]], placing a request at [[Wikipedia:Requested templates|Requested templates]], or contacting an editor via [[WP:IRC|IRC]].
+
+==See also==
+For avoiding blank rows in the case of successive optional rows, see [[m:Help:Table#Conditional table row]].
+
+For more information on &lt;code&gt;#if&lt;/code&gt; (and other # functions), see:
+
+* [[mw:Help:Extension:ParserFunctions]]
+
+The following help topics deal with templates:
+
+* [[m:Help:Template]]
+* [[m:Help:Advanced templates]]
+
+This help topic deals with table design (since most templates use tables, this may be useful):
+
+* [[Help:Table]]
+
+And finally:
+
+* [[Help:Conditional expressions]]
+
+==Notes and references ==
+{{reflist}}
+{{Wikipedia technical help|collapsed}}
+
+[[Category:Wikipedia tables]]</text>
+      <sha1>0vj1ix3t9jbn5bdmzycvn3dzwdg6znf</sha1>
+    </revision>
+    <revision>
+      <id>777598</id>
+      <parentid>777597</parentid>
+      <timestamp>2025-05-20T19:33:20Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>777598</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="9885" sha1="t9ucfb0cldxul4weu6knlynzdylg0e8" xml:space="preserve">{{Table help}}
+{{Wikipedia how to|WP:CTB}}
+
+[[mw:Help:Extension:ParserFunctions|ParserFunctions]] allow for the conditional display of table rows, columns or cells (and really, just about anything else). But Parser functions have some limits.
+
+==Basic use==
+{{ombox | text =Make sure that the [https://www.mediawiki.org/wiki/Extension:ParserFunctions ParserFunctions] plugin is enabled before continuing.}}
+
+The following example shows a basic use for &lt;code&gt;#if&lt;/code&gt; that is available from the extension [[mw:Help:Extension:ParserFunctions|ParserFunctions]]:
+&lt;syntaxhighlight lang="wikitext"&gt;
+ {{#if:{{{variable_foo|}}}
+ |foo is set to '''{{{variable_foo}}}'''
+ |foo is ''blank''}}
+&lt;/syntaxhighlight&gt;
+Here, &lt;code&gt;{{{variable_foo}}}&lt;/code&gt; is checked to see if it is defined with a non-blank value. The table below shows the output from a template call (we'll call the template {{tlx|Conditional tables/example 1}}) with different values for &lt;code&gt;{{{variable_foo}}}&lt;/code&gt;:
+&lt;!-- NOTES:
+&amp;#61;  is an equal sign (=)
+&amp;#124; is a pipe symbol (|)
+--&gt;
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tlx|Conditional tables/example 1}}
+| {{Conditional tables/example 1}}
+|-
+| {{tlx|Conditional tables/example 1|variable_foo&amp;#61;}}
+| {{Conditional tables/example 1|variable_foo=}}
+|-
+| {{tlx|Conditional tables/example 1|variable_foo&amp;#61;value}}
+| {{Conditional tables/example 1|variable_foo=value}}
+|}
+
+Positional parameters &lt;code&gt;{{{1}}}&lt;/code&gt; etc. work like named parameters:
+&lt;syntaxhighlight lang="wikitext"&gt;
+ {{#if:{{{1|}}}
+ |1st parameter is '''{{{1}}}'''
+ |1st parameter is ''blank''}}
+&lt;/syntaxhighlight&gt;
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tlx|Conditional tables/example 1b| &amp;#124;bar}}
+| {{Conditional tables/example 1b| |bar}}
+|-
+| {{tlx|Conditional tables/example 1b|foo&amp;#124;bar}}
+| {{Conditional tables/example 1b|foo|bar}}
+|-
+| {{tlx|Conditional tables/example 1b|[&amp;#91;m:&amp;#124;not empty&amp;#93;]}}
+| {{Conditional tables/example 1b|[[m:|not empty]]}}
+|-
+| {{tlx|Conditional tables/example 1b|bad&amp;#61;idea}}
+| {{Conditional tables/example 1b|bad=idea}}
+|-
+| {{tlx|Conditional tables/example 1b|1&amp;#61;ok&amp;#61;yes}}
+| {{Conditional tables/example 1b|1=ok=yes}}
+|}
+
+Note how the ''pipe symbol'' (vertical bar) in the link works as is, it's not quite that easy within Wiki tables, see below.
+
+==Hiding rows entirely==
+It's also possible to hide rows of data within a table, however, there are issues you should be aware of.
+
+===Incorrect usage===
+Unfortunately &lt;code&gt;#if&lt;/code&gt; and the MediaWiki table syntax do not work together well. For example, the following, {{tl|Conditional tables/example 2}} is '''invalid''' and will not work:
+
+&lt;syntaxhighlight lang="wikitext"&gt;{| class="wikitable"
+{{#if:{{{variable_foo|}}}
+|
+|-
+! Foo
+| {{{variable_foo}}}
+}}
+|-
+! Bar
+| {{{variable_bar}}}
+|}&lt;/syntaxhighlight&gt;
+
+The table below demonstrates the effect when {{tl|Conditional tables/example 2}} is used:
+
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tl|Conditional tables/example 2}}
+| {{Conditional tables/example 2}}
+|-
+| {{tlp|Conditional tables/example 2|variable_foo&amp;#61;}}
+| {{Conditional tables/example 2|variable_foo=}}
+|-
+| {{tlp|Conditional tables/example 2|variable_foo&amp;#61;&amp;#124;variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2|variable_foo=|variable_bar=bar}}
+|-
+| {{tlp|Conditional tables/example 2|variable_foo&amp;#61;value}}
+| {{Conditional tables/example 2|variable_foo=value}}
+|-
+| {{tlp|Conditional tables/example 2|variable_foo&amp;#61;value&amp;#124;variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2|variable_foo=value|variable_bar=bar}}
+|}
+
+The problem is with the usage of the pipe character (&lt;code&gt;|&lt;/code&gt;). This character, in template calls, is used to separate parameters and so is invalid.
+
+===Correct usage===
+====Plan A====
+
+One method of hiding rows in tables (or other structures within tables) uses HTML directly.&lt;ref name="not_portable"&gt;Using HTML table code in templates can make them non-portable to other [[MediaWiki]] [[wiki]]s. This is because Wikipedia and other Wikimedia Foundation wikis process wikitext through [[:en:HTML Tidy|HTML Tidy]]; most other wikis do not have the same setup, and the HTML table tags do not render. See [[Wikipedia:WikiProject Transwiki#Special templates]].&lt;/ref&gt; HTML is more complicated than MediaWiki table syntax, but not much more so. In general, there are only a handful of HTML tags you need to be aware of
+
+* &lt;code&gt;&lt;nowiki&gt;&lt;tr&gt;&lt;/nowiki&gt;&lt;/code&gt; - this tag creates a new row (similar to &lt;code&gt;|-&lt;/code&gt; in MediaWiki table syntax)
+* &lt;code&gt;&lt;nowiki&gt;&lt;th&gt;&lt;/nowiki&gt;&lt;/code&gt; - this tag creates a new header cell within a row (similar to &lt;code&gt;!&lt;/code&gt; in MediaWiki table syntax)
+* &lt;code&gt;&lt;nowiki&gt;&lt;td&gt;&lt;/nowiki&gt;&lt;/code&gt; - this tag creates a new cell within a row (similar to &lt;code&gt;|&lt;/code&gt; in MediaWiki table syntax)
+* &lt;code&gt;&lt;nowiki&gt;&lt;caption&gt;&lt;/nowiki&gt;&lt;/code&gt; - this tag creates a caption (similar to &lt;code&gt;|+&lt;/code&gt; in MediaWiki table syntax)
+
+Working from the invalid template example above, by switching to HTML we end up with the following code:
+
+&lt;syntaxhighlight lang="wikitext"&gt;{| class="wikitable"
+{{#if:{{{variable_foo|}}}
+|&lt;tr&gt;&lt;th&gt;Foo&lt;/th&gt;&lt;td&gt;{{{variable_foo}}}&lt;/td&gt;&lt;/tr&gt;}}
+|-
+! Bar
+| {{{variable_bar}}}
+|}&lt;/syntaxhighlight&gt;
+
+The code above is in {{tl|Conditional tables/example 2a}}. As before, the table below demonstrates the effect when it's used:
+
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tl|Conditional tables/example 2a}}
+| {{Conditional tables/example 2a}}
+|-
+| {{tlp|Conditional tables/example 2a|variable_foo&amp;#61;}}
+| {{Conditional tables/example 2a|variable_foo=}}
+|-
+| {{tlp|Conditional tables/example 2a|variable_foo&amp;#61;&amp;#124;variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2a|variable_foo=|variable_bar=bar}}
+|-
+| {{tlp|Conditional tables/example 2a|variable_foo&amp;#61;value}}
+| {{Conditional tables/example 2a|variable_foo=value}}
+|-
+| {{tlp|Conditional tables/example 2a|variable_foo&amp;#61;value&amp;#124;variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2a|variable_foo=value|variable_bar=bar}}
+|}
+
+====Plan B====
+As noted above the only problem is the vertical bar or
+''pipe symbol'' within a template. Often it's good enough to
+replace problematic characters by numeric references, 
+e.g. "{" by &lt;kbd&gt;&amp;amp;#123;&lt;/kbd&gt;, "|" by 
+&lt;kbd&gt;&amp;amp;#124;&lt;/kbd&gt;, and "}" by &lt;kbd&gt;&amp;amp;#125;&lt;/kbd&gt;.
+But for Wiki tables a real "|" delimiter is required &amp;mdash;
+using &lt;kbd&gt;&amp;amp;#124;&lt;/kbd&gt; doesn't work as delimiter.
+
+A simple trick allows to protect the "|" in template 
+parameter values while still arriving as real "|" 
+delimiter in the Wiki table, see the [[mw:Help:Magic_words#Other|magic word &lt;nowiki&gt;{{!}}&lt;/nowiki&gt;]]. Note that
+"!" (exclamation mark) has no problems with templates,
+it's the other delimiter used in Wiki tables.
+Here's the code for plan B:
+
+&lt;syntaxhighlight lang="wikitext"&gt;
+{| class="wikitable"
+{{#if:{{{foo|}}}|
+{{!}}-
+! Foo
+{{!}} {{{foo}}}
+}}
+|-
+! Bar
+| {{{bar}}}
+|}
+&lt;/syntaxhighlight&gt;
+
+The code above is in {{tl|Conditional tables/example 2b}}. As before, 
+the table below demonstrates the effect when it's used:
+
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tlx|Conditional tables/example 2b|bar&amp;#61;nobar}}
+| {{Conditional tables/example 2b|bar=nobar}}
+|-
+| {{tlx|Conditional tables/example 2b|foo&amp;#61;|bar&amp;#61;vbar}}
+| {{Conditional tables/example 2b|foo=|bar=vbar}}
+|-
+| {{tlx|Conditional tables/example 2b|foo&amp;#61;value}}
+| {{Conditional tables/example 2b|foo=value}}
+|-
+| {{tlx|Conditional tables/example 2b|foo&amp;#61;value|bar&amp;#61;vbar}}
+| {{Conditional tables/example 2b|foo=value|bar=vbar}}
+|}
+
+====Plan C====
+
+Perhaps the simplest option is to use the conditional with the CSS "display: none" property as follows:
+
+&lt;syntaxhighlight lang="wikitext"&gt;{| class="wikitable"
+|- {{#if: {{{variable_foo|}}} | | style="display: none;" }}
+! Foo
+| {{{variable_foo}}}
+|-
+! Bar
+| {{{variable_bar}}}
+|}&lt;/syntaxhighlight&gt;
+
+In this way there is no need for the wikitables pipe character to appear in the #if conditional. However, sources and notes referred to in the muted cells won't get suppressed with the other contents, to the effect that they continue to be listed at the end of an article without any references to them occurring in the article's text. Also, this method only works with browsers supporting CSS.
+
+The code above is in {{tl|Conditional tables/example 2c}}. As before, 
+the table below demonstrates the effect when it's used:
+
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tlx|Conditional tables/example 2c|variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2c|variable_bar=bar}}
+|-
+| {{tlx|Conditional tables/example 2c|variable_foo&amp;#61;|variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2c|variable_foo=|variable_bar=bar}}
+|-
+| {{tlx|Conditional tables/example 2c|variable_foo&amp;#61;foo}}
+| {{Conditional tables/example 2c|variable_foo=foo}}
+|-
+| {{tlx|Conditional tables/example 2c|variable_foo&amp;#61;foo|variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2c|variable_foo=foo|variable_bar=bar}}
+|}
+
+==Getting help==
+If you find yourself unable to get a template to behave how you like, you can try asking on [[Wikipedia:Village pump (technical)|Village pump]], placing a request at [[Wikipedia:Requested templates|Requested templates]], or contacting an editor via [[WP:IRC|IRC]].
+
+==See also==
+For avoiding blank rows in the case of successive optional rows, see [[m:Help:Table#Conditional table row]].
+
+For more information on &lt;code&gt;#if&lt;/code&gt; (and other # functions), see:
+
+* [[mw:Help:Extension:ParserFunctions]]
+
+The following help topics deal with templates:
+
+* [[m:Help:Template]]
+* [[m:Help:Advanced templates]]
+
+This help topic deals with table design (since most templates use tables, this may be useful):
+
+* [[Help:Table]]
+
+And finally:
+
+* [[Help:Conditional expressions]]
+
+==Notes and references ==
+{{reflist}}
+{{Wikipedia technical help|collapsed}}
+
+[[Category:Wikipedia tables]]</text>
+      <sha1>t9ucfb0cldxul4weu6knlynzdylg0e8</sha1>
+    </revision>
+    <revision>
+      <id>777599</id>
+      <parentid>777598</parentid>
+      <timestamp>2025-05-23T03:05:35Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>777599</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="9899" sha1="k5mc5krx7dwzrwe2lozhlwp2h9li5iq" xml:space="preserve">{{Table help}}
+{{Wikipedia how to|WP:CTB}}
+
+[[mw:Help:Extension:ParserFunctions|ParserFunctions]] allow for the conditional display of table rows, columns or cells (and really, just about anything else). But Parser functions have some limits.
+
+==Basic use==
+{{ombox | text =Make sure that the [https://www.mediawiki.org/wiki/Extension:ParserFunctions ParserFunctions] plugin is enabled before continuing.}}
+
+The following example shows a basic use for &lt;code&gt;#if&lt;/code&gt; that is available from the extension [[mw:Help:Extension:ParserFunctions|ParserFunctions]]:
+&lt;syntaxhighlight lang="wikitext"&gt;
+ {{#if:{{{variable_foo|}}}
+ |foo is set to '''{{{variable_foo}}}'''
+ |foo is ''blank''}}
+&lt;/syntaxhighlight&gt;
+Here, &lt;code&gt;{{{variable_foo}}}&lt;/code&gt; is checked to see if it is defined with a non-blank value. The table below shows the output from a template call (we'll call the template {{tlx|Conditional tables/example 1}}) with different values for &lt;code&gt;{{{variable_foo}}}&lt;/code&gt;:
+&lt;!-- NOTES:
+&amp;#61;  is an equal sign (=)
+&amp;#124; is a pipe symbol (|)
+--&gt;
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tlx|Conditional tables/example 1}}
+| {{Conditional tables/example 1}}
+|-
+| {{tlx|Conditional tables/example 1|variable_foo&amp;#61;}}
+| {{Conditional tables/example 1|variable_foo=}}
+|-
+| {{tlx|Conditional tables/example 1|variable_foo&amp;#61;value}}
+| {{Conditional tables/example 1|variable_foo=value}}
+|}
+
+Positional parameters &lt;code&gt;{{{1}}}&lt;/code&gt; etc. work like named parameters:
+&lt;syntaxhighlight lang="wikitext"&gt;
+ {{#if:{{{1|}}}
+ |1st parameter is '''{{{1}}}'''
+ |1st parameter is ''blank''}}
+&lt;/syntaxhighlight&gt;
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tlx|Conditional tables/example 1b| &amp;#124;bar}}
+| {{Conditional tables/example 1b| |bar}}
+|-
+| {{tlx|Conditional tables/example 1b|foo&amp;#124;bar}}
+| {{Conditional tables/example 1b|foo|bar}}
+|-
+| {{tlx|Conditional tables/example 1b|[&amp;#91;m:&amp;#124;not empty&amp;#93;]}}
+| {{Conditional tables/example 1b|[[m:|not empty]]}}
+|-
+| {{tlx|Conditional tables/example 1b|bad&amp;#61;idea}}
+| {{Conditional tables/example 1b|bad=idea}}
+|-
+| {{tlx|Conditional tables/example 1b|1&amp;#61;ok&amp;#61;yes}}
+| {{Conditional tables/example 1b|1=ok=yes}}
+|}
+
+Note how the ''pipe symbol'' (vertical bar) in the link works as is, it's not quite that easy within Wiki tables, see below.
+
+==Hiding rows entirely==
+It's also possible to hide rows of data within a table, however, there are issues you should be aware of.
+
+===Incorrect usage===
+Unfortunately &lt;code&gt;#if&lt;/code&gt; and the MediaWiki table syntax do not work together well. For example, the following, {{tl|Conditional tables/example 2}} is '''invalid''' and will not work:
+
+&lt;syntaxhighlight lang="wikitext"&gt;{| class="wikitable"
+{{#if:{{{variable_foo|}}}
+|
+|-
+! Foo
+| {{{variable_foo}}}
+}}
+|-
+! Bar
+| {{{variable_bar}}}
+|}&lt;/syntaxhighlight&gt;
+
+The table below demonstrates the effect when {{tl|Conditional tables/example 2}} is used:
+
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tl|Conditional tables/example 2}}
+| {{Conditional tables/example 2}}
+|-
+| {{tlp|Conditional tables/example 2|variable_foo&amp;#61;}}
+| {{Conditional tables/example 2|variable_foo=}}
+|-
+| {{tlp|Conditional tables/example 2|variable_foo&amp;#61;&amp;#124;variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2|variable_foo=|variable_bar=bar}}
+|-
+| {{tlp|Conditional tables/example 2|variable_foo&amp;#61;value}}
+| {{Conditional tables/example 2|variable_foo=value}}
+|-
+| {{tlp|Conditional tables/example 2|variable_foo&amp;#61;value&amp;#124;variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2|variable_foo=value|variable_bar=bar}}
+|}
+
+The problem is with the usage of the pipe character (&lt;code&gt;|&lt;/code&gt;). This character, in template calls, is used to separate parameters and so is invalid.
+
+===Correct usage===
+====Plan A====
+
+One method of hiding rows in tables (or other structures within tables) uses HTML directly.&lt;ref name="not_portable"&gt;Using HTML table code in templates can make them non-portable to other [[:en:MediaWiki|MediaWiki]] [[wiki]]s. This is because Wikipedia and other Wikimedia Foundation wikis process wikitext through [[:en:HTML Tidy|HTML Tidy]]; most other wikis do not have the same setup, and the HTML table tags do not render. See [[Wikipedia:WikiProject Transwiki#Special templates]].&lt;/ref&gt; HTML is more complicated than MediaWiki table syntax, but not much more so. In general, there are only a handful of HTML tags you need to be aware of
+
+* &lt;code&gt;&lt;nowiki&gt;&lt;tr&gt;&lt;/nowiki&gt;&lt;/code&gt; - this tag creates a new row (similar to &lt;code&gt;|-&lt;/code&gt; in MediaWiki table syntax)
+* &lt;code&gt;&lt;nowiki&gt;&lt;th&gt;&lt;/nowiki&gt;&lt;/code&gt; - this tag creates a new header cell within a row (similar to &lt;code&gt;!&lt;/code&gt; in MediaWiki table syntax)
+* &lt;code&gt;&lt;nowiki&gt;&lt;td&gt;&lt;/nowiki&gt;&lt;/code&gt; - this tag creates a new cell within a row (similar to &lt;code&gt;|&lt;/code&gt; in MediaWiki table syntax)
+* &lt;code&gt;&lt;nowiki&gt;&lt;caption&gt;&lt;/nowiki&gt;&lt;/code&gt; - this tag creates a caption (similar to &lt;code&gt;|+&lt;/code&gt; in MediaWiki table syntax)
+
+Working from the invalid template example above, by switching to HTML we end up with the following code:
+
+&lt;syntaxhighlight lang="wikitext"&gt;{| class="wikitable"
+{{#if:{{{variable_foo|}}}
+|&lt;tr&gt;&lt;th&gt;Foo&lt;/th&gt;&lt;td&gt;{{{variable_foo}}}&lt;/td&gt;&lt;/tr&gt;}}
+|-
+! Bar
+| {{{variable_bar}}}
+|}&lt;/syntaxhighlight&gt;
+
+The code above is in {{tl|Conditional tables/example 2a}}. As before, the table below demonstrates the effect when it's used:
+
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tl|Conditional tables/example 2a}}
+| {{Conditional tables/example 2a}}
+|-
+| {{tlp|Conditional tables/example 2a|variable_foo&amp;#61;}}
+| {{Conditional tables/example 2a|variable_foo=}}
+|-
+| {{tlp|Conditional tables/example 2a|variable_foo&amp;#61;&amp;#124;variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2a|variable_foo=|variable_bar=bar}}
+|-
+| {{tlp|Conditional tables/example 2a|variable_foo&amp;#61;value}}
+| {{Conditional tables/example 2a|variable_foo=value}}
+|-
+| {{tlp|Conditional tables/example 2a|variable_foo&amp;#61;value&amp;#124;variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2a|variable_foo=value|variable_bar=bar}}
+|}
+
+====Plan B====
+As noted above the only problem is the vertical bar or
+''pipe symbol'' within a template. Often it's good enough to
+replace problematic characters by numeric references, 
+e.g. "{" by &lt;kbd&gt;&amp;amp;#123;&lt;/kbd&gt;, "|" by 
+&lt;kbd&gt;&amp;amp;#124;&lt;/kbd&gt;, and "}" by &lt;kbd&gt;&amp;amp;#125;&lt;/kbd&gt;.
+But for Wiki tables a real "|" delimiter is required &amp;mdash;
+using &lt;kbd&gt;&amp;amp;#124;&lt;/kbd&gt; doesn't work as delimiter.
+
+A simple trick allows to protect the "|" in template 
+parameter values while still arriving as real "|" 
+delimiter in the Wiki table, see the [[mw:Help:Magic_words#Other|magic word &lt;nowiki&gt;{{!}}&lt;/nowiki&gt;]]. Note that
+"!" (exclamation mark) has no problems with templates,
+it's the other delimiter used in Wiki tables.
+Here's the code for plan B:
+
+&lt;syntaxhighlight lang="wikitext"&gt;
+{| class="wikitable"
+{{#if:{{{foo|}}}|
+{{!}}-
+! Foo
+{{!}} {{{foo}}}
+}}
+|-
+! Bar
+| {{{bar}}}
+|}
+&lt;/syntaxhighlight&gt;
+
+The code above is in {{tl|Conditional tables/example 2b}}. As before, 
+the table below demonstrates the effect when it's used:
+
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tlx|Conditional tables/example 2b|bar&amp;#61;nobar}}
+| {{Conditional tables/example 2b|bar=nobar}}
+|-
+| {{tlx|Conditional tables/example 2b|foo&amp;#61;|bar&amp;#61;vbar}}
+| {{Conditional tables/example 2b|foo=|bar=vbar}}
+|-
+| {{tlx|Conditional tables/example 2b|foo&amp;#61;value}}
+| {{Conditional tables/example 2b|foo=value}}
+|-
+| {{tlx|Conditional tables/example 2b|foo&amp;#61;value|bar&amp;#61;vbar}}
+| {{Conditional tables/example 2b|foo=value|bar=vbar}}
+|}
+
+====Plan C====
+
+Perhaps the simplest option is to use the conditional with the CSS "display: none" property as follows:
+
+&lt;syntaxhighlight lang="wikitext"&gt;{| class="wikitable"
+|- {{#if: {{{variable_foo|}}} | | style="display: none;" }}
+! Foo
+| {{{variable_foo}}}
+|-
+! Bar
+| {{{variable_bar}}}
+|}&lt;/syntaxhighlight&gt;
+
+In this way there is no need for the wikitables pipe character to appear in the #if conditional. However, sources and notes referred to in the muted cells won't get suppressed with the other contents, to the effect that they continue to be listed at the end of an article without any references to them occurring in the article's text. Also, this method only works with browsers supporting CSS.
+
+The code above is in {{tl|Conditional tables/example 2c}}. As before, 
+the table below demonstrates the effect when it's used:
+
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tlx|Conditional tables/example 2c|variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2c|variable_bar=bar}}
+|-
+| {{tlx|Conditional tables/example 2c|variable_foo&amp;#61;|variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2c|variable_foo=|variable_bar=bar}}
+|-
+| {{tlx|Conditional tables/example 2c|variable_foo&amp;#61;foo}}
+| {{Conditional tables/example 2c|variable_foo=foo}}
+|-
+| {{tlx|Conditional tables/example 2c|variable_foo&amp;#61;foo|variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2c|variable_foo=foo|variable_bar=bar}}
+|}
+
+==Getting help==
+If you find yourself unable to get a template to behave how you like, you can try asking on [[Wikipedia:Village pump (technical)|Village pump]], placing a request at [[Wikipedia:Requested templates|Requested templates]], or contacting an editor via [[WP:IRC|IRC]].
+
+==See also==
+For avoiding blank rows in the case of successive optional rows, see [[m:Help:Table#Conditional table row]].
+
+For more information on &lt;code&gt;#if&lt;/code&gt; (and other # functions), see:
+
+* [[mw:Help:Extension:ParserFunctions]]
+
+The following help topics deal with templates:
+
+* [[m:Help:Template]]
+* [[m:Help:Advanced templates]]
+
+This help topic deals with table design (since most templates use tables, this may be useful):
+
+* [[Help:Table]]
+
+And finally:
+
+* [[Help:Conditional expressions]]
+
+==Notes and references ==
+{{reflist}}
+{{Wikipedia technical help|collapsed}}
+
+[[Category:Wikipedia tables]]</text>
+      <sha1>k5mc5krx7dwzrwe2lozhlwp2h9li5iq</sha1>
+    </revision>
+    <revision>
+      <id>4830</id>
+      <timestamp>2025-05-24T21:34:50Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Bot: convert local link → enwiki interwiki</comment>
+      <origin>4830</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="9908" sha1="pqj3qpiq9f767hmeqyz9jpa8uc65mn0" xml:space="preserve">{{Table help}}
+{{Wikipedia how to|WP:CTB}}
+
+[[mw:Help:Extension:ParserFunctions|ParserFunctions]] allow for the conditional display of table rows, columns or cells (and really, just about anything else). But Parser functions have some limits.
+
+==Basic use==
+{{ombox | text =Make sure that the [https://www.mediawiki.org/wiki/Extension:ParserFunctions ParserFunctions] plugin is enabled before continuing.}}
+
+The following example shows a basic use for &lt;code&gt;#if&lt;/code&gt; that is available from the extension [[mw:Help:Extension:ParserFunctions|ParserFunctions]]:
+&lt;syntaxhighlight lang="wikitext"&gt;
+ {{#if:{{{variable_foo|}}}
+ |foo is set to '''{{{variable_foo}}}'''
+ |foo is ''blank''}}
+&lt;/syntaxhighlight&gt;
+Here, &lt;code&gt;{{{variable_foo}}}&lt;/code&gt; is checked to see if it is defined with a non-blank value. The table below shows the output from a template call (we'll call the template {{tlx|Conditional tables/example 1}}) with different values for &lt;code&gt;{{{variable_foo}}}&lt;/code&gt;:
+&lt;!-- NOTES:
+&amp;#61;  is an equal sign (=)
+&amp;#124; is a pipe symbol (|)
+--&gt;
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tlx|Conditional tables/example 1}}
+| {{Conditional tables/example 1}}
+|-
+| {{tlx|Conditional tables/example 1|variable_foo&amp;#61;}}
+| {{Conditional tables/example 1|variable_foo=}}
+|-
+| {{tlx|Conditional tables/example 1|variable_foo&amp;#61;value}}
+| {{Conditional tables/example 1|variable_foo=value}}
+|}
+
+Positional parameters &lt;code&gt;{{{1}}}&lt;/code&gt; etc. work like named parameters:
+&lt;syntaxhighlight lang="wikitext"&gt;
+ {{#if:{{{1|}}}
+ |1st parameter is '''{{{1}}}'''
+ |1st parameter is ''blank''}}
+&lt;/syntaxhighlight&gt;
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tlx|Conditional tables/example 1b| &amp;#124;bar}}
+| {{Conditional tables/example 1b| |bar}}
+|-
+| {{tlx|Conditional tables/example 1b|foo&amp;#124;bar}}
+| {{Conditional tables/example 1b|foo|bar}}
+|-
+| {{tlx|Conditional tables/example 1b|[&amp;#91;m:&amp;#124;not empty&amp;#93;]}}
+| {{Conditional tables/example 1b|[[m:|not empty]]}}
+|-
+| {{tlx|Conditional tables/example 1b|bad&amp;#61;idea}}
+| {{Conditional tables/example 1b|bad=idea}}
+|-
+| {{tlx|Conditional tables/example 1b|1&amp;#61;ok&amp;#61;yes}}
+| {{Conditional tables/example 1b|1=ok=yes}}
+|}
+
+Note how the ''pipe symbol'' (vertical bar) in the link works as is, it's not quite that easy within Wiki tables, see below.
+
+==Hiding rows entirely==
+It's also possible to hide rows of data within a table, however, there are issues you should be aware of.
+
+===Incorrect usage===
+Unfortunately &lt;code&gt;#if&lt;/code&gt; and the MediaWiki table syntax do not work together well. For example, the following, {{tl|Conditional tables/example 2}} is '''invalid''' and will not work:
+
+&lt;syntaxhighlight lang="wikitext"&gt;{| class="wikitable"
+{{#if:{{{variable_foo|}}}
+|
+|-
+! Foo
+| {{{variable_foo}}}
+}}
+|-
+! Bar
+| {{{variable_bar}}}
+|}&lt;/syntaxhighlight&gt;
+
+The table below demonstrates the effect when {{tl|Conditional tables/example 2}} is used:
+
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tl|Conditional tables/example 2}}
+| {{Conditional tables/example 2}}
+|-
+| {{tlp|Conditional tables/example 2|variable_foo&amp;#61;}}
+| {{Conditional tables/example 2|variable_foo=}}
+|-
+| {{tlp|Conditional tables/example 2|variable_foo&amp;#61;&amp;#124;variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2|variable_foo=|variable_bar=bar}}
+|-
+| {{tlp|Conditional tables/example 2|variable_foo&amp;#61;value}}
+| {{Conditional tables/example 2|variable_foo=value}}
+|-
+| {{tlp|Conditional tables/example 2|variable_foo&amp;#61;value&amp;#124;variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2|variable_foo=value|variable_bar=bar}}
+|}
+
+The problem is with the usage of the pipe character (&lt;code&gt;|&lt;/code&gt;). This character, in template calls, is used to separate parameters and so is invalid.
+
+===Correct usage===
+====Plan A====
+
+One method of hiding rows in tables (or other structures within tables) uses HTML directly.&lt;ref name="not_portable"&gt;Using HTML table code in templates can make them non-portable to other [[:en:MediaWiki|MediaWiki]] [[:en:wiki|wiki]]s. This is because Wikipedia and other Wikimedia Foundation wikis process wikitext through [[:en:HTML Tidy|HTML Tidy]]; most other wikis do not have the same setup, and the HTML table tags do not render. See [[Wikipedia:WikiProject Transwiki#Special templates]].&lt;/ref&gt; HTML is more complicated than MediaWiki table syntax, but not much more so. In general, there are only a handful of HTML tags you need to be aware of
+
+* &lt;code&gt;&lt;nowiki&gt;&lt;tr&gt;&lt;/nowiki&gt;&lt;/code&gt; - this tag creates a new row (similar to &lt;code&gt;|-&lt;/code&gt; in MediaWiki table syntax)
+* &lt;code&gt;&lt;nowiki&gt;&lt;th&gt;&lt;/nowiki&gt;&lt;/code&gt; - this tag creates a new header cell within a row (similar to &lt;code&gt;!&lt;/code&gt; in MediaWiki table syntax)
+* &lt;code&gt;&lt;nowiki&gt;&lt;td&gt;&lt;/nowiki&gt;&lt;/code&gt; - this tag creates a new cell within a row (similar to &lt;code&gt;|&lt;/code&gt; in MediaWiki table syntax)
+* &lt;code&gt;&lt;nowiki&gt;&lt;caption&gt;&lt;/nowiki&gt;&lt;/code&gt; - this tag creates a caption (similar to &lt;code&gt;|+&lt;/code&gt; in MediaWiki table syntax)
+
+Working from the invalid template example above, by switching to HTML we end up with the following code:
+
+&lt;syntaxhighlight lang="wikitext"&gt;{| class="wikitable"
+{{#if:{{{variable_foo|}}}
+|&lt;tr&gt;&lt;th&gt;Foo&lt;/th&gt;&lt;td&gt;{{{variable_foo}}}&lt;/td&gt;&lt;/tr&gt;}}
+|-
+! Bar
+| {{{variable_bar}}}
+|}&lt;/syntaxhighlight&gt;
+
+The code above is in {{tl|Conditional tables/example 2a}}. As before, the table below demonstrates the effect when it's used:
+
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tl|Conditional tables/example 2a}}
+| {{Conditional tables/example 2a}}
+|-
+| {{tlp|Conditional tables/example 2a|variable_foo&amp;#61;}}
+| {{Conditional tables/example 2a|variable_foo=}}
+|-
+| {{tlp|Conditional tables/example 2a|variable_foo&amp;#61;&amp;#124;variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2a|variable_foo=|variable_bar=bar}}
+|-
+| {{tlp|Conditional tables/example 2a|variable_foo&amp;#61;value}}
+| {{Conditional tables/example 2a|variable_foo=value}}
+|-
+| {{tlp|Conditional tables/example 2a|variable_foo&amp;#61;value&amp;#124;variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2a|variable_foo=value|variable_bar=bar}}
+|}
+
+====Plan B====
+As noted above the only problem is the vertical bar or
+''pipe symbol'' within a template. Often it's good enough to
+replace problematic characters by numeric references, 
+e.g. "{" by &lt;kbd&gt;&amp;amp;#123;&lt;/kbd&gt;, "|" by 
+&lt;kbd&gt;&amp;amp;#124;&lt;/kbd&gt;, and "}" by &lt;kbd&gt;&amp;amp;#125;&lt;/kbd&gt;.
+But for Wiki tables a real "|" delimiter is required &amp;mdash;
+using &lt;kbd&gt;&amp;amp;#124;&lt;/kbd&gt; doesn't work as delimiter.
+
+A simple trick allows to protect the "|" in template 
+parameter values while still arriving as real "|" 
+delimiter in the Wiki table, see the [[mw:Help:Magic_words#Other|magic word &lt;nowiki&gt;{{!}}&lt;/nowiki&gt;]]. Note that
+"!" (exclamation mark) has no problems with templates,
+it's the other delimiter used in Wiki tables.
+Here's the code for plan B:
+
+&lt;syntaxhighlight lang="wikitext"&gt;
+{| class="wikitable"
+{{#if:{{{foo|}}}|
+{{!}}-
+! Foo
+{{!}} {{{foo}}}
+}}
+|-
+! Bar
+| {{{bar}}}
+|}
+&lt;/syntaxhighlight&gt;
+
+The code above is in {{tl|Conditional tables/example 2b}}. As before, 
+the table below demonstrates the effect when it's used:
+
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tlx|Conditional tables/example 2b|bar&amp;#61;nobar}}
+| {{Conditional tables/example 2b|bar=nobar}}
+|-
+| {{tlx|Conditional tables/example 2b|foo&amp;#61;|bar&amp;#61;vbar}}
+| {{Conditional tables/example 2b|foo=|bar=vbar}}
+|-
+| {{tlx|Conditional tables/example 2b|foo&amp;#61;value}}
+| {{Conditional tables/example 2b|foo=value}}
+|-
+| {{tlx|Conditional tables/example 2b|foo&amp;#61;value|bar&amp;#61;vbar}}
+| {{Conditional tables/example 2b|foo=value|bar=vbar}}
+|}
+
+====Plan C====
+
+Perhaps the simplest option is to use the conditional with the CSS "display: none" property as follows:
+
+&lt;syntaxhighlight lang="wikitext"&gt;{| class="wikitable"
+|- {{#if: {{{variable_foo|}}} | | style="display: none;" }}
+! Foo
+| {{{variable_foo}}}
+|-
+! Bar
+| {{{variable_bar}}}
+|}&lt;/syntaxhighlight&gt;
+
+In this way there is no need for the wikitables pipe character to appear in the #if conditional. However, sources and notes referred to in the muted cells won't get suppressed with the other contents, to the effect that they continue to be listed at the end of an article without any references to them occurring in the article's text. Also, this method only works with browsers supporting CSS.
+
+The code above is in {{tl|Conditional tables/example 2c}}. As before, 
+the table below demonstrates the effect when it's used:
+
+{| class="wikitable"
+|-
+! Template call
+! Result
+|-
+| {{tlx|Conditional tables/example 2c|variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2c|variable_bar=bar}}
+|-
+| {{tlx|Conditional tables/example 2c|variable_foo&amp;#61;|variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2c|variable_foo=|variable_bar=bar}}
+|-
+| {{tlx|Conditional tables/example 2c|variable_foo&amp;#61;foo}}
+| {{Conditional tables/example 2c|variable_foo=foo}}
+|-
+| {{tlx|Conditional tables/example 2c|variable_foo&amp;#61;foo|variable_bar&amp;#61;bar}}
+| {{Conditional tables/example 2c|variable_foo=foo|variable_bar=bar}}
+|}
+
+==Getting help==
+If you find yourself unable to get a template to behave how you like, you can try asking on [[Wikipedia:Village pump (technical)|Village pump]], placing a request at [[Wikipedia:Requested templates|Requested templates]], or contacting an editor via [[WP:IRC|IRC]].
+
+==See also==
+For avoiding blank rows in the case of successive optional rows, see [[m:Help:Table#Conditional table row]].
+
+For more information on &lt;code&gt;#if&lt;/code&gt; (and other # functions), see:
+
+* [[mw:Help:Extension:ParserFunctions]]
+
+The following help topics deal with templates:
+
+* [[m:Help:Template]]
+* [[m:Help:Advanced templates]]
+
+This help topic deals with table design (since most templates use tables, this may be useful):
+
+* [[Help:Table]]
+
+And finally:
+
+* [[Help:Conditional expressions]]
+
+==Notes and references ==
+{{reflist}}
+{{Wikipedia technical help|collapsed}}
+
+[[Category:Wikipedia tables]]</text>
+      <sha1>pqj3qpiq9f767hmeqyz9jpa8uc65mn0</sha1>
+    </revision>
+  </page>
+</mediawiki>

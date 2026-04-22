@@ -1,0 +1,1509 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>User:Nardog/SmartDiff</title>
+    <ns>2</ns>
+    <id>9840</id>
+    <revision>
+      <id>985990</id>
+      <timestamp>2024-06-10T09:30:04Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Nardog</username>
+        <id>0</id>
+      </contributor>
+      <comment>/* Comparison with fancy-diffs */ default color</comment>
+      <origin>985990</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="6723" sha1="7h4nr7xgw9gebf61a4s3xs3z3bphoyu" xml:space="preserve">{{Infobox Wikipedia user script
+|name=SmartDiff
+|desc=&lt;onlyinclude&gt;Makes links and template calls in diffs clickable (supports red links, avoids [[WP:SEAOFBLUE]])&lt;/onlyinclude&gt;
+|browsers=Chrome, Firefox, etc. ([[ES2018]]+ needed)
+|source=[[User:Nardog/SmartDiff.js]]
+}}
+
+This script turns wikilinks, external links, and template/module calls in a diff into clickable links. It shows links to nonexistent pages in red, and keeps the linked part to a minimum to avoid [[WP:SEAOFBLUE]], unlike [[User:Enterprisey/fancy-diffs|fancy-diffs]] ([[#Comparison with fancy-diffs|further comparison]]).
+
+==Installation==
+Add the following to [[Special:MyPage/common.js|your common.js]] or [[meta:Special:MyPage/global.js|global.js]]:
+&lt;syntaxhighlight lang="javascript"&gt;
+mw.loader.load('//en.wikipedia.org/w/index.php?title=User:Nardog/SmartDiff.js&amp;action=raw&amp;ctype=text/javascript');
+&lt;/syntaxhighlight&gt;
+
+Or you may enable the [[User:Enterprisey/script-installer|script installer]] in {{myprefs|Gadgets}} and click "Install" in the infobox on this page.
+
+==Customization==
+===Template parameter linking===
+You can instruct the script to link certain unnamed parameters in templates, so e.g. {{tlc|tl|reflist}} appears as {{tlx|tl|[[Template:Reflist|reflist]]}}. This is useful for linking templates like {{tl|tl}} and hatnotes like {{tl|About}}. Linking of named parameters is not supported, and the template call and parameters must be in the same line for the latter to be linked.
+
+To do it, add code like below to your common.js (templates vary by wiki, so even if you have installed the script globally, it is recommended to have different code on each wiki).
+
+&lt;syntaxhighlight lang="javascript"&gt;
+window.smartdiffTemplates = [
+	// Objects go here
+];
+&lt;/syntaxhighlight&gt;
+
+====Example====
+Here is an example based on templates on English Wikipedia.
+
+{{collapse top|Example code}}
+&lt;syntaxhighlight lang="javascript"&gt;
+window.smartdiffTemplates = [
+
+	// {{t}}, {{tl}}
+	{
+		names: ['T', 'Tl'],
+		end: 1,
+		namespace: 10,
+		forceNs: true
+	},
+
+	// {{tlx}}
+	{
+		names: ['Tlx'],
+		end: 1,
+		namespace: 10
+	},
+
+	// {{u}}
+	{
+		names: ['U'],
+		end: 1,
+		namespace: 1
+	},
+
+	// {{Reply to}}, {{Re}}, {{Ping}}
+	{
+		names: ['Re', 'Reply to', 'Ping'],
+		namespace: 1
+	},
+
+	// {{About}}
+	{
+		names: ['About'],
+		start: 3,
+		skipEven: true
+	},
+
+	// {{For}}
+	{
+		names: ['For'],
+		start: 2
+	},
+
+	// {{Other uses}}, {{Otheruses}}
+	{
+		names: ['Other uses', 'Otheruses'],
+		end: 1
+	},
+
+	// {{Distinguish}}, {{Further}}, {{Main}}, {{See also}}
+	{
+		names: ['Distinguish', 'Further', 'Main', 'See also', 'Seealso']
+	},
+
+	// {{Redirect}}
+	{
+		names: ['Redirect'],
+		skipEven: true,
+		noRedirectEnd: 1
+	},
+
+	// {{Tracked}}
+	{
+		names: ['Tracked'],
+		end: 1,
+		prefix: 'phab:'
+	},
+
+];
+&lt;/syntaxhighlight&gt;
+{{collapse bottom}}
+
+====Schema====
+The objects can have the following properties (only &lt;code&gt;names&lt;/code&gt; is required):
+
+;&lt;code&gt;names&lt;/code&gt;{{nobold| (array of strings)}}
+:Template names to apply this object to. Must be well-formed names (no &lt;code&gt;Template:&lt;/code&gt;, no underscores, start with a capital letter except on Wiktionary). Redirects are not resolved, so include all you expect to find.
+;&lt;code&gt;start&lt;/code&gt;{{nobold|, }}&lt;code&gt;end&lt;/code&gt;{{nobold| (number);}} &lt;code&gt;skipOdd&lt;/code&gt;{{nobold|, }}&lt;code&gt;skipEven&lt;/code&gt;{{nobold| (boolean)}}
+:Specify the range of parameters to link. If omitted, all unnamed parameters will be linked.
+;&lt;code&gt;namespace&lt;/code&gt;{{nobold| (number)}}
+:[[WP:NS|Namespace number]] for the link.
+;&lt;code&gt;forceNs&lt;/code&gt;{{nobold| (boolean)}}
+:If &lt;code&gt;true&lt;/code&gt;, the namespace prefix will be added even if the input begins with a valid namespace prefix (so e.g. {{tlx|tl|[[Template:Wikipedia:Cleanup/Header|Wikipedia:Cleanup/Header]]}} is linked correctly).
+;&lt;code&gt;prefix&lt;/code&gt;{{nobold|, }}&lt;code&gt;suffix&lt;/code&gt;{{nobold| (string)}}
+:String to prepend or append to the input. &lt;code&gt;prefix&lt;/code&gt; is useful for linking to a special page or sister site.
+;&lt;code&gt;noRedirectStart&lt;/code&gt;{{nobold|, }}&lt;code&gt;noRedirectEnd&lt;/code&gt;{{nobold| (number)}}
+:Specify the range of parameters to suppress redirects (by adding &lt;code&gt;redirect=no&lt;/code&gt; to the URL) in.
+
+===Magic words===
+If you want the script to recognize certain magic words it does not by default and stop linking them as templates, you can do so by adding code like below to your common.js or global.js. This example adds localized variables for &lt;code&gt;PAGENAME&lt;/code&gt; and &lt;code&gt;DEFAULTSORT&lt;/code&gt; in Polish (a trailing colon is required if the magic word accepts a variable).
+
+&lt;syntaxhighlight lang="javascript"&gt;
+window.smartdiffMagicWords = ['NAZWASTRONY', 'NAZWASTRONY:', 'SORTUJ:'];
+&lt;/syntaxhighlight&gt;
+
+==Comparison with fancy-diffs==
+This script owes a great debt to [[User:Enterprisey/fancy-diffs|Enterprisey's fancy-diffs]] in its concept, and makes improvements on it. Differences include:
+
+*Shows links to nonexistent pages {{fake redlink|in red}}.
+*Links only &lt;code&gt;&lt;nowiki&gt;[[&lt;/nowiki&gt;{{fake link|this part}}&lt;nowiki&gt;]]&lt;/nowiki&gt;&lt;/code&gt; and &lt;code&gt;&lt;nowiki&gt;[[&lt;/nowiki&gt;{{fake link|this part}}&lt;nowiki&gt;|in piped links]]&lt;/nowiki&gt;&lt;/code&gt;, avoiding [[WP:SEAOFBLUE]].
+*Links section headings (e.g. &lt;code&gt;== [[#Customization|Customization]] ==&lt;/code&gt;).
+*Recognizes template names without &lt;code&gt;{{))}}&lt;/code&gt; in the same line (e.g. &lt;code&gt;{{((}}[[Template:Infobox person|Infobox person]]&lt;/code&gt;).
+*Recognizes relative links to and transclusions of subpages (e.g. &lt;code&gt;&lt;nowiki&gt;[[&lt;/nowiki&gt;{{fake link|/Archive 1}}&lt;nowiki&gt;]]&lt;/nowiki&gt;&lt;/code&gt;).
+*Does not mistake common [[H:MW|magic words]] and template parameters ({{tlc|PAGENAME}}, {{tlc|#if:...}}, {{param|1}} etc.) for template calls.
+*Supports customizable linking of unnamed parameters in templates (e.g. {{tlx|tl|[[Template:Cite web|Cite web]]}}, {{tlx|distinguish|[[Foo]]}})—see [[#Template parameter linking|above]].
+*Links content inside &lt;code&gt;tvar&lt;/code&gt; in multilingual wikis, as in &lt;code&gt;&lt;nowiki&gt;[[&lt;tvar name=1&gt;&lt;/nowiki&gt;[[Foo]]&lt;nowiki&gt;&lt;/tvar&gt;|Foo]]&lt;/nowiki&gt;&lt;/code&gt;.
+*Shows external and interwiki links {{color|var(--color-progressive, #36c)|in the same color}} as in the page body.
+*Adds to links to redirects and disambiguation pages the respective &lt;code&gt;mw-redirect&lt;/code&gt; and &lt;code&gt;mw-disambig&lt;/code&gt; classes, so if you style them in your CSS (or use the gadget "{{delink|{{int:gadget-DisambiguationLinks}}}}"), they appear the same as in the page body.
+*Verifies the result after processing each line, so it will never alter the substance of a diff even if it makes a mistake (and notifies you in such an event so you can report it).
+*Does not support image previews.
+
+==Limitations==
+*The detection/retrieval of red links and link classes is capped at 500 unique page names (10 API calls) per diff.
+
+{{User:Nardog/scripts}}</text>
+      <sha1>7h4nr7xgw9gebf61a4s3xs3z3bphoyu</sha1>
+    </revision>
+    <revision>
+      <id>985991</id>
+      <parentid>985990</parentid>
+      <timestamp>2025-01-19T18:12:38Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:User:Nardog/SmartDiff]]</comment>
+      <origin>985990</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="6723" sha1="7h4nr7xgw9gebf61a4s3xs3z3bphoyu" xml:space="preserve">{{Infobox Wikipedia user script
+|name=SmartDiff
+|desc=&lt;onlyinclude&gt;Makes links and template calls in diffs clickable (supports red links, avoids [[WP:SEAOFBLUE]])&lt;/onlyinclude&gt;
+|browsers=Chrome, Firefox, etc. ([[ES2018]]+ needed)
+|source=[[User:Nardog/SmartDiff.js]]
+}}
+
+This script turns wikilinks, external links, and template/module calls in a diff into clickable links. It shows links to nonexistent pages in red, and keeps the linked part to a minimum to avoid [[WP:SEAOFBLUE]], unlike [[User:Enterprisey/fancy-diffs|fancy-diffs]] ([[#Comparison with fancy-diffs|further comparison]]).
+
+==Installation==
+Add the following to [[Special:MyPage/common.js|your common.js]] or [[meta:Special:MyPage/global.js|global.js]]:
+&lt;syntaxhighlight lang="javascript"&gt;
+mw.loader.load('//en.wikipedia.org/w/index.php?title=User:Nardog/SmartDiff.js&amp;action=raw&amp;ctype=text/javascript');
+&lt;/syntaxhighlight&gt;
+
+Or you may enable the [[User:Enterprisey/script-installer|script installer]] in {{myprefs|Gadgets}} and click "Install" in the infobox on this page.
+
+==Customization==
+===Template parameter linking===
+You can instruct the script to link certain unnamed parameters in templates, so e.g. {{tlc|tl|reflist}} appears as {{tlx|tl|[[Template:Reflist|reflist]]}}. This is useful for linking templates like {{tl|tl}} and hatnotes like {{tl|About}}. Linking of named parameters is not supported, and the template call and parameters must be in the same line for the latter to be linked.
+
+To do it, add code like below to your common.js (templates vary by wiki, so even if you have installed the script globally, it is recommended to have different code on each wiki).
+
+&lt;syntaxhighlight lang="javascript"&gt;
+window.smartdiffTemplates = [
+	// Objects go here
+];
+&lt;/syntaxhighlight&gt;
+
+====Example====
+Here is an example based on templates on English Wikipedia.
+
+{{collapse top|Example code}}
+&lt;syntaxhighlight lang="javascript"&gt;
+window.smartdiffTemplates = [
+
+	// {{t}}, {{tl}}
+	{
+		names: ['T', 'Tl'],
+		end: 1,
+		namespace: 10,
+		forceNs: true
+	},
+
+	// {{tlx}}
+	{
+		names: ['Tlx'],
+		end: 1,
+		namespace: 10
+	},
+
+	// {{u}}
+	{
+		names: ['U'],
+		end: 1,
+		namespace: 1
+	},
+
+	// {{Reply to}}, {{Re}}, {{Ping}}
+	{
+		names: ['Re', 'Reply to', 'Ping'],
+		namespace: 1
+	},
+
+	// {{About}}
+	{
+		names: ['About'],
+		start: 3,
+		skipEven: true
+	},
+
+	// {{For}}
+	{
+		names: ['For'],
+		start: 2
+	},
+
+	// {{Other uses}}, {{Otheruses}}
+	{
+		names: ['Other uses', 'Otheruses'],
+		end: 1
+	},
+
+	// {{Distinguish}}, {{Further}}, {{Main}}, {{See also}}
+	{
+		names: ['Distinguish', 'Further', 'Main', 'See also', 'Seealso']
+	},
+
+	// {{Redirect}}
+	{
+		names: ['Redirect'],
+		skipEven: true,
+		noRedirectEnd: 1
+	},
+
+	// {{Tracked}}
+	{
+		names: ['Tracked'],
+		end: 1,
+		prefix: 'phab:'
+	},
+
+];
+&lt;/syntaxhighlight&gt;
+{{collapse bottom}}
+
+====Schema====
+The objects can have the following properties (only &lt;code&gt;names&lt;/code&gt; is required):
+
+;&lt;code&gt;names&lt;/code&gt;{{nobold| (array of strings)}}
+:Template names to apply this object to. Must be well-formed names (no &lt;code&gt;Template:&lt;/code&gt;, no underscores, start with a capital letter except on Wiktionary). Redirects are not resolved, so include all you expect to find.
+;&lt;code&gt;start&lt;/code&gt;{{nobold|, }}&lt;code&gt;end&lt;/code&gt;{{nobold| (number);}} &lt;code&gt;skipOdd&lt;/code&gt;{{nobold|, }}&lt;code&gt;skipEven&lt;/code&gt;{{nobold| (boolean)}}
+:Specify the range of parameters to link. If omitted, all unnamed parameters will be linked.
+;&lt;code&gt;namespace&lt;/code&gt;{{nobold| (number)}}
+:[[WP:NS|Namespace number]] for the link.
+;&lt;code&gt;forceNs&lt;/code&gt;{{nobold| (boolean)}}
+:If &lt;code&gt;true&lt;/code&gt;, the namespace prefix will be added even if the input begins with a valid namespace prefix (so e.g. {{tlx|tl|[[Template:Wikipedia:Cleanup/Header|Wikipedia:Cleanup/Header]]}} is linked correctly).
+;&lt;code&gt;prefix&lt;/code&gt;{{nobold|, }}&lt;code&gt;suffix&lt;/code&gt;{{nobold| (string)}}
+:String to prepend or append to the input. &lt;code&gt;prefix&lt;/code&gt; is useful for linking to a special page or sister site.
+;&lt;code&gt;noRedirectStart&lt;/code&gt;{{nobold|, }}&lt;code&gt;noRedirectEnd&lt;/code&gt;{{nobold| (number)}}
+:Specify the range of parameters to suppress redirects (by adding &lt;code&gt;redirect=no&lt;/code&gt; to the URL) in.
+
+===Magic words===
+If you want the script to recognize certain magic words it does not by default and stop linking them as templates, you can do so by adding code like below to your common.js or global.js. This example adds localized variables for &lt;code&gt;PAGENAME&lt;/code&gt; and &lt;code&gt;DEFAULTSORT&lt;/code&gt; in Polish (a trailing colon is required if the magic word accepts a variable).
+
+&lt;syntaxhighlight lang="javascript"&gt;
+window.smartdiffMagicWords = ['NAZWASTRONY', 'NAZWASTRONY:', 'SORTUJ:'];
+&lt;/syntaxhighlight&gt;
+
+==Comparison with fancy-diffs==
+This script owes a great debt to [[User:Enterprisey/fancy-diffs|Enterprisey's fancy-diffs]] in its concept, and makes improvements on it. Differences include:
+
+*Shows links to nonexistent pages {{fake redlink|in red}}.
+*Links only &lt;code&gt;&lt;nowiki&gt;[[&lt;/nowiki&gt;{{fake link|this part}}&lt;nowiki&gt;]]&lt;/nowiki&gt;&lt;/code&gt; and &lt;code&gt;&lt;nowiki&gt;[[&lt;/nowiki&gt;{{fake link|this part}}&lt;nowiki&gt;|in piped links]]&lt;/nowiki&gt;&lt;/code&gt;, avoiding [[WP:SEAOFBLUE]].
+*Links section headings (e.g. &lt;code&gt;== [[#Customization|Customization]] ==&lt;/code&gt;).
+*Recognizes template names without &lt;code&gt;{{))}}&lt;/code&gt; in the same line (e.g. &lt;code&gt;{{((}}[[Template:Infobox person|Infobox person]]&lt;/code&gt;).
+*Recognizes relative links to and transclusions of subpages (e.g. &lt;code&gt;&lt;nowiki&gt;[[&lt;/nowiki&gt;{{fake link|/Archive 1}}&lt;nowiki&gt;]]&lt;/nowiki&gt;&lt;/code&gt;).
+*Does not mistake common [[H:MW|magic words]] and template parameters ({{tlc|PAGENAME}}, {{tlc|#if:...}}, {{param|1}} etc.) for template calls.
+*Supports customizable linking of unnamed parameters in templates (e.g. {{tlx|tl|[[Template:Cite web|Cite web]]}}, {{tlx|distinguish|[[Foo]]}})—see [[#Template parameter linking|above]].
+*Links content inside &lt;code&gt;tvar&lt;/code&gt; in multilingual wikis, as in &lt;code&gt;&lt;nowiki&gt;[[&lt;tvar name=1&gt;&lt;/nowiki&gt;[[Foo]]&lt;nowiki&gt;&lt;/tvar&gt;|Foo]]&lt;/nowiki&gt;&lt;/code&gt;.
+*Shows external and interwiki links {{color|var(--color-progressive, #36c)|in the same color}} as in the page body.
+*Adds to links to redirects and disambiguation pages the respective &lt;code&gt;mw-redirect&lt;/code&gt; and &lt;code&gt;mw-disambig&lt;/code&gt; classes, so if you style them in your CSS (or use the gadget "{{delink|{{int:gadget-DisambiguationLinks}}}}"), they appear the same as in the page body.
+*Verifies the result after processing each line, so it will never alter the substance of a diff even if it makes a mistake (and notifies you in such an event so you can report it).
+*Does not support image previews.
+
+==Limitations==
+*The detection/retrieval of red links and link classes is capped at 500 unique page names (10 API calls) per diff.
+
+{{User:Nardog/scripts}}</text>
+      <sha1>7h4nr7xgw9gebf61a4s3xs3z3bphoyu</sha1>
+    </revision>
+    <revision>
+      <id>985992</id>
+      <parentid>985991</parentid>
+      <timestamp>2025-05-19T16:56:47Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>985992</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="6734" sha1="bv0o25vvx419p4zkepngl3sbhly60et" xml:space="preserve">{{Infobox Wikipedia user script
+|name=SmartDiff
+|desc=&lt;onlyinclude&gt;Makes links and template calls in diffs clickable (supports red links, avoids [[WP:SEAOFBLUE]])&lt;/onlyinclude&gt;
+|browsers=Chrome, Firefox, etc. ([[:en:ES2018|ES2018]]+ needed)
+|source=[[User:Nardog/SmartDiff.js]]
+}}
+
+This script turns wikilinks, external links, and template/module calls in a diff into clickable links. It shows links to nonexistent pages in red, and keeps the linked part to a minimum to avoid [[WP:SEAOFBLUE]], unlike [[User:Enterprisey/fancy-diffs|fancy-diffs]] ([[#Comparison with fancy-diffs|further comparison]]).
+
+==Installation==
+Add the following to [[Special:MyPage/common.js|your common.js]] or [[meta:Special:MyPage/global.js|global.js]]:
+&lt;syntaxhighlight lang="javascript"&gt;
+mw.loader.load('//en.wikipedia.org/w/index.php?title=User:Nardog/SmartDiff.js&amp;action=raw&amp;ctype=text/javascript');
+&lt;/syntaxhighlight&gt;
+
+Or you may enable the [[User:Enterprisey/script-installer|script installer]] in {{myprefs|Gadgets}} and click "Install" in the infobox on this page.
+
+==Customization==
+===Template parameter linking===
+You can instruct the script to link certain unnamed parameters in templates, so e.g. {{tlc|tl|reflist}} appears as {{tlx|tl|[[Template:Reflist|reflist]]}}. This is useful for linking templates like {{tl|tl}} and hatnotes like {{tl|About}}. Linking of named parameters is not supported, and the template call and parameters must be in the same line for the latter to be linked.
+
+To do it, add code like below to your common.js (templates vary by wiki, so even if you have installed the script globally, it is recommended to have different code on each wiki).
+
+&lt;syntaxhighlight lang="javascript"&gt;
+window.smartdiffTemplates = [
+	// Objects go here
+];
+&lt;/syntaxhighlight&gt;
+
+====Example====
+Here is an example based on templates on English Wikipedia.
+
+{{collapse top|Example code}}
+&lt;syntaxhighlight lang="javascript"&gt;
+window.smartdiffTemplates = [
+
+	// {{t}}, {{tl}}
+	{
+		names: ['T', 'Tl'],
+		end: 1,
+		namespace: 10,
+		forceNs: true
+	},
+
+	// {{tlx}}
+	{
+		names: ['Tlx'],
+		end: 1,
+		namespace: 10
+	},
+
+	// {{u}}
+	{
+		names: ['U'],
+		end: 1,
+		namespace: 1
+	},
+
+	// {{Reply to}}, {{Re}}, {{Ping}}
+	{
+		names: ['Re', 'Reply to', 'Ping'],
+		namespace: 1
+	},
+
+	// {{About}}
+	{
+		names: ['About'],
+		start: 3,
+		skipEven: true
+	},
+
+	// {{For}}
+	{
+		names: ['For'],
+		start: 2
+	},
+
+	// {{Other uses}}, {{Otheruses}}
+	{
+		names: ['Other uses', 'Otheruses'],
+		end: 1
+	},
+
+	// {{Distinguish}}, {{Further}}, {{Main}}, {{See also}}
+	{
+		names: ['Distinguish', 'Further', 'Main', 'See also', 'Seealso']
+	},
+
+	// {{Redirect}}
+	{
+		names: ['Redirect'],
+		skipEven: true,
+		noRedirectEnd: 1
+	},
+
+	// {{Tracked}}
+	{
+		names: ['Tracked'],
+		end: 1,
+		prefix: 'phab:'
+	},
+
+];
+&lt;/syntaxhighlight&gt;
+{{collapse bottom}}
+
+====Schema====
+The objects can have the following properties (only &lt;code&gt;names&lt;/code&gt; is required):
+
+;&lt;code&gt;names&lt;/code&gt;{{nobold| (array of strings)}}
+:Template names to apply this object to. Must be well-formed names (no &lt;code&gt;Template:&lt;/code&gt;, no underscores, start with a capital letter except on Wiktionary). Redirects are not resolved, so include all you expect to find.
+;&lt;code&gt;start&lt;/code&gt;{{nobold|, }}&lt;code&gt;end&lt;/code&gt;{{nobold| (number);}} &lt;code&gt;skipOdd&lt;/code&gt;{{nobold|, }}&lt;code&gt;skipEven&lt;/code&gt;{{nobold| (boolean)}}
+:Specify the range of parameters to link. If omitted, all unnamed parameters will be linked.
+;&lt;code&gt;namespace&lt;/code&gt;{{nobold| (number)}}
+:[[WP:NS|Namespace number]] for the link.
+;&lt;code&gt;forceNs&lt;/code&gt;{{nobold| (boolean)}}
+:If &lt;code&gt;true&lt;/code&gt;, the namespace prefix will be added even if the input begins with a valid namespace prefix (so e.g. {{tlx|tl|[[Template:Wikipedia:Cleanup/Header|Wikipedia:Cleanup/Header]]}} is linked correctly).
+;&lt;code&gt;prefix&lt;/code&gt;{{nobold|, }}&lt;code&gt;suffix&lt;/code&gt;{{nobold| (string)}}
+:String to prepend or append to the input. &lt;code&gt;prefix&lt;/code&gt; is useful for linking to a special page or sister site.
+;&lt;code&gt;noRedirectStart&lt;/code&gt;{{nobold|, }}&lt;code&gt;noRedirectEnd&lt;/code&gt;{{nobold| (number)}}
+:Specify the range of parameters to suppress redirects (by adding &lt;code&gt;redirect=no&lt;/code&gt; to the URL) in.
+
+===Magic words===
+If you want the script to recognize certain magic words it does not by default and stop linking them as templates, you can do so by adding code like below to your common.js or global.js. This example adds localized variables for &lt;code&gt;PAGENAME&lt;/code&gt; and &lt;code&gt;DEFAULTSORT&lt;/code&gt; in Polish (a trailing colon is required if the magic word accepts a variable).
+
+&lt;syntaxhighlight lang="javascript"&gt;
+window.smartdiffMagicWords = ['NAZWASTRONY', 'NAZWASTRONY:', 'SORTUJ:'];
+&lt;/syntaxhighlight&gt;
+
+==Comparison with fancy-diffs==
+This script owes a great debt to [[User:Enterprisey/fancy-diffs|Enterprisey's fancy-diffs]] in its concept, and makes improvements on it. Differences include:
+
+*Shows links to nonexistent pages {{fake redlink|in red}}.
+*Links only &lt;code&gt;&lt;nowiki&gt;[[&lt;/nowiki&gt;{{fake link|this part}}&lt;nowiki&gt;]]&lt;/nowiki&gt;&lt;/code&gt; and &lt;code&gt;&lt;nowiki&gt;[[&lt;/nowiki&gt;{{fake link|this part}}&lt;nowiki&gt;|in piped links]]&lt;/nowiki&gt;&lt;/code&gt;, avoiding [[WP:SEAOFBLUE]].
+*Links section headings (e.g. &lt;code&gt;== [[#Customization|Customization]] ==&lt;/code&gt;).
+*Recognizes template names without &lt;code&gt;{{))}}&lt;/code&gt; in the same line (e.g. &lt;code&gt;{{((}}[[Template:Infobox person|Infobox person]]&lt;/code&gt;).
+*Recognizes relative links to and transclusions of subpages (e.g. &lt;code&gt;&lt;nowiki&gt;[[&lt;/nowiki&gt;{{fake link|/Archive 1}}&lt;nowiki&gt;]]&lt;/nowiki&gt;&lt;/code&gt;).
+*Does not mistake common [[H:MW|magic words]] and template parameters ({{tlc|PAGENAME}}, {{tlc|#if:...}}, {{param|1}} etc.) for template calls.
+*Supports customizable linking of unnamed parameters in templates (e.g. {{tlx|tl|[[Template:Cite web|Cite web]]}}, {{tlx|distinguish|[[Foo]]}})—see [[#Template parameter linking|above]].
+*Links content inside &lt;code&gt;tvar&lt;/code&gt; in multilingual wikis, as in &lt;code&gt;&lt;nowiki&gt;[[&lt;tvar name=1&gt;&lt;/nowiki&gt;[[Foo]]&lt;nowiki&gt;&lt;/tvar&gt;|Foo]]&lt;/nowiki&gt;&lt;/code&gt;.
+*Shows external and interwiki links {{color|var(--color-progressive, #36c)|in the same color}} as in the page body.
+*Adds to links to redirects and disambiguation pages the respective &lt;code&gt;mw-redirect&lt;/code&gt; and &lt;code&gt;mw-disambig&lt;/code&gt; classes, so if you style them in your CSS (or use the gadget "{{delink|{{int:gadget-DisambiguationLinks}}}}"), they appear the same as in the page body.
+*Verifies the result after processing each line, so it will never alter the substance of a diff even if it makes a mistake (and notifies you in such an event so you can report it).
+*Does not support image previews.
+
+==Limitations==
+*The detection/retrieval of red links and link classes is capped at 500 unique page names (10 API calls) per diff.
+
+{{User:Nardog/scripts}}</text>
+      <sha1>bv0o25vvx419p4zkepngl3sbhly60et</sha1>
+    </revision>
+    <revision>
+      <id>985993</id>
+      <parentid>985992</parentid>
+      <timestamp>2025-05-19T17:17:46Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>985993</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="6738" sha1="n5w362rqpizck1wlceknzp4uxbc2tqt" xml:space="preserve">{{Infobox Wikipedia user script
+|name=SmartDiff
+|desc=&lt;onlyinclude&gt;Makes links and template calls in diffs clickable (supports red links, avoids [[WP:SEAOFBLUE]])&lt;/onlyinclude&gt;
+|browsers=Chrome, Firefox, etc. ([[:en:ES2018|ES2018]]+ needed)
+|source=[[User:Nardog/SmartDiff.js]]
+}}
+
+This script turns wikilinks, external links, and template/module calls in a diff into clickable links. It shows links to nonexistent pages in red, and keeps the linked part to a minimum to avoid [[WP:SEAOFBLUE]], unlike [[User:Enterprisey/fancy-diffs|fancy-diffs]] ([[#Comparison with fancy-diffs|further comparison]]).
+
+==Installation==
+Add the following to [[Special:MyPage/common.js|your common.js]] or [[meta:Special:MyPage/global.js|global.js]]:
+&lt;syntaxhighlight lang="javascript"&gt;
+mw.loader.load('//en.wikipedia.org/w/index.php?title=User:Nardog/SmartDiff.js&amp;action=raw&amp;ctype=text/javascript');
+&lt;/syntaxhighlight&gt;
+
+Or you may enable the [[User:Enterprisey/script-installer|script installer]] in {{myprefs|Gadgets}} and click "Install" in the infobox on this page.
+
+==Customization==
+===Template parameter linking===
+You can instruct the script to link certain unnamed parameters in templates, so e.g. {{tlc|tl|reflist}} appears as {{tlx|tl|[[Template:Reflist|reflist]]}}. This is useful for linking templates like {{tl|tl}} and hatnotes like {{tl|About}}. Linking of named parameters is not supported, and the template call and parameters must be in the same line for the latter to be linked.
+
+To do it, add code like below to your common.js (templates vary by wiki, so even if you have installed the script globally, it is recommended to have different code on each wiki).
+
+&lt;syntaxhighlight lang="javascript"&gt;
+window.smartdiffTemplates = [
+	// Objects go here
+];
+&lt;/syntaxhighlight&gt;
+
+====Example====
+Here is an example based on templates on English Wikipedia.
+
+{{collapse top|Example code}}
+&lt;syntaxhighlight lang="javascript"&gt;
+window.smartdiffTemplates = [
+
+	// {{t}}, {{tl}}
+	{
+		names: ['T', 'Tl'],
+		end: 1,
+		namespace: 10,
+		forceNs: true
+	},
+
+	// {{tlx}}
+	{
+		names: ['Tlx'],
+		end: 1,
+		namespace: 10
+	},
+
+	// {{u}}
+	{
+		names: ['U'],
+		end: 1,
+		namespace: 1
+	},
+
+	// {{Reply to}}, {{Re}}, {{Ping}}
+	{
+		names: ['Re', 'Reply to', 'Ping'],
+		namespace: 1
+	},
+
+	// {{About}}
+	{
+		names: ['About'],
+		start: 3,
+		skipEven: true
+	},
+
+	// {{For}}
+	{
+		names: ['For'],
+		start: 2
+	},
+
+	// {{Other uses}}, {{Otheruses}}
+	{
+		names: ['Other uses', 'Otheruses'],
+		end: 1
+	},
+
+	// {{Distinguish}}, {{Further}}, {{Main}}, {{See also}}
+	{
+		names: ['Distinguish', 'Further', 'Main', 'See also', 'Seealso']
+	},
+
+	// {{Redirect}}
+	{
+		names: ['Redirect'],
+		skipEven: true,
+		noRedirectEnd: 1
+	},
+
+	// {{Tracked}}
+	{
+		names: ['Tracked'],
+		end: 1,
+		prefix: 'phab:'
+	},
+
+];
+&lt;/syntaxhighlight&gt;
+{{collapse bottom}}
+
+====Schema====
+The objects can have the following properties (only &lt;code&gt;names&lt;/code&gt; is required):
+
+;&lt;code&gt;names&lt;/code&gt;{{nobold| (array of strings)}}
+:Template names to apply this object to. Must be well-formed names (no &lt;code&gt;Template:&lt;/code&gt;, no underscores, start with a capital letter except on Wiktionary). Redirects are not resolved, so include all you expect to find.
+;&lt;code&gt;start&lt;/code&gt;{{nobold|, }}&lt;code&gt;end&lt;/code&gt;{{nobold| (number);}} &lt;code&gt;skipOdd&lt;/code&gt;{{nobold|, }}&lt;code&gt;skipEven&lt;/code&gt;{{nobold| (boolean)}}
+:Specify the range of parameters to link. If omitted, all unnamed parameters will be linked.
+;&lt;code&gt;namespace&lt;/code&gt;{{nobold| (number)}}
+:[[WP:NS|Namespace number]] for the link.
+;&lt;code&gt;forceNs&lt;/code&gt;{{nobold| (boolean)}}
+:If &lt;code&gt;true&lt;/code&gt;, the namespace prefix will be added even if the input begins with a valid namespace prefix (so e.g. {{tlx|tl|[[Template:Wikipedia:Cleanup/Header|Wikipedia:Cleanup/Header]]}} is linked correctly).
+;&lt;code&gt;prefix&lt;/code&gt;{{nobold|, }}&lt;code&gt;suffix&lt;/code&gt;{{nobold| (string)}}
+:String to prepend or append to the input. &lt;code&gt;prefix&lt;/code&gt; is useful for linking to a special page or sister site.
+;&lt;code&gt;noRedirectStart&lt;/code&gt;{{nobold|, }}&lt;code&gt;noRedirectEnd&lt;/code&gt;{{nobold| (number)}}
+:Specify the range of parameters to suppress redirects (by adding &lt;code&gt;redirect=no&lt;/code&gt; to the URL) in.
+
+===Magic words===
+If you want the script to recognize certain magic words it does not by default and stop linking them as templates, you can do so by adding code like below to your common.js or global.js. This example adds localized variables for &lt;code&gt;PAGENAME&lt;/code&gt; and &lt;code&gt;DEFAULTSORT&lt;/code&gt; in Polish (a trailing colon is required if the magic word accepts a variable).
+
+&lt;syntaxhighlight lang="javascript"&gt;
+window.smartdiffMagicWords = ['NAZWASTRONY', 'NAZWASTRONY:', 'SORTUJ:'];
+&lt;/syntaxhighlight&gt;
+
+==Comparison with fancy-diffs==
+This script owes a great debt to [[User:Enterprisey/fancy-diffs|Enterprisey's fancy-diffs]] in its concept, and makes improvements on it. Differences include:
+
+*Shows links to nonexistent pages {{fake redlink|in red}}.
+*Links only &lt;code&gt;&lt;nowiki&gt;[[&lt;/nowiki&gt;{{fake link|this part}}&lt;nowiki&gt;]]&lt;/nowiki&gt;&lt;/code&gt; and &lt;code&gt;&lt;nowiki&gt;[[&lt;/nowiki&gt;{{fake link|this part}}&lt;nowiki&gt;|in piped links]]&lt;/nowiki&gt;&lt;/code&gt;, avoiding [[WP:SEAOFBLUE]].
+*Links section headings (e.g. &lt;code&gt;== [[#Customization|Customization]] ==&lt;/code&gt;).
+*Recognizes template names without &lt;code&gt;{{))}}&lt;/code&gt; in the same line (e.g. &lt;code&gt;{{((}}[[Template:Infobox person|Infobox person]]&lt;/code&gt;).
+*Recognizes relative links to and transclusions of subpages (e.g. &lt;code&gt;&lt;nowiki&gt;[[&lt;/nowiki&gt;{{fake link|/Archive 1}}&lt;nowiki&gt;]]&lt;/nowiki&gt;&lt;/code&gt;).
+*Does not mistake common [[:en:H:MW|magic words]] and template parameters ({{tlc|PAGENAME}}, {{tlc|#if:...}}, {{param|1}} etc.) for template calls.
+*Supports customizable linking of unnamed parameters in templates (e.g. {{tlx|tl|[[Template:Cite web|Cite web]]}}, {{tlx|distinguish|[[Foo]]}})—see [[#Template parameter linking|above]].
+*Links content inside &lt;code&gt;tvar&lt;/code&gt; in multilingual wikis, as in &lt;code&gt;&lt;nowiki&gt;[[&lt;tvar name=1&gt;&lt;/nowiki&gt;[[Foo]]&lt;nowiki&gt;&lt;/tvar&gt;|Foo]]&lt;/nowiki&gt;&lt;/code&gt;.
+*Shows external and interwiki links {{color|var(--color-progressive, #36c)|in the same color}} as in the page body.
+*Adds to links to redirects and disambiguation pages the respective &lt;code&gt;mw-redirect&lt;/code&gt; and &lt;code&gt;mw-disambig&lt;/code&gt; classes, so if you style them in your CSS (or use the gadget "{{delink|{{int:gadget-DisambiguationLinks}}}}"), they appear the same as in the page body.
+*Verifies the result after processing each line, so it will never alter the substance of a diff even if it makes a mistake (and notifies you in such an event so you can report it).
+*Does not support image previews.
+
+==Limitations==
+*The detection/retrieval of red links and link classes is capped at 500 unique page names (10 API calls) per diff.
+
+{{User:Nardog/scripts}}</text>
+      <sha1>n5w362rqpizck1wlceknzp4uxbc2tqt</sha1>
+    </revision>
+    <revision>
+      <id>9841</id>
+      <timestamp>2025-05-19T20:06:26Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Bot: convert local link → enwiki interwiki</comment>
+      <origin>9841</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="6754" sha1="rugfl5rq9hknd7s9q5ib1d5ynfkc0vt" xml:space="preserve">{{Infobox Wikipedia user script
+|name=SmartDiff
+|desc=&lt;onlyinclude&gt;Makes links and template calls in diffs clickable (supports red links, avoids [[WP:SEAOFBLUE]])&lt;/onlyinclude&gt;
+|browsers=Chrome, Firefox, etc. ([[:en:ES2018|ES2018]]+ needed)
+|source=[[User:Nardog/SmartDiff.js]]
+}}
+
+This script turns wikilinks, external links, and template/module calls in a diff into clickable links. It shows links to nonexistent pages in red, and keeps the linked part to a minimum to avoid [[WP:SEAOFBLUE]], unlike [[User:Enterprisey/fancy-diffs|fancy-diffs]] ([[#Comparison with fancy-diffs|further comparison]]).
+
+==Installation==
+Add the following to [[Special:MyPage/common.js|your common.js]] or [[meta:Special:MyPage/global.js|global.js]]:
+&lt;syntaxhighlight lang="javascript"&gt;
+mw.loader.load('//en.wikipedia.org/w/index.php?title=User:Nardog/SmartDiff.js&amp;action=raw&amp;ctype=text/javascript');
+&lt;/syntaxhighlight&gt;
+
+Or you may enable the [[User:Enterprisey/script-installer|script installer]] in {{myprefs|Gadgets}} and click "Install" in the infobox on this page.
+
+==Customization==
+===Template parameter linking===
+You can instruct the script to link certain unnamed parameters in templates, so e.g. {{tlc|tl|reflist}} appears as {{tlx|tl|[[Template:Reflist|reflist]]}}. This is useful for linking templates like {{tl|tl}} and hatnotes like {{tl|About}}. Linking of named parameters is not supported, and the template call and parameters must be in the same line for the latter to be linked.
+
+To do it, add code like below to your common.js (templates vary by wiki, so even if you have installed the script globally, it is recommended to have different code on each wiki).
+
+&lt;syntaxhighlight lang="javascript"&gt;
+window.smartdiffTemplates = [
+	// Objects go here
+];
+&lt;/syntaxhighlight&gt;
+
+====Example====
+Here is an example based on templates on English Wikipedia.
+
+{{collapse top|Example code}}
+&lt;syntaxhighlight lang="javascript"&gt;
+window.smartdiffTemplates = [
+
+	// {{t}}, {{tl}}
+	{
+		names: ['T', 'Tl'],
+		end: 1,
+		namespace: 10,
+		forceNs: true
+	},
+
+	// {{tlx}}
+	{
+		names: ['Tlx'],
+		end: 1,
+		namespace: 10
+	},
+
+	// {{u}}
+	{
+		names: ['U'],
+		end: 1,
+		namespace: 1
+	},
+
+	// {{Reply to}}, {{Re}}, {{Ping}}
+	{
+		names: ['Re', 'Reply to', 'Ping'],
+		namespace: 1
+	},
+
+	// {{About}}
+	{
+		names: ['About'],
+		start: 3,
+		skipEven: true
+	},
+
+	// {{For}}
+	{
+		names: ['For'],
+		start: 2
+	},
+
+	// {{Other uses}}, {{Otheruses}}
+	{
+		names: ['Other uses', 'Otheruses'],
+		end: 1
+	},
+
+	// {{Distinguish}}, {{Further}}, {{Main}}, {{See also}}
+	{
+		names: ['Distinguish', 'Further', 'Main', 'See also', 'Seealso']
+	},
+
+	// {{Redirect}}
+	{
+		names: ['Redirect'],
+		skipEven: true,
+		noRedirectEnd: 1
+	},
+
+	// {{Tracked}}
+	{
+		names: ['Tracked'],
+		end: 1,
+		prefix: 'phab:'
+	},
+
+];
+&lt;/syntaxhighlight&gt;
+{{collapse bottom}}
+
+====Schema====
+The objects can have the following properties (only &lt;code&gt;names&lt;/code&gt; is required):
+
+;&lt;code&gt;names&lt;/code&gt;{{nobold| (array of strings)}}
+:Template names to apply this object to. Must be well-formed names (no &lt;code&gt;Template:&lt;/code&gt;, no underscores, start with a capital letter except on Wiktionary). Redirects are not resolved, so include all you expect to find.
+;&lt;code&gt;start&lt;/code&gt;{{nobold|, }}&lt;code&gt;end&lt;/code&gt;{{nobold| (number);}} &lt;code&gt;skipOdd&lt;/code&gt;{{nobold|, }}&lt;code&gt;skipEven&lt;/code&gt;{{nobold| (boolean)}}
+:Specify the range of parameters to link. If omitted, all unnamed parameters will be linked.
+;&lt;code&gt;namespace&lt;/code&gt;{{nobold| (number)}}
+:[[WP:NS|Namespace number]] for the link.
+;&lt;code&gt;forceNs&lt;/code&gt;{{nobold| (boolean)}}
+:If &lt;code&gt;true&lt;/code&gt;, the namespace prefix will be added even if the input begins with a valid namespace prefix (so e.g. {{tlx|tl|[[Template:Wikipedia:Cleanup/Header|Wikipedia:Cleanup/Header]]}} is linked correctly).
+;&lt;code&gt;prefix&lt;/code&gt;{{nobold|, }}&lt;code&gt;suffix&lt;/code&gt;{{nobold| (string)}}
+:String to prepend or append to the input. &lt;code&gt;prefix&lt;/code&gt; is useful for linking to a special page or sister site.
+;&lt;code&gt;noRedirectStart&lt;/code&gt;{{nobold|, }}&lt;code&gt;noRedirectEnd&lt;/code&gt;{{nobold| (number)}}
+:Specify the range of parameters to suppress redirects (by adding &lt;code&gt;redirect=no&lt;/code&gt; to the URL) in.
+
+===Magic words===
+If you want the script to recognize certain magic words it does not by default and stop linking them as templates, you can do so by adding code like below to your common.js or global.js. This example adds localized variables for &lt;code&gt;PAGENAME&lt;/code&gt; and &lt;code&gt;DEFAULTSORT&lt;/code&gt; in Polish (a trailing colon is required if the magic word accepts a variable).
+
+&lt;syntaxhighlight lang="javascript"&gt;
+window.smartdiffMagicWords = ['NAZWASTRONY', 'NAZWASTRONY:', 'SORTUJ:'];
+&lt;/syntaxhighlight&gt;
+
+==Comparison with fancy-diffs==
+This script owes a great debt to [[User:Enterprisey/fancy-diffs|Enterprisey's fancy-diffs]] in its concept, and makes improvements on it. Differences include:
+
+*Shows links to nonexistent pages {{fake redlink|in red}}.
+*Links only &lt;code&gt;&lt;nowiki&gt;[[&lt;/nowiki&gt;{{fake link|this part}}&lt;nowiki&gt;]]&lt;/nowiki&gt;&lt;/code&gt; and &lt;code&gt;&lt;nowiki&gt;[[&lt;/nowiki&gt;{{fake link|this part}}&lt;nowiki&gt;|in piped links]]&lt;/nowiki&gt;&lt;/code&gt;, avoiding [[WP:SEAOFBLUE]].
+*Links section headings (e.g. &lt;code&gt;== [[#Customization|Customization]] ==&lt;/code&gt;).
+*Recognizes template names without &lt;code&gt;{{))}}&lt;/code&gt; in the same line (e.g. &lt;code&gt;{{((}}[[Template:Infobox person|Infobox person]]&lt;/code&gt;).
+*Recognizes relative links to and transclusions of subpages (e.g. &lt;code&gt;&lt;nowiki&gt;[[&lt;/nowiki&gt;{{fake link|/Archive 1}}&lt;nowiki&gt;]]&lt;/nowiki&gt;&lt;/code&gt;).
+*Does not mistake common [[:en:H:MW|magic words]] and template parameters ({{tlc|PAGENAME}}, {{tlc|#if:...}}, {{param|1}} etc.) for template calls.
+*Supports customizable linking of unnamed parameters in templates (e.g. {{tlx|tl|[[Template:Cite web|Cite web]]}}, {{tlx|distinguish|[[:en:Foo|Foo]]}})—see [[#Template parameter linking|above]].
+*Links content inside &lt;code&gt;tvar&lt;/code&gt; in multilingual wikis, as in &lt;code&gt;&lt;nowiki&gt;[[&lt;tvar name=1&gt;&lt;/nowiki&gt;[[:en:Foo|Foo]]&lt;nowiki&gt;&lt;/tvar&gt;|Foo]]&lt;/nowiki&gt;&lt;/code&gt;.
+*Shows external and interwiki links {{color|var(--color-progressive, #36c)|in the same color}} as in the page body.
+*Adds to links to redirects and disambiguation pages the respective &lt;code&gt;mw-redirect&lt;/code&gt; and &lt;code&gt;mw-disambig&lt;/code&gt; classes, so if you style them in your CSS (or use the gadget "{{delink|{{int:gadget-DisambiguationLinks}}}}"), they appear the same as in the page body.
+*Verifies the result after processing each line, so it will never alter the substance of a diff even if it makes a mistake (and notifies you in such an event so you can report it).
+*Does not support image previews.
+
+==Limitations==
+*The detection/retrieval of red links and link classes is capped at 500 unique page names (10 API calls) per diff.
+
+{{User:Nardog/scripts}}</text>
+      <sha1>rugfl5rq9hknd7s9q5ib1d5ynfkc0vt</sha1>
+    </revision>
+    <revision>
+      <id>3243812</id>
+      <parentid>9841</parentid>
+      <timestamp>2026-02-26T04:43:49Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <origin>3243812</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="6775" sha1="grj5sdwh1ti94a6h5k9efknqdcmeef3" xml:space="preserve">{{Infobox Wikipedia user script
+|name=SmartDiff
+|desc=&lt;onlyinclude&gt;Makes links and template calls in diffs clickable (supports red links, avoids [[WP:SEAOFBLUE]])&lt;/onlyinclude&gt;
+|browsers=Chrome, Firefox, etc. ([[:en:ES2018|ES2018]]+ needed)
+|source=[[User:Nardog/SmartDiff.js]]
+}}
+
+This script turns wikilinks, external links, and template/module calls in a diff into clickable links. It shows links to nonexistent pages in red, and keeps the linked part to a minimum to avoid [[WP:SEAOFBLUE]], unlike [[User:Enterprisey/fancy-diffs|fancy-diffs]] ([[#Comparison with fancy-diffs|further comparison]]).
+
+==Installation==
+Add the following to [[Special:MyPage/common.js|your common.js]] or [[meta:Special:MyPage/global.js|global.js]]:
+&lt;syntaxhighlight lang="javascript"&gt;
+mw.loader.load('//en.wikipedia.org/w/index.php?title=User:Nardog/SmartDiff.js&amp;action=raw&amp;ctype=text/javascript');
+&lt;/syntaxhighlight&gt;
+
+Or you may enable the [[User:Enterprisey/script-installer|script installer]] in {{myprefs|Gadgets}} and click "Install" in the infobox on this page.
+
+==Customization==
+===Template parameter linking===
+You can instruct the script to link certain unnamed parameters in templates, so e.g. {{tlc|tl|reflist}} appears as {{tlx|tl|[[Template:Reflist|reflist]]}}. This is useful for linking templates like {{tl|tl}} and hatnotes like {{tl|About}}. Linking of named parameters is not supported, and the template call and parameters must be in the same line for the latter to be linked.
+
+To do it, add code like below to your common.js (templates vary by wiki, so even if you have installed the script globally, it is recommended to have different code on each wiki).
+
+&lt;syntaxhighlight lang="javascript"&gt;
+window.smartdiffTemplates = [
+	// Objects go here
+];
+&lt;/syntaxhighlight&gt;
+
+====Example====
+Here is an example based on templates on English Wikipedia.
+
+{{collapse top|Example code}}
+&lt;syntaxhighlight lang="javascript"&gt;
+window.smartdiffTemplates = [
+
+	// {{t}}, {{tl}}
+	{
+		names: ['T', 'Tl'],
+		end: 1,
+		namespace: 10,
+		forceNs: true
+	},
+
+	// {{tlx}}
+	{
+		names: ['Tlx'],
+		end: 1,
+		namespace: 10
+	},
+
+	// {{u}}
+	{
+		names: ['U'],
+		end: 1,
+		namespace: 1
+	},
+
+	// {{Reply to}}, {{Re}}, {{Ping}}
+	{
+		names: ['Re', 'Reply to', 'Ping'],
+		namespace: 1
+	},
+
+	// {{About}}
+	{
+		names: ['About'],
+		start: 3,
+		skipEven: true
+	},
+
+	// {{For}}
+	{
+		names: ['For'],
+		start: 2
+	},
+
+	// {{Other uses}}, {{Otheruses}}
+	{
+		names: ['Other uses', 'Otheruses'],
+		end: 1
+	},
+
+	// {{Distinguish}}, {{Further}}, {{Main}}, {{See also}}
+	{
+		names: ['Distinguish', 'Further', 'Main', 'See also', 'Seealso']
+	},
+
+	// {{Redirect}}
+	{
+		names: ['Redirect'],
+		skipEven: true,
+		noRedirectEnd: 1
+	},
+
+	// {{Tracked}}
+	{
+		names: ['Tracked'],
+		end: 1,
+		prefix: 'phab:'
+	},
+
+];
+&lt;/syntaxhighlight&gt;
+{{collapse bottom}}
+
+====Schema====
+The objects can have the following properties (only &lt;code&gt;names&lt;/code&gt; is required):
+
+;&lt;code&gt;names&lt;/code&gt;{{nobold| (array of strings)}}
+:Template names to apply this object to. Must be well-formed names (no &lt;code&gt;Template:&lt;/code&gt;, no underscores, start with a capital letter except on Wiktionary). Redirects are not resolved, so include all you expect to find.
+;&lt;code&gt;start&lt;/code&gt;{{nobold|, }}&lt;code&gt;end&lt;/code&gt;{{nobold| (number);}} &lt;code&gt;skipOdd&lt;/code&gt;{{nobold|, }}&lt;code&gt;skipEven&lt;/code&gt;{{nobold| (boolean)}}
+:Specify the range of parameters to link. If omitted, all unnamed parameters will be linked.
+;&lt;code&gt;namespace&lt;/code&gt;{{nobold| (number)}}
+:[[WP:NS|Namespace number]] for the link.
+;&lt;code&gt;forceNs&lt;/code&gt;{{nobold| (boolean)}}
+:If &lt;code&gt;true&lt;/code&gt;, the namespace prefix will be added even if the input begins with a valid namespace prefix (so e.g. {{tlx|tl|[[Template:Wikipedia:Cleanup/Header|Wikipedia:Cleanup/Header]]}} is linked correctly).
+;&lt;code&gt;prefix&lt;/code&gt;{{nobold|, }}&lt;code&gt;suffix&lt;/code&gt;{{nobold| (string)}}
+:String to prepend or append to the input. &lt;code&gt;prefix&lt;/code&gt; is useful for linking to a special page or sister site.
+;&lt;code&gt;noRedirectStart&lt;/code&gt;{{nobold|, }}&lt;code&gt;noRedirectEnd&lt;/code&gt;{{nobold| (number)}}
+:Specify the range of parameters to suppress redirects (by adding &lt;code&gt;redirect=no&lt;/code&gt; to the URL) in.
+
+===Magic words===
+If you want the script to recognize certain magic words it does not by default and stop linking them as templates, you can do so by adding code like below to your common.js or global.js. This example adds localized variables for &lt;code&gt;PAGENAME&lt;/code&gt; and &lt;code&gt;DEFAULTSORT&lt;/code&gt; in Polish (a trailing colon is required if the magic word accepts a variable).
+
+&lt;syntaxhighlight lang="javascript"&gt;
+window.smartdiffMagicWords = ['NAZWASTRONY', 'NAZWASTRONY:', 'SORTUJ:'];
+&lt;/syntaxhighlight&gt;
+
+==Comparison with fancy-diffs==
+This script owes a great debt to [[User:Enterprisey/fancy-diffs|Enterprisey's fancy-diffs]] in its concept, and makes improvements on it. Differences include:
+
+*Shows links to nonexistent pages {{fake redlink|in red}}.
+*Links only &lt;code&gt;&lt;nowiki&gt;[[&lt;/nowiki&gt;{{fake link|this part}}&lt;nowiki&gt;]]&lt;/nowiki&gt;&lt;/code&gt; and &lt;code&gt;&lt;nowiki&gt;[[&lt;/nowiki&gt;{{fake link|this part}}&lt;nowiki&gt;|in piped links]]&lt;/nowiki&gt;&lt;/code&gt;, avoiding [[WP:SEAOFBLUE]].
+*Links section headings (e.g. &lt;code&gt;== [[#Customization|Customization]] ==&lt;/code&gt;).
+*Recognizes template names without &lt;code&gt;{{))}}&lt;/code&gt; in the same line (e.g. &lt;code&gt;{{((}}[[Template:Infobox person|Infobox person]]&lt;/code&gt;).
+*Recognizes relative links to and transclusions of subpages (e.g. &lt;code&gt;&lt;nowiki&gt;[[&lt;/nowiki&gt;{{fake link|/Archive 1}}&lt;nowiki&gt;]]&lt;/nowiki&gt;&lt;/code&gt;).
+*Does not mistake common [[:en:H:MW|magic words]] and template parameters ({{tlc|PAGENAME}}, {{tlc|#if:...}}, {{param|1}} etc.) for template calls.
+*Supports customizable linking of unnamed parameters in templates (e.g. {{tlx|tl|[[Template:Cite web|Cite web]]}}, {{tlx|distinguish|[[:en:Foo|Foo]]}})—see [[#Template parameter linking|above]].
+*Links content inside &lt;code&gt;tvar&lt;/code&gt; in multilingual wikis, as in &lt;code&gt;&lt;nowiki&gt;[[&lt;tvar name=1&gt;&lt;/nowiki&gt;[[:en:Foo|Foo]]&lt;nowiki&gt;&lt;/tvar&gt;|Foo]]&lt;/nowiki&gt;&lt;/code&gt;.
+*Shows external and interwiki links {{color|var(--color-progressive, #36c)|in the same color}} as in the page body.
+*Adds to links to redirects and disambiguation pages the respective &lt;code&gt;mw-redirect&lt;/code&gt; and &lt;code&gt;mw-disambig&lt;/code&gt; classes, so if you style them in your CSS (or use the gadget "{{delink|{{int:gadget-DisambiguationLinks}}}}"), they appear the same as in the page body.
+*Verifies the result after processing each line, so it will never alter the substance of a diff even if it makes a mistake (and notifies you in such an event so you can report it).
+*Does not support image previews.
+
+==Limitations==
+*The detection/retrieval of red links and link classes is capped at 500 unique page names (10 API calls) per diff.
+
+{{User:Nardog/scripts}}[[Category:reimport]]</text>
+      <sha1>grj5sdwh1ti94a6h5k9efknqdcmeef3</sha1>
+    </revision>
+    <revision>
+      <id>3367711</id>
+      <parentid>3243812</parentid>
+      <timestamp>2026-03-02T18:43:44Z</timestamp>
+      <contributor>
+        <username>en&gt;Nardog</username>
+        <id>0</id>
+      </contributor>
+      <comment>/* Comparison with fancy-diffs */ default color</comment>
+      <origin>3367711</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="6723" sha1="7h4nr7xgw9gebf61a4s3xs3z3bphoyu" xml:space="preserve">{{Infobox Wikipedia user script
+|name=SmartDiff
+|desc=&lt;onlyinclude&gt;Makes links and template calls in diffs clickable (supports red links, avoids [[WP:SEAOFBLUE]])&lt;/onlyinclude&gt;
+|browsers=Chrome, Firefox, etc. ([[ES2018]]+ needed)
+|source=[[User:Nardog/SmartDiff.js]]
+}}
+
+This script turns wikilinks, external links, and template/module calls in a diff into clickable links. It shows links to nonexistent pages in red, and keeps the linked part to a minimum to avoid [[WP:SEAOFBLUE]], unlike [[User:Enterprisey/fancy-diffs|fancy-diffs]] ([[#Comparison with fancy-diffs|further comparison]]).
+
+==Installation==
+Add the following to [[Special:MyPage/common.js|your common.js]] or [[meta:Special:MyPage/global.js|global.js]]:
+&lt;syntaxhighlight lang="javascript"&gt;
+mw.loader.load('//en.wikipedia.org/w/index.php?title=User:Nardog/SmartDiff.js&amp;action=raw&amp;ctype=text/javascript');
+&lt;/syntaxhighlight&gt;
+
+Or you may enable the [[User:Enterprisey/script-installer|script installer]] in {{myprefs|Gadgets}} and click "Install" in the infobox on this page.
+
+==Customization==
+===Template parameter linking===
+You can instruct the script to link certain unnamed parameters in templates, so e.g. {{tlc|tl|reflist}} appears as {{tlx|tl|[[Template:Reflist|reflist]]}}. This is useful for linking templates like {{tl|tl}} and hatnotes like {{tl|About}}. Linking of named parameters is not supported, and the template call and parameters must be in the same line for the latter to be linked.
+
+To do it, add code like below to your common.js (templates vary by wiki, so even if you have installed the script globally, it is recommended to have different code on each wiki).
+
+&lt;syntaxhighlight lang="javascript"&gt;
+window.smartdiffTemplates = [
+	// Objects go here
+];
+&lt;/syntaxhighlight&gt;
+
+====Example====
+Here is an example based on templates on English Wikipedia.
+
+{{collapse top|Example code}}
+&lt;syntaxhighlight lang="javascript"&gt;
+window.smartdiffTemplates = [
+
+	// {{t}}, {{tl}}
+	{
+		names: ['T', 'Tl'],
+		end: 1,
+		namespace: 10,
+		forceNs: true
+	},
+
+	// {{tlx}}
+	{
+		names: ['Tlx'],
+		end: 1,
+		namespace: 10
+	},
+
+	// {{u}}
+	{
+		names: ['U'],
+		end: 1,
+		namespace: 1
+	},
+
+	// {{Reply to}}, {{Re}}, {{Ping}}
+	{
+		names: ['Re', 'Reply to', 'Ping'],
+		namespace: 1
+	},
+
+	// {{About}}
+	{
+		names: ['About'],
+		start: 3,
+		skipEven: true
+	},
+
+	// {{For}}
+	{
+		names: ['For'],
+		start: 2
+	},
+
+	// {{Other uses}}, {{Otheruses}}
+	{
+		names: ['Other uses', 'Otheruses'],
+		end: 1
+	},
+
+	// {{Distinguish}}, {{Further}}, {{Main}}, {{See also}}
+	{
+		names: ['Distinguish', 'Further', 'Main', 'See also', 'Seealso']
+	},
+
+	// {{Redirect}}
+	{
+		names: ['Redirect'],
+		skipEven: true,
+		noRedirectEnd: 1
+	},
+
+	// {{Tracked}}
+	{
+		names: ['Tracked'],
+		end: 1,
+		prefix: 'phab:'
+	},
+
+];
+&lt;/syntaxhighlight&gt;
+{{collapse bottom}}
+
+====Schema====
+The objects can have the following properties (only &lt;code&gt;names&lt;/code&gt; is required):
+
+;&lt;code&gt;names&lt;/code&gt;{{nobold| (array of strings)}}
+:Template names to apply this object to. Must be well-formed names (no &lt;code&gt;Template:&lt;/code&gt;, no underscores, start with a capital letter except on Wiktionary). Redirects are not resolved, so include all you expect to find.
+;&lt;code&gt;start&lt;/code&gt;{{nobold|, }}&lt;code&gt;end&lt;/code&gt;{{nobold| (number);}} &lt;code&gt;skipOdd&lt;/code&gt;{{nobold|, }}&lt;code&gt;skipEven&lt;/code&gt;{{nobold| (boolean)}}
+:Specify the range of parameters to link. If omitted, all unnamed parameters will be linked.
+;&lt;code&gt;namespace&lt;/code&gt;{{nobold| (number)}}
+:[[WP:NS|Namespace number]] for the link.
+;&lt;code&gt;forceNs&lt;/code&gt;{{nobold| (boolean)}}
+:If &lt;code&gt;true&lt;/code&gt;, the namespace prefix will be added even if the input begins with a valid namespace prefix (so e.g. {{tlx|tl|[[Template:Wikipedia:Cleanup/Header|Wikipedia:Cleanup/Header]]}} is linked correctly).
+;&lt;code&gt;prefix&lt;/code&gt;{{nobold|, }}&lt;code&gt;suffix&lt;/code&gt;{{nobold| (string)}}
+:String to prepend or append to the input. &lt;code&gt;prefix&lt;/code&gt; is useful for linking to a special page or sister site.
+;&lt;code&gt;noRedirectStart&lt;/code&gt;{{nobold|, }}&lt;code&gt;noRedirectEnd&lt;/code&gt;{{nobold| (number)}}
+:Specify the range of parameters to suppress redirects (by adding &lt;code&gt;redirect=no&lt;/code&gt; to the URL) in.
+
+===Magic words===
+If you want the script to recognize certain magic words it does not by default and stop linking them as templates, you can do so by adding code like below to your common.js or global.js. This example adds localized variables for &lt;code&gt;PAGENAME&lt;/code&gt; and &lt;code&gt;DEFAULTSORT&lt;/code&gt; in Polish (a trailing colon is required if the magic word accepts a variable).
+
+&lt;syntaxhighlight lang="javascript"&gt;
+window.smartdiffMagicWords = ['NAZWASTRONY', 'NAZWASTRONY:', 'SORTUJ:'];
+&lt;/syntaxhighlight&gt;
+
+==Comparison with fancy-diffs==
+This script owes a great debt to [[User:Enterprisey/fancy-diffs|Enterprisey's fancy-diffs]] in its concept, and makes improvements on it. Differences include:
+
+*Shows links to nonexistent pages {{fake redlink|in red}}.
+*Links only &lt;code&gt;&lt;nowiki&gt;[[&lt;/nowiki&gt;{{fake link|this part}}&lt;nowiki&gt;]]&lt;/nowiki&gt;&lt;/code&gt; and &lt;code&gt;&lt;nowiki&gt;[[&lt;/nowiki&gt;{{fake link|this part}}&lt;nowiki&gt;|in piped links]]&lt;/nowiki&gt;&lt;/code&gt;, avoiding [[WP:SEAOFBLUE]].
+*Links section headings (e.g. &lt;code&gt;== [[#Customization|Customization]] ==&lt;/code&gt;).
+*Recognizes template names without &lt;code&gt;{{))}}&lt;/code&gt; in the same line (e.g. &lt;code&gt;{{((}}[[Template:Infobox person|Infobox person]]&lt;/code&gt;).
+*Recognizes relative links to and transclusions of subpages (e.g. &lt;code&gt;&lt;nowiki&gt;[[&lt;/nowiki&gt;{{fake link|/Archive 1}}&lt;nowiki&gt;]]&lt;/nowiki&gt;&lt;/code&gt;).
+*Does not mistake common [[H:MW|magic words]] and template parameters ({{tlc|PAGENAME}}, {{tlc|#if:...}}, {{param|1}} etc.) for template calls.
+*Supports customizable linking of unnamed parameters in templates (e.g. {{tlx|tl|[[Template:Cite web|Cite web]]}}, {{tlx|distinguish|[[Foo]]}})—see [[#Template parameter linking|above]].
+*Links content inside &lt;code&gt;tvar&lt;/code&gt; in multilingual wikis, as in &lt;code&gt;&lt;nowiki&gt;[[&lt;tvar name=1&gt;&lt;/nowiki&gt;[[Foo]]&lt;nowiki&gt;&lt;/tvar&gt;|Foo]]&lt;/nowiki&gt;&lt;/code&gt;.
+*Shows external and interwiki links {{color|var(--color-progressive, #36c)|in the same color}} as in the page body.
+*Adds to links to redirects and disambiguation pages the respective &lt;code&gt;mw-redirect&lt;/code&gt; and &lt;code&gt;mw-disambig&lt;/code&gt; classes, so if you style them in your CSS (or use the gadget "{{delink|{{int:gadget-DisambiguationLinks}}}}"), they appear the same as in the page body.
+*Verifies the result after processing each line, so it will never alter the substance of a diff even if it makes a mistake (and notifies you in such an event so you can report it).
+*Does not support image previews.
+
+==Limitations==
+*The detection/retrieval of red links and link classes is capped at 500 unique page names (10 API calls) per diff.
+
+{{User:Nardog/scripts}}</text>
+      <sha1>7h4nr7xgw9gebf61a4s3xs3z3bphoyu</sha1>
+    </revision>
+    <revision>
+      <id>3367712</id>
+      <parentid>3367711</parentid>
+      <timestamp>2026-03-02T18:43:45Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3367711</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="6723" sha1="7h4nr7xgw9gebf61a4s3xs3z3bphoyu" xml:space="preserve">{{Infobox Wikipedia user script
+|name=SmartDiff
+|desc=&lt;onlyinclude&gt;Makes links and template calls in diffs clickable (supports red links, avoids [[WP:SEAOFBLUE]])&lt;/onlyinclude&gt;
+|browsers=Chrome, Firefox, etc. ([[ES2018]]+ needed)
+|source=[[User:Nardog/SmartDiff.js]]
+}}
+
+This script turns wikilinks, external links, and template/module calls in a diff into clickable links. It shows links to nonexistent pages in red, and keeps the linked part to a minimum to avoid [[WP:SEAOFBLUE]], unlike [[User:Enterprisey/fancy-diffs|fancy-diffs]] ([[#Comparison with fancy-diffs|further comparison]]).
+
+==Installation==
+Add the following to [[Special:MyPage/common.js|your common.js]] or [[meta:Special:MyPage/global.js|global.js]]:
+&lt;syntaxhighlight lang="javascript"&gt;
+mw.loader.load('//en.wikipedia.org/w/index.php?title=User:Nardog/SmartDiff.js&amp;action=raw&amp;ctype=text/javascript');
+&lt;/syntaxhighlight&gt;
+
+Or you may enable the [[User:Enterprisey/script-installer|script installer]] in {{myprefs|Gadgets}} and click "Install" in the infobox on this page.
+
+==Customization==
+===Template parameter linking===
+You can instruct the script to link certain unnamed parameters in templates, so e.g. {{tlc|tl|reflist}} appears as {{tlx|tl|[[Template:Reflist|reflist]]}}. This is useful for linking templates like {{tl|tl}} and hatnotes like {{tl|About}}. Linking of named parameters is not supported, and the template call and parameters must be in the same line for the latter to be linked.
+
+To do it, add code like below to your common.js (templates vary by wiki, so even if you have installed the script globally, it is recommended to have different code on each wiki).
+
+&lt;syntaxhighlight lang="javascript"&gt;
+window.smartdiffTemplates = [
+	// Objects go here
+];
+&lt;/syntaxhighlight&gt;
+
+====Example====
+Here is an example based on templates on English Wikipedia.
+
+{{collapse top|Example code}}
+&lt;syntaxhighlight lang="javascript"&gt;
+window.smartdiffTemplates = [
+
+	// {{t}}, {{tl}}
+	{
+		names: ['T', 'Tl'],
+		end: 1,
+		namespace: 10,
+		forceNs: true
+	},
+
+	// {{tlx}}
+	{
+		names: ['Tlx'],
+		end: 1,
+		namespace: 10
+	},
+
+	// {{u}}
+	{
+		names: ['U'],
+		end: 1,
+		namespace: 1
+	},
+
+	// {{Reply to}}, {{Re}}, {{Ping}}
+	{
+		names: ['Re', 'Reply to', 'Ping'],
+		namespace: 1
+	},
+
+	// {{About}}
+	{
+		names: ['About'],
+		start: 3,
+		skipEven: true
+	},
+
+	// {{For}}
+	{
+		names: ['For'],
+		start: 2
+	},
+
+	// {{Other uses}}, {{Otheruses}}
+	{
+		names: ['Other uses', 'Otheruses'],
+		end: 1
+	},
+
+	// {{Distinguish}}, {{Further}}, {{Main}}, {{See also}}
+	{
+		names: ['Distinguish', 'Further', 'Main', 'See also', 'Seealso']
+	},
+
+	// {{Redirect}}
+	{
+		names: ['Redirect'],
+		skipEven: true,
+		noRedirectEnd: 1
+	},
+
+	// {{Tracked}}
+	{
+		names: ['Tracked'],
+		end: 1,
+		prefix: 'phab:'
+	},
+
+];
+&lt;/syntaxhighlight&gt;
+{{collapse bottom}}
+
+====Schema====
+The objects can have the following properties (only &lt;code&gt;names&lt;/code&gt; is required):
+
+;&lt;code&gt;names&lt;/code&gt;{{nobold| (array of strings)}}
+:Template names to apply this object to. Must be well-formed names (no &lt;code&gt;Template:&lt;/code&gt;, no underscores, start with a capital letter except on Wiktionary). Redirects are not resolved, so include all you expect to find.
+;&lt;code&gt;start&lt;/code&gt;{{nobold|, }}&lt;code&gt;end&lt;/code&gt;{{nobold| (number);}} &lt;code&gt;skipOdd&lt;/code&gt;{{nobold|, }}&lt;code&gt;skipEven&lt;/code&gt;{{nobold| (boolean)}}
+:Specify the range of parameters to link. If omitted, all unnamed parameters will be linked.
+;&lt;code&gt;namespace&lt;/code&gt;{{nobold| (number)}}
+:[[WP:NS|Namespace number]] for the link.
+;&lt;code&gt;forceNs&lt;/code&gt;{{nobold| (boolean)}}
+:If &lt;code&gt;true&lt;/code&gt;, the namespace prefix will be added even if the input begins with a valid namespace prefix (so e.g. {{tlx|tl|[[Template:Wikipedia:Cleanup/Header|Wikipedia:Cleanup/Header]]}} is linked correctly).
+;&lt;code&gt;prefix&lt;/code&gt;{{nobold|, }}&lt;code&gt;suffix&lt;/code&gt;{{nobold| (string)}}
+:String to prepend or append to the input. &lt;code&gt;prefix&lt;/code&gt; is useful for linking to a special page or sister site.
+;&lt;code&gt;noRedirectStart&lt;/code&gt;{{nobold|, }}&lt;code&gt;noRedirectEnd&lt;/code&gt;{{nobold| (number)}}
+:Specify the range of parameters to suppress redirects (by adding &lt;code&gt;redirect=no&lt;/code&gt; to the URL) in.
+
+===Magic words===
+If you want the script to recognize certain magic words it does not by default and stop linking them as templates, you can do so by adding code like below to your common.js or global.js. This example adds localized variables for &lt;code&gt;PAGENAME&lt;/code&gt; and &lt;code&gt;DEFAULTSORT&lt;/code&gt; in Polish (a trailing colon is required if the magic word accepts a variable).
+
+&lt;syntaxhighlight lang="javascript"&gt;
+window.smartdiffMagicWords = ['NAZWASTRONY', 'NAZWASTRONY:', 'SORTUJ:'];
+&lt;/syntaxhighlight&gt;
+
+==Comparison with fancy-diffs==
+This script owes a great debt to [[User:Enterprisey/fancy-diffs|Enterprisey's fancy-diffs]] in its concept, and makes improvements on it. Differences include:
+
+*Shows links to nonexistent pages {{fake redlink|in red}}.
+*Links only &lt;code&gt;&lt;nowiki&gt;[[&lt;/nowiki&gt;{{fake link|this part}}&lt;nowiki&gt;]]&lt;/nowiki&gt;&lt;/code&gt; and &lt;code&gt;&lt;nowiki&gt;[[&lt;/nowiki&gt;{{fake link|this part}}&lt;nowiki&gt;|in piped links]]&lt;/nowiki&gt;&lt;/code&gt;, avoiding [[WP:SEAOFBLUE]].
+*Links section headings (e.g. &lt;code&gt;== [[#Customization|Customization]] ==&lt;/code&gt;).
+*Recognizes template names without &lt;code&gt;{{))}}&lt;/code&gt; in the same line (e.g. &lt;code&gt;{{((}}[[Template:Infobox person|Infobox person]]&lt;/code&gt;).
+*Recognizes relative links to and transclusions of subpages (e.g. &lt;code&gt;&lt;nowiki&gt;[[&lt;/nowiki&gt;{{fake link|/Archive 1}}&lt;nowiki&gt;]]&lt;/nowiki&gt;&lt;/code&gt;).
+*Does not mistake common [[H:MW|magic words]] and template parameters ({{tlc|PAGENAME}}, {{tlc|#if:...}}, {{param|1}} etc.) for template calls.
+*Supports customizable linking of unnamed parameters in templates (e.g. {{tlx|tl|[[Template:Cite web|Cite web]]}}, {{tlx|distinguish|[[Foo]]}})—see [[#Template parameter linking|above]].
+*Links content inside &lt;code&gt;tvar&lt;/code&gt; in multilingual wikis, as in &lt;code&gt;&lt;nowiki&gt;[[&lt;tvar name=1&gt;&lt;/nowiki&gt;[[Foo]]&lt;nowiki&gt;&lt;/tvar&gt;|Foo]]&lt;/nowiki&gt;&lt;/code&gt;.
+*Shows external and interwiki links {{color|var(--color-progressive, #36c)|in the same color}} as in the page body.
+*Adds to links to redirects and disambiguation pages the respective &lt;code&gt;mw-redirect&lt;/code&gt; and &lt;code&gt;mw-disambig&lt;/code&gt; classes, so if you style them in your CSS (or use the gadget "{{delink|{{int:gadget-DisambiguationLinks}}}}"), they appear the same as in the page body.
+*Verifies the result after processing each line, so it will never alter the substance of a diff even if it makes a mistake (and notifies you in such an event so you can report it).
+*Does not support image previews.
+
+==Limitations==
+*The detection/retrieval of red links and link classes is capped at 500 unique page names (10 API calls) per diff.
+
+{{User:Nardog/scripts}}</text>
+      <sha1>7h4nr7xgw9gebf61a4s3xs3z3bphoyu</sha1>
+    </revision>
+    <revision>
+      <id>3621336</id>
+      <parentid>3367712</parentid>
+      <timestamp>2026-04-22T20:44:45Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <comment>[[Project:History cleanup|Offloading history due to miraheze stability concerns]] many contributors, see [https://emmaleonhart.github.io/shintowiki-scripts/wikihistory.html?page=Nardog%2FSmartDiff here] for full history [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/24796114356|commit triggered pipeline]]</comment>
+      <origin>3621336</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="7079" sha1="73ui63i5db2mzzylz8dqn837se9vqee" xml:space="preserve">&lt;!-- History offloaded: due to miraheze stability concerns, the edit history of this page has been offloaded to the XML archive. See https://emmaleonhart.github.io/shintowiki-scripts/wikihistory.html?page=Nardog%2FSmartDiff for full history. Last refreshed: [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/24796114356|commit triggered pipeline]] --&gt;
+{{Infobox Wikipedia user script
+|name=SmartDiff
+|desc=&lt;onlyinclude&gt;Makes links and template calls in diffs clickable (supports red links, avoids [[WP:SEAOFBLUE]])&lt;/onlyinclude&gt;
+|browsers=Chrome, Firefox, etc. ([[ES2018]]+ needed)
+|source=[[User:Nardog/SmartDiff.js]]
+}}
+
+This script turns wikilinks, external links, and template/module calls in a diff into clickable links. It shows links to nonexistent pages in red, and keeps the linked part to a minimum to avoid [[WP:SEAOFBLUE]], unlike [[User:Enterprisey/fancy-diffs|fancy-diffs]] ([[#Comparison with fancy-diffs|further comparison]]).
+
+==Installation==
+Add the following to [[Special:MyPage/common.js|your common.js]] or [[meta:Special:MyPage/global.js|global.js]]:
+&lt;syntaxhighlight lang="javascript"&gt;
+mw.loader.load('//en.wikipedia.org/w/index.php?title=User:Nardog/SmartDiff.js&amp;action=raw&amp;ctype=text/javascript');
+&lt;/syntaxhighlight&gt;
+
+Or you may enable the [[User:Enterprisey/script-installer|script installer]] in {{myprefs|Gadgets}} and click "Install" in the infobox on this page.
+
+==Customization==
+===Template parameter linking===
+You can instruct the script to link certain unnamed parameters in templates, so e.g. {{tlc|tl|reflist}} appears as {{tlx|tl|[[Template:Reflist|reflist]]}}. This is useful for linking templates like {{tl|tl}} and hatnotes like {{tl|About}}. Linking of named parameters is not supported, and the template call and parameters must be in the same line for the latter to be linked.
+
+To do it, add code like below to your common.js (templates vary by wiki, so even if you have installed the script globally, it is recommended to have different code on each wiki).
+
+&lt;syntaxhighlight lang="javascript"&gt;
+window.smartdiffTemplates = [
+	// Objects go here
+];
+&lt;/syntaxhighlight&gt;
+
+====Example====
+Here is an example based on templates on English Wikipedia.
+
+{{collapse top|Example code}}
+&lt;syntaxhighlight lang="javascript"&gt;
+window.smartdiffTemplates = [
+
+	// {{t}}, {{tl}}
+	{
+		names: ['T', 'Tl'],
+		end: 1,
+		namespace: 10,
+		forceNs: true
+	},
+
+	// {{tlx}}
+	{
+		names: ['Tlx'],
+		end: 1,
+		namespace: 10
+	},
+
+	// {{u}}
+	{
+		names: ['U'],
+		end: 1,
+		namespace: 1
+	},
+
+	// {{Reply to}}, {{Re}}, {{Ping}}
+	{
+		names: ['Re', 'Reply to', 'Ping'],
+		namespace: 1
+	},
+
+	// {{About}}
+	{
+		names: ['About'],
+		start: 3,
+		skipEven: true
+	},
+
+	// {{For}}
+	{
+		names: ['For'],
+		start: 2
+	},
+
+	// {{Other uses}}, {{Otheruses}}
+	{
+		names: ['Other uses', 'Otheruses'],
+		end: 1
+	},
+
+	// {{Distinguish}}, {{Further}}, {{Main}}, {{See also}}
+	{
+		names: ['Distinguish', 'Further', 'Main', 'See also', 'Seealso']
+	},
+
+	// {{Redirect}}
+	{
+		names: ['Redirect'],
+		skipEven: true,
+		noRedirectEnd: 1
+	},
+
+	// {{Tracked}}
+	{
+		names: ['Tracked'],
+		end: 1,
+		prefix: 'phab:'
+	},
+
+];
+&lt;/syntaxhighlight&gt;
+{{collapse bottom}}
+
+====Schema====
+The objects can have the following properties (only &lt;code&gt;names&lt;/code&gt; is required):
+
+;&lt;code&gt;names&lt;/code&gt;{{nobold| (array of strings)}}
+:Template names to apply this object to. Must be well-formed names (no &lt;code&gt;Template:&lt;/code&gt;, no underscores, start with a capital letter except on Wiktionary). Redirects are not resolved, so include all you expect to find.
+;&lt;code&gt;start&lt;/code&gt;{{nobold|, }}&lt;code&gt;end&lt;/code&gt;{{nobold| (number);}} &lt;code&gt;skipOdd&lt;/code&gt;{{nobold|, }}&lt;code&gt;skipEven&lt;/code&gt;{{nobold| (boolean)}}
+:Specify the range of parameters to link. If omitted, all unnamed parameters will be linked.
+;&lt;code&gt;namespace&lt;/code&gt;{{nobold| (number)}}
+:[[WP:NS|Namespace number]] for the link.
+;&lt;code&gt;forceNs&lt;/code&gt;{{nobold| (boolean)}}
+:If &lt;code&gt;true&lt;/code&gt;, the namespace prefix will be added even if the input begins with a valid namespace prefix (so e.g. {{tlx|tl|[[Template:Wikipedia:Cleanup/Header|Wikipedia:Cleanup/Header]]}} is linked correctly).
+;&lt;code&gt;prefix&lt;/code&gt;{{nobold|, }}&lt;code&gt;suffix&lt;/code&gt;{{nobold| (string)}}
+:String to prepend or append to the input. &lt;code&gt;prefix&lt;/code&gt; is useful for linking to a special page or sister site.
+;&lt;code&gt;noRedirectStart&lt;/code&gt;{{nobold|, }}&lt;code&gt;noRedirectEnd&lt;/code&gt;{{nobold| (number)}}
+:Specify the range of parameters to suppress redirects (by adding &lt;code&gt;redirect=no&lt;/code&gt; to the URL) in.
+
+===Magic words===
+If you want the script to recognize certain magic words it does not by default and stop linking them as templates, you can do so by adding code like below to your common.js or global.js. This example adds localized variables for &lt;code&gt;PAGENAME&lt;/code&gt; and &lt;code&gt;DEFAULTSORT&lt;/code&gt; in Polish (a trailing colon is required if the magic word accepts a variable).
+
+&lt;syntaxhighlight lang="javascript"&gt;
+window.smartdiffMagicWords = ['NAZWASTRONY', 'NAZWASTRONY:', 'SORTUJ:'];
+&lt;/syntaxhighlight&gt;
+
+==Comparison with fancy-diffs==
+This script owes a great debt to [[User:Enterprisey/fancy-diffs|Enterprisey's fancy-diffs]] in its concept, and makes improvements on it. Differences include:
+
+*Shows links to nonexistent pages {{fake redlink|in red}}.
+*Links only &lt;code&gt;&lt;nowiki&gt;[[&lt;/nowiki&gt;{{fake link|this part}}&lt;nowiki&gt;]]&lt;/nowiki&gt;&lt;/code&gt; and &lt;code&gt;&lt;nowiki&gt;[[&lt;/nowiki&gt;{{fake link|this part}}&lt;nowiki&gt;|in piped links]]&lt;/nowiki&gt;&lt;/code&gt;, avoiding [[WP:SEAOFBLUE]].
+*Links section headings (e.g. &lt;code&gt;== [[#Customization|Customization]] ==&lt;/code&gt;).
+*Recognizes template names without &lt;code&gt;{{))}}&lt;/code&gt; in the same line (e.g. &lt;code&gt;{{((}}[[Template:Infobox person|Infobox person]]&lt;/code&gt;).
+*Recognizes relative links to and transclusions of subpages (e.g. &lt;code&gt;&lt;nowiki&gt;[[&lt;/nowiki&gt;{{fake link|/Archive 1}}&lt;nowiki&gt;]]&lt;/nowiki&gt;&lt;/code&gt;).
+*Does not mistake common [[H:MW|magic words]] and template parameters ({{tlc|PAGENAME}}, {{tlc|#if:...}}, {{param|1}} etc.) for template calls.
+*Supports customizable linking of unnamed parameters in templates (e.g. {{tlx|tl|[[Template:Cite web|Cite web]]}}, {{tlx|distinguish|[[Foo]]}})—see [[#Template parameter linking|above]].
+*Links content inside &lt;code&gt;tvar&lt;/code&gt; in multilingual wikis, as in &lt;code&gt;&lt;nowiki&gt;[[&lt;tvar name=1&gt;&lt;/nowiki&gt;[[Foo]]&lt;nowiki&gt;&lt;/tvar&gt;|Foo]]&lt;/nowiki&gt;&lt;/code&gt;.
+*Shows external and interwiki links {{color|var(--color-progressive, #36c)|in the same color}} as in the page body.
+*Adds to links to redirects and disambiguation pages the respective &lt;code&gt;mw-redirect&lt;/code&gt; and &lt;code&gt;mw-disambig&lt;/code&gt; classes, so if you style them in your CSS (or use the gadget "{{delink|{{int:gadget-DisambiguationLinks}}}}"), they appear the same as in the page body.
+*Verifies the result after processing each line, so it will never alter the substance of a diff even if it makes a mistake (and notifies you in such an event so you can report it).
+*Does not support image previews.
+
+==Limitations==
+*The detection/retrieval of red links and link classes is capped at 500 unique page names (10 API calls) per diff.
+
+{{User:Nardog/scripts}}</text>
+      <sha1>73ui63i5db2mzzylz8dqn837se9vqee</sha1>
+    </revision>
+  </page>
+</mediawiki>

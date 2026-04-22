@@ -1,0 +1,1812 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>User:Nardog/InsertAnyChar.js</title>
+    <ns>2</ns>
+    <id>143925</id>
+    <revision>
+      <id>3367859</id>
+      <timestamp>2026-03-02T18:44:10Z</timestamp>
+      <contributor>
+        <username>en&gt;Nardog</username>
+        <id>0</id>
+      </contributor>
+      <comment>major update</comment>
+      <origin>3367859</origin>
+      <model>javascript</model>
+      <format>text/javascript</format>
+      <text bytes="29347" sha1="hqst6tsb6480xr83mgv5y3ybsl0ccij" xml:space="preserve">['edit', 'submit'].includes(mw.config.get('wgAction')) &amp;&amp;
+(function () {
+	let clicked, iac;
+	class Iac {
+		constructor(context) {
+			this.context = context;
+			this.history = new OO.ui.SelectWidget({
+				classes: ['insertanychar-history']
+			}).on('choose', item =&gt; {
+				this.history.unselectItem(item);
+				this.insert(item.getData());
+			});
+			this.historyToggle = new OO.ui.ToggleButtonWidget({
+				framed: false,
+				icon: 'history',
+				invisibleLabel: true,
+				label: 'History',
+				value: true
+			}).toggle().connect(this.history, { change: 'toggle' });
+			this.chars = {
+				select: new OO.ui.SelectWidget({
+					classes: ['insertanychar-select']
+				}).on('choose', item =&gt; {
+					this.chars.select.unselectItem(item);
+					if (this.chars.loaders.includes(item)) {
+						this.renderChars(item);
+						return;
+					}
+					this.insert(item.getData());
+				}),
+				filterToggle: new OO.ui.ToggleButtonWidget({
+					framed: false,
+					icon: 'funnel',
+					invisibleLabel: true,
+					label: 'Filter characters',
+					value: true
+				}).connect(this, { change: ['onFilterToggle', 'chars'] }),
+				filter: new OO.ui.SearchInputWidget({
+					autocomplete: false,
+					icon: '',
+					title: 'Filter characters'
+				}).on('change', OO.ui.debounce(this.filterChars, 500)),
+				filterMethod: 'filterChars',
+				$blockLink: $('&lt;a&gt;').attr({
+					class: 'external',
+					rel: 'nofollow',
+					title: 'Open Unicode PDF',
+					target: '_blank'
+				}),
+				$info: $('&lt;span&gt;').addClass('insertanychar-info'),
+				reset: new OO.ui.ButtonWidget({
+					flags: ['destructive'],
+					framed: false,
+					label: 'Reset',
+					title: 'Show all characters'
+				}).toggle().connect(this, { click: 'resetBlock' })
+			};
+			this.compactToggle = new OO.ui.ToggleButtonWidget({
+				framed: false,
+				icon: 'viewCompact',
+				invisibleLabel: true,
+				label: 'Compact view'
+			}).on('change', on =&gt; {
+				let items = this.chars.select.getItems();
+				let firstVisible = this.getFirstVisible('chars', items);
+				this.chars.select.$element.toggleClass('insertanychar-compact', on);
+				let lang = this.options.lang.getValue();
+				items.forEach(item =&gt; {
+					if (!this.chars.loaders.includes(item)) {
+						this.renderChar(item, on, lang);
+					}
+				});
+				this.scroll('chars', firstVisible, {
+					alignToTop: true,
+					animate: false
+				});
+			});
+			this.chars.$notice = $('&lt;div&gt;').addClass('insertanychar-notice').append(
+				$('&lt;span&gt;').addClass('insertanychar-name').append(
+					this.chars.$blockLink,
+					this.chars.$info
+				),
+				this.chars.reset.$element
+			);
+			this.chars.tab = new OO.ui.TabPanelLayout('chars', {
+				$content: $([
+					this.chars.$notice[0],
+					this.chars.select.$element[0]
+				]),
+				label: 'Characters'
+			}).connect(this.chars.filterToggle, { active: 'toggle' })
+				.connect(this.chars.filter, { active: 'toggle' })
+				.connect(this.compactToggle, { active: 'toggle' });
+			this.blocks = {
+				select: new OO.ui.SelectWidget({
+					classes: ['insertanychar-select']
+				}).on('choose', item =&gt; {
+					this.blocks.select.unselectItem(item);
+					this.showBlock(item.getData());
+					this.index.setTabPanel('chars');
+				}),
+				filterToggle: new OO.ui.ToggleButtonWidget({
+					framed: false,
+					icon: 'funnel',
+					invisibleLabel: true,
+					label: 'Filter blocks',
+					value: true
+				}).toggle().connect(this, { change: ['onFilterToggle', 'blocks'] }),
+				filter: new OO.ui.SearchInputWidget({
+					autocomplete: false,
+					icon: '',
+					title: 'Filter blocks'
+				}).toggle().on('change', OO.ui.debounce(this.filterBlocks, 250)),
+				filterMethod: 'filterBlocks',
+				$notice: $('&lt;div&gt;').addClass('insertanychar-notice insertanychar-info')
+			};
+			this.blocks.tab = new OO.ui.TabPanelLayout('blocks', {
+				$content: $([
+					this.blocks.$notice[0],
+					this.blocks.select.$element[0]
+				]),
+				label: 'Blocks'
+			}).connect(this.blocks.filterToggle, { active: 'toggle' })
+				.connect(this.blocks.filter, { active: 'toggle' });
+			this.index = new OO.ui.IndexLayout({
+				autoFocus: false,
+				framed: false
+			}).addTabPanels([this.chars.tab, this.blocks.tab]).on('set', tab =&gt; {
+				let side = tab.getName();
+				if (this[side].filterToggle.getValue() &amp;&amp; !OO.ui.isMobile()) {
+					this[side].filter.focus();
+				}
+			});
+			this.options = {
+				font: new OO.ui.DropdownWidget({
+					$overlay: true,
+					menu: {
+						items: [
+							new OO.ui.MenuOptionWidget({
+								data: 0,
+								label: 'Serif first'
+							}),
+							new OO.ui.MenuOptionWidget({
+								data: 1,
+								label: 'Sans-serif first'
+							})
+						]
+					}
+				}),
+				lang: new OO.ui.ComboBoxInputWidget({
+					$overlay: true,
+					options: [
+						{ data: '', label: '(Default)' },
+						{ data: 'ja' },
+						{ data: 'ko' },
+						{ data: 'vi' },
+						{ data: 'zh-Hans' },
+						{ data: 'zh-Hant' },
+						{ data: 'zh-Hant-HK' },
+						{ data: 'zh-Hant-TW' }
+					],
+					placeholder: '(Default)'
+				}).on('change', on =&gt; {
+					this.$pane.find('.insertanychar-char').attr('lang', on || null);
+				}),
+				vs: new OO.ui.DropdownWidget({
+					$overlay: true,
+					menu: {
+						items: [
+							new OO.ui.MenuOptionWidget({
+								data: '',
+								label: 'None'
+							})
+						]
+					}
+				})
+			};
+			this.options.font.getMenu().selectItemByData(0).on('choose', item =&gt; {
+				this.$pane.toggleClass('insertanychar-sans', !!item.getData());
+			});
+			this.options.vs.getMenu().selectItemByData('').on('choose', item =&gt; {
+				let v = item.getData();
+				this.$pane.css(
+					'--insertanychar-vs',
+					v ? `'\\${v.toString(16)}'` : ''
+				);
+			});
+			this.options.panel = new OO.ui.PanelLayout({
+				$content: $([
+					new OO.ui.FieldLayout(this.options.font, {
+						label: 'Font stack:'
+					}).$element[0],
+					new OO.ui.FieldLayout(this.options.lang, {
+						label: 'Language:'
+					}).$element[0],
+					new OO.ui.FieldLayout(this.options.vs, {
+						label: 'Variation selector:'
+					}).$element[0]
+				]),
+				expanded: false,
+				padded: true
+			}).toggle();
+			this.optionsToggle = new OO.ui.ToggleButtonWidget({
+				framed: false,
+				icon: 'textStyle',
+				invisibleLabel: true,
+				label: 'Preview options'
+			}).connect(this.options.panel, { change: 'toggle' });
+			this.chars.loaders = [
+				new OO.ui.MenuOptionWidget({
+					classes: ['insertanychar-loader'],
+					label: 'Load more'
+				}),
+				new OO.ui.MenuOptionWidget({
+					classes: ['insertanychar-loader'],
+					label: 'Load more'
+				})
+			];
+			this.chars.observer = new IntersectionObserver(entries =&gt; {
+				if (!entries[0].isIntersecting) return;
+				this.renderChars(this.chars.loaders.find(loader =&gt; (
+					loader.$element.is(entries[0].target))
+				));
+			}, { threshold: 0.75 });
+			this.chars.loaders.forEach(loader =&gt; {
+				this.chars.observer.observe(loader.$element[0]);
+			});
+			this.twoPaneLayout = new mw.loader.moduleRegistry['ext.wikiEditor.realtimepreview']
+				.packageExports['realtimepreview/TwoPaneLayout.js']();
+			this.$pane = this.twoPaneLayout.getPane2()
+				.addClass('insertanychar insertanychar-loading')
+				.text('Loading...');
+		}
+		ready(blocks) {
+			this.chars.count = 0;
+			this.blocks.blocks = blocks;
+			this.blocks.count = blocks.length;
+			let vs = [];
+			this.blocks.items = blocks.map((block, i) =&gt; {
+				if (block.name.startsWith('Variation Selectors')) {
+					vs.push(...block.entries);
+				}
+				let { sample } = block;
+				delete block.sample;
+				let $sample = $('&lt;span&gt;').addClass('insertanychar-char');
+				if (sample) {
+					$sample.text(Iac.renderChar(sample.v, sample.combining));
+				}
+				block.count = Iac.isRange(block.entries[0])
+					? block.entries[0].end - block.entries[0].start
+					: block.entries.length;
+				this.chars.count += block.count;
+				return new OO.ui.MenuOptionWidget({
+					data: block,
+					disabled: !block.count,
+					label: $([
+						$sample[0],
+						$('&lt;span&gt;').addClass('insertanychar-name').text(
+							block.name
+						).append(
+							$('&lt;span&gt;').addClass('insertanychar-info').text(
+								`${block.count.toLocaleString('en')} characters`
+							)
+						)[0],
+						$('&lt;span&gt;').addClass('insertanychar-num').text(i + 1)[0]
+					])
+				});
+			});
+			this.blocks.select.addItems(this.blocks.items);
+			this.options.vs.getMenu().addItems(vs.map(entry =&gt; (
+				new OO.ui.MenuOptionWidget({
+					data: entry.v,
+					label: `${entry.name.slice(19)} (${Iac.getHex(entry.v)})`
+				})
+			)));
+			this.blocks.$notice
+				.text(`${this.blocks.count.toLocaleString('en')} blocks`);
+			this.$pane.empty().removeClass('insertanychar-loading').append(
+				this.history.$element,
+				this.index.$element,
+				this.options.panel.$element,
+				$('&lt;div&gt;').addClass('insertanychar-bar').append(
+					this.historyToggle.$element,
+					this.chars.filterToggle.$element,
+					this.chars.filter.$element,
+					this.blocks.filterToggle.$element,
+					this.blocks.filter.$element,
+					this.optionsToggle.$element,
+					this.compactToggle.$element
+				)
+			).on('keydown', e =&gt; {
+				if (e.ctrlKey || e.shiftKey || e.altKey || e.metaKey) return;
+				let isEnter = e.which === 13;
+				let isUp = e.which === 38;
+				let isDown = e.which === 40;
+				let isHome = e.which === 36;
+				let isEnd = e.which === 35;
+				let isPgUp = e.which === 33;
+				let isPgDown = e.which === 34;
+				if (!(isEnter || isUp || isDown || isHome || isEnd || isPgUp || isPgDown)) return;
+				e.preventDefault();
+				let side = this.index.getCurrentTabPanelName();
+				if (isEnter) {
+					let highlighted = this[side].select.findHighlightedItem();
+					if (highlighted) {
+						this[side].select.chooseItem(highlighted);
+					}
+					return;
+				}
+				let item = (isUp || isDown) &amp;&amp; this.getAdjacent(side, isUp) ||
+					(isPgUp || isPgDown) &amp;&amp; this.getPageAway(side, isPgUp) ||
+					this.getEdge(side, isDown || isPgUp || isHome);
+				if (item) {
+					this[side].select.highlightItem(item);
+					this.scroll(side, item);
+				}
+			});
+			this.filterChars(true);
+			if (!OO.ui.isMobile()) {
+				this.chars.filter.focus();
+			}
+		}
+		toggle(visible = !this.visible) {
+			let $uiText = this.context.$ui
+				.toggleClass('insertanychar-enabled', visible)
+				.find('.wikiEditor-ui-text');
+			if (visible) {
+				$uiText.before(this.twoPaneLayout.$element);
+				this.twoPaneLayout.setPane1($uiText);
+				this.twoPaneLayout.$element.show();
+				this.twoPaneLayout.$element.css('height', $uiText.height() + 'px');
+				$uiText.css('height', '100%');
+				let side = this.index.getCurrentTabPanelName();
+				if (this[side].filterToggle.getValue() &amp;&amp; !OO.ui.isMobile()) {
+					this[side].filter.focus();
+				}
+			} else {
+				$uiText.css('height', this.twoPaneLayout.$element.height() + 'px');
+				this.twoPaneLayout.$element.after($uiText).hide();
+			}
+			this.visible = visible;
+			return this;
+		}
+		insert(data) {
+			this.context.$textarea.textSelection('encapsulateSelection', {
+				peri: String.fromCodePoint(data.v),
+				selectPeri: false
+			});
+			let historyItem = this.history.getItems().find(item =&gt; (
+				item.getData().v === data.v
+			)) || this.renderChar(data, true);
+			this.history.addItems([historyItem], 0);
+			this.historyToggle.toggle(true);
+		}
+		filterChars = first =&gt; {
+			let prevSearch = this.chars.search;
+			this.chars.search = new Search(
+				this.chars.filter.getValue(),
+				this.chars.filterToggle.getValue()
+			);
+			if (!first &amp;&amp; this.block === this.prevBlock &amp;&amp;
+				this.chars.search.compare(prevSearch)
+			) {
+				return;
+			}
+			this.prevBlock = this.block;
+			this.chars.entries = this.block
+				? this.block.entries
+				: this.blocks.blocks.flatMap(block =&gt; block.entries);
+			if (!this.chars.search.valid) {
+				this.chars.$info.text(`${
+					(this.block?.count || this.chars.count).toLocaleString('en')
+				} characters`);
+				this.renderChars(null, !this.block);
+				return;
+			}
+			let matches = [[], [], [], [], [], []];
+			this.chars.entries.forEach(entry =&gt; {
+				if (!Iac.isRange(entry)) {
+					let result = this.chars.search.test(entry.name);
+					if (result) {
+						matches[result - 1].push(entry);
+					}
+					return;
+				}
+				if (!entry.isHangul &amp;&amp; !this.chars.search.testHex(entry.name)) return;
+				for (let v = entry.start; v &lt;= entry.end; v++) {
+					let nameToTest = Iac.getCharName(entry, v, true);
+					let result = this.chars.search.test(nameToTest);
+					if (result) {
+						matches[result - 1].push({
+							v,
+							name: entry.isHangul ? nameToTest : entry.name
+						});
+					}
+				}
+			});
+			this.chars.entries = matches.flat();
+			this.chars.$info.text(`${
+				this.chars.entries.length.toLocaleString('en')
+			} / ${
+				(this.block?.count || this.chars.count).toLocaleString('en')
+			} characters`);
+			this.renderChars();
+		};
+		renderChars(loader, startMid) {
+			let compact = this.compactToggle.getValue();
+			let lang = this.options.lang.getValue();
+			let prevItems = this.chars.select.getItems();
+			let prevCharItems = prevItems
+				.filter(item =&gt; !this.chars.loaders.includes(item));
+			let i = 0, blockV;
+			if (startMid) {
+				let firstVisible = this.getFirstVisible('chars', prevCharItems);
+				if (firstVisible) {
+					let data = firstVisible.getData();
+					this.chars.entries.some((entry, j) =&gt; {
+						if (Iac.isRange(entry)) {
+							if (Iac.inBlock(data.v, entry)) {
+								i = j;
+								blockV = data.v;
+								return true;
+							}
+						} else if (entry.v === data.v) {
+							i = j;
+							return true;
+						}
+					});
+				}
+			}
+			let up = loader === this.chars.loaders[0];
+			let increment = up ? -1 : 1;
+			if (loader) {
+				this.chars.select.removeItems(this.chars.loaders);
+				let adjacent = prevCharItems.at(up ? 0 : -1);
+				if (adjacent) {
+					let data = adjacent.getData();
+					if (Iac.isRange(data.entry)) {
+						i = this.chars.entries.indexOf(data.entry);
+						blockV = data.v + increment;
+					} else {
+						i = this.chars.entries.indexOf(data.entry) + increment;
+					}
+				}
+			} else {
+				this.chars.select.removeItems(prevItems);
+			}
+			let toAdd = [], len = 0;
+			do {
+				let entry = this.chars.entries[i];
+				if (!entry) break;
+				if (!Iac.isRange(entry)) {
+					len = toAdd.push(this.renderChar({
+						v: entry.v,
+						entry
+					}, compact, lang));
+					i += increment;
+					continue;
+				}
+				if (typeof blockV === 'number') {
+					if (!Iac.inBlock(blockV, entry)) {
+						blockV = null;
+						i += increment;
+						continue;
+					}
+				} else {
+					blockV = entry[up ? 'end' : 'start'];
+				}
+				len = toAdd.push(this.renderChar({
+					v: blockV,
+					entry
+				}, compact, lang));
+				blockV += increment;
+			} while (len &lt; 128);
+			if (loader) {
+				let toRemove = up
+					? prevCharItems.slice(384 - len)
+					: prevCharItems.slice(0, -384 + len);
+				this.chars.select.removeItems(toRemove);
+			}
+			if (up) {
+				this.chars.select.addItems(toAdd.reverse(), 0);
+			} else {
+				this.chars.select.addItems(toAdd);
+			}
+			let reached = {};
+			let items = this.chars.select.getItems();
+			if (items.length) {
+				[['start', 0], ['end', -1]].forEach(([pos, idx]) =&gt; {
+					let data = items.at(idx).getData();
+					reached[pos] = data.entry === this.chars.entries.at(idx) &amp;&amp; (
+						!Iac.isRange(data.entry) || data.v === data.entry[pos]
+					);
+				});
+			} else {
+				reached.start = true;
+				reached.end = true;
+			}
+			if (!reached.start) {
+				this.chars.select.addItems([this.chars.loaders[0]], 0);
+			}
+			if (!reached.end) {
+				this.chars.select.addItems([this.chars.loaders[1]]);
+			}
+			if (loader) {
+				this.scroll('chars', toAdd.at(up ? -1 : 0), {
+					alignToTop: up,
+					animate: false
+				});
+			} else {
+				this.chars.tab.$element[0].scrollTop = 0;
+			}
+		}
+		renderChar(item, compact, lang = this.options.lang.getValue()) {
+			let data;
+			if ($.isPlainObject(item)) {
+				data = item;
+				item = new OO.ui.MenuOptionWidget({ data });
+				data.name = Iac.getCharName(data.entry, data.v).replace(
+					/ (?:AND|AS|AT|BY|FOR|FROM|IN|OF|ON|OR|THE|TO|WITH)(?= )/g,
+					s =&gt; s.toLowerCase()
+				).replace(
+					/\b(?!CJK\b)([A-Z])([A-Z]+)\b/g,
+					($0, $1, $2) =&gt; $1 + $2.toLowerCase()
+				);
+			} else {
+				data = item.getData();
+			}
+			let block = this.block ||
+				this.blocks.blocks.find(b =&gt; Iac.inBlock(data.v, b));
+			let hex = Iac.getHex(data.v);
+			let $label = item.getLabel() || $('&lt;span&gt;').attr({
+				class: 'insertanychar-char',
+				lang: lang
+			}).text(Iac.renderChar(data.v, data.entry.combining));
+			if (!compact &amp;&amp; !$label.children().length) {
+				$label = $([
+					$label[0],
+					$('&lt;span&gt;').addClass('insertanychar-name').text(
+						data.name
+					).append(
+						!this.block &amp;&amp; $('&lt;span&gt;').addClass('insertanychar-block').append(
+							$('&lt;a&gt;').attr({
+								href: '#',
+								title: 'Show only this block'
+							}).text(block.name)
+								.on('click', block, this.onBlockClick)
+								.on('mousedown', Iac.stopPropagation)
+						)
+					)[0],
+					$('&lt;span&gt;').addClass('insertanychar-hex').text(hex)[0]
+				]);
+			}
+			return item.setLabel($label).setTitle(
+				compact ? `${data.name} (${hex})\n${block.name}` : null
+			);
+		}
+		showBlock(block) {
+			this.prevBlock = this.block;
+			this.block = block;
+			this.chars.$blockLink.attr(
+				'href',
+				`https://www.unicode.org/charts/PDF/U${Iac.getHex(block.start)}.pdf`
+			).text(block.name).show();
+			this.chars.reset.toggle(true);
+			if (this.chars.filterToggle.getValue()) {
+				this.chars.filterToggle.setValue(false);
+			} else {
+				this.filterChars();
+			}
+		}
+		resetBlock() {
+			this.prevBlock = this.block;
+			this.block = null;
+			this.chars.$blockLink.hide();
+			this.chars.reset.toggle(false);
+			this.filterChars();
+		}
+		filterBlocks = () =&gt; {
+			let prevSearch = this.blocks.search;
+			this.blocks.search = new Search(
+				this.blocks.filter.getValue(),
+				this.blocks.filterToggle.getValue()
+			);
+			if (this.blocks.search.compare(prevSearch)) return;
+			let items = this.blocks.select.getItems(), firstVisible;
+			if (prevSearch?.valid &amp;&amp; !this.blocks.search.valid) {
+				firstVisible = this.getFirstVisible('chars', items);
+			}
+			let filtered = this.blocks.search?.valid;
+			let toShow = this.blocks.items.filter(item =&gt; !filtered || (
+				this.blocks.search.test(item.getData().name.toUpperCase())
+			));
+			this.blocks.select.removeItems(items).addItems(toShow);
+			this.blocks.$notice.text(`${
+				filtered ? `${toShow.length.toLocaleString('en')} / ` : ''
+			}${this.blocks.count.toLocaleString('en')} blocks`);
+			if (toShow.includes(firstVisible)) {
+				this.scroll('blocks', firstVisible, {
+					alignToTop: true,
+					animate: false
+				});
+			} else {
+				this.blocks.tab.$element[0].scrollTop = 0;
+			}
+		};
+		getFirstVisible(side, items) {
+			let y = this[side].tab.$element[0].scrollTop;
+			return items.find(item =&gt; item.$element[0].offsetTop &gt;= y);
+		}
+		getEdge(side, up) {
+			return this[side].select.getItems().at(up ? 0 : -1);
+		}
+		getAdjacent(side, up) {
+			let items = this[side].select.getItems();
+			let highlighted = this[side].select.findHighlightedItem();
+			if (highlighted) {
+				return items[items.indexOf(highlighted) + (up ? -1 : 1)];
+			}
+			let y = this[side].tab.$element[0].scrollTop;
+			if (up) {
+				return items.findLast(item =&gt; item.$element[0].offsetTop &lt; y);
+			}
+			y += this[side].tab.$element[0].clientHeight;
+			return items.find(item =&gt; (
+				item.$element[0].offsetTop + item.$element[0].offsetHeight &gt; y
+			));
+		}
+		getPageAway(side, up) {
+			let items = this[side].select.getItems();
+			let y = this[side].tab.$element[0].scrollTop +
+				this[side].tab.$element[0].clientHeight * (up ? -1 : 2);
+			if (up) {
+				return items.find(item =&gt; item.$element[0].offsetTop &gt;= y);
+			}
+			return items.findLast(item =&gt; (
+				item.$element[0].offsetTop + item.$element[0].offsetHeight &lt; y
+			));
+		}
+		scroll(side, item, options = {}) {
+			if (!item) return;
+			options.padding = { top: this[side].$notice[0].offsetHeight };
+			item.scrollElementIntoView(options);
+		}
+		onFilterToggle(side, on) {
+			this[this[side].filterMethod]();
+			if (on &amp;&amp; !OO.ui.isMobile()) {
+				setTimeout(() =&gt; {
+					this[side].filter.focus();
+				});
+			}
+		}
+		onBlockClick = e =&gt; {
+			e.preventDefault();
+			this.showBlock(e.data);
+		};
+		static stopPropagation(e) {
+			e.stopPropagation();
+		}
+		static getHex(v) {
+			return v.toString(16).padStart(4, '0').toUpperCase();
+		}
+		// https://www.unicode.org/versions/latest/core-spec/chapter-3/
+		static hangul = {
+			leads: [
+				'G', 'GG', 'N', 'D', 'DD', 'R', 'M', 'B', 'BB', 'S', 'SS', '',
+				'J', 'JJ', 'C', 'K', 'T', 'P', 'H'
+			],
+			vowels: [
+				'A', 'AE', 'YA', 'YAE', 'EO', 'E', 'YEO', 'YE', 'O', 'WA',
+				'WAE', 'OE', 'YO', 'U', 'WEO', 'WE', 'WI', 'YU', 'EU', 'YI', 'I'
+			],
+			trails: [
+				'', 'G', 'GG', 'GS', 'N', 'NJ', 'NH', 'D', 'L', 'LG', 'LM',
+				'LB', 'LS', 'LT', 'LP', 'LH', 'M', 'B', 'BS', 'S', 'SS', 'NG',
+				'J', 'C', 'K', 'T', 'P', 'H'
+			]
+		};
+		static getCharName(entry, v, appendHex) {
+			if (entry.isHangul) {
+				let i = v - entry.start;
+				return entry.name + ' ' + Iac.hangul.leads[Math.floor(i / 588)] +
+					Iac.hangul.vowels[Math.floor((i % 588) / 28)] +
+					Iac.hangul.trails[i % 28];
+			}
+			if (appendHex) {
+				return entry.name + ' ' + Iac.getHex(v);
+			}
+			return entry.name;
+		}
+		static renderChar(v, combining) {
+			return `${combining ? '◌' : ''}${
+				String.fromCodePoint(v)
+			}${combining === 2 ? '◌' : ''}`;
+		}
+		static inBlock(v, block) {
+			return v &gt;= block.start &amp;&amp; v &lt;= block.end;
+		}
+		static isRange(entry) {
+			return !!entry &amp;&amp; Object.hasOwn(entry, 'start');
+		}
+	}
+	class Search {
+		constructor(query, valid) {
+			let terms = [], negTerms = new Set();
+			if (valid) {
+				query.toUpperCase().replace(/[^-\s\dA-Z]/g, '').split(/\s+/).forEach(s =&gt; {
+					if (s[0] === '-') {
+						if (s !== '-') {
+							negTerms.add(s.slice(1));
+						}
+					} else {
+						terms.push(...s.split('-').filter(Boolean));
+					}
+				});
+			}
+			this.negTerms = [...negTerms].sort();
+			this.terms = terms.filter(t =&gt; (
+				!this.negTerms.some(nt =&gt; t.includes(nt))
+			)).sort();
+			this.termCount = terms.length;
+			this.valid = !!(this.termCount || this.negTerms.length);
+		}
+		test(s) {
+			if (this.negTerms.some(term =&gt; s.includes(term))) return;
+			let words = s.split(/[ -]/);
+			let exactCount = 0, initialCount = 0, partialCount = 0;
+			this.terms.filter(term =&gt; {
+				let i = words.indexOf(term);
+				if (i === -1) {
+					return true;
+				}
+				words.splice(i, 1);
+				exactCount++;
+			}).filter(term =&gt; {
+				let i = words.findIndex(word =&gt; word.startsWith(term));
+				if (i === -1) {
+					return true;
+				}
+				words.splice(i, 1);
+				initialCount++;
+			}).forEach(term =&gt; {
+				let i = words.findIndex(word =&gt; word.includes(term));
+				if (i === -1) return;
+				words.splice(i, 1);
+				partialCount++;
+			});
+			switch (this.termCount) {
+				case exactCount:
+					return 1;
+				case exactCount &amp;&amp; initialCount &amp;&amp; exactCount + initialCount + partialCount:
+					return 2;
+				case exactCount &amp;&amp; exactCount + partialCount:
+					return 3;
+				case initialCount:
+					return 4;
+				case initialCount &amp;&amp; initialCount + partialCount:
+					return 5;
+				case partialCount:
+					return 6;
+			}
+		}
+		testHex(s) {
+			return !this.negTerms.some(term =&gt; s.includes(term)) &amp;&amp;
+				this.terms.every(term =&gt; s.includes(term) || /^[\dA-F]{1,6}$/.test(term));
+		}
+		compare(search) {
+			if (!search) {
+				return !this.valid;
+			}
+			return search.valid === this.valid &amp;&amp;
+				String(search.terms) === String(this.terms) &amp;&amp;
+				String(search.negTerms) === String(this.negTerms);
+		}
+	}
+	let css = mw.loader.addStyleTag('.wikiEditor-ui:not(.insertanychar-available) .tool[rel="insertanychar"], .wikiEditor-ui.insertanychar-enabled .tool[rel="realtimepreview"]{display:none}');
+	let init = async context =&gt; {
+		if (clicked) {
+			if (iac) {
+				iac.context = context;
+				iac.toggle();
+			}
+			return;
+		}
+		clicked = true;
+		css.textContent += ` .insertanychar-loading{padding:8px !important} .insertanychar-bar{display:flex} .insertanychar-bar &gt; .oo-ui-widget{margin:0 !important} .insertanychar-history{display:flex;overflow:auto} .insertanychar-history &gt; .oo-ui-menuOptionWidget{padding:0;margin:2px} .insertanychar-history &gt; .oo-ui-menuOptionWidget &gt; .oo-ui-labelElement-label, .insertanychar-select &gt; .oo-ui-menuOptionWidget &gt; .oo-ui-labelElement-label{overflow:visible} .insertanychar &gt; .oo-ui-indexLayout{flex-grow:1;position:relative} .insertanychar .oo-ui-tabSelectWidget{display:flex;justify-content:space-evenly} .insertanychar .oo-ui-tabOptionWidget{margin-inline:0;width:45%;text-align:center} .insertanychar .oo-ui-tabPanelLayout{padding:0} .insertanychar-select &gt; .oo-ui-menuOptionWidget{padding-inline:0} .insertanychar-select &gt; .oo-ui-menuOptionWidget &gt; .oo-ui-labelElement-label{display:flex;align-items:center} .insertanychar-char{display:inline-block;font-size:200%;min-width:1.5em;min-height:1.5em;line-height:1.5;text-align:center;white-space:pre;font-family:'Charis','Charis SIL','Doulos SIL','Gentium','Gentium Plus','Noto Serif','Liberation Serif','Roboto Serif',serif,'Andika','Noto Sans','Liberation Sans','Roboto','Bitstream Cyberbit','Code2000','Lucida Grande','Lucida Sans Unicode',sans-serif} .insertanychar-sans .insertanychar-char{font-family:'Andika','Noto Sans','Liberation Sans','Roboto','Bitstream Cyberbit','Code2000','Lucida Grande','Lucida Sans Unicode',sans-serif,'Charis','Charis SIL','Doulos SIL','Gentium','Gentium Plus','Noto Serif','Liberation Serif','Roboto Serif',serif} .insertanychar-char::after{content:var(--insertanychar-vs)} .insertanychar-history .insertanychar-char{font-size:150%} .insertanychar-select:not(.insertanychar-compact) .insertanychar-char{margin:0 2px} .insertanychar-name{flex-grow:1;white-space:normal !important;word-break:break-word} .insertanychar-block, .insertanychar-info{display:block} .insertanychar-block &gt; a, .insertanychar-block &gt; a:visited, .insertanychar-info, .insertanychar-hex, .insertanychar-num{font-size:85%;color:var(--color-subtle,#54595d)} .insertanychar-hex, .insertanychar-num{margin:0 4px} .insertanychar-compact{display:flex;flex-wrap:wrap;align-content:start;align-items:center} .insertanychar-compact &gt; .oo-ui-menuOptionWidget{padding:0;margin:4px 6px} .insertanychar-compact .insertanychar-name, .insertanychar-compact .insertanychar-hex{display:none} .insertanychar-select:not(.insertanychar-compact) .insertanychar-loader{padding-inline:8px} .insertanychar .oo-ui-toggleButtonWidget:not(.oo-ui-toggleWidget-on) + .oo-ui-textInputWidget-type-search{visibility:hidden} .insertanychar-notice{padding:2px 6px;display:flex;align-items:center;position:sticky;top:0;z-index:1;background-color:var(--background-color-base,#fff);border-bottom:1px solid var(--border-color-subtle,#c8ccd1)} .insertanychar-notice a{font-weight:bold}`;
+		await mw.loader.using([
+			'oojs-ui-core', 'jquery.textSelection', 'ext.wikiEditor.realtimepreview',
+			'oojs-ui.styles.icons-content', 'oojs-ui.styles.icons-interactions',
+			'oojs-ui.styles.icons-editing-styling', 'oojs-ui.styles.icons-layout'
+		]);
+		iac = new Iac(context).toggle(true);
+		let { source } = await $.get('//en.wiktionary.org/w/rest.php/v1/revision/86743629');
+		let blocks = [...source.matchAll(/^([\dA-F]+)\.\.([\dA-F]+); (.+)$/gm)]
+			.map(([, start, end, n]) =&gt; ({
+				start: parseInt(start, 16),
+				end: parseInt(end, 16),
+				name: n,
+				entries: []
+			}));
+		let blockIdx = 0;
+		for (let rev of [86743612, 86743610]) {
+			let { source } = await $.get(`//en.wiktionary.org/w/rest.php/v1/revision/${rev}`);
+			for (let [, hex, n, cat, combClass, oldName] of source.matchAll(
+				/^([^;]+);([^;]*);([^;]*);([^;]*);(?:[^;]*;){6}([^;]*)/gm
+			)) {
+				let v = parseInt(hex, 16);
+				while (v &gt; blocks[blockIdx].end) {
+					blockIdx++;
+				}
+				let block = blocks[blockIdx];
+				if (n?.[0] === '&lt;') {
+					if (n === '&lt;control&gt;') {
+						n = oldName;
+					} else {
+						if (block.entries.length) {
+							block.entries[0].end = v;
+						} else {
+							let blockName = n.match(/[^,&lt;&gt;]+/)?.[0].toUpperCase();
+							if (!blockName || blockName.endsWith(' SURROGATE')) continue;
+							let entry = { start: v, name: blockName };
+							if (blockName === 'HANGUL SYLLABLE') {
+								entry.isHangul = true;
+							}
+							block.entries.push(entry);
+							block.sample = { v, name: Iac.getCharName(entry, v) };
+						}
+						continue;
+					}
+				}
+				if (!n) continue;
+				let entry = { v, name: n };
+				if (cat === 'Mn') {
+					entry.combining = 1 + ['233', '234'].includes(combClass);
+				}
+				block.entries.push(entry);
+				if (!block.sample &amp;&amp; !['C', 'Z'].includes(cat[0])) {
+					block.sample = entry;
+				}
+			}
+		}
+		iac.ready(blocks);
+	};
+	mw.hook('wikiEditor.toolbarReady').add(async $textarea =&gt; {
+		$textarea.closest('.wikiEditor-ui').toggleClass(
+			'insertanychar-available',
+			mw.config.get('wgPageContentModel') !== 'wikitext' || (
+				await mw.loader.using('user.options'),
+				!Number(mw.user.options.get('wikieditor-realtimepreview'))
+			)
+		);
+		$textarea.wikiEditor('addToToolbar', {
+			section: 'secondary',
+			group: 'default',
+			tools: {
+				insertanychar: {
+					label: 'InsertAnyChar',
+					type: 'toggle',
+					oouiIcon: 'specialCharacter',
+					action: { type: 'callback', execute: init }
+				}
+			}
+		});
+	});
+	mw.hook('ext.WikiEditor.realtimepreview.disable').add(rtp =&gt; {
+		rtp.context.$ui.addClass('insertanychar-available');
+	});
+	mw.hook('ext.WikiEditor.realtimepreview.enable').add(rtp =&gt; {
+		rtp.context.$ui.removeClass('insertanychar-available');
+	});
+}());</text>
+      <sha1>hqst6tsb6480xr83mgv5y3ybsl0ccij</sha1>
+    </revision>
+    <revision>
+      <id>3367860</id>
+      <parentid>3367859</parentid>
+      <timestamp>2026-03-02T18:44:11Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3367859</origin>
+      <model>javascript</model>
+      <format>text/javascript</format>
+      <text bytes="29347" sha1="hqst6tsb6480xr83mgv5y3ybsl0ccij" xml:space="preserve">['edit', 'submit'].includes(mw.config.get('wgAction')) &amp;&amp;
+(function () {
+	let clicked, iac;
+	class Iac {
+		constructor(context) {
+			this.context = context;
+			this.history = new OO.ui.SelectWidget({
+				classes: ['insertanychar-history']
+			}).on('choose', item =&gt; {
+				this.history.unselectItem(item);
+				this.insert(item.getData());
+			});
+			this.historyToggle = new OO.ui.ToggleButtonWidget({
+				framed: false,
+				icon: 'history',
+				invisibleLabel: true,
+				label: 'History',
+				value: true
+			}).toggle().connect(this.history, { change: 'toggle' });
+			this.chars = {
+				select: new OO.ui.SelectWidget({
+					classes: ['insertanychar-select']
+				}).on('choose', item =&gt; {
+					this.chars.select.unselectItem(item);
+					if (this.chars.loaders.includes(item)) {
+						this.renderChars(item);
+						return;
+					}
+					this.insert(item.getData());
+				}),
+				filterToggle: new OO.ui.ToggleButtonWidget({
+					framed: false,
+					icon: 'funnel',
+					invisibleLabel: true,
+					label: 'Filter characters',
+					value: true
+				}).connect(this, { change: ['onFilterToggle', 'chars'] }),
+				filter: new OO.ui.SearchInputWidget({
+					autocomplete: false,
+					icon: '',
+					title: 'Filter characters'
+				}).on('change', OO.ui.debounce(this.filterChars, 500)),
+				filterMethod: 'filterChars',
+				$blockLink: $('&lt;a&gt;').attr({
+					class: 'external',
+					rel: 'nofollow',
+					title: 'Open Unicode PDF',
+					target: '_blank'
+				}),
+				$info: $('&lt;span&gt;').addClass('insertanychar-info'),
+				reset: new OO.ui.ButtonWidget({
+					flags: ['destructive'],
+					framed: false,
+					label: 'Reset',
+					title: 'Show all characters'
+				}).toggle().connect(this, { click: 'resetBlock' })
+			};
+			this.compactToggle = new OO.ui.ToggleButtonWidget({
+				framed: false,
+				icon: 'viewCompact',
+				invisibleLabel: true,
+				label: 'Compact view'
+			}).on('change', on =&gt; {
+				let items = this.chars.select.getItems();
+				let firstVisible = this.getFirstVisible('chars', items);
+				this.chars.select.$element.toggleClass('insertanychar-compact', on);
+				let lang = this.options.lang.getValue();
+				items.forEach(item =&gt; {
+					if (!this.chars.loaders.includes(item)) {
+						this.renderChar(item, on, lang);
+					}
+				});
+				this.scroll('chars', firstVisible, {
+					alignToTop: true,
+					animate: false
+				});
+			});
+			this.chars.$notice = $('&lt;div&gt;').addClass('insertanychar-notice').append(
+				$('&lt;span&gt;').addClass('insertanychar-name').append(
+					this.chars.$blockLink,
+					this.chars.$info
+				),
+				this.chars.reset.$element
+			);
+			this.chars.tab = new OO.ui.TabPanelLayout('chars', {
+				$content: $([
+					this.chars.$notice[0],
+					this.chars.select.$element[0]
+				]),
+				label: 'Characters'
+			}).connect(this.chars.filterToggle, { active: 'toggle' })
+				.connect(this.chars.filter, { active: 'toggle' })
+				.connect(this.compactToggle, { active: 'toggle' });
+			this.blocks = {
+				select: new OO.ui.SelectWidget({
+					classes: ['insertanychar-select']
+				}).on('choose', item =&gt; {
+					this.blocks.select.unselectItem(item);
+					this.showBlock(item.getData());
+					this.index.setTabPanel('chars');
+				}),
+				filterToggle: new OO.ui.ToggleButtonWidget({
+					framed: false,
+					icon: 'funnel',
+					invisibleLabel: true,
+					label: 'Filter blocks',
+					value: true
+				}).toggle().connect(this, { change: ['onFilterToggle', 'blocks'] }),
+				filter: new OO.ui.SearchInputWidget({
+					autocomplete: false,
+					icon: '',
+					title: 'Filter blocks'
+				}).toggle().on('change', OO.ui.debounce(this.filterBlocks, 250)),
+				filterMethod: 'filterBlocks',
+				$notice: $('&lt;div&gt;').addClass('insertanychar-notice insertanychar-info')
+			};
+			this.blocks.tab = new OO.ui.TabPanelLayout('blocks', {
+				$content: $([
+					this.blocks.$notice[0],
+					this.blocks.select.$element[0]
+				]),
+				label: 'Blocks'
+			}).connect(this.blocks.filterToggle, { active: 'toggle' })
+				.connect(this.blocks.filter, { active: 'toggle' });
+			this.index = new OO.ui.IndexLayout({
+				autoFocus: false,
+				framed: false
+			}).addTabPanels([this.chars.tab, this.blocks.tab]).on('set', tab =&gt; {
+				let side = tab.getName();
+				if (this[side].filterToggle.getValue() &amp;&amp; !OO.ui.isMobile()) {
+					this[side].filter.focus();
+				}
+			});
+			this.options = {
+				font: new OO.ui.DropdownWidget({
+					$overlay: true,
+					menu: {
+						items: [
+							new OO.ui.MenuOptionWidget({
+								data: 0,
+								label: 'Serif first'
+							}),
+							new OO.ui.MenuOptionWidget({
+								data: 1,
+								label: 'Sans-serif first'
+							})
+						]
+					}
+				}),
+				lang: new OO.ui.ComboBoxInputWidget({
+					$overlay: true,
+					options: [
+						{ data: '', label: '(Default)' },
+						{ data: 'ja' },
+						{ data: 'ko' },
+						{ data: 'vi' },
+						{ data: 'zh-Hans' },
+						{ data: 'zh-Hant' },
+						{ data: 'zh-Hant-HK' },
+						{ data: 'zh-Hant-TW' }
+					],
+					placeholder: '(Default)'
+				}).on('change', on =&gt; {
+					this.$pane.find('.insertanychar-char').attr('lang', on || null);
+				}),
+				vs: new OO.ui.DropdownWidget({
+					$overlay: true,
+					menu: {
+						items: [
+							new OO.ui.MenuOptionWidget({
+								data: '',
+								label: 'None'
+							})
+						]
+					}
+				})
+			};
+			this.options.font.getMenu().selectItemByData(0).on('choose', item =&gt; {
+				this.$pane.toggleClass('insertanychar-sans', !!item.getData());
+			});
+			this.options.vs.getMenu().selectItemByData('').on('choose', item =&gt; {
+				let v = item.getData();
+				this.$pane.css(
+					'--insertanychar-vs',
+					v ? `'\\${v.toString(16)}'` : ''
+				);
+			});
+			this.options.panel = new OO.ui.PanelLayout({
+				$content: $([
+					new OO.ui.FieldLayout(this.options.font, {
+						label: 'Font stack:'
+					}).$element[0],
+					new OO.ui.FieldLayout(this.options.lang, {
+						label: 'Language:'
+					}).$element[0],
+					new OO.ui.FieldLayout(this.options.vs, {
+						label: 'Variation selector:'
+					}).$element[0]
+				]),
+				expanded: false,
+				padded: true
+			}).toggle();
+			this.optionsToggle = new OO.ui.ToggleButtonWidget({
+				framed: false,
+				icon: 'textStyle',
+				invisibleLabel: true,
+				label: 'Preview options'
+			}).connect(this.options.panel, { change: 'toggle' });
+			this.chars.loaders = [
+				new OO.ui.MenuOptionWidget({
+					classes: ['insertanychar-loader'],
+					label: 'Load more'
+				}),
+				new OO.ui.MenuOptionWidget({
+					classes: ['insertanychar-loader'],
+					label: 'Load more'
+				})
+			];
+			this.chars.observer = new IntersectionObserver(entries =&gt; {
+				if (!entries[0].isIntersecting) return;
+				this.renderChars(this.chars.loaders.find(loader =&gt; (
+					loader.$element.is(entries[0].target))
+				));
+			}, { threshold: 0.75 });
+			this.chars.loaders.forEach(loader =&gt; {
+				this.chars.observer.observe(loader.$element[0]);
+			});
+			this.twoPaneLayout = new mw.loader.moduleRegistry['ext.wikiEditor.realtimepreview']
+				.packageExports['realtimepreview/TwoPaneLayout.js']();
+			this.$pane = this.twoPaneLayout.getPane2()
+				.addClass('insertanychar insertanychar-loading')
+				.text('Loading...');
+		}
+		ready(blocks) {
+			this.chars.count = 0;
+			this.blocks.blocks = blocks;
+			this.blocks.count = blocks.length;
+			let vs = [];
+			this.blocks.items = blocks.map((block, i) =&gt; {
+				if (block.name.startsWith('Variation Selectors')) {
+					vs.push(...block.entries);
+				}
+				let { sample } = block;
+				delete block.sample;
+				let $sample = $('&lt;span&gt;').addClass('insertanychar-char');
+				if (sample) {
+					$sample.text(Iac.renderChar(sample.v, sample.combining));
+				}
+				block.count = Iac.isRange(block.entries[0])
+					? block.entries[0].end - block.entries[0].start
+					: block.entries.length;
+				this.chars.count += block.count;
+				return new OO.ui.MenuOptionWidget({
+					data: block,
+					disabled: !block.count,
+					label: $([
+						$sample[0],
+						$('&lt;span&gt;').addClass('insertanychar-name').text(
+							block.name
+						).append(
+							$('&lt;span&gt;').addClass('insertanychar-info').text(
+								`${block.count.toLocaleString('en')} characters`
+							)
+						)[0],
+						$('&lt;span&gt;').addClass('insertanychar-num').text(i + 1)[0]
+					])
+				});
+			});
+			this.blocks.select.addItems(this.blocks.items);
+			this.options.vs.getMenu().addItems(vs.map(entry =&gt; (
+				new OO.ui.MenuOptionWidget({
+					data: entry.v,
+					label: `${entry.name.slice(19)} (${Iac.getHex(entry.v)})`
+				})
+			)));
+			this.blocks.$notice
+				.text(`${this.blocks.count.toLocaleString('en')} blocks`);
+			this.$pane.empty().removeClass('insertanychar-loading').append(
+				this.history.$element,
+				this.index.$element,
+				this.options.panel.$element,
+				$('&lt;div&gt;').addClass('insertanychar-bar').append(
+					this.historyToggle.$element,
+					this.chars.filterToggle.$element,
+					this.chars.filter.$element,
+					this.blocks.filterToggle.$element,
+					this.blocks.filter.$element,
+					this.optionsToggle.$element,
+					this.compactToggle.$element
+				)
+			).on('keydown', e =&gt; {
+				if (e.ctrlKey || e.shiftKey || e.altKey || e.metaKey) return;
+				let isEnter = e.which === 13;
+				let isUp = e.which === 38;
+				let isDown = e.which === 40;
+				let isHome = e.which === 36;
+				let isEnd = e.which === 35;
+				let isPgUp = e.which === 33;
+				let isPgDown = e.which === 34;
+				if (!(isEnter || isUp || isDown || isHome || isEnd || isPgUp || isPgDown)) return;
+				e.preventDefault();
+				let side = this.index.getCurrentTabPanelName();
+				if (isEnter) {
+					let highlighted = this[side].select.findHighlightedItem();
+					if (highlighted) {
+						this[side].select.chooseItem(highlighted);
+					}
+					return;
+				}
+				let item = (isUp || isDown) &amp;&amp; this.getAdjacent(side, isUp) ||
+					(isPgUp || isPgDown) &amp;&amp; this.getPageAway(side, isPgUp) ||
+					this.getEdge(side, isDown || isPgUp || isHome);
+				if (item) {
+					this[side].select.highlightItem(item);
+					this.scroll(side, item);
+				}
+			});
+			this.filterChars(true);
+			if (!OO.ui.isMobile()) {
+				this.chars.filter.focus();
+			}
+		}
+		toggle(visible = !this.visible) {
+			let $uiText = this.context.$ui
+				.toggleClass('insertanychar-enabled', visible)
+				.find('.wikiEditor-ui-text');
+			if (visible) {
+				$uiText.before(this.twoPaneLayout.$element);
+				this.twoPaneLayout.setPane1($uiText);
+				this.twoPaneLayout.$element.show();
+				this.twoPaneLayout.$element.css('height', $uiText.height() + 'px');
+				$uiText.css('height', '100%');
+				let side = this.index.getCurrentTabPanelName();
+				if (this[side].filterToggle.getValue() &amp;&amp; !OO.ui.isMobile()) {
+					this[side].filter.focus();
+				}
+			} else {
+				$uiText.css('height', this.twoPaneLayout.$element.height() + 'px');
+				this.twoPaneLayout.$element.after($uiText).hide();
+			}
+			this.visible = visible;
+			return this;
+		}
+		insert(data) {
+			this.context.$textarea.textSelection('encapsulateSelection', {
+				peri: String.fromCodePoint(data.v),
+				selectPeri: false
+			});
+			let historyItem = this.history.getItems().find(item =&gt; (
+				item.getData().v === data.v
+			)) || this.renderChar(data, true);
+			this.history.addItems([historyItem], 0);
+			this.historyToggle.toggle(true);
+		}
+		filterChars = first =&gt; {
+			let prevSearch = this.chars.search;
+			this.chars.search = new Search(
+				this.chars.filter.getValue(),
+				this.chars.filterToggle.getValue()
+			);
+			if (!first &amp;&amp; this.block === this.prevBlock &amp;&amp;
+				this.chars.search.compare(prevSearch)
+			) {
+				return;
+			}
+			this.prevBlock = this.block;
+			this.chars.entries = this.block
+				? this.block.entries
+				: this.blocks.blocks.flatMap(block =&gt; block.entries);
+			if (!this.chars.search.valid) {
+				this.chars.$info.text(`${
+					(this.block?.count || this.chars.count).toLocaleString('en')
+				} characters`);
+				this.renderChars(null, !this.block);
+				return;
+			}
+			let matches = [[], [], [], [], [], []];
+			this.chars.entries.forEach(entry =&gt; {
+				if (!Iac.isRange(entry)) {
+					let result = this.chars.search.test(entry.name);
+					if (result) {
+						matches[result - 1].push(entry);
+					}
+					return;
+				}
+				if (!entry.isHangul &amp;&amp; !this.chars.search.testHex(entry.name)) return;
+				for (let v = entry.start; v &lt;= entry.end; v++) {
+					let nameToTest = Iac.getCharName(entry, v, true);
+					let result = this.chars.search.test(nameToTest);
+					if (result) {
+						matches[result - 1].push({
+							v,
+							name: entry.isHangul ? nameToTest : entry.name
+						});
+					}
+				}
+			});
+			this.chars.entries = matches.flat();
+			this.chars.$info.text(`${
+				this.chars.entries.length.toLocaleString('en')
+			} / ${
+				(this.block?.count || this.chars.count).toLocaleString('en')
+			} characters`);
+			this.renderChars();
+		};
+		renderChars(loader, startMid) {
+			let compact = this.compactToggle.getValue();
+			let lang = this.options.lang.getValue();
+			let prevItems = this.chars.select.getItems();
+			let prevCharItems = prevItems
+				.filter(item =&gt; !this.chars.loaders.includes(item));
+			let i = 0, blockV;
+			if (startMid) {
+				let firstVisible = this.getFirstVisible('chars', prevCharItems);
+				if (firstVisible) {
+					let data = firstVisible.getData();
+					this.chars.entries.some((entry, j) =&gt; {
+						if (Iac.isRange(entry)) {
+							if (Iac.inBlock(data.v, entry)) {
+								i = j;
+								blockV = data.v;
+								return true;
+							}
+						} else if (entry.v === data.v) {
+							i = j;
+							return true;
+						}
+					});
+				}
+			}
+			let up = loader === this.chars.loaders[0];
+			let increment = up ? -1 : 1;
+			if (loader) {
+				this.chars.select.removeItems(this.chars.loaders);
+				let adjacent = prevCharItems.at(up ? 0 : -1);
+				if (adjacent) {
+					let data = adjacent.getData();
+					if (Iac.isRange(data.entry)) {
+						i = this.chars.entries.indexOf(data.entry);
+						blockV = data.v + increment;
+					} else {
+						i = this.chars.entries.indexOf(data.entry) + increment;
+					}
+				}
+			} else {
+				this.chars.select.removeItems(prevItems);
+			}
+			let toAdd = [], len = 0;
+			do {
+				let entry = this.chars.entries[i];
+				if (!entry) break;
+				if (!Iac.isRange(entry)) {
+					len = toAdd.push(this.renderChar({
+						v: entry.v,
+						entry
+					}, compact, lang));
+					i += increment;
+					continue;
+				}
+				if (typeof blockV === 'number') {
+					if (!Iac.inBlock(blockV, entry)) {
+						blockV = null;
+						i += increment;
+						continue;
+					}
+				} else {
+					blockV = entry[up ? 'end' : 'start'];
+				}
+				len = toAdd.push(this.renderChar({
+					v: blockV,
+					entry
+				}, compact, lang));
+				blockV += increment;
+			} while (len &lt; 128);
+			if (loader) {
+				let toRemove = up
+					? prevCharItems.slice(384 - len)
+					: prevCharItems.slice(0, -384 + len);
+				this.chars.select.removeItems(toRemove);
+			}
+			if (up) {
+				this.chars.select.addItems(toAdd.reverse(), 0);
+			} else {
+				this.chars.select.addItems(toAdd);
+			}
+			let reached = {};
+			let items = this.chars.select.getItems();
+			if (items.length) {
+				[['start', 0], ['end', -1]].forEach(([pos, idx]) =&gt; {
+					let data = items.at(idx).getData();
+					reached[pos] = data.entry === this.chars.entries.at(idx) &amp;&amp; (
+						!Iac.isRange(data.entry) || data.v === data.entry[pos]
+					);
+				});
+			} else {
+				reached.start = true;
+				reached.end = true;
+			}
+			if (!reached.start) {
+				this.chars.select.addItems([this.chars.loaders[0]], 0);
+			}
+			if (!reached.end) {
+				this.chars.select.addItems([this.chars.loaders[1]]);
+			}
+			if (loader) {
+				this.scroll('chars', toAdd.at(up ? -1 : 0), {
+					alignToTop: up,
+					animate: false
+				});
+			} else {
+				this.chars.tab.$element[0].scrollTop = 0;
+			}
+		}
+		renderChar(item, compact, lang = this.options.lang.getValue()) {
+			let data;
+			if ($.isPlainObject(item)) {
+				data = item;
+				item = new OO.ui.MenuOptionWidget({ data });
+				data.name = Iac.getCharName(data.entry, data.v).replace(
+					/ (?:AND|AS|AT|BY|FOR|FROM|IN|OF|ON|OR|THE|TO|WITH)(?= )/g,
+					s =&gt; s.toLowerCase()
+				).replace(
+					/\b(?!CJK\b)([A-Z])([A-Z]+)\b/g,
+					($0, $1, $2) =&gt; $1 + $2.toLowerCase()
+				);
+			} else {
+				data = item.getData();
+			}
+			let block = this.block ||
+				this.blocks.blocks.find(b =&gt; Iac.inBlock(data.v, b));
+			let hex = Iac.getHex(data.v);
+			let $label = item.getLabel() || $('&lt;span&gt;').attr({
+				class: 'insertanychar-char',
+				lang: lang
+			}).text(Iac.renderChar(data.v, data.entry.combining));
+			if (!compact &amp;&amp; !$label.children().length) {
+				$label = $([
+					$label[0],
+					$('&lt;span&gt;').addClass('insertanychar-name').text(
+						data.name
+					).append(
+						!this.block &amp;&amp; $('&lt;span&gt;').addClass('insertanychar-block').append(
+							$('&lt;a&gt;').attr({
+								href: '#',
+								title: 'Show only this block'
+							}).text(block.name)
+								.on('click', block, this.onBlockClick)
+								.on('mousedown', Iac.stopPropagation)
+						)
+					)[0],
+					$('&lt;span&gt;').addClass('insertanychar-hex').text(hex)[0]
+				]);
+			}
+			return item.setLabel($label).setTitle(
+				compact ? `${data.name} (${hex})\n${block.name}` : null
+			);
+		}
+		showBlock(block) {
+			this.prevBlock = this.block;
+			this.block = block;
+			this.chars.$blockLink.attr(
+				'href',
+				`https://www.unicode.org/charts/PDF/U${Iac.getHex(block.start)}.pdf`
+			).text(block.name).show();
+			this.chars.reset.toggle(true);
+			if (this.chars.filterToggle.getValue()) {
+				this.chars.filterToggle.setValue(false);
+			} else {
+				this.filterChars();
+			}
+		}
+		resetBlock() {
+			this.prevBlock = this.block;
+			this.block = null;
+			this.chars.$blockLink.hide();
+			this.chars.reset.toggle(false);
+			this.filterChars();
+		}
+		filterBlocks = () =&gt; {
+			let prevSearch = this.blocks.search;
+			this.blocks.search = new Search(
+				this.blocks.filter.getValue(),
+				this.blocks.filterToggle.getValue()
+			);
+			if (this.blocks.search.compare(prevSearch)) return;
+			let items = this.blocks.select.getItems(), firstVisible;
+			if (prevSearch?.valid &amp;&amp; !this.blocks.search.valid) {
+				firstVisible = this.getFirstVisible('chars', items);
+			}
+			let filtered = this.blocks.search?.valid;
+			let toShow = this.blocks.items.filter(item =&gt; !filtered || (
+				this.blocks.search.test(item.getData().name.toUpperCase())
+			));
+			this.blocks.select.removeItems(items).addItems(toShow);
+			this.blocks.$notice.text(`${
+				filtered ? `${toShow.length.toLocaleString('en')} / ` : ''
+			}${this.blocks.count.toLocaleString('en')} blocks`);
+			if (toShow.includes(firstVisible)) {
+				this.scroll('blocks', firstVisible, {
+					alignToTop: true,
+					animate: false
+				});
+			} else {
+				this.blocks.tab.$element[0].scrollTop = 0;
+			}
+		};
+		getFirstVisible(side, items) {
+			let y = this[side].tab.$element[0].scrollTop;
+			return items.find(item =&gt; item.$element[0].offsetTop &gt;= y);
+		}
+		getEdge(side, up) {
+			return this[side].select.getItems().at(up ? 0 : -1);
+		}
+		getAdjacent(side, up) {
+			let items = this[side].select.getItems();
+			let highlighted = this[side].select.findHighlightedItem();
+			if (highlighted) {
+				return items[items.indexOf(highlighted) + (up ? -1 : 1)];
+			}
+			let y = this[side].tab.$element[0].scrollTop;
+			if (up) {
+				return items.findLast(item =&gt; item.$element[0].offsetTop &lt; y);
+			}
+			y += this[side].tab.$element[0].clientHeight;
+			return items.find(item =&gt; (
+				item.$element[0].offsetTop + item.$element[0].offsetHeight &gt; y
+			));
+		}
+		getPageAway(side, up) {
+			let items = this[side].select.getItems();
+			let y = this[side].tab.$element[0].scrollTop +
+				this[side].tab.$element[0].clientHeight * (up ? -1 : 2);
+			if (up) {
+				return items.find(item =&gt; item.$element[0].offsetTop &gt;= y);
+			}
+			return items.findLast(item =&gt; (
+				item.$element[0].offsetTop + item.$element[0].offsetHeight &lt; y
+			));
+		}
+		scroll(side, item, options = {}) {
+			if (!item) return;
+			options.padding = { top: this[side].$notice[0].offsetHeight };
+			item.scrollElementIntoView(options);
+		}
+		onFilterToggle(side, on) {
+			this[this[side].filterMethod]();
+			if (on &amp;&amp; !OO.ui.isMobile()) {
+				setTimeout(() =&gt; {
+					this[side].filter.focus();
+				});
+			}
+		}
+		onBlockClick = e =&gt; {
+			e.preventDefault();
+			this.showBlock(e.data);
+		};
+		static stopPropagation(e) {
+			e.stopPropagation();
+		}
+		static getHex(v) {
+			return v.toString(16).padStart(4, '0').toUpperCase();
+		}
+		// https://www.unicode.org/versions/latest/core-spec/chapter-3/
+		static hangul = {
+			leads: [
+				'G', 'GG', 'N', 'D', 'DD', 'R', 'M', 'B', 'BB', 'S', 'SS', '',
+				'J', 'JJ', 'C', 'K', 'T', 'P', 'H'
+			],
+			vowels: [
+				'A', 'AE', 'YA', 'YAE', 'EO', 'E', 'YEO', 'YE', 'O', 'WA',
+				'WAE', 'OE', 'YO', 'U', 'WEO', 'WE', 'WI', 'YU', 'EU', 'YI', 'I'
+			],
+			trails: [
+				'', 'G', 'GG', 'GS', 'N', 'NJ', 'NH', 'D', 'L', 'LG', 'LM',
+				'LB', 'LS', 'LT', 'LP', 'LH', 'M', 'B', 'BS', 'S', 'SS', 'NG',
+				'J', 'C', 'K', 'T', 'P', 'H'
+			]
+		};
+		static getCharName(entry, v, appendHex) {
+			if (entry.isHangul) {
+				let i = v - entry.start;
+				return entry.name + ' ' + Iac.hangul.leads[Math.floor(i / 588)] +
+					Iac.hangul.vowels[Math.floor((i % 588) / 28)] +
+					Iac.hangul.trails[i % 28];
+			}
+			if (appendHex) {
+				return entry.name + ' ' + Iac.getHex(v);
+			}
+			return entry.name;
+		}
+		static renderChar(v, combining) {
+			return `${combining ? '◌' : ''}${
+				String.fromCodePoint(v)
+			}${combining === 2 ? '◌' : ''}`;
+		}
+		static inBlock(v, block) {
+			return v &gt;= block.start &amp;&amp; v &lt;= block.end;
+		}
+		static isRange(entry) {
+			return !!entry &amp;&amp; Object.hasOwn(entry, 'start');
+		}
+	}
+	class Search {
+		constructor(query, valid) {
+			let terms = [], negTerms = new Set();
+			if (valid) {
+				query.toUpperCase().replace(/[^-\s\dA-Z]/g, '').split(/\s+/).forEach(s =&gt; {
+					if (s[0] === '-') {
+						if (s !== '-') {
+							negTerms.add(s.slice(1));
+						}
+					} else {
+						terms.push(...s.split('-').filter(Boolean));
+					}
+				});
+			}
+			this.negTerms = [...negTerms].sort();
+			this.terms = terms.filter(t =&gt; (
+				!this.negTerms.some(nt =&gt; t.includes(nt))
+			)).sort();
+			this.termCount = terms.length;
+			this.valid = !!(this.termCount || this.negTerms.length);
+		}
+		test(s) {
+			if (this.negTerms.some(term =&gt; s.includes(term))) return;
+			let words = s.split(/[ -]/);
+			let exactCount = 0, initialCount = 0, partialCount = 0;
+			this.terms.filter(term =&gt; {
+				let i = words.indexOf(term);
+				if (i === -1) {
+					return true;
+				}
+				words.splice(i, 1);
+				exactCount++;
+			}).filter(term =&gt; {
+				let i = words.findIndex(word =&gt; word.startsWith(term));
+				if (i === -1) {
+					return true;
+				}
+				words.splice(i, 1);
+				initialCount++;
+			}).forEach(term =&gt; {
+				let i = words.findIndex(word =&gt; word.includes(term));
+				if (i === -1) return;
+				words.splice(i, 1);
+				partialCount++;
+			});
+			switch (this.termCount) {
+				case exactCount:
+					return 1;
+				case exactCount &amp;&amp; initialCount &amp;&amp; exactCount + initialCount + partialCount:
+					return 2;
+				case exactCount &amp;&amp; exactCount + partialCount:
+					return 3;
+				case initialCount:
+					return 4;
+				case initialCount &amp;&amp; initialCount + partialCount:
+					return 5;
+				case partialCount:
+					return 6;
+			}
+		}
+		testHex(s) {
+			return !this.negTerms.some(term =&gt; s.includes(term)) &amp;&amp;
+				this.terms.every(term =&gt; s.includes(term) || /^[\dA-F]{1,6}$/.test(term));
+		}
+		compare(search) {
+			if (!search) {
+				return !this.valid;
+			}
+			return search.valid === this.valid &amp;&amp;
+				String(search.terms) === String(this.terms) &amp;&amp;
+				String(search.negTerms) === String(this.negTerms);
+		}
+	}
+	let css = mw.loader.addStyleTag('.wikiEditor-ui:not(.insertanychar-available) .tool[rel="insertanychar"], .wikiEditor-ui.insertanychar-enabled .tool[rel="realtimepreview"]{display:none}');
+	let init = async context =&gt; {
+		if (clicked) {
+			if (iac) {
+				iac.context = context;
+				iac.toggle();
+			}
+			return;
+		}
+		clicked = true;
+		css.textContent += ` .insertanychar-loading{padding:8px !important} .insertanychar-bar{display:flex} .insertanychar-bar &gt; .oo-ui-widget{margin:0 !important} .insertanychar-history{display:flex;overflow:auto} .insertanychar-history &gt; .oo-ui-menuOptionWidget{padding:0;margin:2px} .insertanychar-history &gt; .oo-ui-menuOptionWidget &gt; .oo-ui-labelElement-label, .insertanychar-select &gt; .oo-ui-menuOptionWidget &gt; .oo-ui-labelElement-label{overflow:visible} .insertanychar &gt; .oo-ui-indexLayout{flex-grow:1;position:relative} .insertanychar .oo-ui-tabSelectWidget{display:flex;justify-content:space-evenly} .insertanychar .oo-ui-tabOptionWidget{margin-inline:0;width:45%;text-align:center} .insertanychar .oo-ui-tabPanelLayout{padding:0} .insertanychar-select &gt; .oo-ui-menuOptionWidget{padding-inline:0} .insertanychar-select &gt; .oo-ui-menuOptionWidget &gt; .oo-ui-labelElement-label{display:flex;align-items:center} .insertanychar-char{display:inline-block;font-size:200%;min-width:1.5em;min-height:1.5em;line-height:1.5;text-align:center;white-space:pre;font-family:'Charis','Charis SIL','Doulos SIL','Gentium','Gentium Plus','Noto Serif','Liberation Serif','Roboto Serif',serif,'Andika','Noto Sans','Liberation Sans','Roboto','Bitstream Cyberbit','Code2000','Lucida Grande','Lucida Sans Unicode',sans-serif} .insertanychar-sans .insertanychar-char{font-family:'Andika','Noto Sans','Liberation Sans','Roboto','Bitstream Cyberbit','Code2000','Lucida Grande','Lucida Sans Unicode',sans-serif,'Charis','Charis SIL','Doulos SIL','Gentium','Gentium Plus','Noto Serif','Liberation Serif','Roboto Serif',serif} .insertanychar-char::after{content:var(--insertanychar-vs)} .insertanychar-history .insertanychar-char{font-size:150%} .insertanychar-select:not(.insertanychar-compact) .insertanychar-char{margin:0 2px} .insertanychar-name{flex-grow:1;white-space:normal !important;word-break:break-word} .insertanychar-block, .insertanychar-info{display:block} .insertanychar-block &gt; a, .insertanychar-block &gt; a:visited, .insertanychar-info, .insertanychar-hex, .insertanychar-num{font-size:85%;color:var(--color-subtle,#54595d)} .insertanychar-hex, .insertanychar-num{margin:0 4px} .insertanychar-compact{display:flex;flex-wrap:wrap;align-content:start;align-items:center} .insertanychar-compact &gt; .oo-ui-menuOptionWidget{padding:0;margin:4px 6px} .insertanychar-compact .insertanychar-name, .insertanychar-compact .insertanychar-hex{display:none} .insertanychar-select:not(.insertanychar-compact) .insertanychar-loader{padding-inline:8px} .insertanychar .oo-ui-toggleButtonWidget:not(.oo-ui-toggleWidget-on) + .oo-ui-textInputWidget-type-search{visibility:hidden} .insertanychar-notice{padding:2px 6px;display:flex;align-items:center;position:sticky;top:0;z-index:1;background-color:var(--background-color-base,#fff);border-bottom:1px solid var(--border-color-subtle,#c8ccd1)} .insertanychar-notice a{font-weight:bold}`;
+		await mw.loader.using([
+			'oojs-ui-core', 'jquery.textSelection', 'ext.wikiEditor.realtimepreview',
+			'oojs-ui.styles.icons-content', 'oojs-ui.styles.icons-interactions',
+			'oojs-ui.styles.icons-editing-styling', 'oojs-ui.styles.icons-layout'
+		]);
+		iac = new Iac(context).toggle(true);
+		let { source } = await $.get('//en.wiktionary.org/w/rest.php/v1/revision/86743629');
+		let blocks = [...source.matchAll(/^([\dA-F]+)\.\.([\dA-F]+); (.+)$/gm)]
+			.map(([, start, end, n]) =&gt; ({
+				start: parseInt(start, 16),
+				end: parseInt(end, 16),
+				name: n,
+				entries: []
+			}));
+		let blockIdx = 0;
+		for (let rev of [86743612, 86743610]) {
+			let { source } = await $.get(`//en.wiktionary.org/w/rest.php/v1/revision/${rev}`);
+			for (let [, hex, n, cat, combClass, oldName] of source.matchAll(
+				/^([^;]+);([^;]*);([^;]*);([^;]*);(?:[^;]*;){6}([^;]*)/gm
+			)) {
+				let v = parseInt(hex, 16);
+				while (v &gt; blocks[blockIdx].end) {
+					blockIdx++;
+				}
+				let block = blocks[blockIdx];
+				if (n?.[0] === '&lt;') {
+					if (n === '&lt;control&gt;') {
+						n = oldName;
+					} else {
+						if (block.entries.length) {
+							block.entries[0].end = v;
+						} else {
+							let blockName = n.match(/[^,&lt;&gt;]+/)?.[0].toUpperCase();
+							if (!blockName || blockName.endsWith(' SURROGATE')) continue;
+							let entry = { start: v, name: blockName };
+							if (blockName === 'HANGUL SYLLABLE') {
+								entry.isHangul = true;
+							}
+							block.entries.push(entry);
+							block.sample = { v, name: Iac.getCharName(entry, v) };
+						}
+						continue;
+					}
+				}
+				if (!n) continue;
+				let entry = { v, name: n };
+				if (cat === 'Mn') {
+					entry.combining = 1 + ['233', '234'].includes(combClass);
+				}
+				block.entries.push(entry);
+				if (!block.sample &amp;&amp; !['C', 'Z'].includes(cat[0])) {
+					block.sample = entry;
+				}
+			}
+		}
+		iac.ready(blocks);
+	};
+	mw.hook('wikiEditor.toolbarReady').add(async $textarea =&gt; {
+		$textarea.closest('.wikiEditor-ui').toggleClass(
+			'insertanychar-available',
+			mw.config.get('wgPageContentModel') !== 'wikitext' || (
+				await mw.loader.using('user.options'),
+				!Number(mw.user.options.get('wikieditor-realtimepreview'))
+			)
+		);
+		$textarea.wikiEditor('addToToolbar', {
+			section: 'secondary',
+			group: 'default',
+			tools: {
+				insertanychar: {
+					label: 'InsertAnyChar',
+					type: 'toggle',
+					oouiIcon: 'specialCharacter',
+					action: { type: 'callback', execute: init }
+				}
+			}
+		});
+	});
+	mw.hook('ext.WikiEditor.realtimepreview.disable').add(rtp =&gt; {
+		rtp.context.$ui.addClass('insertanychar-available');
+	});
+	mw.hook('ext.WikiEditor.realtimepreview.enable').add(rtp =&gt; {
+		rtp.context.$ui.removeClass('insertanychar-available');
+	});
+}());</text>
+      <sha1>hqst6tsb6480xr83mgv5y3ybsl0ccij</sha1>
+    </revision>
+  </page>
+</mediawiki>

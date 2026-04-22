@@ -1,0 +1,490 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>User:Nardog/Consecudiff</title>
+    <ns>2</ns>
+    <id>9828</id>
+    <revision>
+      <id>985966</id>
+      <timestamp>2024-11-22T11:10:29Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Nardog</username>
+        <id>0</id>
+      </contributor>
+      <comment>phab</comment>
+      <origin>985966</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="4490" sha1="trye4ni3a23ibcw61il38gpve444ys4" xml:space="preserve">{{Infobox Wikipedia user script
+|name=Consecudiff
+|desc=&lt;onlyinclude&gt;Adds links to diffs of consecutive edits by the same user on watchlist, history, etc.&lt;/onlyinclude&gt;
+|browsers=Chrome, Firefox, etc. ([[ES2017]]+ needed)
+|source=[[User:Nardog/Consecudiff.js]]
+}}
+
+This script finds edits made consecutively by the same user to the same page on the watchlist, recent changes, page history, or user contributions, and adds a link to the diff spanning the entire series of edits at the end of each line.
+
+It'll look something like this:
+
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Foo}}; 03:18 . . {{DarkRed|(−34‎)}} . . {{fake link|User A}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) {{angbr|{{fake link|2/2}}}}
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 03:11 . . {{green|(+55)}} . . {{fake link|User B}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}})
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 03:04 . . {{green|(+44)}} . . {{fake link|User C}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) [{{fake link|3/3}}]
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 02:58 . . {{DarkRed|(−15)}} . . {{fake link|User C}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) [{{fake link|2/3}}]
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Foo}}; 02:51 . . {{DarkRed|(−72‎)}} . . {{fake link|User A}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) {{angbr|{{fake link|1/2}}}}
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Foo}}; 02:46 . . {{DarkRed|(+41‎)}} . . {{fake link|User D}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}})
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 02:19 . . {{green|(+34)}} . . {{fake link|User C}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) [{{fake link|1/3}}]
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 02:00 . . {{green|(+65)}} . . {{fake link|User E}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}})
+
+"2/2" and "1/2" will link to the diff between the versions at 02:46 and 03:18, and "3/3", "2/3" and "1/3" to the diff between 02:00 and 03:04. The {{angbr|angle brackets}} denote the last edit in the series is the current version of the page.
+
+==Installation==
+Add the following to [[Special:MyPage/common.js|your common.js]] or [[meta:Special:MyPage/global.js|global.js]]:
+&lt;syntaxhighlight lang="javascript"&gt;
+mw.loader.load('//en.wikipedia.org/w/index.php?title=User:Nardog/Consecudiff.js&amp;action=raw&amp;ctype=text/javascript');
+&lt;/syntaxhighlight&gt;
+
+Or you may enable the [[User:Enterprisey/script-installer|script installer]] in {{myprefs|Gadgets}} and click "Install" in the infobox on this page.
+
+==Customization==
+On user contributions, it's impossible to tell from the page which edits were made with no one else intervening, so any edits to the same page made no more than two hours apart are assumed to be consecutive. On the watchlist, recent changes, and page history, diffs between edits made too far apart may not be of much use, so edits with a gap greater than 12 hours are considered not consecutive. These can be customized by substituting your preferred thresholds in minutes in your common.js or global.js. This example doubles the numbers:
+&lt;syntaxhighlight lang="javascript"&gt;
+window.consecudiffThreshold = 1440;
+window.consecudiffHistThreshold = 1440;
+window.consecudiffContribsThreshold = 240;
+&lt;/syntaxhighlight&gt;
+
+On the watchlist and recent changes, the script by default regards any edits with no intervening edits visible on the list as consecutive, even if there were some that were filtered out. If you add the following, it will detect strictly consecutive edits only:
+&lt;syntaxhighlight lang="javascript"&gt;
+window.consecudiffDetectInterruptions = true;
+&lt;/syntaxhighlight&gt;
+
+==Limitations==
+*The script is purposely lightweight. It doesn't go out of its way to figure out if each edit on the list is part of a larger series of edits; it sticks to what's on the page. So if an edit toward the end of a list was the last in a series of consecutive edits, the script wouldn't recognize it as such. On the JavaScript-assisted (Ajax) watchlist or recent changes, Consecudiff links are recalculated every time the page is updated so only diffs of edits currently visible will appear.
+
+==See also==
+*[[phab:T21247]]
+
+{{User:Nardog/scripts}}</text>
+      <sha1>trye4ni3a23ibcw61il38gpve444ys4</sha1>
+    </revision>
+    <revision>
+      <id>985967</id>
+      <parentid>985966</parentid>
+      <timestamp>2025-01-19T18:12:25Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:User:Nardog/Consecudiff]]</comment>
+      <origin>985966</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="4490" sha1="trye4ni3a23ibcw61il38gpve444ys4" xml:space="preserve">{{Infobox Wikipedia user script
+|name=Consecudiff
+|desc=&lt;onlyinclude&gt;Adds links to diffs of consecutive edits by the same user on watchlist, history, etc.&lt;/onlyinclude&gt;
+|browsers=Chrome, Firefox, etc. ([[ES2017]]+ needed)
+|source=[[User:Nardog/Consecudiff.js]]
+}}
+
+This script finds edits made consecutively by the same user to the same page on the watchlist, recent changes, page history, or user contributions, and adds a link to the diff spanning the entire series of edits at the end of each line.
+
+It'll look something like this:
+
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Foo}}; 03:18 . . {{DarkRed|(−34‎)}} . . {{fake link|User A}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) {{angbr|{{fake link|2/2}}}}
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 03:11 . . {{green|(+55)}} . . {{fake link|User B}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}})
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 03:04 . . {{green|(+44)}} . . {{fake link|User C}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) [{{fake link|3/3}}]
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 02:58 . . {{DarkRed|(−15)}} . . {{fake link|User C}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) [{{fake link|2/3}}]
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Foo}}; 02:51 . . {{DarkRed|(−72‎)}} . . {{fake link|User A}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) {{angbr|{{fake link|1/2}}}}
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Foo}}; 02:46 . . {{DarkRed|(+41‎)}} . . {{fake link|User D}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}})
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 02:19 . . {{green|(+34)}} . . {{fake link|User C}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) [{{fake link|1/3}}]
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 02:00 . . {{green|(+65)}} . . {{fake link|User E}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}})
+
+"2/2" and "1/2" will link to the diff between the versions at 02:46 and 03:18, and "3/3", "2/3" and "1/3" to the diff between 02:00 and 03:04. The {{angbr|angle brackets}} denote the last edit in the series is the current version of the page.
+
+==Installation==
+Add the following to [[Special:MyPage/common.js|your common.js]] or [[meta:Special:MyPage/global.js|global.js]]:
+&lt;syntaxhighlight lang="javascript"&gt;
+mw.loader.load('//en.wikipedia.org/w/index.php?title=User:Nardog/Consecudiff.js&amp;action=raw&amp;ctype=text/javascript');
+&lt;/syntaxhighlight&gt;
+
+Or you may enable the [[User:Enterprisey/script-installer|script installer]] in {{myprefs|Gadgets}} and click "Install" in the infobox on this page.
+
+==Customization==
+On user contributions, it's impossible to tell from the page which edits were made with no one else intervening, so any edits to the same page made no more than two hours apart are assumed to be consecutive. On the watchlist, recent changes, and page history, diffs between edits made too far apart may not be of much use, so edits with a gap greater than 12 hours are considered not consecutive. These can be customized by substituting your preferred thresholds in minutes in your common.js or global.js. This example doubles the numbers:
+&lt;syntaxhighlight lang="javascript"&gt;
+window.consecudiffThreshold = 1440;
+window.consecudiffHistThreshold = 1440;
+window.consecudiffContribsThreshold = 240;
+&lt;/syntaxhighlight&gt;
+
+On the watchlist and recent changes, the script by default regards any edits with no intervening edits visible on the list as consecutive, even if there were some that were filtered out. If you add the following, it will detect strictly consecutive edits only:
+&lt;syntaxhighlight lang="javascript"&gt;
+window.consecudiffDetectInterruptions = true;
+&lt;/syntaxhighlight&gt;
+
+==Limitations==
+*The script is purposely lightweight. It doesn't go out of its way to figure out if each edit on the list is part of a larger series of edits; it sticks to what's on the page. So if an edit toward the end of a list was the last in a series of consecutive edits, the script wouldn't recognize it as such. On the JavaScript-assisted (Ajax) watchlist or recent changes, Consecudiff links are recalculated every time the page is updated so only diffs of edits currently visible will appear.
+
+==See also==
+*[[phab:T21247]]
+
+{{User:Nardog/scripts}}</text>
+      <sha1>trye4ni3a23ibcw61il38gpve444ys4</sha1>
+    </revision>
+    <revision>
+      <id>9829</id>
+      <timestamp>2025-05-19T16:56:38Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Bot: convert local link → enwiki interwiki</comment>
+      <origin>9829</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="4501" sha1="7saupb91z7sslbq8h8htdjhgz98pfoo" xml:space="preserve">{{Infobox Wikipedia user script
+|name=Consecudiff
+|desc=&lt;onlyinclude&gt;Adds links to diffs of consecutive edits by the same user on watchlist, history, etc.&lt;/onlyinclude&gt;
+|browsers=Chrome, Firefox, etc. ([[:en:ES2017|ES2017]]+ needed)
+|source=[[User:Nardog/Consecudiff.js]]
+}}
+
+This script finds edits made consecutively by the same user to the same page on the watchlist, recent changes, page history, or user contributions, and adds a link to the diff spanning the entire series of edits at the end of each line.
+
+It'll look something like this:
+
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Foo}}; 03:18 . . {{DarkRed|(−34‎)}} . . {{fake link|User A}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) {{angbr|{{fake link|2/2}}}}
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 03:11 . . {{green|(+55)}} . . {{fake link|User B}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}})
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 03:04 . . {{green|(+44)}} . . {{fake link|User C}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) [{{fake link|3/3}}]
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 02:58 . . {{DarkRed|(−15)}} . . {{fake link|User C}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) [{{fake link|2/3}}]
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Foo}}; 02:51 . . {{DarkRed|(−72‎)}} . . {{fake link|User A}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) {{angbr|{{fake link|1/2}}}}
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Foo}}; 02:46 . . {{DarkRed|(+41‎)}} . . {{fake link|User D}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}})
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 02:19 . . {{green|(+34)}} . . {{fake link|User C}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) [{{fake link|1/3}}]
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 02:00 . . {{green|(+65)}} . . {{fake link|User E}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}})
+
+"2/2" and "1/2" will link to the diff between the versions at 02:46 and 03:18, and "3/3", "2/3" and "1/3" to the diff between 02:00 and 03:04. The {{angbr|angle brackets}} denote the last edit in the series is the current version of the page.
+
+==Installation==
+Add the following to [[Special:MyPage/common.js|your common.js]] or [[meta:Special:MyPage/global.js|global.js]]:
+&lt;syntaxhighlight lang="javascript"&gt;
+mw.loader.load('//en.wikipedia.org/w/index.php?title=User:Nardog/Consecudiff.js&amp;action=raw&amp;ctype=text/javascript');
+&lt;/syntaxhighlight&gt;
+
+Or you may enable the [[User:Enterprisey/script-installer|script installer]] in {{myprefs|Gadgets}} and click "Install" in the infobox on this page.
+
+==Customization==
+On user contributions, it's impossible to tell from the page which edits were made with no one else intervening, so any edits to the same page made no more than two hours apart are assumed to be consecutive. On the watchlist, recent changes, and page history, diffs between edits made too far apart may not be of much use, so edits with a gap greater than 12 hours are considered not consecutive. These can be customized by substituting your preferred thresholds in minutes in your common.js or global.js. This example doubles the numbers:
+&lt;syntaxhighlight lang="javascript"&gt;
+window.consecudiffThreshold = 1440;
+window.consecudiffHistThreshold = 1440;
+window.consecudiffContribsThreshold = 240;
+&lt;/syntaxhighlight&gt;
+
+On the watchlist and recent changes, the script by default regards any edits with no intervening edits visible on the list as consecutive, even if there were some that were filtered out. If you add the following, it will detect strictly consecutive edits only:
+&lt;syntaxhighlight lang="javascript"&gt;
+window.consecudiffDetectInterruptions = true;
+&lt;/syntaxhighlight&gt;
+
+==Limitations==
+*The script is purposely lightweight. It doesn't go out of its way to figure out if each edit on the list is part of a larger series of edits; it sticks to what's on the page. So if an edit toward the end of a list was the last in a series of consecutive edits, the script wouldn't recognize it as such. On the JavaScript-assisted (Ajax) watchlist or recent changes, Consecudiff links are recalculated every time the page is updated so only diffs of edits currently visible will appear.
+
+==See also==
+*[[phab:T21247]]
+
+{{User:Nardog/scripts}}</text>
+      <sha1>7saupb91z7sslbq8h8htdjhgz98pfoo</sha1>
+    </revision>
+    <revision>
+      <id>3243801</id>
+      <parentid>9829</parentid>
+      <timestamp>2026-02-26T04:43:49Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <origin>3243801</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="4522" sha1="bp9stc01h9tqcwmvmfenpcr0ft8ndum" xml:space="preserve">{{Infobox Wikipedia user script
+|name=Consecudiff
+|desc=&lt;onlyinclude&gt;Adds links to diffs of consecutive edits by the same user on watchlist, history, etc.&lt;/onlyinclude&gt;
+|browsers=Chrome, Firefox, etc. ([[:en:ES2017|ES2017]]+ needed)
+|source=[[User:Nardog/Consecudiff.js]]
+}}
+
+This script finds edits made consecutively by the same user to the same page on the watchlist, recent changes, page history, or user contributions, and adds a link to the diff spanning the entire series of edits at the end of each line.
+
+It'll look something like this:
+
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Foo}}; 03:18 . . {{DarkRed|(−34‎)}} . . {{fake link|User A}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) {{angbr|{{fake link|2/2}}}}
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 03:11 . . {{green|(+55)}} . . {{fake link|User B}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}})
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 03:04 . . {{green|(+44)}} . . {{fake link|User C}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) [{{fake link|3/3}}]
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 02:58 . . {{DarkRed|(−15)}} . . {{fake link|User C}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) [{{fake link|2/3}}]
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Foo}}; 02:51 . . {{DarkRed|(−72‎)}} . . {{fake link|User A}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) {{angbr|{{fake link|1/2}}}}
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Foo}}; 02:46 . . {{DarkRed|(+41‎)}} . . {{fake link|User D}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}})
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 02:19 . . {{green|(+34)}} . . {{fake link|User C}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) [{{fake link|1/3}}]
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 02:00 . . {{green|(+65)}} . . {{fake link|User E}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}})
+
+"2/2" and "1/2" will link to the diff between the versions at 02:46 and 03:18, and "3/3", "2/3" and "1/3" to the diff between 02:00 and 03:04. The {{angbr|angle brackets}} denote the last edit in the series is the current version of the page.
+
+==Installation==
+Add the following to [[Special:MyPage/common.js|your common.js]] or [[meta:Special:MyPage/global.js|global.js]]:
+&lt;syntaxhighlight lang="javascript"&gt;
+mw.loader.load('//en.wikipedia.org/w/index.php?title=User:Nardog/Consecudiff.js&amp;action=raw&amp;ctype=text/javascript');
+&lt;/syntaxhighlight&gt;
+
+Or you may enable the [[User:Enterprisey/script-installer|script installer]] in {{myprefs|Gadgets}} and click "Install" in the infobox on this page.
+
+==Customization==
+On user contributions, it's impossible to tell from the page which edits were made with no one else intervening, so any edits to the same page made no more than two hours apart are assumed to be consecutive. On the watchlist, recent changes, and page history, diffs between edits made too far apart may not be of much use, so edits with a gap greater than 12 hours are considered not consecutive. These can be customized by substituting your preferred thresholds in minutes in your common.js or global.js. This example doubles the numbers:
+&lt;syntaxhighlight lang="javascript"&gt;
+window.consecudiffThreshold = 1440;
+window.consecudiffHistThreshold = 1440;
+window.consecudiffContribsThreshold = 240;
+&lt;/syntaxhighlight&gt;
+
+On the watchlist and recent changes, the script by default regards any edits with no intervening edits visible on the list as consecutive, even if there were some that were filtered out. If you add the following, it will detect strictly consecutive edits only:
+&lt;syntaxhighlight lang="javascript"&gt;
+window.consecudiffDetectInterruptions = true;
+&lt;/syntaxhighlight&gt;
+
+==Limitations==
+*The script is purposely lightweight. It doesn't go out of its way to figure out if each edit on the list is part of a larger series of edits; it sticks to what's on the page. So if an edit toward the end of a list was the last in a series of consecutive edits, the script wouldn't recognize it as such. On the JavaScript-assisted (Ajax) watchlist or recent changes, Consecudiff links are recalculated every time the page is updated so only diffs of edits currently visible will appear.
+
+==See also==
+*[[phab:T21247]]
+
+{{User:Nardog/scripts}}[[Category:reimport]]</text>
+      <sha1>bp9stc01h9tqcwmvmfenpcr0ft8ndum</sha1>
+    </revision>
+    <revision>
+      <id>3367688</id>
+      <parentid>3243801</parentid>
+      <timestamp>2026-03-02T18:43:28Z</timestamp>
+      <contributor>
+        <username>en&gt;Nardog</username>
+        <id>0</id>
+      </contributor>
+      <comment>phab</comment>
+      <origin>3367688</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="4490" sha1="trye4ni3a23ibcw61il38gpve444ys4" xml:space="preserve">{{Infobox Wikipedia user script
+|name=Consecudiff
+|desc=&lt;onlyinclude&gt;Adds links to diffs of consecutive edits by the same user on watchlist, history, etc.&lt;/onlyinclude&gt;
+|browsers=Chrome, Firefox, etc. ([[ES2017]]+ needed)
+|source=[[User:Nardog/Consecudiff.js]]
+}}
+
+This script finds edits made consecutively by the same user to the same page on the watchlist, recent changes, page history, or user contributions, and adds a link to the diff spanning the entire series of edits at the end of each line.
+
+It'll look something like this:
+
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Foo}}; 03:18 . . {{DarkRed|(−34‎)}} . . {{fake link|User A}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) {{angbr|{{fake link|2/2}}}}
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 03:11 . . {{green|(+55)}} . . {{fake link|User B}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}})
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 03:04 . . {{green|(+44)}} . . {{fake link|User C}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) [{{fake link|3/3}}]
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 02:58 . . {{DarkRed|(−15)}} . . {{fake link|User C}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) [{{fake link|2/3}}]
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Foo}}; 02:51 . . {{DarkRed|(−72‎)}} . . {{fake link|User A}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) {{angbr|{{fake link|1/2}}}}
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Foo}}; 02:46 . . {{DarkRed|(+41‎)}} . . {{fake link|User D}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}})
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 02:19 . . {{green|(+34)}} . . {{fake link|User C}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) [{{fake link|1/3}}]
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 02:00 . . {{green|(+65)}} . . {{fake link|User E}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}})
+
+"2/2" and "1/2" will link to the diff between the versions at 02:46 and 03:18, and "3/3", "2/3" and "1/3" to the diff between 02:00 and 03:04. The {{angbr|angle brackets}} denote the last edit in the series is the current version of the page.
+
+==Installation==
+Add the following to [[Special:MyPage/common.js|your common.js]] or [[meta:Special:MyPage/global.js|global.js]]:
+&lt;syntaxhighlight lang="javascript"&gt;
+mw.loader.load('//en.wikipedia.org/w/index.php?title=User:Nardog/Consecudiff.js&amp;action=raw&amp;ctype=text/javascript');
+&lt;/syntaxhighlight&gt;
+
+Or you may enable the [[User:Enterprisey/script-installer|script installer]] in {{myprefs|Gadgets}} and click "Install" in the infobox on this page.
+
+==Customization==
+On user contributions, it's impossible to tell from the page which edits were made with no one else intervening, so any edits to the same page made no more than two hours apart are assumed to be consecutive. On the watchlist, recent changes, and page history, diffs between edits made too far apart may not be of much use, so edits with a gap greater than 12 hours are considered not consecutive. These can be customized by substituting your preferred thresholds in minutes in your common.js or global.js. This example doubles the numbers:
+&lt;syntaxhighlight lang="javascript"&gt;
+window.consecudiffThreshold = 1440;
+window.consecudiffHistThreshold = 1440;
+window.consecudiffContribsThreshold = 240;
+&lt;/syntaxhighlight&gt;
+
+On the watchlist and recent changes, the script by default regards any edits with no intervening edits visible on the list as consecutive, even if there were some that were filtered out. If you add the following, it will detect strictly consecutive edits only:
+&lt;syntaxhighlight lang="javascript"&gt;
+window.consecudiffDetectInterruptions = true;
+&lt;/syntaxhighlight&gt;
+
+==Limitations==
+*The script is purposely lightweight. It doesn't go out of its way to figure out if each edit on the list is part of a larger series of edits; it sticks to what's on the page. So if an edit toward the end of a list was the last in a series of consecutive edits, the script wouldn't recognize it as such. On the JavaScript-assisted (Ajax) watchlist or recent changes, Consecudiff links are recalculated every time the page is updated so only diffs of edits currently visible will appear.
+
+==See also==
+*[[phab:T21247]]
+
+{{User:Nardog/scripts}}</text>
+      <sha1>trye4ni3a23ibcw61il38gpve444ys4</sha1>
+    </revision>
+    <revision>
+      <id>3367689</id>
+      <parentid>3367688</parentid>
+      <timestamp>2026-03-02T18:43:29Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3367688</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="4490" sha1="trye4ni3a23ibcw61il38gpve444ys4" xml:space="preserve">{{Infobox Wikipedia user script
+|name=Consecudiff
+|desc=&lt;onlyinclude&gt;Adds links to diffs of consecutive edits by the same user on watchlist, history, etc.&lt;/onlyinclude&gt;
+|browsers=Chrome, Firefox, etc. ([[ES2017]]+ needed)
+|source=[[User:Nardog/Consecudiff.js]]
+}}
+
+This script finds edits made consecutively by the same user to the same page on the watchlist, recent changes, page history, or user contributions, and adds a link to the diff spanning the entire series of edits at the end of each line.
+
+It'll look something like this:
+
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Foo}}; 03:18 . . {{DarkRed|(−34‎)}} . . {{fake link|User A}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) {{angbr|{{fake link|2/2}}}}
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 03:11 . . {{green|(+55)}} . . {{fake link|User B}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}})
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 03:04 . . {{green|(+44)}} . . {{fake link|User C}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) [{{fake link|3/3}}]
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 02:58 . . {{DarkRed|(−15)}} . . {{fake link|User C}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) [{{fake link|2/3}}]
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Foo}}; 02:51 . . {{DarkRed|(−72‎)}} . . {{fake link|User A}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) {{angbr|{{fake link|1/2}}}}
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Foo}}; 02:46 . . {{DarkRed|(+41‎)}} . . {{fake link|User D}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}})
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 02:19 . . {{green|(+34)}} . . {{fake link|User C}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) [{{fake link|1/3}}]
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 02:00 . . {{green|(+65)}} . . {{fake link|User E}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}})
+
+"2/2" and "1/2" will link to the diff between the versions at 02:46 and 03:18, and "3/3", "2/3" and "1/3" to the diff between 02:00 and 03:04. The {{angbr|angle brackets}} denote the last edit in the series is the current version of the page.
+
+==Installation==
+Add the following to [[Special:MyPage/common.js|your common.js]] or [[meta:Special:MyPage/global.js|global.js]]:
+&lt;syntaxhighlight lang="javascript"&gt;
+mw.loader.load('//en.wikipedia.org/w/index.php?title=User:Nardog/Consecudiff.js&amp;action=raw&amp;ctype=text/javascript');
+&lt;/syntaxhighlight&gt;
+
+Or you may enable the [[User:Enterprisey/script-installer|script installer]] in {{myprefs|Gadgets}} and click "Install" in the infobox on this page.
+
+==Customization==
+On user contributions, it's impossible to tell from the page which edits were made with no one else intervening, so any edits to the same page made no more than two hours apart are assumed to be consecutive. On the watchlist, recent changes, and page history, diffs between edits made too far apart may not be of much use, so edits with a gap greater than 12 hours are considered not consecutive. These can be customized by substituting your preferred thresholds in minutes in your common.js or global.js. This example doubles the numbers:
+&lt;syntaxhighlight lang="javascript"&gt;
+window.consecudiffThreshold = 1440;
+window.consecudiffHistThreshold = 1440;
+window.consecudiffContribsThreshold = 240;
+&lt;/syntaxhighlight&gt;
+
+On the watchlist and recent changes, the script by default regards any edits with no intervening edits visible on the list as consecutive, even if there were some that were filtered out. If you add the following, it will detect strictly consecutive edits only:
+&lt;syntaxhighlight lang="javascript"&gt;
+window.consecudiffDetectInterruptions = true;
+&lt;/syntaxhighlight&gt;
+
+==Limitations==
+*The script is purposely lightweight. It doesn't go out of its way to figure out if each edit on the list is part of a larger series of edits; it sticks to what's on the page. So if an edit toward the end of a list was the last in a series of consecutive edits, the script wouldn't recognize it as such. On the JavaScript-assisted (Ajax) watchlist or recent changes, Consecudiff links are recalculated every time the page is updated so only diffs of edits currently visible will appear.
+
+==See also==
+*[[phab:T21247]]
+
+{{User:Nardog/scripts}}</text>
+      <sha1>trye4ni3a23ibcw61il38gpve444ys4</sha1>
+    </revision>
+    <revision>
+      <id>3621325</id>
+      <parentid>3367689</parentid>
+      <timestamp>2026-04-22T20:43:10Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <comment>[[Project:History cleanup|Offloading history due to miraheze stability concerns]] many contributors, see [https://emmaleonhart.github.io/shintowiki-scripts/wikihistory.html?page=Nardog%2FConsecudiff here] for full history [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/24796114356|commit triggered pipeline]]</comment>
+      <origin>3621325</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="4848" sha1="cijlsw0ravkjv89kpoti7z2k991x9m0" xml:space="preserve">&lt;!-- History offloaded: due to miraheze stability concerns, the edit history of this page has been offloaded to the XML archive. See https://emmaleonhart.github.io/shintowiki-scripts/wikihistory.html?page=Nardog%2FConsecudiff for full history. Last refreshed: [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/24796114356|commit triggered pipeline]] --&gt;
+{{Infobox Wikipedia user script
+|name=Consecudiff
+|desc=&lt;onlyinclude&gt;Adds links to diffs of consecutive edits by the same user on watchlist, history, etc.&lt;/onlyinclude&gt;
+|browsers=Chrome, Firefox, etc. ([[ES2017]]+ needed)
+|source=[[User:Nardog/Consecudiff.js]]
+}}
+
+This script finds edits made consecutively by the same user to the same page on the watchlist, recent changes, page history, or user contributions, and adds a link to the diff spanning the entire series of edits at the end of each line.
+
+It'll look something like this:
+
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Foo}}; 03:18 . . {{DarkRed|(−34‎)}} . . {{fake link|User A}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) {{angbr|{{fake link|2/2}}}}
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 03:11 . . {{green|(+55)}} . . {{fake link|User B}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}})
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 03:04 . . {{green|(+44)}} . . {{fake link|User C}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) [{{fake link|3/3}}]
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 02:58 . . {{DarkRed|(−15)}} . . {{fake link|User C}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) [{{fake link|2/3}}]
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Foo}}; 02:51 . . {{DarkRed|(−72‎)}} . . {{fake link|User A}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) {{angbr|{{fake link|1/2}}}}
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Foo}}; 02:46 . . {{DarkRed|(+41‎)}} . . {{fake link|User D}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}})
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 02:19 . . {{green|(+34)}} . . {{fake link|User C}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}}) [{{fake link|1/3}}]
+*({{fake link|diff}}&amp;nbsp;|&amp;nbsp;{{fake link|hist}}) . . {{fake link|Bar}}; 02:00 . . {{green|(+65)}} . . {{fake link|User E}} ({{fake link|talk}}&amp;nbsp;|&amp;nbsp;{{fake link|contribs}})
+
+"2/2" and "1/2" will link to the diff between the versions at 02:46 and 03:18, and "3/3", "2/3" and "1/3" to the diff between 02:00 and 03:04. The {{angbr|angle brackets}} denote the last edit in the series is the current version of the page.
+
+==Installation==
+Add the following to [[Special:MyPage/common.js|your common.js]] or [[meta:Special:MyPage/global.js|global.js]]:
+&lt;syntaxhighlight lang="javascript"&gt;
+mw.loader.load('//en.wikipedia.org/w/index.php?title=User:Nardog/Consecudiff.js&amp;action=raw&amp;ctype=text/javascript');
+&lt;/syntaxhighlight&gt;
+
+Or you may enable the [[User:Enterprisey/script-installer|script installer]] in {{myprefs|Gadgets}} and click "Install" in the infobox on this page.
+
+==Customization==
+On user contributions, it's impossible to tell from the page which edits were made with no one else intervening, so any edits to the same page made no more than two hours apart are assumed to be consecutive. On the watchlist, recent changes, and page history, diffs between edits made too far apart may not be of much use, so edits with a gap greater than 12 hours are considered not consecutive. These can be customized by substituting your preferred thresholds in minutes in your common.js or global.js. This example doubles the numbers:
+&lt;syntaxhighlight lang="javascript"&gt;
+window.consecudiffThreshold = 1440;
+window.consecudiffHistThreshold = 1440;
+window.consecudiffContribsThreshold = 240;
+&lt;/syntaxhighlight&gt;
+
+On the watchlist and recent changes, the script by default regards any edits with no intervening edits visible on the list as consecutive, even if there were some that were filtered out. If you add the following, it will detect strictly consecutive edits only:
+&lt;syntaxhighlight lang="javascript"&gt;
+window.consecudiffDetectInterruptions = true;
+&lt;/syntaxhighlight&gt;
+
+==Limitations==
+*The script is purposely lightweight. It doesn't go out of its way to figure out if each edit on the list is part of a larger series of edits; it sticks to what's on the page. So if an edit toward the end of a list was the last in a series of consecutive edits, the script wouldn't recognize it as such. On the JavaScript-assisted (Ajax) watchlist or recent changes, Consecudiff links are recalculated every time the page is updated so only diffs of edits currently visible will appear.
+
+==See also==
+*[[phab:T21247]]
+
+{{User:Nardog/scripts}}</text>
+      <sha1>cijlsw0ravkjv89kpoti7z2k991x9m0</sha1>
+    </revision>
+  </page>
+</mediawiki>

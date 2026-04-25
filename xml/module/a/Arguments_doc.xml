@@ -1,0 +1,1574 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Arguments/doc</title>
+    <ns>828</ns>
+    <id>7526</id>
+    <revision>
+      <id>884847</id>
+      <timestamp>2024-11-18T09:54:47Z</timestamp>
+      <contributor>
+        <username>en&gt;Explorer09</username>
+        <id>0</id>
+      </contributor>
+      <comment>/* Options */ Italicize "firstInvokeArg" in the examples. This help identifying the frame source of the arguments easier.</comment>
+      <origin>884847</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="20159" sha1="kgdii6ylu1nqsy3672zpawttsdlkgdn" xml:space="preserve">{{Used in system}}
+{{Module rating|p}}
+{{cascade-protected template|page=module}}
+
+This module provides easy processing of arguments passed from &lt;code&gt;#invoke&lt;/code&gt;. It is a meta-module, meant for use by other modules, and should not be called from &lt;code&gt;#invoke&lt;/code&gt; directly (for a module directly invocable by templates you might want to have a look at {{ml|params|}}). Its features include:
+* Easy trimming of arguments and removal of blank arguments.
+* Arguments can be passed by both the current frame and by the parent frame at the same time. (More details below.)
+* Arguments can be passed in directly from another Lua module or from the debug console.
+* Most features can be customized.
+
+== Basic use ==
+
+First, you need to load the module. It contains one function, named &lt;code&gt;getArgs&lt;/code&gt;.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local getArgs = require('Module:Arguments').getArgs
+&lt;/syntaxhighlight&gt;
+
+In the most basic scenario, you can use getArgs inside your main function. The variable &lt;code&gt;args&lt;/code&gt; is a table containing the arguments from #invoke. (See below for details.)
+
+&lt;syntaxhighlight lang="lua"&gt;
+local getArgs = require('Module:Arguments').getArgs
+local p = {}
+
+function p.main(frame)
+	local args = getArgs(frame)
+	-- Main module code goes here.
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+
+=== Recommended practice ===
+However, the recommended practice is to use a function just for processing arguments from #invoke. This means that if someone calls your module from another Lua module you don't have to have a frame object available, which improves performance.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local getArgs = require('Module:Arguments').getArgs
+local p = {}
+
+function p.main(frame)
+	local args = getArgs(frame)
+	return p._main(args)
+end
+
+function p._main(args)
+	-- Main module code goes here.
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+
+The way this is called from a template is &lt;code&gt;&lt;nowiki&gt;{{#invoke:Example|main}}&lt;/nowiki&gt;&lt;/code&gt; (optionally with some parameters like &lt;code&gt;&lt;nowiki&gt;{{#invoke:Example|main|arg1=value1|arg2=value2}}&lt;/nowiki&gt;&lt;/code&gt;), and the way this is called from a module is &lt;syntaxhighlight lang=lua inline&gt;require('Module:Example')._main({arg1 = 'value1', arg2 = value2, 'spaced arg3' = 'value3'})&lt;/syntaxhighlight&gt;. What this second one does is construct a table with the arguments in it, then gives that table to the p._main(args) function, which uses it natively.
+
+=== Multiple functions ===
+If you want multiple functions to use the arguments, and you also want them to be accessible from #invoke, you can use a wrapper function.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local getArgs = require('Module:Arguments').getArgs
+
+local p = {}
+
+local function makeInvokeFunc(funcName)
+	return function (frame)
+		local args = getArgs(frame)
+		return p[funcName](args)
+	end
+end
+
+p.func1 = makeInvokeFunc('_func1')
+
+function p._func1(args)
+	-- Code for the first function goes here.
+end
+
+p.func2 = makeInvokeFunc('_func2')
+
+function p._func2(args)
+	-- Code for the second function goes here.
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+
+== Options ==
+
+The following options are available. They are explained in the sections below.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local args = getArgs(frame, {
+	trim = false,
+	removeBlanks = false,
+	valueFunc = function (key, value)
+		-- Code for processing one argument
+	end,
+
+	frameOnly = true,
+	parentOnly = true,
+	parentFirst = true,
+
+	wrappers = {
+		'Template:A wrapper template',
+		'Template:Another wrapper template'
+	},
+
+	readOnly = true,
+	noOverwrite = true
+})
+&lt;/syntaxhighlight&gt;
+
+=== Trimming whitespace ===
+
+MediaWiki trims whitespace for named arguments coming from #invoke or a template call, but preserves whitespace for positional arguments. By default, this module helps trim whitespace also for position arguments. To preserve whitespace for positional arguments, set the &lt;code&gt;trim&lt;/code&gt; option to &lt;code&gt;false&lt;/code&gt;.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local args = getArgs(frame, {
+	trim = false
+})
+&lt;/syntaxhighlight&gt;
+
+When the &lt;code&gt;valueFunc&lt;/code&gt; option is given, the &lt;code&gt;valueFunc&lt;/code&gt; function will be responsible for trimming whitespace, and the &lt;code&gt;trim&lt;/code&gt; option will have no effect.
+
+=== Removing blank arguments ===
+
+"Blank arguments" are arguments from #invoke or template that are blank strings or consist of only whitespace. By default, this module removes all blank arguments. To preserve the blank arguments, set the &lt;code&gt;removeBlanks&lt;/code&gt; option to &lt;code&gt;false&lt;/code&gt;.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local args = getArgs(frame, {
+	removeBlanks = false
+})
+&lt;/syntaxhighlight&gt;
+
+This might be necessary for some templates' operation.
+
+Note: When converting MediaWiki templates to Lua, keep in mind that in Lua, blank strings and strings consisting only of whitespace are considered true. If you don't pay attention to such blank arguments when you write your Lua modules, you might treat something as true that should actually be treated as false.
+
+When the &lt;code&gt;valueFunc&lt;/code&gt; option is given, the &lt;code&gt;valueFunc&lt;/code&gt; function will be responsible for handling blank arguments, and the &lt;code&gt;removeBlanks&lt;/code&gt; option will have no effect.
+
+=== Custom formatting of arguments ===
+
+Sometimes you want to remove some blank arguments but not others, or perhaps you might want to put all of the positional arguments in lower case. To do things like this you can use the &lt;code&gt;valueFunc&lt;/code&gt; option. The input to this option must be a function that takes two parameters, &lt;code&gt;key&lt;/code&gt; and &lt;code&gt;value&lt;/code&gt;, and returns a single value. This value is what you will get when you access the field &lt;code&gt;key&lt;/code&gt; in the &lt;code&gt;args&lt;/code&gt; table.
+
+Example 1: this function preserves whitespace for the first positional argument's value, but trims all other arguments' value and removes all other blank arguments.
+&lt;syntaxhighlight lang="lua"&gt;
+local args = getArgs(frame, {
+	valueFunc = function (key, value)
+		if key == 1 then
+			return value
+		elseif value then
+			value = mw.text.trim(value)
+			if value ~= '' then
+				return value
+			end
+		end
+		return nil
+	end
+})
+&lt;/syntaxhighlight&gt;
+
+Example 2: this function removes blank arguments and converts all argument values to lower case, but doesn't trim whitespace from positional parameters.
+&lt;syntaxhighlight lang="lua"&gt;
+local args = getArgs(frame, {
+	valueFunc = function (key, value)
+		if not value then
+			return nil
+		end
+		value = mw.ustring.lower(value)
+		if mw.ustring.find(value, '%S') then
+			return value
+		end
+		return nil
+	end
+})
+&lt;/syntaxhighlight&gt;
+
+Note: the above functions will fail if passed input that is not of type &lt;code&gt;string&lt;/code&gt; or &lt;code&gt;nil&lt;/code&gt;. This might be the case if you use the &lt;code&gt;getArgs&lt;/code&gt; function in the main function of your module, and that function is called by another Lua module. In this case, you will need to check the type of your input. This is not a problem if you are using a function specially for arguments from #invoke (i.e. you have &lt;code&gt;p.main&lt;/code&gt; and &lt;code&gt;p._main&lt;/code&gt; functions, or something similar).
+
+{{cot|Examples 1 and 2 with type checking}}
+Example 1:
+&lt;syntaxhighlight lang="lua"&gt;
+local args = getArgs(frame, {
+	valueFunc = function (key, value)
+		if key == 1 then
+			return value
+		elseif type(value) == 'string' then
+			value = mw.text.trim(value)
+			if value ~= '' then
+				return value
+			else
+				return nil
+			end
+		else
+			return value
+		end
+	end
+})
+&lt;/syntaxhighlight&gt;
+
+Example 2:
+&lt;syntaxhighlight lang="lua"&gt;
+local args = getArgs(frame, {
+	valueFunc = function (key, value)
+		if type(value) == 'string' then
+			value = mw.ustring.lower(value)
+			if mw.ustring.find(value, '%S') then
+				return value
+			else
+				return nil
+			end
+		else
+			return value
+		end
+	end
+})
+&lt;/syntaxhighlight&gt;
+{{cob}}
+
+Also, please note that the &lt;code&gt;valueFunc&lt;/code&gt; function is called more or less every time an argument is requested from the &lt;code&gt;args&lt;/code&gt; table, so if you care about performance you should make sure you aren't doing anything inefficient with your code.
+
+=== Frames and parent frames ===
+
+Arguments in the &lt;code&gt;args&lt;/code&gt; table can be passed from the current frame or from its parent frame at the same time. To understand what this means, it is easiest to give an example. Let's say that we have a module called &lt;code&gt;Module:ExampleArgs&lt;/code&gt;. This module prints the first two positional arguments that it is passed.
+
+{{cot|Module:ExampleArgs code}}
+&lt;syntaxhighlight lang="lua"&gt;
+local getArgs = require('Module:Arguments').getArgs
+local p = {}
+
+function p.main(frame)
+	local args = getArgs(frame)
+	return p._main(args)
+end
+
+function p._main(args)
+	local first = args[1] or ''
+	local second = args[2] or ''
+	return first .. ' ' .. second
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+{{cob}}
+
+&lt;code&gt;Template:ExampleArgs&lt;/code&gt; contains the code &lt;code&gt;&lt;nowiki&gt;{{#invoke:ExampleArgs|main|''firstInvokeArg''}}&lt;/nowiki&gt;&lt;/code&gt;.
+
+Now if we were to call &lt;code&gt;Template:ExampleArgs&lt;/code&gt;, the following would happen:
+
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;pre&gt;{{#invoke:ExampleArgs|main|''firstInvokeArg''}}
+
+(call #invoke directly without template)&lt;/pre&gt;
+| ''firstInvokeArg''
+
+(call #invoke directly without template)
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg'' secondTemplateArg
+|}
+
+There are three options you can set to change this behaviour: &lt;code&gt;frameOnly&lt;/code&gt;, &lt;code&gt;parentOnly&lt;/code&gt; and &lt;code&gt;parentFirst&lt;/code&gt;. If you set &lt;code&gt;frameOnly&lt;/code&gt; then only arguments passed from the current frame will be accepted; if you set &lt;code&gt;parentOnly&lt;/code&gt; then only arguments passed from the parent frame will be accepted; and if you set &lt;code&gt;parentFirst&lt;/code&gt; then arguments will be passed from both the current and parent frames, but the parent frame will have priority over the current frame. Here are the results in terms of &lt;code&gt;Template:ExampleArgs&lt;/code&gt;:
+
+; frameOnly
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|}
+
+; parentOnly
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+| 
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg secondTemplateArg
+|}
+
+; parentFirst
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg secondTemplateArg
+|}
+
+Notes:
+# If you set both the &lt;code&gt;frameOnly&lt;/code&gt; and &lt;code&gt;parentOnly&lt;/code&gt; options, the module won't fetch any arguments at all from #invoke. This is probably not what you want.
+# In some situations a parent frame may not be available, e.g. if getArgs is passed the parent frame rather than the current frame. In this case, only the frame arguments will be used (unless parentOnly is set, in which case no arguments will be used) and the &lt;code&gt;parentFirst&lt;/code&gt; and &lt;code&gt;frameOnly&lt;/code&gt; options will have no effect.
+
+=== Wrappers ===
+
+The ''wrappers'' option is used to specify a limited number of templates as ''wrapper templates'', that is, templates whose only purpose is to call a module. If the module detects that it is being called from a wrapper template, it will only check for arguments in the parent frame; otherwise it will only check for arguments in the frame passed to getArgs. This allows modules to be called by either #invoke or through a wrapper template without the loss of performance associated with having to check both the frame and the parent frame for each argument lookup.
+
+For example, the only content of [[Template:Side box]] (excluding content in {{tag|noinclude}} tags) is &lt;code&gt;&lt;nowiki&gt;{{#invoke:Side box|main}}&lt;/nowiki&gt;&lt;/code&gt;. There is no point in checking the arguments passed directly to the #invoke statement for this template, as no arguments will ever be specified there. We can avoid checking arguments passed to #invoke by using the ''parentOnly'' option, but if we do this then #invoke will not work from other pages either. If this were the case, the {{para|text|Some text}} in the code &lt;code&gt;&lt;nowiki&gt;{{#invoke:Side box|main|text=Some text}}&lt;/nowiki&gt;&lt;/code&gt; would be ignored completely, no matter what page it was used from. By using the &lt;code&gt;wrappers&lt;/code&gt; option to specify 'Template:Side box' as a wrapper, we can make &lt;code&gt;&lt;nowiki&gt;{{#invoke:Side box|main|text=Some text}}&lt;/nowiki&gt;&lt;/code&gt; work from most pages, while still not requiring that the module check for arguments on the [[Template:Side box]] page itself.
+
+Wrappers can be specified either as a string, or as an array of strings.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local args = getArgs(frame, {
+	wrappers = 'Template:Wrapper template'
+})
+&lt;/syntaxhighlight&gt;
+
+
+&lt;syntaxhighlight lang="lua"&gt;
+local args = getArgs(frame, {
+	wrappers = {
+		'Template:Wrapper 1',
+		'Template:Wrapper 2',
+		-- Any number of wrapper templates can be added here.
+	}
+})
+&lt;/syntaxhighlight&gt;
+
+The &lt;code&gt;wrappers&lt;/code&gt; option changes the default behaviors of the &lt;code&gt;frameOnly&lt;/code&gt; and &lt;code&gt;parentOnly&lt;/code&gt; options.
+
+{{collapse top|title=Behaviors of ''frameOnly'' and ''parentOnly'' in relations with wrapper templates}}
+
+; If &lt;code&gt;Template:ExampleArgs&lt;/code&gt; is specified as a wrapper template:
+
+; &lt;code&gt;parentOnly&lt;/code&gt; is true or not set
+
+The frame arguments will not be used at all.
+
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+|
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg secondTemplateArg
+|}
+
+; &lt;code&gt;parentOnly&lt;/code&gt; is false, &lt;code&gt;parentFirst&lt;/code&gt; is false or not set
+
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg'' secondTemplateArg
+|}
+
+; &lt;code&gt;parentOnly&lt;/code&gt; is false, &lt;code&gt;parentFirst&lt;/code&gt; is true
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg secondTemplateArg
+|}
+
+; If &lt;code&gt;wrappers&lt;/code&gt; is set but &lt;code&gt;Template:ExampleArgs&lt;/code&gt; is not in the &lt;code&gt;wrappers&lt;/code&gt; list:
+
+; &lt;code&gt;frameOnly&lt;/code&gt; is true or not set
+
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|}
+
+; &lt;code&gt;frameOnly&lt;/code&gt; is false, &lt;code&gt;parentFirst&lt;/code&gt; is false or not set
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg'' secondTemplateArg
+|}
+
+; &lt;code&gt;frameOnly&lt;/code&gt; is false, &lt;code&gt;parentFirst&lt;/code&gt; is true
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg secondTemplateArg
+|}
+{{collapse bottom}}
+
+Notes:
+# The module will automatically detect if it is being called from a wrapper template's /sandbox subpage, so there is no need to specify sandbox pages explicitly.
+# If the ''wrappers'' option is set and no parent frame is available, the module will always get the arguments from the frame passed to &lt;code&gt;getArgs&lt;/code&gt;.
+
+=== Writing to the args table ===
+
+Sometimes it can be useful to write new values to the args table. This is possible with the default settings of this module. (However, bear in mind that it is usually better coding style to create a new table with your new values and copy arguments from the args table as needed.)
+
+&lt;syntaxhighlight lang="lua"&gt;
+args.foo = 'some value'
+&lt;/syntaxhighlight&gt;
+
+It is possible to alter this behaviour with the &lt;code&gt;readOnly&lt;/code&gt; and &lt;code&gt;noOverwrite&lt;/code&gt; options. If &lt;code&gt;readOnly&lt;/code&gt; is set then it is not possible to write any values to the args table at all. If &lt;code&gt;noOverwrite&lt;/code&gt; is set, then it is possible to add new values to the table, but it is not possible to add a value if it would overwrite any arguments that are passed from #invoke.
+
+== Notes ==
+
+=== Ref tags ===
+
+This module uses [[mw:Extension:Scribunto/Lua reference manual#Metatables|metatables]] to fetch arguments from #invoke. This allows access to both the frame arguments and the parent frame arguments without using the &lt;code&gt;pairs()&lt;/code&gt; function. This can help if your module might be passed {{tag|ref}} tags as input.
+
+As soon as {{tag|ref}} tags are accessed from Lua, they are processed by the MediaWiki software and the reference will appear in the reference list at the bottom of the article. If your module proceeds to omit the reference tag from the output, you will end up with a phantom reference – a reference that appears in the reference list but without any number linking to it. This has been a problem with modules that use &lt;code&gt;pairs()&lt;/code&gt; to detect whether to use the arguments from the frame or the parent frame, as those modules automatically process every available argument.
+
+This module solves this problem by allowing access to both frame and parent frame arguments, while still only fetching those arguments when it is necessary. The problem will still occur if you use &lt;code&gt;pairs(args)&lt;/code&gt; elsewhere in your module, however.
+
+=== Known limitations ===
+
+The use of metatables also has its downsides. Most of the normal Lua table tools won't work properly on the args table, including the &lt;code&gt;#&lt;/code&gt; operator, the &lt;code&gt;next()&lt;/code&gt; function, and the functions in the table library. If using these is important for your module, you should use your own argument processing function instead of this module.&lt;includeonly&gt;{{#ifeq:{{SUBPAGENAME}}|sandbox||
+[[Category:Lua metamodules]]
+}}&lt;/includeonly&gt;
+
+== See also ==
+* [[Module:Params]]
+* {{tl|Template parameter value}}
+&lt;includeonly&gt;{{Sandbox other||
+&lt;!-- Categories below this line; interwikis at Wikidata --&gt;
+[[Category:Wikipedia utility modules]]
+}}&lt;/includeonly&gt;
+&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>kgdii6ylu1nqsy3672zpawttsdlkgdn</sha1>
+    </revision>
+    <revision>
+      <id>884848</id>
+      <parentid>884847</parentid>
+      <timestamp>2025-01-07T10:27:10Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: importing modules</comment>
+      <origin>884847</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="20159" sha1="kgdii6ylu1nqsy3672zpawttsdlkgdn" xml:space="preserve">{{Used in system}}
+{{Module rating|p}}
+{{cascade-protected template|page=module}}
+
+This module provides easy processing of arguments passed from &lt;code&gt;#invoke&lt;/code&gt;. It is a meta-module, meant for use by other modules, and should not be called from &lt;code&gt;#invoke&lt;/code&gt; directly (for a module directly invocable by templates you might want to have a look at {{ml|params|}}). Its features include:
+* Easy trimming of arguments and removal of blank arguments.
+* Arguments can be passed by both the current frame and by the parent frame at the same time. (More details below.)
+* Arguments can be passed in directly from another Lua module or from the debug console.
+* Most features can be customized.
+
+== Basic use ==
+
+First, you need to load the module. It contains one function, named &lt;code&gt;getArgs&lt;/code&gt;.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local getArgs = require('Module:Arguments').getArgs
+&lt;/syntaxhighlight&gt;
+
+In the most basic scenario, you can use getArgs inside your main function. The variable &lt;code&gt;args&lt;/code&gt; is a table containing the arguments from #invoke. (See below for details.)
+
+&lt;syntaxhighlight lang="lua"&gt;
+local getArgs = require('Module:Arguments').getArgs
+local p = {}
+
+function p.main(frame)
+	local args = getArgs(frame)
+	-- Main module code goes here.
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+
+=== Recommended practice ===
+However, the recommended practice is to use a function just for processing arguments from #invoke. This means that if someone calls your module from another Lua module you don't have to have a frame object available, which improves performance.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local getArgs = require('Module:Arguments').getArgs
+local p = {}
+
+function p.main(frame)
+	local args = getArgs(frame)
+	return p._main(args)
+end
+
+function p._main(args)
+	-- Main module code goes here.
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+
+The way this is called from a template is &lt;code&gt;&lt;nowiki&gt;{{#invoke:Example|main}}&lt;/nowiki&gt;&lt;/code&gt; (optionally with some parameters like &lt;code&gt;&lt;nowiki&gt;{{#invoke:Example|main|arg1=value1|arg2=value2}}&lt;/nowiki&gt;&lt;/code&gt;), and the way this is called from a module is &lt;syntaxhighlight lang=lua inline&gt;require('Module:Example')._main({arg1 = 'value1', arg2 = value2, 'spaced arg3' = 'value3'})&lt;/syntaxhighlight&gt;. What this second one does is construct a table with the arguments in it, then gives that table to the p._main(args) function, which uses it natively.
+
+=== Multiple functions ===
+If you want multiple functions to use the arguments, and you also want them to be accessible from #invoke, you can use a wrapper function.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local getArgs = require('Module:Arguments').getArgs
+
+local p = {}
+
+local function makeInvokeFunc(funcName)
+	return function (frame)
+		local args = getArgs(frame)
+		return p[funcName](args)
+	end
+end
+
+p.func1 = makeInvokeFunc('_func1')
+
+function p._func1(args)
+	-- Code for the first function goes here.
+end
+
+p.func2 = makeInvokeFunc('_func2')
+
+function p._func2(args)
+	-- Code for the second function goes here.
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+
+== Options ==
+
+The following options are available. They are explained in the sections below.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local args = getArgs(frame, {
+	trim = false,
+	removeBlanks = false,
+	valueFunc = function (key, value)
+		-- Code for processing one argument
+	end,
+
+	frameOnly = true,
+	parentOnly = true,
+	parentFirst = true,
+
+	wrappers = {
+		'Template:A wrapper template',
+		'Template:Another wrapper template'
+	},
+
+	readOnly = true,
+	noOverwrite = true
+})
+&lt;/syntaxhighlight&gt;
+
+=== Trimming whitespace ===
+
+MediaWiki trims whitespace for named arguments coming from #invoke or a template call, but preserves whitespace for positional arguments. By default, this module helps trim whitespace also for position arguments. To preserve whitespace for positional arguments, set the &lt;code&gt;trim&lt;/code&gt; option to &lt;code&gt;false&lt;/code&gt;.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local args = getArgs(frame, {
+	trim = false
+})
+&lt;/syntaxhighlight&gt;
+
+When the &lt;code&gt;valueFunc&lt;/code&gt; option is given, the &lt;code&gt;valueFunc&lt;/code&gt; function will be responsible for trimming whitespace, and the &lt;code&gt;trim&lt;/code&gt; option will have no effect.
+
+=== Removing blank arguments ===
+
+"Blank arguments" are arguments from #invoke or template that are blank strings or consist of only whitespace. By default, this module removes all blank arguments. To preserve the blank arguments, set the &lt;code&gt;removeBlanks&lt;/code&gt; option to &lt;code&gt;false&lt;/code&gt;.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local args = getArgs(frame, {
+	removeBlanks = false
+})
+&lt;/syntaxhighlight&gt;
+
+This might be necessary for some templates' operation.
+
+Note: When converting MediaWiki templates to Lua, keep in mind that in Lua, blank strings and strings consisting only of whitespace are considered true. If you don't pay attention to such blank arguments when you write your Lua modules, you might treat something as true that should actually be treated as false.
+
+When the &lt;code&gt;valueFunc&lt;/code&gt; option is given, the &lt;code&gt;valueFunc&lt;/code&gt; function will be responsible for handling blank arguments, and the &lt;code&gt;removeBlanks&lt;/code&gt; option will have no effect.
+
+=== Custom formatting of arguments ===
+
+Sometimes you want to remove some blank arguments but not others, or perhaps you might want to put all of the positional arguments in lower case. To do things like this you can use the &lt;code&gt;valueFunc&lt;/code&gt; option. The input to this option must be a function that takes two parameters, &lt;code&gt;key&lt;/code&gt; and &lt;code&gt;value&lt;/code&gt;, and returns a single value. This value is what you will get when you access the field &lt;code&gt;key&lt;/code&gt; in the &lt;code&gt;args&lt;/code&gt; table.
+
+Example 1: this function preserves whitespace for the first positional argument's value, but trims all other arguments' value and removes all other blank arguments.
+&lt;syntaxhighlight lang="lua"&gt;
+local args = getArgs(frame, {
+	valueFunc = function (key, value)
+		if key == 1 then
+			return value
+		elseif value then
+			value = mw.text.trim(value)
+			if value ~= '' then
+				return value
+			end
+		end
+		return nil
+	end
+})
+&lt;/syntaxhighlight&gt;
+
+Example 2: this function removes blank arguments and converts all argument values to lower case, but doesn't trim whitespace from positional parameters.
+&lt;syntaxhighlight lang="lua"&gt;
+local args = getArgs(frame, {
+	valueFunc = function (key, value)
+		if not value then
+			return nil
+		end
+		value = mw.ustring.lower(value)
+		if mw.ustring.find(value, '%S') then
+			return value
+		end
+		return nil
+	end
+})
+&lt;/syntaxhighlight&gt;
+
+Note: the above functions will fail if passed input that is not of type &lt;code&gt;string&lt;/code&gt; or &lt;code&gt;nil&lt;/code&gt;. This might be the case if you use the &lt;code&gt;getArgs&lt;/code&gt; function in the main function of your module, and that function is called by another Lua module. In this case, you will need to check the type of your input. This is not a problem if you are using a function specially for arguments from #invoke (i.e. you have &lt;code&gt;p.main&lt;/code&gt; and &lt;code&gt;p._main&lt;/code&gt; functions, or something similar).
+
+{{cot|Examples 1 and 2 with type checking}}
+Example 1:
+&lt;syntaxhighlight lang="lua"&gt;
+local args = getArgs(frame, {
+	valueFunc = function (key, value)
+		if key == 1 then
+			return value
+		elseif type(value) == 'string' then
+			value = mw.text.trim(value)
+			if value ~= '' then
+				return value
+			else
+				return nil
+			end
+		else
+			return value
+		end
+	end
+})
+&lt;/syntaxhighlight&gt;
+
+Example 2:
+&lt;syntaxhighlight lang="lua"&gt;
+local args = getArgs(frame, {
+	valueFunc = function (key, value)
+		if type(value) == 'string' then
+			value = mw.ustring.lower(value)
+			if mw.ustring.find(value, '%S') then
+				return value
+			else
+				return nil
+			end
+		else
+			return value
+		end
+	end
+})
+&lt;/syntaxhighlight&gt;
+{{cob}}
+
+Also, please note that the &lt;code&gt;valueFunc&lt;/code&gt; function is called more or less every time an argument is requested from the &lt;code&gt;args&lt;/code&gt; table, so if you care about performance you should make sure you aren't doing anything inefficient with your code.
+
+=== Frames and parent frames ===
+
+Arguments in the &lt;code&gt;args&lt;/code&gt; table can be passed from the current frame or from its parent frame at the same time. To understand what this means, it is easiest to give an example. Let's say that we have a module called &lt;code&gt;Module:ExampleArgs&lt;/code&gt;. This module prints the first two positional arguments that it is passed.
+
+{{cot|Module:ExampleArgs code}}
+&lt;syntaxhighlight lang="lua"&gt;
+local getArgs = require('Module:Arguments').getArgs
+local p = {}
+
+function p.main(frame)
+	local args = getArgs(frame)
+	return p._main(args)
+end
+
+function p._main(args)
+	local first = args[1] or ''
+	local second = args[2] or ''
+	return first .. ' ' .. second
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+{{cob}}
+
+&lt;code&gt;Template:ExampleArgs&lt;/code&gt; contains the code &lt;code&gt;&lt;nowiki&gt;{{#invoke:ExampleArgs|main|''firstInvokeArg''}}&lt;/nowiki&gt;&lt;/code&gt;.
+
+Now if we were to call &lt;code&gt;Template:ExampleArgs&lt;/code&gt;, the following would happen:
+
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;pre&gt;{{#invoke:ExampleArgs|main|''firstInvokeArg''}}
+
+(call #invoke directly without template)&lt;/pre&gt;
+| ''firstInvokeArg''
+
+(call #invoke directly without template)
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg'' secondTemplateArg
+|}
+
+There are three options you can set to change this behaviour: &lt;code&gt;frameOnly&lt;/code&gt;, &lt;code&gt;parentOnly&lt;/code&gt; and &lt;code&gt;parentFirst&lt;/code&gt;. If you set &lt;code&gt;frameOnly&lt;/code&gt; then only arguments passed from the current frame will be accepted; if you set &lt;code&gt;parentOnly&lt;/code&gt; then only arguments passed from the parent frame will be accepted; and if you set &lt;code&gt;parentFirst&lt;/code&gt; then arguments will be passed from both the current and parent frames, but the parent frame will have priority over the current frame. Here are the results in terms of &lt;code&gt;Template:ExampleArgs&lt;/code&gt;:
+
+; frameOnly
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|}
+
+; parentOnly
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+| 
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg secondTemplateArg
+|}
+
+; parentFirst
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg secondTemplateArg
+|}
+
+Notes:
+# If you set both the &lt;code&gt;frameOnly&lt;/code&gt; and &lt;code&gt;parentOnly&lt;/code&gt; options, the module won't fetch any arguments at all from #invoke. This is probably not what you want.
+# In some situations a parent frame may not be available, e.g. if getArgs is passed the parent frame rather than the current frame. In this case, only the frame arguments will be used (unless parentOnly is set, in which case no arguments will be used) and the &lt;code&gt;parentFirst&lt;/code&gt; and &lt;code&gt;frameOnly&lt;/code&gt; options will have no effect.
+
+=== Wrappers ===
+
+The ''wrappers'' option is used to specify a limited number of templates as ''wrapper templates'', that is, templates whose only purpose is to call a module. If the module detects that it is being called from a wrapper template, it will only check for arguments in the parent frame; otherwise it will only check for arguments in the frame passed to getArgs. This allows modules to be called by either #invoke or through a wrapper template without the loss of performance associated with having to check both the frame and the parent frame for each argument lookup.
+
+For example, the only content of [[Template:Side box]] (excluding content in {{tag|noinclude}} tags) is &lt;code&gt;&lt;nowiki&gt;{{#invoke:Side box|main}}&lt;/nowiki&gt;&lt;/code&gt;. There is no point in checking the arguments passed directly to the #invoke statement for this template, as no arguments will ever be specified there. We can avoid checking arguments passed to #invoke by using the ''parentOnly'' option, but if we do this then #invoke will not work from other pages either. If this were the case, the {{para|text|Some text}} in the code &lt;code&gt;&lt;nowiki&gt;{{#invoke:Side box|main|text=Some text}}&lt;/nowiki&gt;&lt;/code&gt; would be ignored completely, no matter what page it was used from. By using the &lt;code&gt;wrappers&lt;/code&gt; option to specify 'Template:Side box' as a wrapper, we can make &lt;code&gt;&lt;nowiki&gt;{{#invoke:Side box|main|text=Some text}}&lt;/nowiki&gt;&lt;/code&gt; work from most pages, while still not requiring that the module check for arguments on the [[Template:Side box]] page itself.
+
+Wrappers can be specified either as a string, or as an array of strings.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local args = getArgs(frame, {
+	wrappers = 'Template:Wrapper template'
+})
+&lt;/syntaxhighlight&gt;
+
+
+&lt;syntaxhighlight lang="lua"&gt;
+local args = getArgs(frame, {
+	wrappers = {
+		'Template:Wrapper 1',
+		'Template:Wrapper 2',
+		-- Any number of wrapper templates can be added here.
+	}
+})
+&lt;/syntaxhighlight&gt;
+
+The &lt;code&gt;wrappers&lt;/code&gt; option changes the default behaviors of the &lt;code&gt;frameOnly&lt;/code&gt; and &lt;code&gt;parentOnly&lt;/code&gt; options.
+
+{{collapse top|title=Behaviors of ''frameOnly'' and ''parentOnly'' in relations with wrapper templates}}
+
+; If &lt;code&gt;Template:ExampleArgs&lt;/code&gt; is specified as a wrapper template:
+
+; &lt;code&gt;parentOnly&lt;/code&gt; is true or not set
+
+The frame arguments will not be used at all.
+
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+|
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg secondTemplateArg
+|}
+
+; &lt;code&gt;parentOnly&lt;/code&gt; is false, &lt;code&gt;parentFirst&lt;/code&gt; is false or not set
+
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg'' secondTemplateArg
+|}
+
+; &lt;code&gt;parentOnly&lt;/code&gt; is false, &lt;code&gt;parentFirst&lt;/code&gt; is true
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg secondTemplateArg
+|}
+
+; If &lt;code&gt;wrappers&lt;/code&gt; is set but &lt;code&gt;Template:ExampleArgs&lt;/code&gt; is not in the &lt;code&gt;wrappers&lt;/code&gt; list:
+
+; &lt;code&gt;frameOnly&lt;/code&gt; is true or not set
+
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|}
+
+; &lt;code&gt;frameOnly&lt;/code&gt; is false, &lt;code&gt;parentFirst&lt;/code&gt; is false or not set
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg'' secondTemplateArg
+|}
+
+; &lt;code&gt;frameOnly&lt;/code&gt; is false, &lt;code&gt;parentFirst&lt;/code&gt; is true
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg secondTemplateArg
+|}
+{{collapse bottom}}
+
+Notes:
+# The module will automatically detect if it is being called from a wrapper template's /sandbox subpage, so there is no need to specify sandbox pages explicitly.
+# If the ''wrappers'' option is set and no parent frame is available, the module will always get the arguments from the frame passed to &lt;code&gt;getArgs&lt;/code&gt;.
+
+=== Writing to the args table ===
+
+Sometimes it can be useful to write new values to the args table. This is possible with the default settings of this module. (However, bear in mind that it is usually better coding style to create a new table with your new values and copy arguments from the args table as needed.)
+
+&lt;syntaxhighlight lang="lua"&gt;
+args.foo = 'some value'
+&lt;/syntaxhighlight&gt;
+
+It is possible to alter this behaviour with the &lt;code&gt;readOnly&lt;/code&gt; and &lt;code&gt;noOverwrite&lt;/code&gt; options. If &lt;code&gt;readOnly&lt;/code&gt; is set then it is not possible to write any values to the args table at all. If &lt;code&gt;noOverwrite&lt;/code&gt; is set, then it is possible to add new values to the table, but it is not possible to add a value if it would overwrite any arguments that are passed from #invoke.
+
+== Notes ==
+
+=== Ref tags ===
+
+This module uses [[mw:Extension:Scribunto/Lua reference manual#Metatables|metatables]] to fetch arguments from #invoke. This allows access to both the frame arguments and the parent frame arguments without using the &lt;code&gt;pairs()&lt;/code&gt; function. This can help if your module might be passed {{tag|ref}} tags as input.
+
+As soon as {{tag|ref}} tags are accessed from Lua, they are processed by the MediaWiki software and the reference will appear in the reference list at the bottom of the article. If your module proceeds to omit the reference tag from the output, you will end up with a phantom reference – a reference that appears in the reference list but without any number linking to it. This has been a problem with modules that use &lt;code&gt;pairs()&lt;/code&gt; to detect whether to use the arguments from the frame or the parent frame, as those modules automatically process every available argument.
+
+This module solves this problem by allowing access to both frame and parent frame arguments, while still only fetching those arguments when it is necessary. The problem will still occur if you use &lt;code&gt;pairs(args)&lt;/code&gt; elsewhere in your module, however.
+
+=== Known limitations ===
+
+The use of metatables also has its downsides. Most of the normal Lua table tools won't work properly on the args table, including the &lt;code&gt;#&lt;/code&gt; operator, the &lt;code&gt;next()&lt;/code&gt; function, and the functions in the table library. If using these is important for your module, you should use your own argument processing function instead of this module.&lt;includeonly&gt;{{#ifeq:{{SUBPAGENAME}}|sandbox||
+[[Category:Lua metamodules]]
+}}&lt;/includeonly&gt;
+
+== See also ==
+* [[Module:Params]]
+* {{tl|Template parameter value}}
+&lt;includeonly&gt;{{Sandbox other||
+&lt;!-- Categories below this line; interwikis at Wikidata --&gt;
+[[Category:Wikipedia utility modules]]
+}}&lt;/includeonly&gt;
+&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>kgdii6ylu1nqsy3672zpawttsdlkgdn</sha1>
+    </revision>
+    <revision>
+      <id>7527</id>
+      <timestamp>2025-11-22T14:37:59Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Text replacement - "↵↵↵" to "
+"</comment>
+      <origin>7527</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="20157" sha1="lk4np4unpptxmj130t7lzuxjltzijdx" xml:space="preserve">{{Used in system}}
+{{Module rating|p}}
+{{cascade-protected template|page=module}}
+
+This module provides easy processing of arguments passed from &lt;code&gt;#invoke&lt;/code&gt;. It is a meta-module, meant for use by other modules, and should not be called from &lt;code&gt;#invoke&lt;/code&gt; directly (for a module directly invocable by templates you might want to have a look at {{ml|params|}}). Its features include:
+* Easy trimming of arguments and removal of blank arguments.
+* Arguments can be passed by both the current frame and by the parent frame at the same time. (More details below.)
+* Arguments can be passed in directly from another Lua module or from the debug console.
+* Most features can be customized.
+
+== Basic use ==
+
+First, you need to load the module. It contains one function, named &lt;code&gt;getArgs&lt;/code&gt;.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local getArgs = require('Module:Arguments').getArgs
+&lt;/syntaxhighlight&gt;
+
+In the most basic scenario, you can use getArgs inside your main function. The variable &lt;code&gt;args&lt;/code&gt; is a table containing the arguments from #invoke. (See below for details.)
+
+&lt;syntaxhighlight lang="lua"&gt;
+local getArgs = require('Module:Arguments').getArgs
+local p = {}
+
+function p.main(frame)
+	local args = getArgs(frame)
+	-- Main module code goes here.
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+
+=== Recommended practice ===
+However, the recommended practice is to use a function just for processing arguments from #invoke. This means that if someone calls your module from another Lua module you don't have to have a frame object available, which improves performance.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local getArgs = require('Module:Arguments').getArgs
+local p = {}
+
+function p.main(frame)
+	local args = getArgs(frame)
+	return p._main(args)
+end
+
+function p._main(args)
+	-- Main module code goes here.
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+
+The way this is called from a template is &lt;code&gt;&lt;nowiki&gt;{{#invoke:Example|main}}&lt;/nowiki&gt;&lt;/code&gt; (optionally with some parameters like &lt;code&gt;&lt;nowiki&gt;{{#invoke:Example|main|arg1=value1|arg2=value2}}&lt;/nowiki&gt;&lt;/code&gt;), and the way this is called from a module is &lt;syntaxhighlight lang=lua inline&gt;require('Module:Example')._main({arg1 = 'value1', arg2 = value2, 'spaced arg3' = 'value3'})&lt;/syntaxhighlight&gt;. What this second one does is construct a table with the arguments in it, then gives that table to the p._main(args) function, which uses it natively.
+
+=== Multiple functions ===
+If you want multiple functions to use the arguments, and you also want them to be accessible from #invoke, you can use a wrapper function.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local getArgs = require('Module:Arguments').getArgs
+
+local p = {}
+
+local function makeInvokeFunc(funcName)
+	return function (frame)
+		local args = getArgs(frame)
+		return p[funcName](args)
+	end
+end
+
+p.func1 = makeInvokeFunc('_func1')
+
+function p._func1(args)
+	-- Code for the first function goes here.
+end
+
+p.func2 = makeInvokeFunc('_func2')
+
+function p._func2(args)
+	-- Code for the second function goes here.
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+
+== Options ==
+
+The following options are available. They are explained in the sections below.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local args = getArgs(frame, {
+	trim = false,
+	removeBlanks = false,
+	valueFunc = function (key, value)
+		-- Code for processing one argument
+	end,
+
+	frameOnly = true,
+	parentOnly = true,
+	parentFirst = true,
+
+	wrappers = {
+		'Template:A wrapper template',
+		'Template:Another wrapper template'
+	},
+
+	readOnly = true,
+	noOverwrite = true
+})
+&lt;/syntaxhighlight&gt;
+
+=== Trimming whitespace ===
+
+MediaWiki trims whitespace for named arguments coming from #invoke or a template call, but preserves whitespace for positional arguments. By default, this module helps trim whitespace also for position arguments. To preserve whitespace for positional arguments, set the &lt;code&gt;trim&lt;/code&gt; option to &lt;code&gt;false&lt;/code&gt;.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local args = getArgs(frame, {
+	trim = false
+})
+&lt;/syntaxhighlight&gt;
+
+When the &lt;code&gt;valueFunc&lt;/code&gt; option is given, the &lt;code&gt;valueFunc&lt;/code&gt; function will be responsible for trimming whitespace, and the &lt;code&gt;trim&lt;/code&gt; option will have no effect.
+
+=== Removing blank arguments ===
+
+"Blank arguments" are arguments from #invoke or template that are blank strings or consist of only whitespace. By default, this module removes all blank arguments. To preserve the blank arguments, set the &lt;code&gt;removeBlanks&lt;/code&gt; option to &lt;code&gt;false&lt;/code&gt;.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local args = getArgs(frame, {
+	removeBlanks = false
+})
+&lt;/syntaxhighlight&gt;
+
+This might be necessary for some templates' operation.
+
+Note: When converting MediaWiki templates to Lua, keep in mind that in Lua, blank strings and strings consisting only of whitespace are considered true. If you don't pay attention to such blank arguments when you write your Lua modules, you might treat something as true that should actually be treated as false.
+
+When the &lt;code&gt;valueFunc&lt;/code&gt; option is given, the &lt;code&gt;valueFunc&lt;/code&gt; function will be responsible for handling blank arguments, and the &lt;code&gt;removeBlanks&lt;/code&gt; option will have no effect.
+
+=== Custom formatting of arguments ===
+
+Sometimes you want to remove some blank arguments but not others, or perhaps you might want to put all of the positional arguments in lower case. To do things like this you can use the &lt;code&gt;valueFunc&lt;/code&gt; option. The input to this option must be a function that takes two parameters, &lt;code&gt;key&lt;/code&gt; and &lt;code&gt;value&lt;/code&gt;, and returns a single value. This value is what you will get when you access the field &lt;code&gt;key&lt;/code&gt; in the &lt;code&gt;args&lt;/code&gt; table.
+
+Example 1: this function preserves whitespace for the first positional argument's value, but trims all other arguments' value and removes all other blank arguments.
+&lt;syntaxhighlight lang="lua"&gt;
+local args = getArgs(frame, {
+	valueFunc = function (key, value)
+		if key == 1 then
+			return value
+		elseif value then
+			value = mw.text.trim(value)
+			if value ~= '' then
+				return value
+			end
+		end
+		return nil
+	end
+})
+&lt;/syntaxhighlight&gt;
+
+Example 2: this function removes blank arguments and converts all argument values to lower case, but doesn't trim whitespace from positional parameters.
+&lt;syntaxhighlight lang="lua"&gt;
+local args = getArgs(frame, {
+	valueFunc = function (key, value)
+		if not value then
+			return nil
+		end
+		value = mw.ustring.lower(value)
+		if mw.ustring.find(value, '%S') then
+			return value
+		end
+		return nil
+	end
+})
+&lt;/syntaxhighlight&gt;
+
+Note: the above functions will fail if passed input that is not of type &lt;code&gt;string&lt;/code&gt; or &lt;code&gt;nil&lt;/code&gt;. This might be the case if you use the &lt;code&gt;getArgs&lt;/code&gt; function in the main function of your module, and that function is called by another Lua module. In this case, you will need to check the type of your input. This is not a problem if you are using a function specially for arguments from #invoke (i.e. you have &lt;code&gt;p.main&lt;/code&gt; and &lt;code&gt;p._main&lt;/code&gt; functions, or something similar).
+
+{{cot|Examples 1 and 2 with type checking}}
+Example 1:
+&lt;syntaxhighlight lang="lua"&gt;
+local args = getArgs(frame, {
+	valueFunc = function (key, value)
+		if key == 1 then
+			return value
+		elseif type(value) == 'string' then
+			value = mw.text.trim(value)
+			if value ~= '' then
+				return value
+			else
+				return nil
+			end
+		else
+			return value
+		end
+	end
+})
+&lt;/syntaxhighlight&gt;
+
+Example 2:
+&lt;syntaxhighlight lang="lua"&gt;
+local args = getArgs(frame, {
+	valueFunc = function (key, value)
+		if type(value) == 'string' then
+			value = mw.ustring.lower(value)
+			if mw.ustring.find(value, '%S') then
+				return value
+			else
+				return nil
+			end
+		else
+			return value
+		end
+	end
+})
+&lt;/syntaxhighlight&gt;
+{{cob}}
+
+Also, please note that the &lt;code&gt;valueFunc&lt;/code&gt; function is called more or less every time an argument is requested from the &lt;code&gt;args&lt;/code&gt; table, so if you care about performance you should make sure you aren't doing anything inefficient with your code.
+
+=== Frames and parent frames ===
+
+Arguments in the &lt;code&gt;args&lt;/code&gt; table can be passed from the current frame or from its parent frame at the same time. To understand what this means, it is easiest to give an example. Let's say that we have a module called &lt;code&gt;Module:ExampleArgs&lt;/code&gt;. This module prints the first two positional arguments that it is passed.
+
+{{cot|Module:ExampleArgs code}}
+&lt;syntaxhighlight lang="lua"&gt;
+local getArgs = require('Module:Arguments').getArgs
+local p = {}
+
+function p.main(frame)
+	local args = getArgs(frame)
+	return p._main(args)
+end
+
+function p._main(args)
+	local first = args[1] or ''
+	local second = args[2] or ''
+	return first .. ' ' .. second
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+{{cob}}
+
+&lt;code&gt;Template:ExampleArgs&lt;/code&gt; contains the code &lt;code&gt;&lt;nowiki&gt;{{#invoke:ExampleArgs|main|''firstInvokeArg''}}&lt;/nowiki&gt;&lt;/code&gt;.
+
+Now if we were to call &lt;code&gt;Template:ExampleArgs&lt;/code&gt;, the following would happen:
+
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;pre&gt;{{#invoke:ExampleArgs|main|''firstInvokeArg''}}
+
+(call #invoke directly without template)&lt;/pre&gt;
+| ''firstInvokeArg''
+
+(call #invoke directly without template)
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg'' secondTemplateArg
+|}
+
+There are three options you can set to change this behaviour: &lt;code&gt;frameOnly&lt;/code&gt;, &lt;code&gt;parentOnly&lt;/code&gt; and &lt;code&gt;parentFirst&lt;/code&gt;. If you set &lt;code&gt;frameOnly&lt;/code&gt; then only arguments passed from the current frame will be accepted; if you set &lt;code&gt;parentOnly&lt;/code&gt; then only arguments passed from the parent frame will be accepted; and if you set &lt;code&gt;parentFirst&lt;/code&gt; then arguments will be passed from both the current and parent frames, but the parent frame will have priority over the current frame. Here are the results in terms of &lt;code&gt;Template:ExampleArgs&lt;/code&gt;:
+
+; frameOnly
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|}
+
+; parentOnly
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+| 
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg secondTemplateArg
+|}
+
+; parentFirst
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg secondTemplateArg
+|}
+
+Notes:
+# If you set both the &lt;code&gt;frameOnly&lt;/code&gt; and &lt;code&gt;parentOnly&lt;/code&gt; options, the module won't fetch any arguments at all from #invoke. This is probably not what you want.
+# In some situations a parent frame may not be available, e.g. if getArgs is passed the parent frame rather than the current frame. In this case, only the frame arguments will be used (unless parentOnly is set, in which case no arguments will be used) and the &lt;code&gt;parentFirst&lt;/code&gt; and &lt;code&gt;frameOnly&lt;/code&gt; options will have no effect.
+
+=== Wrappers ===
+
+The ''wrappers'' option is used to specify a limited number of templates as ''wrapper templates'', that is, templates whose only purpose is to call a module. If the module detects that it is being called from a wrapper template, it will only check for arguments in the parent frame; otherwise it will only check for arguments in the frame passed to getArgs. This allows modules to be called by either #invoke or through a wrapper template without the loss of performance associated with having to check both the frame and the parent frame for each argument lookup.
+
+For example, the only content of [[Template:Side box]] (excluding content in {{tag|noinclude}} tags) is &lt;code&gt;&lt;nowiki&gt;{{#invoke:Side box|main}}&lt;/nowiki&gt;&lt;/code&gt;. There is no point in checking the arguments passed directly to the #invoke statement for this template, as no arguments will ever be specified there. We can avoid checking arguments passed to #invoke by using the ''parentOnly'' option, but if we do this then #invoke will not work from other pages either. If this were the case, the {{para|text|Some text}} in the code &lt;code&gt;&lt;nowiki&gt;{{#invoke:Side box|main|text=Some text}}&lt;/nowiki&gt;&lt;/code&gt; would be ignored completely, no matter what page it was used from. By using the &lt;code&gt;wrappers&lt;/code&gt; option to specify 'Template:Side box' as a wrapper, we can make &lt;code&gt;&lt;nowiki&gt;{{#invoke:Side box|main|text=Some text}}&lt;/nowiki&gt;&lt;/code&gt; work from most pages, while still not requiring that the module check for arguments on the [[Template:Side box]] page itself.
+
+Wrappers can be specified either as a string, or as an array of strings.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local args = getArgs(frame, {
+	wrappers = 'Template:Wrapper template'
+})
+&lt;/syntaxhighlight&gt;
+&lt;syntaxhighlight lang="lua"&gt;
+local args = getArgs(frame, {
+	wrappers = {
+		'Template:Wrapper 1',
+		'Template:Wrapper 2',
+		-- Any number of wrapper templates can be added here.
+	}
+})
+&lt;/syntaxhighlight&gt;
+
+The &lt;code&gt;wrappers&lt;/code&gt; option changes the default behaviors of the &lt;code&gt;frameOnly&lt;/code&gt; and &lt;code&gt;parentOnly&lt;/code&gt; options.
+
+{{collapse top|title=Behaviors of ''frameOnly'' and ''parentOnly'' in relations with wrapper templates}}
+
+; If &lt;code&gt;Template:ExampleArgs&lt;/code&gt; is specified as a wrapper template:
+
+; &lt;code&gt;parentOnly&lt;/code&gt; is true or not set
+
+The frame arguments will not be used at all.
+
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+|
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg secondTemplateArg
+|}
+
+; &lt;code&gt;parentOnly&lt;/code&gt; is false, &lt;code&gt;parentFirst&lt;/code&gt; is false or not set
+
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg'' secondTemplateArg
+|}
+
+; &lt;code&gt;parentOnly&lt;/code&gt; is false, &lt;code&gt;parentFirst&lt;/code&gt; is true
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg secondTemplateArg
+|}
+
+; If &lt;code&gt;wrappers&lt;/code&gt; is set but &lt;code&gt;Template:ExampleArgs&lt;/code&gt; is not in the &lt;code&gt;wrappers&lt;/code&gt; list:
+
+; &lt;code&gt;frameOnly&lt;/code&gt; is true or not set
+
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|}
+
+; &lt;code&gt;frameOnly&lt;/code&gt; is false, &lt;code&gt;parentFirst&lt;/code&gt; is false or not set
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg'' secondTemplateArg
+|}
+
+; &lt;code&gt;frameOnly&lt;/code&gt; is false, &lt;code&gt;parentFirst&lt;/code&gt; is true
+{| class="wikitable" style="width: 50em; max-width: 100%;"
+|-
+! style="width: 60%;" | Code
+! style="width: 40%;" | Result
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs}}&lt;/nowiki&gt;&lt;/code&gt;
+| ''firstInvokeArg''
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg
+|-
+| &lt;code&gt;&lt;nowiki&gt;{{ExampleArgs|firstTemplateArg|secondTemplateArg}}&lt;/nowiki&gt;&lt;/code&gt;
+| firstTemplateArg secondTemplateArg
+|}
+{{collapse bottom}}
+
+Notes:
+# The module will automatically detect if it is being called from a wrapper template's /sandbox subpage, so there is no need to specify sandbox pages explicitly.
+# If the ''wrappers'' option is set and no parent frame is available, the module will always get the arguments from the frame passed to &lt;code&gt;getArgs&lt;/code&gt;.
+
+=== Writing to the args table ===
+
+Sometimes it can be useful to write new values to the args table. This is possible with the default settings of this module. (However, bear in mind that it is usually better coding style to create a new table with your new values and copy arguments from the args table as needed.)
+
+&lt;syntaxhighlight lang="lua"&gt;
+args.foo = 'some value'
+&lt;/syntaxhighlight&gt;
+
+It is possible to alter this behaviour with the &lt;code&gt;readOnly&lt;/code&gt; and &lt;code&gt;noOverwrite&lt;/code&gt; options. If &lt;code&gt;readOnly&lt;/code&gt; is set then it is not possible to write any values to the args table at all. If &lt;code&gt;noOverwrite&lt;/code&gt; is set, then it is possible to add new values to the table, but it is not possible to add a value if it would overwrite any arguments that are passed from #invoke.
+
+== Notes ==
+
+=== Ref tags ===
+
+This module uses [[mw:Extension:Scribunto/Lua reference manual#Metatables|metatables]] to fetch arguments from #invoke. This allows access to both the frame arguments and the parent frame arguments without using the &lt;code&gt;pairs()&lt;/code&gt; function. This can help if your module might be passed {{tag|ref}} tags as input.
+
+As soon as {{tag|ref}} tags are accessed from Lua, they are processed by the MediaWiki software and the reference will appear in the reference list at the bottom of the article. If your module proceeds to omit the reference tag from the output, you will end up with a phantom reference – a reference that appears in the reference list but without any number linking to it. This has been a problem with modules that use &lt;code&gt;pairs()&lt;/code&gt; to detect whether to use the arguments from the frame or the parent frame, as those modules automatically process every available argument.
+
+This module solves this problem by allowing access to both frame and parent frame arguments, while still only fetching those arguments when it is necessary. The problem will still occur if you use &lt;code&gt;pairs(args)&lt;/code&gt; elsewhere in your module, however.
+
+=== Known limitations ===
+
+The use of metatables also has its downsides. Most of the normal Lua table tools won't work properly on the args table, including the &lt;code&gt;#&lt;/code&gt; operator, the &lt;code&gt;next()&lt;/code&gt; function, and the functions in the table library. If using these is important for your module, you should use your own argument processing function instead of this module.&lt;includeonly&gt;{{#ifeq:{{SUBPAGENAME}}|sandbox||
+[[Category:Lua metamodules]]
+}}&lt;/includeonly&gt;
+
+== See also ==
+* [[Module:Params]]
+* {{tl|Template parameter value}}
+&lt;includeonly&gt;{{Sandbox other||
+&lt;!-- Categories below this line; interwikis at Wikidata --&gt;
+[[Category:Wikipedia utility modules]]
+}}&lt;/includeonly&gt;
+&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>lk4np4unpptxmj130t7lzuxjltzijdx</sha1>
+    </revision>
+  </page>
+</mediawiki>

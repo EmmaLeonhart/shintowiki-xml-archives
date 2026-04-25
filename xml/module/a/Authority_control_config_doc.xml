@@ -1,0 +1,618 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Authority control/config/doc</title>
+    <ns>828</ns>
+    <id>7530</id>
+    <revision>
+      <id>884853</id>
+      <timestamp>2024-12-29T02:31:41Z</timestamp>
+      <contributor>
+        <username>en&gt;Christian75</username>
+        <id>0</id>
+      </contributor>
+      <comment>{{high use}}</comment>
+      <origin>884853</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="5669" sha1="aq23o4b14w6kitk1yjnzm8pdjkopadq" xml:space="preserve">{{high use}}
+{{Authority control/related}}
+{{#ifeq:{{SUBPAGENAME}}|doc||{{ombox
+|text=Difference with: {{#ifeq:{{PAGENAME}}|Authority control/config/sandbox||{{Compare pages|{{FULLPAGENAME}}|Module:Authority control/config/sandbox|sandbox}}}} {{#ifeq:{{PAGENAME}}|Authority control/config/staging||{{Compare pages|{{FULLPAGENAME}}|Module:Authority control/config/staging|staging}}}} {{#ifeq:{{PAGENAME}}|Authority control/config||{{Compare pages|{{FULLPAGENAME}}|Module:Authority control/config|live}}}}
+}}}}
+Contains configuation details for [[Module:Authority control]].
+{{PAGENAME}}
+=== Syntax ===
+The syntax for the &lt;code&gt;p.config&lt;/code&gt; table is as follows:
+* '''property =''' Wikidata property number, without the prefix P.
+* '''section =''' section number to place the identifier. See [[#List of sections]] for details.
+* '''pattern =''' [[mw:Extension:Scribunto/Lua reference manual#Patterns|Lua pattern]] of valid format for identifier. Note this is similar but not identical to a [[regular expression]]. If this is omitted, then the module will not check the validity of the identifiers.
+* '''link =''' the URL of the external page with details of the identifier. The code &lt;code&gt;$1&lt;/code&gt; will be replaced with the identifier.
+* '''label =''' the label for the link.
+* '''remark =''' a brief explanation of the authority control database, for use on the documentation of [[Template:Authority control]] only.
+
+=== Example ===
+The syntax below generates a link to the [[Dictionary of Irish Biography]] in section 5. It gets its data from Wikidata property {{Q|P6829}} and identifiers need to be in the following form: 0, followed by 0 or 1, followed by 4 digits, possibly followed by a decimal point and then a letter from A to D.
+&lt;syntaxhighlight lang="Lua"&gt;{
+  property = 6829,
+  section = 5,
+  pattern = '0[01]%d%d%d%d%.?[A-D]?',
+  link = 'https://doi.org/10.3318/dib.$1.v1',
+  label = 'Ireland',
+},&lt;/syntaxhighlight&gt;
+
+=== Advanced parameters ===
+* '''patterns =''' if more than one Lua pattern is needed, then use the plural form of this argument and include the comma-separated list of patterns enclosed by curly braces.
+* '''prefix =''' a prefix to be included before the links. In this case numbers 1, 2, ... will be used as the labels and the '''label''' field will be ignored.
+* '''valid =''' the name of a custom Lua function in [[Module:Authority control/auxiliary|/auxiliary]] used to determine if the identifier is valid or not, in case the '''pattern''' method cannot be used. It should return &lt;code&gt;false&lt;/code&gt; if the identifier is invalid.
+* '''customlink =''' the name of a custom Lua function in [[Module:Authority control/auxiliary|/auxiliary]] which will produce the entire external link. It should return &lt;code&gt;false&lt;/code&gt; if the identifier is invalid.
+* '''suppressedbyproperty =''' if this identifier should not be displayed if other identifiers are present, then specify them here in a comma-separated list enclosed by curley braces. Note: the property to be suppressed must be listed later in the list than the property which suppresses it.
+* '''category =''' defines a category that should be used to track uses of this property (not usually needed). For example if &lt;code&gt;category = 'VIAF'&lt;/code&gt; then [[:Category:Articles with VIAF identifiers]] and [[:Category:Articles with faulty VIAF identifiers]] will be populated.
+
+=== List of sections ===
+The names of each section are defined by the &lt;code&gt;p.sectionNames&lt;/code&gt; function. The syntax is as follows:
+
+&lt;code&gt;'''[number]''' = {name = '''name of section''', hidelabelwhenalone = '''true/false'''},&lt;/code&gt;
+
+where
+* '''number''' is the section number (must be sequential integer).
+* '''name of section''' is the name which appears in the header column of the infobox.
+* '''true/false''' is set to true if you want the name to be suppressed when this section is the only section to be displayed. (For example, there is no point in showing "Other" if that is the only section.) The default is false.
+
+For example, the section 7 is defined as:
+
+&lt;code&gt;[7] = {name = 'Other', hidelabelwhenalone = true}&lt;/code&gt;
+
+This section has name "Other" and it will be hidden when it is the only section to be shown.
+
+The current list of sections is shown below:
+{{#invoke:Authority control/documentation{{#ifeq:{{SUBPAGENAME}}|sandbox|/sandbox}}|sectiontable|config={{#ifeq:{{SUBPAGENAME}}|sandbox|sandbox}}}}
+
+=== Whitelists ===
+The whitelists are defined by the &lt;code&gt;p.whitelists&lt;/code&gt; function. The syntax is as follows:
+
+&lt;code&gt;'''code''' = {topic = '''topic QID''', properties = {'''property PIDs'''}}&lt;/code&gt;
+
+where
+* '''code''' is the code of the whitelist which is called via the {{para|show}} parameter.
+* '''topic QID''' is the Wikidata QID for the topic represented by the whitelist, without the Q prefix.
+* '''property QIDs''' is a comma-separated list of PIDs for the properties included in the whitelist (without the prefix P).
+
+For example, the whitelist for Italy is defined as:
+
+&lt;code&gt;it = {topic = 38, properties = {396, 3863, 1986, 8034}},&lt;/code&gt;
+
+The whitelist has code &lt;code&gt;it&lt;/code&gt;, represents {{Q|Q38}} and includes the following properties: {{Q|P396}}, {{Q|P3863}}, {{Q|P1986}}, {{Q|P8034}}.
+
+The currently recognised whitelists are listed below:
+{{#invoke:Authority control/documentation{{#ifeq:{{SUBPAGENAME}}|sandbox|/sandbox}}|whitelisttable|config={{#ifeq:{{SUBPAGENAME}}|sandbox|sandbox}}}}
+
+=== See also ===
+* [[Module:Authority control/auxiliary]]
+
+&lt;includeonly&gt;{{#switch:{{SUBPAGENAME}}
+|sandbox|staging=&lt;!--Suppress categories--&gt;
+|#default=[[Category:Wikipedia authority control]]
+}}&lt;/includeonly&gt;
+&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>aq23o4b14w6kitk1yjnzm8pdjkopadq</sha1>
+    </revision>
+    <revision>
+      <id>884854</id>
+      <parentid>884853</parentid>
+      <timestamp>2025-01-07T10:27:13Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: importing modules</comment>
+      <origin>884853</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="5669" sha1="aq23o4b14w6kitk1yjnzm8pdjkopadq" xml:space="preserve">{{high use}}
+{{Authority control/related}}
+{{#ifeq:{{SUBPAGENAME}}|doc||{{ombox
+|text=Difference with: {{#ifeq:{{PAGENAME}}|Authority control/config/sandbox||{{Compare pages|{{FULLPAGENAME}}|Module:Authority control/config/sandbox|sandbox}}}} {{#ifeq:{{PAGENAME}}|Authority control/config/staging||{{Compare pages|{{FULLPAGENAME}}|Module:Authority control/config/staging|staging}}}} {{#ifeq:{{PAGENAME}}|Authority control/config||{{Compare pages|{{FULLPAGENAME}}|Module:Authority control/config|live}}}}
+}}}}
+Contains configuation details for [[Module:Authority control]].
+{{PAGENAME}}
+=== Syntax ===
+The syntax for the &lt;code&gt;p.config&lt;/code&gt; table is as follows:
+* '''property =''' Wikidata property number, without the prefix P.
+* '''section =''' section number to place the identifier. See [[#List of sections]] for details.
+* '''pattern =''' [[mw:Extension:Scribunto/Lua reference manual#Patterns|Lua pattern]] of valid format for identifier. Note this is similar but not identical to a [[regular expression]]. If this is omitted, then the module will not check the validity of the identifiers.
+* '''link =''' the URL of the external page with details of the identifier. The code &lt;code&gt;$1&lt;/code&gt; will be replaced with the identifier.
+* '''label =''' the label for the link.
+* '''remark =''' a brief explanation of the authority control database, for use on the documentation of [[Template:Authority control]] only.
+
+=== Example ===
+The syntax below generates a link to the [[Dictionary of Irish Biography]] in section 5. It gets its data from Wikidata property {{Q|P6829}} and identifiers need to be in the following form: 0, followed by 0 or 1, followed by 4 digits, possibly followed by a decimal point and then a letter from A to D.
+&lt;syntaxhighlight lang="Lua"&gt;{
+  property = 6829,
+  section = 5,
+  pattern = '0[01]%d%d%d%d%.?[A-D]?',
+  link = 'https://doi.org/10.3318/dib.$1.v1',
+  label = 'Ireland',
+},&lt;/syntaxhighlight&gt;
+
+=== Advanced parameters ===
+* '''patterns =''' if more than one Lua pattern is needed, then use the plural form of this argument and include the comma-separated list of patterns enclosed by curly braces.
+* '''prefix =''' a prefix to be included before the links. In this case numbers 1, 2, ... will be used as the labels and the '''label''' field will be ignored.
+* '''valid =''' the name of a custom Lua function in [[Module:Authority control/auxiliary|/auxiliary]] used to determine if the identifier is valid or not, in case the '''pattern''' method cannot be used. It should return &lt;code&gt;false&lt;/code&gt; if the identifier is invalid.
+* '''customlink =''' the name of a custom Lua function in [[Module:Authority control/auxiliary|/auxiliary]] which will produce the entire external link. It should return &lt;code&gt;false&lt;/code&gt; if the identifier is invalid.
+* '''suppressedbyproperty =''' if this identifier should not be displayed if other identifiers are present, then specify them here in a comma-separated list enclosed by curley braces. Note: the property to be suppressed must be listed later in the list than the property which suppresses it.
+* '''category =''' defines a category that should be used to track uses of this property (not usually needed). For example if &lt;code&gt;category = 'VIAF'&lt;/code&gt; then [[:Category:Articles with VIAF identifiers]] and [[:Category:Articles with faulty VIAF identifiers]] will be populated.
+
+=== List of sections ===
+The names of each section are defined by the &lt;code&gt;p.sectionNames&lt;/code&gt; function. The syntax is as follows:
+
+&lt;code&gt;'''[number]''' = {name = '''name of section''', hidelabelwhenalone = '''true/false'''},&lt;/code&gt;
+
+where
+* '''number''' is the section number (must be sequential integer).
+* '''name of section''' is the name which appears in the header column of the infobox.
+* '''true/false''' is set to true if you want the name to be suppressed when this section is the only section to be displayed. (For example, there is no point in showing "Other" if that is the only section.) The default is false.
+
+For example, the section 7 is defined as:
+
+&lt;code&gt;[7] = {name = 'Other', hidelabelwhenalone = true}&lt;/code&gt;
+
+This section has name "Other" and it will be hidden when it is the only section to be shown.
+
+The current list of sections is shown below:
+{{#invoke:Authority control/documentation{{#ifeq:{{SUBPAGENAME}}|sandbox|/sandbox}}|sectiontable|config={{#ifeq:{{SUBPAGENAME}}|sandbox|sandbox}}}}
+
+=== Whitelists ===
+The whitelists are defined by the &lt;code&gt;p.whitelists&lt;/code&gt; function. The syntax is as follows:
+
+&lt;code&gt;'''code''' = {topic = '''topic QID''', properties = {'''property PIDs'''}}&lt;/code&gt;
+
+where
+* '''code''' is the code of the whitelist which is called via the {{para|show}} parameter.
+* '''topic QID''' is the Wikidata QID for the topic represented by the whitelist, without the Q prefix.
+* '''property QIDs''' is a comma-separated list of PIDs for the properties included in the whitelist (without the prefix P).
+
+For example, the whitelist for Italy is defined as:
+
+&lt;code&gt;it = {topic = 38, properties = {396, 3863, 1986, 8034}},&lt;/code&gt;
+
+The whitelist has code &lt;code&gt;it&lt;/code&gt;, represents {{Q|Q38}} and includes the following properties: {{Q|P396}}, {{Q|P3863}}, {{Q|P1986}}, {{Q|P8034}}.
+
+The currently recognised whitelists are listed below:
+{{#invoke:Authority control/documentation{{#ifeq:{{SUBPAGENAME}}|sandbox|/sandbox}}|whitelisttable|config={{#ifeq:{{SUBPAGENAME}}|sandbox|sandbox}}}}
+
+=== See also ===
+* [[Module:Authority control/auxiliary]]
+
+&lt;includeonly&gt;{{#switch:{{SUBPAGENAME}}
+|sandbox|staging=&lt;!--Suppress categories--&gt;
+|#default=[[Category:Wikipedia authority control]]
+}}&lt;/includeonly&gt;
+&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>aq23o4b14w6kitk1yjnzm8pdjkopadq</sha1>
+    </revision>
+    <revision>
+      <id>884855</id>
+      <parentid>884854</parentid>
+      <timestamp>2025-05-19T21:09:05Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>884855</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="5703" sha1="6bhqd2eqs6kh92s6saglwupemvx0nn5" xml:space="preserve">{{high use}}
+{{Authority control/related}}
+{{#ifeq:{{SUBPAGENAME}}|doc||{{ombox
+|text=Difference with: {{#ifeq:{{PAGENAME}}|Authority control/config/sandbox||{{Compare pages|{{FULLPAGENAME}}|Module:Authority control/config/sandbox|sandbox}}}} {{#ifeq:{{PAGENAME}}|Authority control/config/staging||{{Compare pages|{{FULLPAGENAME}}|Module:Authority control/config/staging|staging}}}} {{#ifeq:{{PAGENAME}}|Authority control/config||{{Compare pages|{{FULLPAGENAME}}|Module:Authority control/config|live}}}}
+}}}}
+Contains configuation details for [[Module:Authority control]].
+{{PAGENAME}}
+=== Syntax ===
+The syntax for the &lt;code&gt;p.config&lt;/code&gt; table is as follows:
+* '''property =''' Wikidata property number, without the prefix P.
+* '''section =''' section number to place the identifier. See [[#List of sections]] for details.
+* '''pattern =''' [[mw:Extension:Scribunto/Lua reference manual#Patterns|Lua pattern]] of valid format for identifier. Note this is similar but not identical to a [[regular expression]]. If this is omitted, then the module will not check the validity of the identifiers.
+* '''link =''' the URL of the external page with details of the identifier. The code &lt;code&gt;$1&lt;/code&gt; will be replaced with the identifier.
+* '''label =''' the label for the link.
+* '''remark =''' a brief explanation of the authority control database, for use on the documentation of [[Template:Authority control]] only.
+
+=== Example ===
+The syntax below generates a link to the [[:en:Dictionary of Irish Biography|Dictionary of Irish Biography]] in section 5. It gets its data from Wikidata property {{Q|P6829}} and identifiers need to be in the following form: 0, followed by 0 or 1, followed by 4 digits, possibly followed by a decimal point and then a letter from A to D.
+&lt;syntaxhighlight lang="Lua"&gt;{
+  property = 6829,
+  section = 5,
+  pattern = '0[01]%d%d%d%d%.?[A-D]?',
+  link = 'https://doi.org/10.3318/dib.$1.v1',
+  label = 'Ireland',
+},&lt;/syntaxhighlight&gt;
+
+=== Advanced parameters ===
+* '''patterns =''' if more than one Lua pattern is needed, then use the plural form of this argument and include the comma-separated list of patterns enclosed by curly braces.
+* '''prefix =''' a prefix to be included before the links. In this case numbers 1, 2, ... will be used as the labels and the '''label''' field will be ignored.
+* '''valid =''' the name of a custom Lua function in [[Module:Authority control/auxiliary|/auxiliary]] used to determine if the identifier is valid or not, in case the '''pattern''' method cannot be used. It should return &lt;code&gt;false&lt;/code&gt; if the identifier is invalid.
+* '''customlink =''' the name of a custom Lua function in [[Module:Authority control/auxiliary|/auxiliary]] which will produce the entire external link. It should return &lt;code&gt;false&lt;/code&gt; if the identifier is invalid.
+* '''suppressedbyproperty =''' if this identifier should not be displayed if other identifiers are present, then specify them here in a comma-separated list enclosed by curley braces. Note: the property to be suppressed must be listed later in the list than the property which suppresses it.
+* '''category =''' defines a category that should be used to track uses of this property (not usually needed). For example if &lt;code&gt;category = 'VIAF'&lt;/code&gt; then [[:Category:Articles with VIAF identifiers]] and [[:Category:Articles with faulty VIAF identifiers]] will be populated.
+
+=== List of sections ===
+The names of each section are defined by the &lt;code&gt;p.sectionNames&lt;/code&gt; function. The syntax is as follows:
+
+&lt;code&gt;'''[number]''' = {name = '''name of section''', hidelabelwhenalone = '''true/false'''},&lt;/code&gt;
+
+where
+* '''number''' is the section number (must be sequential integer).
+* '''name of section''' is the name which appears in the header column of the infobox.
+* '''true/false''' is set to true if you want the name to be suppressed when this section is the only section to be displayed. (For example, there is no point in showing "Other" if that is the only section.) The default is false.
+
+For example, the section 7 is defined as:
+
+&lt;code&gt;[7] = {name = 'Other', hidelabelwhenalone = true}&lt;/code&gt;
+
+This section has name "Other" and it will be hidden when it is the only section to be shown.
+
+The current list of sections is shown below:
+{{#invoke:Authority control/documentation{{#ifeq:{{SUBPAGENAME}}|sandbox|/sandbox}}|sectiontable|config={{#ifeq:{{SUBPAGENAME}}|sandbox|sandbox}}}}
+
+=== Whitelists ===
+The whitelists are defined by the &lt;code&gt;p.whitelists&lt;/code&gt; function. The syntax is as follows:
+
+&lt;code&gt;'''code''' = {topic = '''topic QID''', properties = {'''property PIDs'''}}&lt;/code&gt;
+
+where
+* '''code''' is the code of the whitelist which is called via the {{para|show}} parameter.
+* '''topic QID''' is the Wikidata QID for the topic represented by the whitelist, without the Q prefix.
+* '''property QIDs''' is a comma-separated list of PIDs for the properties included in the whitelist (without the prefix P).
+
+For example, the whitelist for Italy is defined as:
+
+&lt;code&gt;it = {topic = 38, properties = {396, 3863, 1986, 8034}},&lt;/code&gt;
+
+The whitelist has code &lt;code&gt;it&lt;/code&gt;, represents {{Q|Q38}} and includes the following properties: {{Q|P396}}, {{Q|P3863}}, {{Q|P1986}}, {{Q|P8034}}.
+
+The currently recognised whitelists are listed below:
+{{#invoke:Authority control/documentation{{#ifeq:{{SUBPAGENAME}}|sandbox|/sandbox}}|whitelisttable|config={{#ifeq:{{SUBPAGENAME}}|sandbox|sandbox}}}}
+
+=== See also ===
+* [[Module:Authority control/auxiliary]]
+
+&lt;includeonly&gt;{{#switch:{{SUBPAGENAME}}
+|sandbox|staging=&lt;!--Suppress categories--&gt;
+|#default=[[Category:Wikipedia authority control]]
+}}&lt;/includeonly&gt;
+&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>6bhqd2eqs6kh92s6saglwupemvx0nn5</sha1>
+    </revision>
+    <revision>
+      <id>7531</id>
+      <timestamp>2025-05-24T19:29:22Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Bot: convert local link → enwiki interwiki</comment>
+      <origin>7531</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="5726" sha1="rcj3rcmybj5xkl4qlhev45m1if559wv" xml:space="preserve">{{high use}}
+{{Authority control/related}}
+{{#ifeq:{{SUBPAGENAME}}|doc||{{ombox
+|text=Difference with: {{#ifeq:{{PAGENAME}}|Authority control/config/sandbox||{{Compare pages|{{FULLPAGENAME}}|Module:Authority control/config/sandbox|sandbox}}}} {{#ifeq:{{PAGENAME}}|Authority control/config/staging||{{Compare pages|{{FULLPAGENAME}}|Module:Authority control/config/staging|staging}}}} {{#ifeq:{{PAGENAME}}|Authority control/config||{{Compare pages|{{FULLPAGENAME}}|Module:Authority control/config|live}}}}
+}}}}
+Contains configuation details for [[Module:Authority control]].
+{{PAGENAME}}
+=== Syntax ===
+The syntax for the &lt;code&gt;p.config&lt;/code&gt; table is as follows:
+* '''property =''' Wikidata property number, without the prefix P.
+* '''section =''' section number to place the identifier. See [[#List of sections]] for details.
+* '''pattern =''' [[mw:Extension:Scribunto/Lua reference manual#Patterns|Lua pattern]] of valid format for identifier. Note this is similar but not identical to a [[:en:Regular expression|Regular expression]]. If this is omitted, then the module will not check the validity of the identifiers.
+* '''link =''' the URL of the external page with details of the identifier. The code &lt;code&gt;$1&lt;/code&gt; will be replaced with the identifier.
+* '''label =''' the label for the link.
+* '''remark =''' a brief explanation of the authority control database, for use on the documentation of [[Template:Authority control]] only.
+
+=== Example ===
+The syntax below generates a link to the [[:en:Dictionary of Irish Biography|Dictionary of Irish Biography]] in section 5. It gets its data from Wikidata property {{Q|P6829}} and identifiers need to be in the following form: 0, followed by 0 or 1, followed by 4 digits, possibly followed by a decimal point and then a letter from A to D.
+&lt;syntaxhighlight lang="Lua"&gt;{
+  property = 6829,
+  section = 5,
+  pattern = '0[01]%d%d%d%d%.?[A-D]?',
+  link = 'https://doi.org/10.3318/dib.$1.v1',
+  label = 'Ireland',
+},&lt;/syntaxhighlight&gt;
+
+=== Advanced parameters ===
+* '''patterns =''' if more than one Lua pattern is needed, then use the plural form of this argument and include the comma-separated list of patterns enclosed by curly braces.
+* '''prefix =''' a prefix to be included before the links. In this case numbers 1, 2, ... will be used as the labels and the '''label''' field will be ignored.
+* '''valid =''' the name of a custom Lua function in [[Module:Authority control/auxiliary|/auxiliary]] used to determine if the identifier is valid or not, in case the '''pattern''' method cannot be used. It should return &lt;code&gt;false&lt;/code&gt; if the identifier is invalid.
+* '''customlink =''' the name of a custom Lua function in [[Module:Authority control/auxiliary|/auxiliary]] which will produce the entire external link. It should return &lt;code&gt;false&lt;/code&gt; if the identifier is invalid.
+* '''suppressedbyproperty =''' if this identifier should not be displayed if other identifiers are present, then specify them here in a comma-separated list enclosed by curley braces. Note: the property to be suppressed must be listed later in the list than the property which suppresses it.
+* '''category =''' defines a category that should be used to track uses of this property (not usually needed). For example if &lt;code&gt;category = 'VIAF'&lt;/code&gt; then [[:Category:Articles with VIAF identifiers]] and [[:Category:Articles with faulty VIAF identifiers]] will be populated.
+
+=== List of sections ===
+The names of each section are defined by the &lt;code&gt;p.sectionNames&lt;/code&gt; function. The syntax is as follows:
+
+&lt;code&gt;'''[number]''' = {name = '''name of section''', hidelabelwhenalone = '''true/false'''},&lt;/code&gt;
+
+where
+* '''number''' is the section number (must be sequential integer).
+* '''name of section''' is the name which appears in the header column of the infobox.
+* '''true/false''' is set to true if you want the name to be suppressed when this section is the only section to be displayed. (For example, there is no point in showing "Other" if that is the only section.) The default is false.
+
+For example, the section 7 is defined as:
+
+&lt;code&gt;[7] = {name = 'Other', hidelabelwhenalone = true}&lt;/code&gt;
+
+This section has name "Other" and it will be hidden when it is the only section to be shown.
+
+The current list of sections is shown below:
+{{#invoke:Authority control/documentation{{#ifeq:{{SUBPAGENAME}}|sandbox|/sandbox}}|sectiontable|config={{#ifeq:{{SUBPAGENAME}}|sandbox|sandbox}}}}
+
+=== Whitelists ===
+The whitelists are defined by the &lt;code&gt;p.whitelists&lt;/code&gt; function. The syntax is as follows:
+
+&lt;code&gt;'''code''' = {topic = '''topic QID''', properties = {'''property PIDs'''}}&lt;/code&gt;
+
+where
+* '''code''' is the code of the whitelist which is called via the {{para|show}} parameter.
+* '''topic QID''' is the Wikidata QID for the topic represented by the whitelist, without the Q prefix.
+* '''property QIDs''' is a comma-separated list of PIDs for the properties included in the whitelist (without the prefix P).
+
+For example, the whitelist for Italy is defined as:
+
+&lt;code&gt;it = {topic = 38, properties = {396, 3863, 1986, 8034}},&lt;/code&gt;
+
+The whitelist has code &lt;code&gt;it&lt;/code&gt;, represents {{Q|Q38}} and includes the following properties: {{Q|P396}}, {{Q|P3863}}, {{Q|P1986}}, {{Q|P8034}}.
+
+The currently recognised whitelists are listed below:
+{{#invoke:Authority control/documentation{{#ifeq:{{SUBPAGENAME}}|sandbox|/sandbox}}|whitelisttable|config={{#ifeq:{{SUBPAGENAME}}|sandbox|sandbox}}}}
+
+=== See also ===
+* [[Module:Authority control/auxiliary]]
+
+&lt;includeonly&gt;{{#switch:{{SUBPAGENAME}}
+|sandbox|staging=&lt;!--Suppress categories--&gt;
+|#default=[[Category:Wikipedia authority control]]
+}}&lt;/includeonly&gt;
+&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>rcj3rcmybj5xkl4qlhev45m1if559wv</sha1>
+    </revision>
+    <revision>
+      <id>3560861</id>
+      <parentid>7531</parentid>
+      <timestamp>2026-03-21T20:10:33Z</timestamp>
+      <contributor>
+        <username>en&gt;Christian75</username>
+        <id>0</id>
+      </contributor>
+      <comment>{{high use}}</comment>
+      <origin>3560861</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="5669" sha1="aq23o4b14w6kitk1yjnzm8pdjkopadq" xml:space="preserve">{{high use}}
+{{Authority control/related}}
+{{#ifeq:{{SUBPAGENAME}}|doc||{{ombox
+|text=Difference with: {{#ifeq:{{PAGENAME}}|Authority control/config/sandbox||{{Compare pages|{{FULLPAGENAME}}|Module:Authority control/config/sandbox|sandbox}}}} {{#ifeq:{{PAGENAME}}|Authority control/config/staging||{{Compare pages|{{FULLPAGENAME}}|Module:Authority control/config/staging|staging}}}} {{#ifeq:{{PAGENAME}}|Authority control/config||{{Compare pages|{{FULLPAGENAME}}|Module:Authority control/config|live}}}}
+}}}}
+Contains configuation details for [[Module:Authority control]].
+{{PAGENAME}}
+=== Syntax ===
+The syntax for the &lt;code&gt;p.config&lt;/code&gt; table is as follows:
+* '''property =''' Wikidata property number, without the prefix P.
+* '''section =''' section number to place the identifier. See [[#List of sections]] for details.
+* '''pattern =''' [[mw:Extension:Scribunto/Lua reference manual#Patterns|Lua pattern]] of valid format for identifier. Note this is similar but not identical to a [[regular expression]]. If this is omitted, then the module will not check the validity of the identifiers.
+* '''link =''' the URL of the external page with details of the identifier. The code &lt;code&gt;$1&lt;/code&gt; will be replaced with the identifier.
+* '''label =''' the label for the link.
+* '''remark =''' a brief explanation of the authority control database, for use on the documentation of [[Template:Authority control]] only.
+
+=== Example ===
+The syntax below generates a link to the [[Dictionary of Irish Biography]] in section 5. It gets its data from Wikidata property {{Q|P6829}} and identifiers need to be in the following form: 0, followed by 0 or 1, followed by 4 digits, possibly followed by a decimal point and then a letter from A to D.
+&lt;syntaxhighlight lang="Lua"&gt;{
+  property = 6829,
+  section = 5,
+  pattern = '0[01]%d%d%d%d%.?[A-D]?',
+  link = 'https://doi.org/10.3318/dib.$1.v1',
+  label = 'Ireland',
+},&lt;/syntaxhighlight&gt;
+
+=== Advanced parameters ===
+* '''patterns =''' if more than one Lua pattern is needed, then use the plural form of this argument and include the comma-separated list of patterns enclosed by curly braces.
+* '''prefix =''' a prefix to be included before the links. In this case numbers 1, 2, ... will be used as the labels and the '''label''' field will be ignored.
+* '''valid =''' the name of a custom Lua function in [[Module:Authority control/auxiliary|/auxiliary]] used to determine if the identifier is valid or not, in case the '''pattern''' method cannot be used. It should return &lt;code&gt;false&lt;/code&gt; if the identifier is invalid.
+* '''customlink =''' the name of a custom Lua function in [[Module:Authority control/auxiliary|/auxiliary]] which will produce the entire external link. It should return &lt;code&gt;false&lt;/code&gt; if the identifier is invalid.
+* '''suppressedbyproperty =''' if this identifier should not be displayed if other identifiers are present, then specify them here in a comma-separated list enclosed by curley braces. Note: the property to be suppressed must be listed later in the list than the property which suppresses it.
+* '''category =''' defines a category that should be used to track uses of this property (not usually needed). For example if &lt;code&gt;category = 'VIAF'&lt;/code&gt; then [[:Category:Articles with VIAF identifiers]] and [[:Category:Articles with faulty VIAF identifiers]] will be populated.
+
+=== List of sections ===
+The names of each section are defined by the &lt;code&gt;p.sectionNames&lt;/code&gt; function. The syntax is as follows:
+
+&lt;code&gt;'''[number]''' = {name = '''name of section''', hidelabelwhenalone = '''true/false'''},&lt;/code&gt;
+
+where
+* '''number''' is the section number (must be sequential integer).
+* '''name of section''' is the name which appears in the header column of the infobox.
+* '''true/false''' is set to true if you want the name to be suppressed when this section is the only section to be displayed. (For example, there is no point in showing "Other" if that is the only section.) The default is false.
+
+For example, the section 7 is defined as:
+
+&lt;code&gt;[7] = {name = 'Other', hidelabelwhenalone = true}&lt;/code&gt;
+
+This section has name "Other" and it will be hidden when it is the only section to be shown.
+
+The current list of sections is shown below:
+{{#invoke:Authority control/documentation{{#ifeq:{{SUBPAGENAME}}|sandbox|/sandbox}}|sectiontable|config={{#ifeq:{{SUBPAGENAME}}|sandbox|sandbox}}}}
+
+=== Whitelists ===
+The whitelists are defined by the &lt;code&gt;p.whitelists&lt;/code&gt; function. The syntax is as follows:
+
+&lt;code&gt;'''code''' = {topic = '''topic QID''', properties = {'''property PIDs'''}}&lt;/code&gt;
+
+where
+* '''code''' is the code of the whitelist which is called via the {{para|show}} parameter.
+* '''topic QID''' is the Wikidata QID for the topic represented by the whitelist, without the Q prefix.
+* '''property QIDs''' is a comma-separated list of PIDs for the properties included in the whitelist (without the prefix P).
+
+For example, the whitelist for Italy is defined as:
+
+&lt;code&gt;it = {topic = 38, properties = {396, 3863, 1986, 8034}},&lt;/code&gt;
+
+The whitelist has code &lt;code&gt;it&lt;/code&gt;, represents {{Q|Q38}} and includes the following properties: {{Q|P396}}, {{Q|P3863}}, {{Q|P1986}}, {{Q|P8034}}.
+
+The currently recognised whitelists are listed below:
+{{#invoke:Authority control/documentation{{#ifeq:{{SUBPAGENAME}}|sandbox|/sandbox}}|whitelisttable|config={{#ifeq:{{SUBPAGENAME}}|sandbox|sandbox}}}}
+
+=== See also ===
+* [[Module:Authority control/auxiliary]]
+
+&lt;includeonly&gt;{{#switch:{{SUBPAGENAME}}
+|sandbox|staging=&lt;!--Suppress categories--&gt;
+|#default=[[Category:Wikipedia authority control]]
+}}&lt;/includeonly&gt;
+&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>aq23o4b14w6kitk1yjnzm8pdjkopadq</sha1>
+    </revision>
+    <revision>
+      <id>3560862</id>
+      <parentid>3560861</parentid>
+      <timestamp>2026-03-21T20:10:34Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3560861</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="5669" sha1="aq23o4b14w6kitk1yjnzm8pdjkopadq" xml:space="preserve">{{high use}}
+{{Authority control/related}}
+{{#ifeq:{{SUBPAGENAME}}|doc||{{ombox
+|text=Difference with: {{#ifeq:{{PAGENAME}}|Authority control/config/sandbox||{{Compare pages|{{FULLPAGENAME}}|Module:Authority control/config/sandbox|sandbox}}}} {{#ifeq:{{PAGENAME}}|Authority control/config/staging||{{Compare pages|{{FULLPAGENAME}}|Module:Authority control/config/staging|staging}}}} {{#ifeq:{{PAGENAME}}|Authority control/config||{{Compare pages|{{FULLPAGENAME}}|Module:Authority control/config|live}}}}
+}}}}
+Contains configuation details for [[Module:Authority control]].
+{{PAGENAME}}
+=== Syntax ===
+The syntax for the &lt;code&gt;p.config&lt;/code&gt; table is as follows:
+* '''property =''' Wikidata property number, without the prefix P.
+* '''section =''' section number to place the identifier. See [[#List of sections]] for details.
+* '''pattern =''' [[mw:Extension:Scribunto/Lua reference manual#Patterns|Lua pattern]] of valid format for identifier. Note this is similar but not identical to a [[regular expression]]. If this is omitted, then the module will not check the validity of the identifiers.
+* '''link =''' the URL of the external page with details of the identifier. The code &lt;code&gt;$1&lt;/code&gt; will be replaced with the identifier.
+* '''label =''' the label for the link.
+* '''remark =''' a brief explanation of the authority control database, for use on the documentation of [[Template:Authority control]] only.
+
+=== Example ===
+The syntax below generates a link to the [[Dictionary of Irish Biography]] in section 5. It gets its data from Wikidata property {{Q|P6829}} and identifiers need to be in the following form: 0, followed by 0 or 1, followed by 4 digits, possibly followed by a decimal point and then a letter from A to D.
+&lt;syntaxhighlight lang="Lua"&gt;{
+  property = 6829,
+  section = 5,
+  pattern = '0[01]%d%d%d%d%.?[A-D]?',
+  link = 'https://doi.org/10.3318/dib.$1.v1',
+  label = 'Ireland',
+},&lt;/syntaxhighlight&gt;
+
+=== Advanced parameters ===
+* '''patterns =''' if more than one Lua pattern is needed, then use the plural form of this argument and include the comma-separated list of patterns enclosed by curly braces.
+* '''prefix =''' a prefix to be included before the links. In this case numbers 1, 2, ... will be used as the labels and the '''label''' field will be ignored.
+* '''valid =''' the name of a custom Lua function in [[Module:Authority control/auxiliary|/auxiliary]] used to determine if the identifier is valid or not, in case the '''pattern''' method cannot be used. It should return &lt;code&gt;false&lt;/code&gt; if the identifier is invalid.
+* '''customlink =''' the name of a custom Lua function in [[Module:Authority control/auxiliary|/auxiliary]] which will produce the entire external link. It should return &lt;code&gt;false&lt;/code&gt; if the identifier is invalid.
+* '''suppressedbyproperty =''' if this identifier should not be displayed if other identifiers are present, then specify them here in a comma-separated list enclosed by curley braces. Note: the property to be suppressed must be listed later in the list than the property which suppresses it.
+* '''category =''' defines a category that should be used to track uses of this property (not usually needed). For example if &lt;code&gt;category = 'VIAF'&lt;/code&gt; then [[:Category:Articles with VIAF identifiers]] and [[:Category:Articles with faulty VIAF identifiers]] will be populated.
+
+=== List of sections ===
+The names of each section are defined by the &lt;code&gt;p.sectionNames&lt;/code&gt; function. The syntax is as follows:
+
+&lt;code&gt;'''[number]''' = {name = '''name of section''', hidelabelwhenalone = '''true/false'''},&lt;/code&gt;
+
+where
+* '''number''' is the section number (must be sequential integer).
+* '''name of section''' is the name which appears in the header column of the infobox.
+* '''true/false''' is set to true if you want the name to be suppressed when this section is the only section to be displayed. (For example, there is no point in showing "Other" if that is the only section.) The default is false.
+
+For example, the section 7 is defined as:
+
+&lt;code&gt;[7] = {name = 'Other', hidelabelwhenalone = true}&lt;/code&gt;
+
+This section has name "Other" and it will be hidden when it is the only section to be shown.
+
+The current list of sections is shown below:
+{{#invoke:Authority control/documentation{{#ifeq:{{SUBPAGENAME}}|sandbox|/sandbox}}|sectiontable|config={{#ifeq:{{SUBPAGENAME}}|sandbox|sandbox}}}}
+
+=== Whitelists ===
+The whitelists are defined by the &lt;code&gt;p.whitelists&lt;/code&gt; function. The syntax is as follows:
+
+&lt;code&gt;'''code''' = {topic = '''topic QID''', properties = {'''property PIDs'''}}&lt;/code&gt;
+
+where
+* '''code''' is the code of the whitelist which is called via the {{para|show}} parameter.
+* '''topic QID''' is the Wikidata QID for the topic represented by the whitelist, without the Q prefix.
+* '''property QIDs''' is a comma-separated list of PIDs for the properties included in the whitelist (without the prefix P).
+
+For example, the whitelist for Italy is defined as:
+
+&lt;code&gt;it = {topic = 38, properties = {396, 3863, 1986, 8034}},&lt;/code&gt;
+
+The whitelist has code &lt;code&gt;it&lt;/code&gt;, represents {{Q|Q38}} and includes the following properties: {{Q|P396}}, {{Q|P3863}}, {{Q|P1986}}, {{Q|P8034}}.
+
+The currently recognised whitelists are listed below:
+{{#invoke:Authority control/documentation{{#ifeq:{{SUBPAGENAME}}|sandbox|/sandbox}}|whitelisttable|config={{#ifeq:{{SUBPAGENAME}}|sandbox|sandbox}}}}
+
+=== See also ===
+* [[Module:Authority control/auxiliary]]
+
+&lt;includeonly&gt;{{#switch:{{SUBPAGENAME}}
+|sandbox|staging=&lt;!--Suppress categories--&gt;
+|#default=[[Category:Wikipedia authority control]]
+}}&lt;/includeonly&gt;
+&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>aq23o4b14w6kitk1yjnzm8pdjkopadq</sha1>
+    </revision>
+  </page>
+</mediawiki>

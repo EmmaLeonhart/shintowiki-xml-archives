@@ -1,0 +1,683 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Template:If then show/doc</title>
+    <ns>10</ns>
+    <id>50210</id>
+    <revision>
+      <id>2906216</id>
+      <timestamp>2025-03-10T04:11:53Z</timestamp>
+      <contributor>
+        <username>Rusty Cat</username>
+        <id>676</id>
+      </contributor>
+      <minor/>
+      <comment>page move: Changed link from [[Template:Emptyor]] to [[Template:Empty or]] using [[User:BilledMammal/Move+|Move+]]</comment>
+      <origin>2906216</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="5053" sha1="5g2ghb6p2ra0sa47fwtyhb96jvt8cco" xml:space="preserve">{{Documentation subpage}}
+&lt;!-- Please place categories where indicated at the bottom of this page and interwikis at Wikidata (see [[Wikipedia:Wikidata]]) --&gt;
+{{High-use}}
+This template tests whether the first unnamed parameter is not an empty string and returns it if it is not empty. Otherwise it returns the second unnamed parameter.
+
+This is useful when the first parameter is a &lt;nowiki&gt;{{#invoke: }}&lt;/nowiki&gt; of a Lua module that may return a value or nothing. Because it uses the &lt;nowiki&gt;{{#invoke: }}&lt;/nowiki&gt; just once, it simplifies the coding of infoboxes, for example.
+
+The optional third and fourth unnamed parameters provide a prefix and a suffix for the first parameter when returned. This enables the designer to construct more complex templates that still only use one invoke of a Lua module.
+
+== Usage ==
+
+; {{q|P26}} for {{q|Q151973}}
+: &lt;syntaxhighlight lang="wikitext" inline&gt;{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q151973|fwd=ALL|osd=no}}|unmarried}}&lt;/syntaxhighlight&gt; → {{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q151973|fwd=ALL|osd=no}}|unmarried}}
+
+; {{q|P26}} for {{q|Q905}}
+: &lt;syntaxhighlight lang="wikitext" inline&gt;{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q905|fwd=ALL|osd=no}}|unmarried}}&lt;/syntaxhighlight&gt; → {{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q905|fwd=ALL|osd=no}}|unmarried}}
+
+=== Prefix and suffix ===
+==== Infobox field with microformat ====
+A value in an infobox can be designed to be wrapped in a microformat if the wikidata call is not empty:
+: &lt;syntaxhighlight lang="wikitext" inline&gt;{{if then show | {{#invoke:WikidataIB | getValue | rank=best |P19 |name=birth_place |qid={{{qid|}}} |suppressfields={{{suppressfields|}}} |fetchwikidata={{{fetchwikidata|}}} |noicon={{{noicon|}}} | {{{birth_place|}}} }} || &lt;span class="birthplace"&gt; | &lt;/span&gt;}}&lt;/syntaxhighlight&gt;
+: If there is a local parameter supplied in the article (e.g. {{para|birth_place|London}}), the code will return &lt;code&gt;&lt;nowiki&gt;&lt;span class="birthplace"&gt;London&lt;/span&gt;&lt;/nowiki&gt;&lt;/code&gt;.
+: If there is no local parameter it will attempt to fetch a value for {{q|P19}} from Wikidata.
+: If that has a value, such as "New York", the code will return &lt;code&gt;&lt;nowiki&gt;&lt;span class="birthplace"&gt;New York&lt;/span&gt;&lt;/nowiki&gt;&lt;/code&gt;.
+: If there is no value returned from Wikidata, the code returns nothing.
+
+==== Table ====
+A table can be designed to display a row only when a particular property of the article exists on Wikidata.
+
+; {{q|P26}} for {{q|Q151973}}
+: &lt;syntaxhighlight lang="wikitext"&gt;
+{| class="wikitable"
+|-
+! scope="col" style="width:15em;" | Label
+! scope="col" style="width:36em;" | Value
+{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q151973|fwd=ALL|osd=no}}||&lt;tr&gt;&lt;th&gt;{{#invoke:WikidataIB|getLabel|P26|qid=Q151973}}&lt;/th&gt;&lt;td&gt;|&lt;/td&gt;&lt;/tr&gt;}}
+|}
+&lt;/syntaxhighlight&gt;
+: →
+{| class="wikitable"
+|-
+! scope="col" style="width:15em;" | Label
+! scope="col" style="width:36em;" | Value
+{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q151973|fwd=ALL|osd=no}}||&lt;tr&gt;&lt;th&gt;{{#invoke:WikidataIB|getLabel|P26|qid=Q151973}}&lt;/th&gt;&lt;td&gt;|&lt;/td&gt;&lt;/tr&gt;}}
+|}
+
+; {{q|P26}} for {{q|Q905}}
+: &lt;syntaxhighlight lang="wikitext"&gt;
+{| class="wikitable"
+|-
+! scope="col" style="width:15em;" | Label
+! scope="col" style="width:36em;" | Value
+{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q905|fwd=ALL|osd=no}}||&lt;tr&gt;&lt;th&gt;{{#invoke:WikidataIB|getLabel|P26|qid=Q905}}&lt;/th&gt;&lt;td&gt;|&lt;/td&gt;&lt;/tr&gt;}}
+|}
+&lt;/syntaxhighlight&gt;
+: →
+{| class="wikitable"
+|-
+! scope="col" style="width:15em;" | Label
+! scope="col" style="width:36em;" | Value
+{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q905|fwd=ALL|osd=no}}||&lt;tr&gt;&lt;th&gt;{{#invoke:WikidataIB|getLabel|P26|qid=Q905}}&lt;/th&gt;&lt;td&gt;|&lt;/td&gt;&lt;/tr&gt;}}
+|}
+
+== See also ==
+; [[Template:Ifnoteq then show]] : tests whether the first unnamed parameter is equal to the second unnamed parameter and returns the third unnamed parameter if it does. Otherwise it returns the first unnamed parameter. This is useful when the first parameter is a &lt;code&gt;&lt;nowiki&gt;{{#invoke:&lt;/nowiki&gt;&lt;/code&gt; of a Lua module that returns a value for which a specific exception is required.
+; [[Template:If then wikilink]] : tests whether the first unnamed parameter is not an empty string and if it isn't, it returns the parameter formatted as piped wiki-link using an optional namespace prefix.
+; [[Template:Formatter link]] : takes an external identifier code as {{para|code}} and uses a formatter url as {{para|url}} to construct a link to the external resource, which uses the code as display.
+; [[Template:Empty or|Template:Emptyor]] : tests a piece of text to ascertain whether it's effectively empty or contains some text. If the unnamed parameter consists only of html tags, punctuation (e.g. Wiki-markup) and whitespace, then Emptyor returns nothing; otherwise it returns the parameter unchanged. Wrapper for p.emptyor function.
+
+== See also ==
+* {{mfl|params|value_of}}
+
+&lt;includeonly&gt;{{sandbox other||
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:If-then-else templates]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>5g2ghb6p2ra0sa47fwtyhb96jvt8cco</sha1>
+    </revision>
+    <revision>
+      <id>2906217</id>
+      <parentid>2906216</parentid>
+      <timestamp>2025-06-09T22:18:01Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Template:If_then_show/doc]]</comment>
+      <origin>2906216</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="5053" sha1="5g2ghb6p2ra0sa47fwtyhb96jvt8cco" xml:space="preserve">{{Documentation subpage}}
+&lt;!-- Please place categories where indicated at the bottom of this page and interwikis at Wikidata (see [[Wikipedia:Wikidata]]) --&gt;
+{{High-use}}
+This template tests whether the first unnamed parameter is not an empty string and returns it if it is not empty. Otherwise it returns the second unnamed parameter.
+
+This is useful when the first parameter is a &lt;nowiki&gt;{{#invoke: }}&lt;/nowiki&gt; of a Lua module that may return a value or nothing. Because it uses the &lt;nowiki&gt;{{#invoke: }}&lt;/nowiki&gt; just once, it simplifies the coding of infoboxes, for example.
+
+The optional third and fourth unnamed parameters provide a prefix and a suffix for the first parameter when returned. This enables the designer to construct more complex templates that still only use one invoke of a Lua module.
+
+== Usage ==
+
+; {{q|P26}} for {{q|Q151973}}
+: &lt;syntaxhighlight lang="wikitext" inline&gt;{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q151973|fwd=ALL|osd=no}}|unmarried}}&lt;/syntaxhighlight&gt; → {{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q151973|fwd=ALL|osd=no}}|unmarried}}
+
+; {{q|P26}} for {{q|Q905}}
+: &lt;syntaxhighlight lang="wikitext" inline&gt;{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q905|fwd=ALL|osd=no}}|unmarried}}&lt;/syntaxhighlight&gt; → {{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q905|fwd=ALL|osd=no}}|unmarried}}
+
+=== Prefix and suffix ===
+==== Infobox field with microformat ====
+A value in an infobox can be designed to be wrapped in a microformat if the wikidata call is not empty:
+: &lt;syntaxhighlight lang="wikitext" inline&gt;{{if then show | {{#invoke:WikidataIB | getValue | rank=best |P19 |name=birth_place |qid={{{qid|}}} |suppressfields={{{suppressfields|}}} |fetchwikidata={{{fetchwikidata|}}} |noicon={{{noicon|}}} | {{{birth_place|}}} }} || &lt;span class="birthplace"&gt; | &lt;/span&gt;}}&lt;/syntaxhighlight&gt;
+: If there is a local parameter supplied in the article (e.g. {{para|birth_place|London}}), the code will return &lt;code&gt;&lt;nowiki&gt;&lt;span class="birthplace"&gt;London&lt;/span&gt;&lt;/nowiki&gt;&lt;/code&gt;.
+: If there is no local parameter it will attempt to fetch a value for {{q|P19}} from Wikidata.
+: If that has a value, such as "New York", the code will return &lt;code&gt;&lt;nowiki&gt;&lt;span class="birthplace"&gt;New York&lt;/span&gt;&lt;/nowiki&gt;&lt;/code&gt;.
+: If there is no value returned from Wikidata, the code returns nothing.
+
+==== Table ====
+A table can be designed to display a row only when a particular property of the article exists on Wikidata.
+
+; {{q|P26}} for {{q|Q151973}}
+: &lt;syntaxhighlight lang="wikitext"&gt;
+{| class="wikitable"
+|-
+! scope="col" style="width:15em;" | Label
+! scope="col" style="width:36em;" | Value
+{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q151973|fwd=ALL|osd=no}}||&lt;tr&gt;&lt;th&gt;{{#invoke:WikidataIB|getLabel|P26|qid=Q151973}}&lt;/th&gt;&lt;td&gt;|&lt;/td&gt;&lt;/tr&gt;}}
+|}
+&lt;/syntaxhighlight&gt;
+: →
+{| class="wikitable"
+|-
+! scope="col" style="width:15em;" | Label
+! scope="col" style="width:36em;" | Value
+{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q151973|fwd=ALL|osd=no}}||&lt;tr&gt;&lt;th&gt;{{#invoke:WikidataIB|getLabel|P26|qid=Q151973}}&lt;/th&gt;&lt;td&gt;|&lt;/td&gt;&lt;/tr&gt;}}
+|}
+
+; {{q|P26}} for {{q|Q905}}
+: &lt;syntaxhighlight lang="wikitext"&gt;
+{| class="wikitable"
+|-
+! scope="col" style="width:15em;" | Label
+! scope="col" style="width:36em;" | Value
+{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q905|fwd=ALL|osd=no}}||&lt;tr&gt;&lt;th&gt;{{#invoke:WikidataIB|getLabel|P26|qid=Q905}}&lt;/th&gt;&lt;td&gt;|&lt;/td&gt;&lt;/tr&gt;}}
+|}
+&lt;/syntaxhighlight&gt;
+: →
+{| class="wikitable"
+|-
+! scope="col" style="width:15em;" | Label
+! scope="col" style="width:36em;" | Value
+{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q905|fwd=ALL|osd=no}}||&lt;tr&gt;&lt;th&gt;{{#invoke:WikidataIB|getLabel|P26|qid=Q905}}&lt;/th&gt;&lt;td&gt;|&lt;/td&gt;&lt;/tr&gt;}}
+|}
+
+== See also ==
+; [[Template:Ifnoteq then show]] : tests whether the first unnamed parameter is equal to the second unnamed parameter and returns the third unnamed parameter if it does. Otherwise it returns the first unnamed parameter. This is useful when the first parameter is a &lt;code&gt;&lt;nowiki&gt;{{#invoke:&lt;/nowiki&gt;&lt;/code&gt; of a Lua module that returns a value for which a specific exception is required.
+; [[Template:If then wikilink]] : tests whether the first unnamed parameter is not an empty string and if it isn't, it returns the parameter formatted as piped wiki-link using an optional namespace prefix.
+; [[Template:Formatter link]] : takes an external identifier code as {{para|code}} and uses a formatter url as {{para|url}} to construct a link to the external resource, which uses the code as display.
+; [[Template:Empty or|Template:Emptyor]] : tests a piece of text to ascertain whether it's effectively empty or contains some text. If the unnamed parameter consists only of html tags, punctuation (e.g. Wiki-markup) and whitespace, then Emptyor returns nothing; otherwise it returns the parameter unchanged. Wrapper for p.emptyor function.
+
+== See also ==
+* {{mfl|params|value_of}}
+
+&lt;includeonly&gt;{{sandbox other||
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:If-then-else templates]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>5g2ghb6p2ra0sa47fwtyhb96jvt8cco</sha1>
+    </revision>
+    <revision>
+      <id>2906218</id>
+      <parentid>2906217</parentid>
+      <timestamp>2025-11-08T01:52:14Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: add {{wikidata link|Q...}} or [[Category:Templates without wikidata]]</comment>
+      <origin>2906218</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="5116" sha1="qj81vaw0m312toyhi8s4yb8ky2qi8ia" xml:space="preserve">{{Documentation subpage}}
+&lt;!-- Please place categories where indicated at the bottom of this page and interwikis at Wikidata (see [[Wikipedia:Wikidata]]) --&gt;
+{{High-use}}
+This template tests whether the first unnamed parameter is not an empty string and returns it if it is not empty. Otherwise it returns the second unnamed parameter.
+
+This is useful when the first parameter is a &lt;nowiki&gt;{{#invoke: }}&lt;/nowiki&gt; of a Lua module that may return a value or nothing. Because it uses the &lt;nowiki&gt;{{#invoke: }}&lt;/nowiki&gt; just once, it simplifies the coding of infoboxes, for example.
+
+The optional third and fourth unnamed parameters provide a prefix and a suffix for the first parameter when returned. This enables the designer to construct more complex templates that still only use one invoke of a Lua module.
+
+== Usage ==
+
+; {{q|P26}} for {{q|Q151973}}
+: &lt;syntaxhighlight lang="wikitext" inline&gt;{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q151973|fwd=ALL|osd=no}}|unmarried}}&lt;/syntaxhighlight&gt; → {{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q151973|fwd=ALL|osd=no}}|unmarried}}
+
+; {{q|P26}} for {{q|Q905}}
+: &lt;syntaxhighlight lang="wikitext" inline&gt;{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q905|fwd=ALL|osd=no}}|unmarried}}&lt;/syntaxhighlight&gt; → {{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q905|fwd=ALL|osd=no}}|unmarried}}
+
+=== Prefix and suffix ===
+==== Infobox field with microformat ====
+A value in an infobox can be designed to be wrapped in a microformat if the wikidata call is not empty:
+: &lt;syntaxhighlight lang="wikitext" inline&gt;{{if then show | {{#invoke:WikidataIB | getValue | rank=best |P19 |name=birth_place |qid={{{qid|}}} |suppressfields={{{suppressfields|}}} |fetchwikidata={{{fetchwikidata|}}} |noicon={{{noicon|}}} | {{{birth_place|}}} }} || &lt;span class="birthplace"&gt; | &lt;/span&gt;}}&lt;/syntaxhighlight&gt;
+: If there is a local parameter supplied in the article (e.g. {{para|birth_place|London}}), the code will return &lt;code&gt;&lt;nowiki&gt;&lt;span class="birthplace"&gt;London&lt;/span&gt;&lt;/nowiki&gt;&lt;/code&gt;.
+: If there is no local parameter it will attempt to fetch a value for {{q|P19}} from Wikidata.
+: If that has a value, such as "New York", the code will return &lt;code&gt;&lt;nowiki&gt;&lt;span class="birthplace"&gt;New York&lt;/span&gt;&lt;/nowiki&gt;&lt;/code&gt;.
+: If there is no value returned from Wikidata, the code returns nothing.
+
+==== Table ====
+A table can be designed to display a row only when a particular property of the article exists on Wikidata.
+
+; {{q|P26}} for {{q|Q151973}}
+: &lt;syntaxhighlight lang="wikitext"&gt;
+{| class="wikitable"
+|-
+! scope="col" style="width:15em;" | Label
+! scope="col" style="width:36em;" | Value
+{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q151973|fwd=ALL|osd=no}}||&lt;tr&gt;&lt;th&gt;{{#invoke:WikidataIB|getLabel|P26|qid=Q151973}}&lt;/th&gt;&lt;td&gt;|&lt;/td&gt;&lt;/tr&gt;}}
+|}
+&lt;/syntaxhighlight&gt;
+: →
+{| class="wikitable"
+|-
+! scope="col" style="width:15em;" | Label
+! scope="col" style="width:36em;" | Value
+{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q151973|fwd=ALL|osd=no}}||&lt;tr&gt;&lt;th&gt;{{#invoke:WikidataIB|getLabel|P26|qid=Q151973}}&lt;/th&gt;&lt;td&gt;|&lt;/td&gt;&lt;/tr&gt;}}
+|}
+
+; {{q|P26}} for {{q|Q905}}
+: &lt;syntaxhighlight lang="wikitext"&gt;
+{| class="wikitable"
+|-
+! scope="col" style="width:15em;" | Label
+! scope="col" style="width:36em;" | Value
+{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q905|fwd=ALL|osd=no}}||&lt;tr&gt;&lt;th&gt;{{#invoke:WikidataIB|getLabel|P26|qid=Q905}}&lt;/th&gt;&lt;td&gt;|&lt;/td&gt;&lt;/tr&gt;}}
+|}
+&lt;/syntaxhighlight&gt;
+: →
+{| class="wikitable"
+|-
+! scope="col" style="width:15em;" | Label
+! scope="col" style="width:36em;" | Value
+{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q905|fwd=ALL|osd=no}}||&lt;tr&gt;&lt;th&gt;{{#invoke:WikidataIB|getLabel|P26|qid=Q905}}&lt;/th&gt;&lt;td&gt;|&lt;/td&gt;&lt;/tr&gt;}}
+|}
+
+== See also ==
+; [[Template:Ifnoteq then show]] : tests whether the first unnamed parameter is equal to the second unnamed parameter and returns the third unnamed parameter if it does. Otherwise it returns the first unnamed parameter. This is useful when the first parameter is a &lt;code&gt;&lt;nowiki&gt;{{#invoke:&lt;/nowiki&gt;&lt;/code&gt; of a Lua module that returns a value for which a specific exception is required.
+; [[Template:If then wikilink]] : tests whether the first unnamed parameter is not an empty string and if it isn't, it returns the parameter formatted as piped wiki-link using an optional namespace prefix.
+; [[Template:Formatter link]] : takes an external identifier code as {{para|code}} and uses a formatter url as {{para|url}} to construct a link to the external resource, which uses the code as display.
+; [[Template:Empty or|Template:Emptyor]] : tests a piece of text to ascertain whether it's effectively empty or contains some text. If the unnamed parameter consists only of html tags, punctuation (e.g. Wiki-markup) and whitespace, then Emptyor returns nothing; otherwise it returns the parameter unchanged. Wrapper for p.emptyor function.
+
+== See also ==
+* {{mfl|params|value_of}}
+
+&lt;includeonly&gt;{{sandbox other||
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:If-then-else templates]]
+}}&lt;/includeonly&gt;
+&lt;noinclude&gt;[[Category:Templates without wikidata]]&lt;/noinclude&gt;</text>
+      <sha1>qj81vaw0m312toyhi8s4yb8ky2qi8ia</sha1>
+    </revision>
+    <revision>
+      <id>50211</id>
+      <timestamp>2025-11-08T04:37:53Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Text replacement - "↵&lt;noinclude&gt;[[Category:Templates without wikidata]]&lt;/noinclude&gt;" to ""</comment>
+      <origin>50211</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="5053" sha1="5g2ghb6p2ra0sa47fwtyhb96jvt8cco" xml:space="preserve">{{Documentation subpage}}
+&lt;!-- Please place categories where indicated at the bottom of this page and interwikis at Wikidata (see [[Wikipedia:Wikidata]]) --&gt;
+{{High-use}}
+This template tests whether the first unnamed parameter is not an empty string and returns it if it is not empty. Otherwise it returns the second unnamed parameter.
+
+This is useful when the first parameter is a &lt;nowiki&gt;{{#invoke: }}&lt;/nowiki&gt; of a Lua module that may return a value or nothing. Because it uses the &lt;nowiki&gt;{{#invoke: }}&lt;/nowiki&gt; just once, it simplifies the coding of infoboxes, for example.
+
+The optional third and fourth unnamed parameters provide a prefix and a suffix for the first parameter when returned. This enables the designer to construct more complex templates that still only use one invoke of a Lua module.
+
+== Usage ==
+
+; {{q|P26}} for {{q|Q151973}}
+: &lt;syntaxhighlight lang="wikitext" inline&gt;{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q151973|fwd=ALL|osd=no}}|unmarried}}&lt;/syntaxhighlight&gt; → {{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q151973|fwd=ALL|osd=no}}|unmarried}}
+
+; {{q|P26}} for {{q|Q905}}
+: &lt;syntaxhighlight lang="wikitext" inline&gt;{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q905|fwd=ALL|osd=no}}|unmarried}}&lt;/syntaxhighlight&gt; → {{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q905|fwd=ALL|osd=no}}|unmarried}}
+
+=== Prefix and suffix ===
+==== Infobox field with microformat ====
+A value in an infobox can be designed to be wrapped in a microformat if the wikidata call is not empty:
+: &lt;syntaxhighlight lang="wikitext" inline&gt;{{if then show | {{#invoke:WikidataIB | getValue | rank=best |P19 |name=birth_place |qid={{{qid|}}} |suppressfields={{{suppressfields|}}} |fetchwikidata={{{fetchwikidata|}}} |noicon={{{noicon|}}} | {{{birth_place|}}} }} || &lt;span class="birthplace"&gt; | &lt;/span&gt;}}&lt;/syntaxhighlight&gt;
+: If there is a local parameter supplied in the article (e.g. {{para|birth_place|London}}), the code will return &lt;code&gt;&lt;nowiki&gt;&lt;span class="birthplace"&gt;London&lt;/span&gt;&lt;/nowiki&gt;&lt;/code&gt;.
+: If there is no local parameter it will attempt to fetch a value for {{q|P19}} from Wikidata.
+: If that has a value, such as "New York", the code will return &lt;code&gt;&lt;nowiki&gt;&lt;span class="birthplace"&gt;New York&lt;/span&gt;&lt;/nowiki&gt;&lt;/code&gt;.
+: If there is no value returned from Wikidata, the code returns nothing.
+
+==== Table ====
+A table can be designed to display a row only when a particular property of the article exists on Wikidata.
+
+; {{q|P26}} for {{q|Q151973}}
+: &lt;syntaxhighlight lang="wikitext"&gt;
+{| class="wikitable"
+|-
+! scope="col" style="width:15em;" | Label
+! scope="col" style="width:36em;" | Value
+{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q151973|fwd=ALL|osd=no}}||&lt;tr&gt;&lt;th&gt;{{#invoke:WikidataIB|getLabel|P26|qid=Q151973}}&lt;/th&gt;&lt;td&gt;|&lt;/td&gt;&lt;/tr&gt;}}
+|}
+&lt;/syntaxhighlight&gt;
+: →
+{| class="wikitable"
+|-
+! scope="col" style="width:15em;" | Label
+! scope="col" style="width:36em;" | Value
+{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q151973|fwd=ALL|osd=no}}||&lt;tr&gt;&lt;th&gt;{{#invoke:WikidataIB|getLabel|P26|qid=Q151973}}&lt;/th&gt;&lt;td&gt;|&lt;/td&gt;&lt;/tr&gt;}}
+|}
+
+; {{q|P26}} for {{q|Q905}}
+: &lt;syntaxhighlight lang="wikitext"&gt;
+{| class="wikitable"
+|-
+! scope="col" style="width:15em;" | Label
+! scope="col" style="width:36em;" | Value
+{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q905|fwd=ALL|osd=no}}||&lt;tr&gt;&lt;th&gt;{{#invoke:WikidataIB|getLabel|P26|qid=Q905}}&lt;/th&gt;&lt;td&gt;|&lt;/td&gt;&lt;/tr&gt;}}
+|}
+&lt;/syntaxhighlight&gt;
+: →
+{| class="wikitable"
+|-
+! scope="col" style="width:15em;" | Label
+! scope="col" style="width:36em;" | Value
+{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q905|fwd=ALL|osd=no}}||&lt;tr&gt;&lt;th&gt;{{#invoke:WikidataIB|getLabel|P26|qid=Q905}}&lt;/th&gt;&lt;td&gt;|&lt;/td&gt;&lt;/tr&gt;}}
+|}
+
+== See also ==
+; [[Template:Ifnoteq then show]] : tests whether the first unnamed parameter is equal to the second unnamed parameter and returns the third unnamed parameter if it does. Otherwise it returns the first unnamed parameter. This is useful when the first parameter is a &lt;code&gt;&lt;nowiki&gt;{{#invoke:&lt;/nowiki&gt;&lt;/code&gt; of a Lua module that returns a value for which a specific exception is required.
+; [[Template:If then wikilink]] : tests whether the first unnamed parameter is not an empty string and if it isn't, it returns the parameter formatted as piped wiki-link using an optional namespace prefix.
+; [[Template:Formatter link]] : takes an external identifier code as {{para|code}} and uses a formatter url as {{para|url}} to construct a link to the external resource, which uses the code as display.
+; [[Template:Empty or|Template:Emptyor]] : tests a piece of text to ascertain whether it's effectively empty or contains some text. If the unnamed parameter consists only of html tags, punctuation (e.g. Wiki-markup) and whitespace, then Emptyor returns nothing; otherwise it returns the parameter unchanged. Wrapper for p.emptyor function.
+
+== See also ==
+* {{mfl|params|value_of}}
+
+&lt;includeonly&gt;{{sandbox other||
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:If-then-else templates]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>5g2ghb6p2ra0sa47fwtyhb96jvt8cco</sha1>
+    </revision>
+    <revision>
+      <id>168501</id>
+      <parentid>50211</parentid>
+      <timestamp>2026-02-05T22:25:08Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: Adding dummy category to make categories work after wiki restoration</comment>
+      <origin>168501</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="5076" sha1="rmvmnrj5gxabume4j9pgtvnhjwifmbc" xml:space="preserve">{{Documentation subpage}}
+&lt;!-- Please place categories where indicated at the bottom of this page and interwikis at Wikidata (see [[Wikipedia:Wikidata]]) --&gt;
+{{High-use}}
+This template tests whether the first unnamed parameter is not an empty string and returns it if it is not empty. Otherwise it returns the second unnamed parameter.
+
+This is useful when the first parameter is a &lt;nowiki&gt;{{#invoke: }}&lt;/nowiki&gt; of a Lua module that may return a value or nothing. Because it uses the &lt;nowiki&gt;{{#invoke: }}&lt;/nowiki&gt; just once, it simplifies the coding of infoboxes, for example.
+
+The optional third and fourth unnamed parameters provide a prefix and a suffix for the first parameter when returned. This enables the designer to construct more complex templates that still only use one invoke of a Lua module.
+
+== Usage ==
+
+; {{q|P26}} for {{q|Q151973}}
+: &lt;syntaxhighlight lang="wikitext" inline&gt;{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q151973|fwd=ALL|osd=no}}|unmarried}}&lt;/syntaxhighlight&gt; → {{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q151973|fwd=ALL|osd=no}}|unmarried}}
+
+; {{q|P26}} for {{q|Q905}}
+: &lt;syntaxhighlight lang="wikitext" inline&gt;{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q905|fwd=ALL|osd=no}}|unmarried}}&lt;/syntaxhighlight&gt; → {{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q905|fwd=ALL|osd=no}}|unmarried}}
+
+=== Prefix and suffix ===
+==== Infobox field with microformat ====
+A value in an infobox can be designed to be wrapped in a microformat if the wikidata call is not empty:
+: &lt;syntaxhighlight lang="wikitext" inline&gt;{{if then show | {{#invoke:WikidataIB | getValue | rank=best |P19 |name=birth_place |qid={{{qid|}}} |suppressfields={{{suppressfields|}}} |fetchwikidata={{{fetchwikidata|}}} |noicon={{{noicon|}}} | {{{birth_place|}}} }} || &lt;span class="birthplace"&gt; | &lt;/span&gt;}}&lt;/syntaxhighlight&gt;
+: If there is a local parameter supplied in the article (e.g. {{para|birth_place|London}}), the code will return &lt;code&gt;&lt;nowiki&gt;&lt;span class="birthplace"&gt;London&lt;/span&gt;&lt;/nowiki&gt;&lt;/code&gt;.
+: If there is no local parameter it will attempt to fetch a value for {{q|P19}} from Wikidata.
+: If that has a value, such as "New York", the code will return &lt;code&gt;&lt;nowiki&gt;&lt;span class="birthplace"&gt;New York&lt;/span&gt;&lt;/nowiki&gt;&lt;/code&gt;.
+: If there is no value returned from Wikidata, the code returns nothing.
+
+==== Table ====
+A table can be designed to display a row only when a particular property of the article exists on Wikidata.
+
+; {{q|P26}} for {{q|Q151973}}
+: &lt;syntaxhighlight lang="wikitext"&gt;
+{| class="wikitable"
+|-
+! scope="col" style="width:15em;" | Label
+! scope="col" style="width:36em;" | Value
+{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q151973|fwd=ALL|osd=no}}||&lt;tr&gt;&lt;th&gt;{{#invoke:WikidataIB|getLabel|P26|qid=Q151973}}&lt;/th&gt;&lt;td&gt;|&lt;/td&gt;&lt;/tr&gt;}}
+|}
+&lt;/syntaxhighlight&gt;
+: →
+{| class="wikitable"
+|-
+! scope="col" style="width:15em;" | Label
+! scope="col" style="width:36em;" | Value
+{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q151973|fwd=ALL|osd=no}}||&lt;tr&gt;&lt;th&gt;{{#invoke:WikidataIB|getLabel|P26|qid=Q151973}}&lt;/th&gt;&lt;td&gt;|&lt;/td&gt;&lt;/tr&gt;}}
+|}
+
+; {{q|P26}} for {{q|Q905}}
+: &lt;syntaxhighlight lang="wikitext"&gt;
+{| class="wikitable"
+|-
+! scope="col" style="width:15em;" | Label
+! scope="col" style="width:36em;" | Value
+{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q905|fwd=ALL|osd=no}}||&lt;tr&gt;&lt;th&gt;{{#invoke:WikidataIB|getLabel|P26|qid=Q905}}&lt;/th&gt;&lt;td&gt;|&lt;/td&gt;&lt;/tr&gt;}}
+|}
+&lt;/syntaxhighlight&gt;
+: →
+{| class="wikitable"
+|-
+! scope="col" style="width:15em;" | Label
+! scope="col" style="width:36em;" | Value
+{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q905|fwd=ALL|osd=no}}||&lt;tr&gt;&lt;th&gt;{{#invoke:WikidataIB|getLabel|P26|qid=Q905}}&lt;/th&gt;&lt;td&gt;|&lt;/td&gt;&lt;/tr&gt;}}
+|}
+
+== See also ==
+; [[Template:Ifnoteq then show]] : tests whether the first unnamed parameter is equal to the second unnamed parameter and returns the third unnamed parameter if it does. Otherwise it returns the first unnamed parameter. This is useful when the first parameter is a &lt;code&gt;&lt;nowiki&gt;{{#invoke:&lt;/nowiki&gt;&lt;/code&gt; of a Lua module that returns a value for which a specific exception is required.
+; [[Template:If then wikilink]] : tests whether the first unnamed parameter is not an empty string and if it isn't, it returns the parameter formatted as piped wiki-link using an optional namespace prefix.
+; [[Template:Formatter link]] : takes an external identifier code as {{para|code}} and uses a formatter url as {{para|url}} to construct a link to the external resource, which uses the code as display.
+; [[Template:Empty or|Template:Emptyor]] : tests a piece of text to ascertain whether it's effectively empty or contains some text. If the unnamed parameter consists only of html tags, punctuation (e.g. Wiki-markup) and whitespace, then Emptyor returns nothing; otherwise it returns the parameter unchanged. Wrapper for p.emptyor function.
+
+== See also ==
+* {{mfl|params|value_of}}
+
+&lt;includeonly&gt;{{sandbox other||
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:If-then-else templates]]
+}}&lt;/includeonly&gt;
+[[Category:Templates]]</text>
+      <sha1>rmvmnrj5gxabume4j9pgtvnhjwifmbc</sha1>
+    </revision>
+    <revision>
+      <id>3567140</id>
+      <parentid>168501</parentid>
+      <timestamp>2026-03-23T20:41:57Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <comment>Bot: wrap 2 stray tag(s) in noinclude [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23458359115|commit triggered pipeline]]</comment>
+      <origin>3567140</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="5145" sha1="7wgc6jrgb1kawaikolwnasb5kmurl2q" xml:space="preserve">{{Documentation subpage}}
+&lt;!-- Please place categories where indicated at the bottom of this page and interwikis at Wikidata (see [[Wikipedia:Wikidata]]) --&gt;
+{{High-use}}
+This template tests whether the first unnamed parameter is not an empty string and returns it if it is not empty. Otherwise it returns the second unnamed parameter.
+
+This is useful when the first parameter is a &lt;nowiki&gt;{{#invoke: }}&lt;/nowiki&gt; of a Lua module that may return a value or nothing. Because it uses the &lt;nowiki&gt;{{#invoke: }}&lt;/nowiki&gt; just once, it simplifies the coding of infoboxes, for example.
+
+The optional third and fourth unnamed parameters provide a prefix and a suffix for the first parameter when returned. This enables the designer to construct more complex templates that still only use one invoke of a Lua module.
+
+== Usage ==
+
+; {{q|P26}} for {{q|Q151973}}
+: &lt;syntaxhighlight lang="wikitext" inline&gt;{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q151973|fwd=ALL|osd=no}}|unmarried}}&lt;/syntaxhighlight&gt; → {{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q151973|fwd=ALL|osd=no}}|unmarried}}
+
+; {{q|P26}} for {{q|Q905}}
+: &lt;syntaxhighlight lang="wikitext" inline&gt;{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q905|fwd=ALL|osd=no}}|unmarried}}&lt;/syntaxhighlight&gt; → {{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q905|fwd=ALL|osd=no}}|unmarried}}
+
+=== Prefix and suffix ===
+==== Infobox field with microformat ====
+A value in an infobox can be designed to be wrapped in a microformat if the wikidata call is not empty:
+: &lt;syntaxhighlight lang="wikitext" inline&gt;{{if then show | {{#invoke:WikidataIB | getValue | rank=best |P19 |name=birth_place |qid={{{qid|}}} |suppressfields={{{suppressfields|}}} |fetchwikidata={{{fetchwikidata|}}} |noicon={{{noicon|}}} | {{{birth_place|}}} }} || &lt;span class="birthplace"&gt; | &lt;/span&gt;}}&lt;/syntaxhighlight&gt;
+: If there is a local parameter supplied in the article (e.g. {{para|birth_place|London}}), the code will return &lt;code&gt;&lt;nowiki&gt;&lt;span class="birthplace"&gt;London&lt;/span&gt;&lt;/nowiki&gt;&lt;/code&gt;.
+: If there is no local parameter it will attempt to fetch a value for {{q|P19}} from Wikidata.
+: If that has a value, such as "New York", the code will return &lt;code&gt;&lt;nowiki&gt;&lt;span class="birthplace"&gt;New York&lt;/span&gt;&lt;/nowiki&gt;&lt;/code&gt;.
+: If there is no value returned from Wikidata, the code returns nothing.
+
+==== Table ====
+A table can be designed to display a row only when a particular property of the article exists on Wikidata.
+
+; {{q|P26}} for {{q|Q151973}}
+: &lt;syntaxhighlight lang="wikitext"&gt;
+{| class="wikitable"
+|-
+! scope="col" style="width:15em;" | Label
+! scope="col" style="width:36em;" | Value
+{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q151973|fwd=ALL|osd=no}}||&lt;tr&gt;&lt;th&gt;{{#invoke:WikidataIB|getLabel|P26|qid=Q151973}}&lt;/th&gt;&lt;td&gt;|&lt;/td&gt;&lt;/tr&gt;}}
+|}
+&lt;/syntaxhighlight&gt;
+: →
+{| class="wikitable"
+|-
+! scope="col" style="width:15em;" | Label
+! scope="col" style="width:36em;" | Value
+{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q151973|fwd=ALL|osd=no}}||&lt;tr&gt;&lt;th&gt;{{#invoke:WikidataIB|getLabel|P26|qid=Q151973}}&lt;/th&gt;&lt;td&gt;|&lt;/td&gt;&lt;/tr&gt;}}
+|}
+
+; {{q|P26}} for {{q|Q905}}
+: &lt;syntaxhighlight lang="wikitext"&gt;
+{| class="wikitable"
+|-
+! scope="col" style="width:15em;" | Label
+! scope="col" style="width:36em;" | Value
+{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q905|fwd=ALL|osd=no}}||&lt;tr&gt;&lt;th&gt;{{#invoke:WikidataIB|getLabel|P26|qid=Q905}}&lt;/th&gt;&lt;td&gt;|&lt;/td&gt;&lt;/tr&gt;}}
+|}
+&lt;/syntaxhighlight&gt;
+: →
+{| class="wikitable"
+|-
+! scope="col" style="width:15em;" | Label
+! scope="col" style="width:36em;" | Value
+{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q905|fwd=ALL|osd=no}}||&lt;tr&gt;&lt;th&gt;{{#invoke:WikidataIB|getLabel|P26|qid=Q905}}&lt;/th&gt;&lt;td&gt;|&lt;/td&gt;&lt;/tr&gt;}}
+|}
+
+== See also ==
+; [[Template:Ifnoteq then show]] : tests whether the first unnamed parameter is equal to the second unnamed parameter and returns the third unnamed parameter if it does. Otherwise it returns the first unnamed parameter. This is useful when the first parameter is a &lt;code&gt;&lt;nowiki&gt;{{#invoke:&lt;/nowiki&gt;&lt;/code&gt; of a Lua module that returns a value for which a specific exception is required.
+; [[Template:If then wikilink]] : tests whether the first unnamed parameter is not an empty string and if it isn't, it returns the parameter formatted as piped wiki-link using an optional namespace prefix.
+; [[Template:Formatter link]] : takes an external identifier code as {{para|code}} and uses a formatter url as {{para|url}} to construct a link to the external resource, which uses the code as display.
+; [[Template:Empty or|Template:Emptyor]] : tests a piece of text to ascertain whether it's effectively empty or contains some text. If the unnamed parameter consists only of html tags, punctuation (e.g. Wiki-markup) and whitespace, then Emptyor returns nothing; otherwise it returns the parameter unchanged. Wrapper for p.emptyor function.
+
+== See also ==
+* {{mfl|params|value_of}}
+
+&lt;includeonly&gt;{{sandbox other||
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+}}&lt;/includeonly&gt;
+&lt;noinclude&gt;
+[[Category:If-then-else templates]]
+[[Category:Templates]]
+[[Category:Templates fixed with noinclude]]
+&lt;/noinclude&gt;</text>
+      <sha1>7wgc6jrgb1kawaikolwnasb5kmurl2q</sha1>
+    </revision>
+    <revision>
+      <id>3659844</id>
+      <parentid>3567140</parentid>
+      <timestamp>2026-04-25T22:58:45Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <comment>Bot: strip HTML comments [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/24938264069|time triggered pipeline]]</comment>
+      <origin>3659844</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="4947" sha1="7nxraec47noo0vyyi9ntkobs9ayokqr" xml:space="preserve">{{Documentation subpage}}
+
+{{High-use}}
+This template tests whether the first unnamed parameter is not an empty string and returns it if it is not empty. Otherwise it returns the second unnamed parameter.
+
+This is useful when the first parameter is a &lt;nowiki&gt;{{#invoke: }}&lt;/nowiki&gt; of a Lua module that may return a value or nothing. Because it uses the &lt;nowiki&gt;{{#invoke: }}&lt;/nowiki&gt; just once, it simplifies the coding of infoboxes, for example.
+
+The optional third and fourth unnamed parameters provide a prefix and a suffix for the first parameter when returned. This enables the designer to construct more complex templates that still only use one invoke of a Lua module.
+
+== Usage ==
+
+; {{q|P26}} for {{q|Q151973}}
+: &lt;syntaxhighlight lang="wikitext" inline&gt;{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q151973|fwd=ALL|osd=no}}|unmarried}}&lt;/syntaxhighlight&gt; → {{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q151973|fwd=ALL|osd=no}}|unmarried}}
+
+; {{q|P26}} for {{q|Q905}}
+: &lt;syntaxhighlight lang="wikitext" inline&gt;{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q905|fwd=ALL|osd=no}}|unmarried}}&lt;/syntaxhighlight&gt; → {{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q905|fwd=ALL|osd=no}}|unmarried}}
+
+=== Prefix and suffix ===
+==== Infobox field with microformat ====
+A value in an infobox can be designed to be wrapped in a microformat if the wikidata call is not empty:
+: &lt;syntaxhighlight lang="wikitext" inline&gt;{{if then show | {{#invoke:WikidataIB | getValue | rank=best |P19 |name=birth_place |qid={{{qid|}}} |suppressfields={{{suppressfields|}}} |fetchwikidata={{{fetchwikidata|}}} |noicon={{{noicon|}}} | {{{birth_place|}}} }} || &lt;span class="birthplace"&gt; | &lt;/span&gt;}}&lt;/syntaxhighlight&gt;
+: If there is a local parameter supplied in the article (e.g. {{para|birth_place|London}}), the code will return &lt;code&gt;&lt;nowiki&gt;&lt;span class="birthplace"&gt;London&lt;/span&gt;&lt;/nowiki&gt;&lt;/code&gt;.
+: If there is no local parameter it will attempt to fetch a value for {{q|P19}} from Wikidata.
+: If that has a value, such as "New York", the code will return &lt;code&gt;&lt;nowiki&gt;&lt;span class="birthplace"&gt;New York&lt;/span&gt;&lt;/nowiki&gt;&lt;/code&gt;.
+: If there is no value returned from Wikidata, the code returns nothing.
+
+==== Table ====
+A table can be designed to display a row only when a particular property of the article exists on Wikidata.
+
+; {{q|P26}} for {{q|Q151973}}
+: &lt;syntaxhighlight lang="wikitext"&gt;
+{| class="wikitable"
+|-
+! scope="col" style="width:15em;" | Label
+! scope="col" style="width:36em;" | Value
+{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q151973|fwd=ALL|osd=no}}||&lt;tr&gt;&lt;th&gt;{{#invoke:WikidataIB|getLabel|P26|qid=Q151973}}&lt;/th&gt;&lt;td&gt;|&lt;/td&gt;&lt;/tr&gt;}}
+|}
+&lt;/syntaxhighlight&gt;
+: →
+{| class="wikitable"
+|-
+! scope="col" style="width:15em;" | Label
+! scope="col" style="width:36em;" | Value
+{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q151973|fwd=ALL|osd=no}}||&lt;tr&gt;&lt;th&gt;{{#invoke:WikidataIB|getLabel|P26|qid=Q151973}}&lt;/th&gt;&lt;td&gt;|&lt;/td&gt;&lt;/tr&gt;}}
+|}
+
+; {{q|P26}} for {{q|Q905}}
+: &lt;syntaxhighlight lang="wikitext"&gt;
+{| class="wikitable"
+|-
+! scope="col" style="width:15em;" | Label
+! scope="col" style="width:36em;" | Value
+{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q905|fwd=ALL|osd=no}}||&lt;tr&gt;&lt;th&gt;{{#invoke:WikidataIB|getLabel|P26|qid=Q905}}&lt;/th&gt;&lt;td&gt;|&lt;/td&gt;&lt;/tr&gt;}}
+|}
+&lt;/syntaxhighlight&gt;
+: →
+{| class="wikitable"
+|-
+! scope="col" style="width:15em;" | Label
+! scope="col" style="width:36em;" | Value
+{{If then show|{{#invoke:WikidataIB|getValue|P26|qid=Q905|fwd=ALL|osd=no}}||&lt;tr&gt;&lt;th&gt;{{#invoke:WikidataIB|getLabel|P26|qid=Q905}}&lt;/th&gt;&lt;td&gt;|&lt;/td&gt;&lt;/tr&gt;}}
+|}
+
+== See also ==
+; [[Template:Ifnoteq then show]] : tests whether the first unnamed parameter is equal to the second unnamed parameter and returns the third unnamed parameter if it does. Otherwise it returns the first unnamed parameter. This is useful when the first parameter is a &lt;code&gt;&lt;nowiki&gt;{{#invoke:&lt;/nowiki&gt;&lt;/code&gt; of a Lua module that returns a value for which a specific exception is required.
+; [[Template:If then wikilink]] : tests whether the first unnamed parameter is not an empty string and if it isn't, it returns the parameter formatted as piped wiki-link using an optional namespace prefix.
+; [[Template:Formatter link]] : takes an external identifier code as {{para|code}} and uses a formatter url as {{para|url}} to construct a link to the external resource, which uses the code as display.
+; [[Template:Empty or|Template:Emptyor]] : tests a piece of text to ascertain whether it's effectively empty or contains some text. If the unnamed parameter consists only of html tags, punctuation (e.g. Wiki-markup) and whitespace, then Emptyor returns nothing; otherwise it returns the parameter unchanged. Wrapper for p.emptyor function.
+
+== See also ==
+* {{mfl|params|value_of}}
+
+&lt;includeonly&gt;{{sandbox other||
+
+}}&lt;/includeonly&gt;
+&lt;noinclude&gt;
+[[Category:If-then-else templates]]
+[[Category:Templates]]
+[[Category:Templates fixed with noinclude]]
+&lt;/noinclude&gt;</text>
+      <sha1>7nxraec47noo0vyyi9ntkobs9ayokqr</sha1>
+    </revision>
+  </page>
+</mediawiki>

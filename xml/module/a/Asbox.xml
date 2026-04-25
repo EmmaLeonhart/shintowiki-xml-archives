@@ -1,0 +1,960 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Asbox</title>
+    <ns>828</ns>
+    <id>646</id>
+    <revision>
+      <id>516346</id>
+      <timestamp>2021-08-19T05:19:44Z</timestamp>
+      <contributor>
+        <username>DannyS712</username>
+        <id>122</id>
+      </contributor>
+      <comment>prevent global variable disallowedUnicodeChars, triggers warnings at [[Template:Ankylosaurian-stub]] - assuming it was by accident - please revert if this breaks anything</comment>
+      <origin>516346</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="12732" sha1="18jy1or6fzutqp3z3eusrstkz7liymn" xml:space="preserve">--[[
+This module was created by User:CodeHydro (Alexander Zhikun He).
+User:Jackmcbarn and User:Mr._Stradivarius provided a great deal of assistance in writting p.main()
+
+p.main() draw heavily from the following version of Template:Asbox of the English Wikipedia, authored primarily by User:Rich_Farmbrough
+https://en.wikipedia.org/w/index.php?title=Template:Asbox&amp;oldid=619510287
+
+p.templatepage() is derived from the following revision of Template:Asbox/templatepage, authored primarily by User:MSGJ
+https://en.wikipedia.org/w/index.php?title=Template:Asbox/templatepage&amp;oldid=632914791
+
+Both templates had significant contributions from numerous others listed in the revision history tab of their respective pages.
+--]]
+local WRAPPER_TEMPLATE, args = 'Template:Asbox'
+local templatestyles = 'Asbox/styles.css'
+local p, Buffer, stubCats = {
+	--Prevents dupli-cats... get it? Maybe not?
+	cats = setmetatable({}, {__newindex = function(t, i, v)
+		if not rawget(t, i) then
+			rawset(t, i, v)
+			table.insert(t, i)
+		end
+	end}),
+	--initializes variables required by both p.main and p.templatepage
+	init = function(self, frame, page)
+		args, page = args or require('Module:Arguments').getArgs(frame, {
+			wrappers = WRAPPER_TEMPLATE
+		}), page or mw.title.getCurrentTitle()
+		--Ensures demo parameter will never affect category() output for articles
+		self.demo = self.demo or page.namespace ~= 0 and args.demo
+		return args, page
+	end
+}, require('Module:Buffer')
+
+--[[
+Formats category links. Stores them until called with cat.done=true
+Takes multiple or single categories in the form of 'cat'
+or a table of strings and/or tables containing parts. (See below)
+]]
+local attention, catTag, catKey = Buffer'Stub message templates needing attention', '[[Category:%s]]', '%s|%s%s'
+local function category(cat)
+	for _, v in ipairs((tostring(cat) == cat or cat.t) and {cat} or cat) do
+		--[[
+		If v is a table:
+			[1] = full category name; defaults to local attention if blank
+			k = Category sort key. Prefix before v.t
+			t = page.text or args.tempsort#; appended after k (or in its place if omitted). Required if v is not a string
+		Basically the same as v = (v[1] or attention) .. ' | ' .. (v.k or '') .. v.t
+		]]
+		if v and v ~= true then--reject v = nil, false, or true
+			p.cats[catTag:format(tostring(v) == v and
+				v
+				or (v[1] and Buffer(v[1]) or attention):_in(v.k):_(v.t):_str(2, nil, nil, '|')
+			)] = true
+		end
+	end
+	return cat.done and table.concat(p.cats, p.demo and ' | ' or nil) or ''
+end
+
+--[[
+Makes an ombox warning;
+Takes table {ifNot = Boolean, text, {cat. sort key, cat. sort name}}
+Will return an empty string instead when ifNot evaluates to true 
+]]
+local function ombox(v)
+	if v.ifNot then return end
+	p.ombox = p.ombox or require('Module:Message box').ombox
+	category{v[2]}
+	return p.ombox{
+		type = 'content',
+		text = v[1]
+	}
+end
+
+--[[
+Unlike original template, module now takes unlimited cats! This function also performs
+most stub category error checks except for the ombox for when main |category= is omitted (See p.template())
+]]
+local function catStub(page, pageDoc)
+	stubCats = {missing = {}, v = {}}
+	-- zwj and zwnj have semantical use in other other wikis, don't remove them
+	local zwj = '\226\128\141'  -- U+200D, E2 80 8D
+	local zwnj = '\226\128\140' -- U+200C, E2 80 8C
+	local disallowedUnicodeChars = '[^%w%p%s' .. zwj .. zwnj .. ']' -- for i18n we make this a separate string
+	local code
+	for k, _ in pairs(args) do
+		--Find category parameters and store the number (main cat = '')
+		table.insert(stubCats, string.match(k, '^category(%d*)$'))
+	end
+	table.sort(stubCats)
+	for k, v in ipairs(stubCats) do
+		--Get category names and, if called by p.templatepage, the optional sort key
+		local tsort, cat = args['tempsort' .. v], mw.ustring.gsub(args['category' .. v], disallowedUnicodeChars, '')--remove all hidden unicode chars 
+		--Do not place template in main category if |tempsort = 'no'. However, DO place articles of that template in the main category.
+		table.insert(stubCats.v,
+			 page and (--p.templatepage passes page; p.main does not, i.e. articles are categorized without sort keys.
+				v=='' and tsort == 'no'--if true, inserts 'true' in table, which category() will reject
+				or tsort and {cat, k = ' ', t = tsort}
+				or {cat, k = ' *', t = page.text}--note space in front of sort key
+			)
+			or cat
+		)
+		--Check category existance only if on the template page (i.e. stub documentation)
+		if page then
+			if not mw.title.new('Category:' .. cat).exists then
+				code = code or mw.html.create'code':wikitext'|category'
+				table.insert(stubCats.missing, tostring(mw.clone(code):wikitext(v)))
+			end
+			--[[
+			Checks non-demo stub template for documentation and flags if doc is present.
+			All stub cats names are checked and flagged if it does not match 'Category: [] stub'.
+			The main stub cat is exempt from the name check if the stub template has its own doc
+			(presumably, this doc would have an explanation as to why the main stub cat is non-conforming).
+			]]
+			table.insert(stubCats.v, v == '' and not p.demo and pageDoc.exists and
+				'Stub message templates with documentation subpages'
+				or not cat:match' stubs$' and {k = 'S', t = page.text}
+			)
+		end
+	end
+	--Add category names after loop is completed
+	category(stubCats.v)
+	return #stubCats.missing &gt; 0 and ombox{
+		--Changed, original msg:
+		--One or more of the stub categories defined in this template do not seem to exist!
+		--Please double-check the parameters {{para|category}}, {{para|category1}} and {{para|category2}}.
+		'The following parameter'
+			.. (#stubCats.missing == 1 and ' defines a stub category that does' or 's define stub categories that do')
+			.. ' not exist: ' .. mw.text.listToText(stubCats.missing),
+		{k = 'N', t = page.text}
+	}
+end
+
+--Shows population of categories found by catStub(). Outputs demo values if none
+local function population()
+	local wikitext, base = {}, '* [[:Category:%s]] (population: %s)\n'
+	if not args.category and stubCats[1] ~= false then
+		table.insert(stubCats, 1, false)
+	end
+	for _, v in ipairs(stubCats) do
+		table.insert(wikitext, base:format(
+			v and args['category' .. v] or '{{{category}}}',
+			v and mw.site.stats.pagesInCategory(args['category' .. v], 'all') or 0
+		))
+	end
+	return table.concat(wikitext)
+end
+
+--Includes standard stub documention and flags stub templates with bad parameter values.
+function p.templatepage(frame, page)
+	args, page = p:init(frame, page)
+	local tStubDoc = mw.title.new'Template:Stub documentation'
+	local pageDoc = page:subPageTitle('doc')
+	--Reorganization note: Original Asbox alternates between outputting categories and checking on params |category#=.
+	--Rather than checking multiple times and switching tasks, all stub category param operations have been rolled into catStub()
+	return Buffer(
+		ombox{--Show ombox warnings for missing args.
+			ifNot = args.category,
+			'The &lt;code&gt;|category&lt;/code&gt; parameter is not set. Please add an appropriate stub category.',
+			{k = 'C', t = page.text}
+		})
+		:_(ombox{
+			ifNot = args.subject or args.article or args.qualifier,
+			'This stub template contains no description! At least one of the parameters &lt;code&gt;|subject&lt;/code&gt;, &lt;code&gt;|article&lt;/code&gt; or &lt;code&gt;|qualifier&lt;/code&gt; must be defined.',
+			{k = 'D', t = page.text}
+		})
+		:_(catStub(page, pageDoc))--catStub() may also return an ombox if there are non-existing categories
+		:_(category{
+			done = p.demo ~= 'doc',--Outputs categories if not doc demo
+			'Stub message templates',
+			args.icon and
+				'Stub message templates using icon parameter'
+				or args.image and (
+					mw.title.new('Media:' .. mw.text.split(args.image, '|')[1]).exists--do nothing if exists. category() will reject true
+					or {k = 'B', t = page.text}
+				)
+				or 'Stub message templates without images',
+			args.imagealt and {k = 'I', t = page.text},
+		})
+		:_((not p.demo or p.demo == 'doc') and--Add standard stub template documentation
+			require('Module:Documentation').main{
+				content = Buffer(page.text ~= 'Stub' and--This comparison performed in {{Asbox/stubtree}} before it invokes Module:Asbox stubtree
+						require('Module:Asbox stubtree').subtree{args = {pagename = page.text}}
+					)
+					:_in'\n== About this template ==\nThis template is used to identify a':_(args.subject):_'stub':_(args.qualifier):_out' '--space
+					:_'. It uses {{[[Template:Asbox|asbox]]}}, which is a meta-template designed to ease the process of creating and maintaining stub templates.\n=== Usage ===\nTyping '
+					:_(mw.html.create'code'
+						:wikitext('{{', page.text == 'Stub' and 'stub' or page.text, '}}')
+					)
+					:_' produces the message shown at the beginning, and adds the article to the following categor'
+					:_(#stubCats &gt; 1 and 'ies' or 'y')
+					:_':\n'
+					:_(population())
+					:_(pageDoc.exists and--transclusion of /doc if it exists
+						frame:expandTemplate{title = pageDoc.text}
+					)
+					:_'\n== General information ==\n'
+					:_(frame:expandTemplate{title = tStubDoc.text})
+					:_'\n\n'(),
+				['link box'] = Buffer'This documentation is automatically generated by [[Module:Asbox]].'
+					:_in'The general information is transcluded from [[Template:Stub documentation]]. '
+						:_(mw.html.create'span'
+							:cssText'font-size:smaller;font-style:normal;line-height:130%'
+							:node(('([%s edit] | [%s history])'):format(
+								tStubDoc:fullUrl('action=edit', 'relative'),
+								tStubDoc:fullUrl('action=history', 'relative')
+							))
+						)
+						:_out()
+					:_(page.protectionLevels.edit and page.protectionLevels.edit[1] == 'sysop' and
+						"This template is [[WP:PROTECT|fully protected]] and any [[WP:CAT|categories]] should be added to the template's ["
+						.. pageDoc:fullUrl('action=edit&amp;preload=Template:Category_interwiki/preload', 'relative')
+						.. '| /doc] subpage, which is not protected.'
+					)' &lt;br/&gt;'
+			}
+		)()
+end
+
+function p.main(frame, page)
+	args, page = p:init(frame, page)
+	local output = mw.html.create'div'
+		:attr{role = 'note'}
+		:addClass'metadata plainlinks asbox stub'
+		:tag'table'
+			:attr{role = 'presentation'}
+			:tag'tr'
+				:addClass'noresize'
+				:node((args.icon or args.image) and
+					mw.html.create'td'
+						:wikitext(args.icon or ('[[File:%s|%spx|alt=%s]]'):format(
+							args.image or '',
+							args.pix or '40x30',
+							args.imagealt or 'Stub icon'
+						))
+				)
+				:tag'td'
+					:tag'p'
+						:addClass'asbox-body'
+						:wikitext(
+							Buffer'This':_(args.subject):_(args.article or 'article'):_(args.qualifier)' ',--space
+							' is a [[Wikipedia:stub|stub]]. You can help Wikipedia by [',
+							page:fullUrl('action=edit', 'relative'),
+							' expanding it].'
+						)
+					:done()
+					:node(args.note and
+						mw.html.create()
+							:tag'p'
+								:addClass'asbox-note'
+								:wikitext(args.note)
+							:done()
+					)
+		:allDone()
+		:node(args.name and
+			require'Module:Navbar'._navbar{
+				args.name,
+				mini = 'yes',
+			}
+			)
+	--[[
+	Stub categories for templates include a sort key; this ensures that all stub tags appear at the beginning of their respective categories.
+	Articles using the template do not need a sort key since they have unique names.
+	When p.demo equals 'doc', the demo stub categories will appear as those for a stub template.
+	Otherwise, any non-nil p.demo will emulate article space categories (plus any error cats unless set to 'art')
+	]]
+	if page.namespace == 0 then -- Main namespace
+		category'All stub articles'
+		catStub()
+	elseif p.demo then
+		if p.demo ~= 'doc' then catStub() end
+		--Unless p.demo is set to 'art', it will also include error categories normally only shown on
+		--the template but not in the article. The elseif after namespace == 0 means demo cats will never show in article space.
+		p.demodoc = p.demo ~= 'art' and p.templatepage(frame, page)
+		output = mw.html.create()
+			:node(output)
+			:tag'small':wikitext(
+				'Demo categories: ',
+				(category{done = true}:gsub('(%[%[)(Category:)([^|%]]-)(%|)', '%1%2%3|%2%3%4'):gsub('(%[%[)(Category:)', '%1:%2'))
+			):done()
+			:wikitext(p.demo == 'doc' and p.demodoc or nil)
+	else
+		--Checks for valid name; emulates original template's check using {{FULLPAGENAME:{{{name|}}}}}
+		local normalizedName = mw.title.new(args.name or '')
+		if normalizedName and normalizedName.fullText == page.fullText then
+			output = mw.html.create():node(output):wikitext(p.templatepage(frame, page))
+		elseif not page.isSubpage and page.namespace == 10 then-- Template namespace and not a subpage
+			category{{k = args.name and 'E' or 'W', t = page.text}}
+		end
+	end
+	return frame:extensionTag{ name = 'templatestyles', args = { src = templatestyles} } .. tostring(output:wikitext(not p.demo and category{done = true} or nil))
+end
+
+return p</text>
+      <sha1>18jy1or6fzutqp3z3eusrstkz7liymn</sha1>
+    </revision>
+    <revision>
+      <id>647</id>
+      <timestamp>2024-06-28T09:42:56Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported from [[:wikipedia:Module:Asbox]]</comment>
+      <origin>647</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="12732" sha1="18jy1or6fzutqp3z3eusrstkz7liymn" xml:space="preserve">--[[
+This module was created by User:CodeHydro (Alexander Zhikun He).
+User:Jackmcbarn and User:Mr._Stradivarius provided a great deal of assistance in writting p.main()
+
+p.main() draw heavily from the following version of Template:Asbox of the English Wikipedia, authored primarily by User:Rich_Farmbrough
+https://en.wikipedia.org/w/index.php?title=Template:Asbox&amp;oldid=619510287
+
+p.templatepage() is derived from the following revision of Template:Asbox/templatepage, authored primarily by User:MSGJ
+https://en.wikipedia.org/w/index.php?title=Template:Asbox/templatepage&amp;oldid=632914791
+
+Both templates had significant contributions from numerous others listed in the revision history tab of their respective pages.
+--]]
+local WRAPPER_TEMPLATE, args = 'Template:Asbox'
+local templatestyles = 'Asbox/styles.css'
+local p, Buffer, stubCats = {
+	--Prevents dupli-cats... get it? Maybe not?
+	cats = setmetatable({}, {__newindex = function(t, i, v)
+		if not rawget(t, i) then
+			rawset(t, i, v)
+			table.insert(t, i)
+		end
+	end}),
+	--initializes variables required by both p.main and p.templatepage
+	init = function(self, frame, page)
+		args, page = args or require('Module:Arguments').getArgs(frame, {
+			wrappers = WRAPPER_TEMPLATE
+		}), page or mw.title.getCurrentTitle()
+		--Ensures demo parameter will never affect category() output for articles
+		self.demo = self.demo or page.namespace ~= 0 and args.demo
+		return args, page
+	end
+}, require('Module:Buffer')
+
+--[[
+Formats category links. Stores them until called with cat.done=true
+Takes multiple or single categories in the form of 'cat'
+or a table of strings and/or tables containing parts. (See below)
+]]
+local attention, catTag, catKey = Buffer'Stub message templates needing attention', '[[Category:%s]]', '%s|%s%s'
+local function category(cat)
+	for _, v in ipairs((tostring(cat) == cat or cat.t) and {cat} or cat) do
+		--[[
+		If v is a table:
+			[1] = full category name; defaults to local attention if blank
+			k = Category sort key. Prefix before v.t
+			t = page.text or args.tempsort#; appended after k (or in its place if omitted). Required if v is not a string
+		Basically the same as v = (v[1] or attention) .. ' | ' .. (v.k or '') .. v.t
+		]]
+		if v and v ~= true then--reject v = nil, false, or true
+			p.cats[catTag:format(tostring(v) == v and
+				v
+				or (v[1] and Buffer(v[1]) or attention):_in(v.k):_(v.t):_str(2, nil, nil, '|')
+			)] = true
+		end
+	end
+	return cat.done and table.concat(p.cats, p.demo and ' | ' or nil) or ''
+end
+
+--[[
+Makes an ombox warning;
+Takes table {ifNot = Boolean, text, {cat. sort key, cat. sort name}}
+Will return an empty string instead when ifNot evaluates to true 
+]]
+local function ombox(v)
+	if v.ifNot then return end
+	p.ombox = p.ombox or require('Module:Message box').ombox
+	category{v[2]}
+	return p.ombox{
+		type = 'content',
+		text = v[1]
+	}
+end
+
+--[[
+Unlike original template, module now takes unlimited cats! This function also performs
+most stub category error checks except for the ombox for when main |category= is omitted (See p.template())
+]]
+local function catStub(page, pageDoc)
+	stubCats = {missing = {}, v = {}}
+	-- zwj and zwnj have semantical use in other other wikis, don't remove them
+	local zwj = '\226\128\141'  -- U+200D, E2 80 8D
+	local zwnj = '\226\128\140' -- U+200C, E2 80 8C
+	local disallowedUnicodeChars = '[^%w%p%s' .. zwj .. zwnj .. ']' -- for i18n we make this a separate string
+	local code
+	for k, _ in pairs(args) do
+		--Find category parameters and store the number (main cat = '')
+		table.insert(stubCats, string.match(k, '^category(%d*)$'))
+	end
+	table.sort(stubCats)
+	for k, v in ipairs(stubCats) do
+		--Get category names and, if called by p.templatepage, the optional sort key
+		local tsort, cat = args['tempsort' .. v], mw.ustring.gsub(args['category' .. v], disallowedUnicodeChars, '')--remove all hidden unicode chars 
+		--Do not place template in main category if |tempsort = 'no'. However, DO place articles of that template in the main category.
+		table.insert(stubCats.v,
+			 page and (--p.templatepage passes page; p.main does not, i.e. articles are categorized without sort keys.
+				v=='' and tsort == 'no'--if true, inserts 'true' in table, which category() will reject
+				or tsort and {cat, k = ' ', t = tsort}
+				or {cat, k = ' *', t = page.text}--note space in front of sort key
+			)
+			or cat
+		)
+		--Check category existance only if on the template page (i.e. stub documentation)
+		if page then
+			if not mw.title.new('Category:' .. cat).exists then
+				code = code or mw.html.create'code':wikitext'|category'
+				table.insert(stubCats.missing, tostring(mw.clone(code):wikitext(v)))
+			end
+			--[[
+			Checks non-demo stub template for documentation and flags if doc is present.
+			All stub cats names are checked and flagged if it does not match 'Category: [] stub'.
+			The main stub cat is exempt from the name check if the stub template has its own doc
+			(presumably, this doc would have an explanation as to why the main stub cat is non-conforming).
+			]]
+			table.insert(stubCats.v, v == '' and not p.demo and pageDoc.exists and
+				'Stub message templates with documentation subpages'
+				or not cat:match' stubs$' and {k = 'S', t = page.text}
+			)
+		end
+	end
+	--Add category names after loop is completed
+	category(stubCats.v)
+	return #stubCats.missing &gt; 0 and ombox{
+		--Changed, original msg:
+		--One or more of the stub categories defined in this template do not seem to exist!
+		--Please double-check the parameters {{para|category}}, {{para|category1}} and {{para|category2}}.
+		'The following parameter'
+			.. (#stubCats.missing == 1 and ' defines a stub category that does' or 's define stub categories that do')
+			.. ' not exist: ' .. mw.text.listToText(stubCats.missing),
+		{k = 'N', t = page.text}
+	}
+end
+
+--Shows population of categories found by catStub(). Outputs demo values if none
+local function population()
+	local wikitext, base = {}, '* [[:Category:%s]] (population: %s)\n'
+	if not args.category and stubCats[1] ~= false then
+		table.insert(stubCats, 1, false)
+	end
+	for _, v in ipairs(stubCats) do
+		table.insert(wikitext, base:format(
+			v and args['category' .. v] or '{{{category}}}',
+			v and mw.site.stats.pagesInCategory(args['category' .. v], 'all') or 0
+		))
+	end
+	return table.concat(wikitext)
+end
+
+--Includes standard stub documention and flags stub templates with bad parameter values.
+function p.templatepage(frame, page)
+	args, page = p:init(frame, page)
+	local tStubDoc = mw.title.new'Template:Stub documentation'
+	local pageDoc = page:subPageTitle('doc')
+	--Reorganization note: Original Asbox alternates between outputting categories and checking on params |category#=.
+	--Rather than checking multiple times and switching tasks, all stub category param operations have been rolled into catStub()
+	return Buffer(
+		ombox{--Show ombox warnings for missing args.
+			ifNot = args.category,
+			'The &lt;code&gt;|category&lt;/code&gt; parameter is not set. Please add an appropriate stub category.',
+			{k = 'C', t = page.text}
+		})
+		:_(ombox{
+			ifNot = args.subject or args.article or args.qualifier,
+			'This stub template contains no description! At least one of the parameters &lt;code&gt;|subject&lt;/code&gt;, &lt;code&gt;|article&lt;/code&gt; or &lt;code&gt;|qualifier&lt;/code&gt; must be defined.',
+			{k = 'D', t = page.text}
+		})
+		:_(catStub(page, pageDoc))--catStub() may also return an ombox if there are non-existing categories
+		:_(category{
+			done = p.demo ~= 'doc',--Outputs categories if not doc demo
+			'Stub message templates',
+			args.icon and
+				'Stub message templates using icon parameter'
+				or args.image and (
+					mw.title.new('Media:' .. mw.text.split(args.image, '|')[1]).exists--do nothing if exists. category() will reject true
+					or {k = 'B', t = page.text}
+				)
+				or 'Stub message templates without images',
+			args.imagealt and {k = 'I', t = page.text},
+		})
+		:_((not p.demo or p.demo == 'doc') and--Add standard stub template documentation
+			require('Module:Documentation').main{
+				content = Buffer(page.text ~= 'Stub' and--This comparison performed in {{Asbox/stubtree}} before it invokes Module:Asbox stubtree
+						require('Module:Asbox stubtree').subtree{args = {pagename = page.text}}
+					)
+					:_in'\n== About this template ==\nThis template is used to identify a':_(args.subject):_'stub':_(args.qualifier):_out' '--space
+					:_'. It uses {{[[Template:Asbox|asbox]]}}, which is a meta-template designed to ease the process of creating and maintaining stub templates.\n=== Usage ===\nTyping '
+					:_(mw.html.create'code'
+						:wikitext('{{', page.text == 'Stub' and 'stub' or page.text, '}}')
+					)
+					:_' produces the message shown at the beginning, and adds the article to the following categor'
+					:_(#stubCats &gt; 1 and 'ies' or 'y')
+					:_':\n'
+					:_(population())
+					:_(pageDoc.exists and--transclusion of /doc if it exists
+						frame:expandTemplate{title = pageDoc.text}
+					)
+					:_'\n== General information ==\n'
+					:_(frame:expandTemplate{title = tStubDoc.text})
+					:_'\n\n'(),
+				['link box'] = Buffer'This documentation is automatically generated by [[Module:Asbox]].'
+					:_in'The general information is transcluded from [[Template:Stub documentation]]. '
+						:_(mw.html.create'span'
+							:cssText'font-size:smaller;font-style:normal;line-height:130%'
+							:node(('([%s edit] | [%s history])'):format(
+								tStubDoc:fullUrl('action=edit', 'relative'),
+								tStubDoc:fullUrl('action=history', 'relative')
+							))
+						)
+						:_out()
+					:_(page.protectionLevels.edit and page.protectionLevels.edit[1] == 'sysop' and
+						"This template is [[WP:PROTECT|fully protected]] and any [[WP:CAT|categories]] should be added to the template's ["
+						.. pageDoc:fullUrl('action=edit&amp;preload=Template:Category_interwiki/preload', 'relative')
+						.. '| /doc] subpage, which is not protected.'
+					)' &lt;br/&gt;'
+			}
+		)()
+end
+
+function p.main(frame, page)
+	args, page = p:init(frame, page)
+	local output = mw.html.create'div'
+		:attr{role = 'note'}
+		:addClass'metadata plainlinks asbox stub'
+		:tag'table'
+			:attr{role = 'presentation'}
+			:tag'tr'
+				:addClass'noresize'
+				:node((args.icon or args.image) and
+					mw.html.create'td'
+						:wikitext(args.icon or ('[[File:%s|%spx|alt=%s]]'):format(
+							args.image or '',
+							args.pix or '40x30',
+							args.imagealt or 'Stub icon'
+						))
+				)
+				:tag'td'
+					:tag'p'
+						:addClass'asbox-body'
+						:wikitext(
+							Buffer'This':_(args.subject):_(args.article or 'article'):_(args.qualifier)' ',--space
+							' is a [[Wikipedia:stub|stub]]. You can help Wikipedia by [',
+							page:fullUrl('action=edit', 'relative'),
+							' expanding it].'
+						)
+					:done()
+					:node(args.note and
+						mw.html.create()
+							:tag'p'
+								:addClass'asbox-note'
+								:wikitext(args.note)
+							:done()
+					)
+		:allDone()
+		:node(args.name and
+			require'Module:Navbar'._navbar{
+				args.name,
+				mini = 'yes',
+			}
+			)
+	--[[
+	Stub categories for templates include a sort key; this ensures that all stub tags appear at the beginning of their respective categories.
+	Articles using the template do not need a sort key since they have unique names.
+	When p.demo equals 'doc', the demo stub categories will appear as those for a stub template.
+	Otherwise, any non-nil p.demo will emulate article space categories (plus any error cats unless set to 'art')
+	]]
+	if page.namespace == 0 then -- Main namespace
+		category'All stub articles'
+		catStub()
+	elseif p.demo then
+		if p.demo ~= 'doc' then catStub() end
+		--Unless p.demo is set to 'art', it will also include error categories normally only shown on
+		--the template but not in the article. The elseif after namespace == 0 means demo cats will never show in article space.
+		p.demodoc = p.demo ~= 'art' and p.templatepage(frame, page)
+		output = mw.html.create()
+			:node(output)
+			:tag'small':wikitext(
+				'Demo categories: ',
+				(category{done = true}:gsub('(%[%[)(Category:)([^|%]]-)(%|)', '%1%2%3|%2%3%4'):gsub('(%[%[)(Category:)', '%1:%2'))
+			):done()
+			:wikitext(p.demo == 'doc' and p.demodoc or nil)
+	else
+		--Checks for valid name; emulates original template's check using {{FULLPAGENAME:{{{name|}}}}}
+		local normalizedName = mw.title.new(args.name or '')
+		if normalizedName and normalizedName.fullText == page.fullText then
+			output = mw.html.create():node(output):wikitext(p.templatepage(frame, page))
+		elseif not page.isSubpage and page.namespace == 10 then-- Template namespace and not a subpage
+			category{{k = args.name and 'E' or 'W', t = page.text}}
+		end
+	end
+	return frame:extensionTag{ name = 'templatestyles', args = { src = templatestyles} } .. tostring(output:wikitext(not p.demo and category{done = true} or nil))
+end
+
+return p</text>
+      <sha1>18jy1or6fzutqp3z3eusrstkz7liymn</sha1>
+    </revision>
+    <revision>
+      <id>3320821</id>
+      <parentid>647</parentid>
+      <timestamp>2026-02-27T05:25:04Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "by Use" to "by function"</comment>
+      <origin>3320821</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="12747" sha1="snrnul49qox1a0ykl58l7yd3l2tjcu6" xml:space="preserve">--[[
+This module was created by functionr:CodeHydro (Alexander Zhikun He).
+User:Jackmcbarn and User:Mr._Stradivarius provided a great deal of assistance in writting p.main()
+
+p.main() draw heavily from the following version of Template:Asbox of the English Wikipedia, authored primarily by functionr:Rich_Farmbrough
+https://en.wikipedia.org/w/index.php?title=Template:Asbox&amp;oldid=619510287
+
+p.templatepage() is derived from the following revision of Template:Asbox/templatepage, authored primarily by functionr:MSGJ
+https://en.wikipedia.org/w/index.php?title=Template:Asbox/templatepage&amp;oldid=632914791
+
+Both templates had significant contributions from numerous others listed in the revision history tab of their respective pages.
+--]]
+local WRAPPER_TEMPLATE, args = 'Template:Asbox'
+local templatestyles = 'Asbox/styles.css'
+local p, Buffer, stubCats = {
+	--Prevents dupli-cats... get it? Maybe not?
+	cats = setmetatable({}, {__newindex = function(t, i, v)
+		if not rawget(t, i) then
+			rawset(t, i, v)
+			table.insert(t, i)
+		end
+	end}),
+	--initializes variables required by both p.main and p.templatepage
+	init = function(self, frame, page)
+		args, page = args or require('Module:Arguments').getArgs(frame, {
+			wrappers = WRAPPER_TEMPLATE
+		}), page or mw.title.getCurrentTitle()
+		--Ensures demo parameter will never affect category() output for articles
+		self.demo = self.demo or page.namespace ~= 0 and args.demo
+		return args, page
+	end
+}, require('Module:Buffer')
+
+--[[
+Formats category links. Stores them until called with cat.done=true
+Takes multiple or single categories in the form of 'cat'
+or a table of strings and/or tables containing parts. (See below)
+]]
+local attention, catTag, catKey = Buffer'Stub message templates needing attention', '[[Category:%s]]', '%s|%s%s'
+local function category(cat)
+	for _, v in ipairs((tostring(cat) == cat or cat.t) and {cat} or cat) do
+		--[[
+		If v is a table:
+			[1] = full category name; defaults to local attention if blank
+			k = Category sort key. Prefix before v.t
+			t = page.text or args.tempsort#; appended after k (or in its place if omitted). Required if v is not a string
+		Basically the same as v = (v[1] or attention) .. ' | ' .. (v.k or '') .. v.t
+		]]
+		if v and v ~= true then--reject v = nil, false, or true
+			p.cats[catTag:format(tostring(v) == v and
+				v
+				or (v[1] and Buffer(v[1]) or attention):_in(v.k):_(v.t):_str(2, nil, nil, '|')
+			)] = true
+		end
+	end
+	return cat.done and table.concat(p.cats, p.demo and ' | ' or nil) or ''
+end
+
+--[[
+Makes an ombox warning;
+Takes table {ifNot = Boolean, text, {cat. sort key, cat. sort name}}
+Will return an empty string instead when ifNot evaluates to true 
+]]
+local function ombox(v)
+	if v.ifNot then return end
+	p.ombox = p.ombox or require('Module:Message box').ombox
+	category{v[2]}
+	return p.ombox{
+		type = 'content',
+		text = v[1]
+	}
+end
+
+--[[
+Unlike original template, module now takes unlimited cats! This function also performs
+most stub category error checks except for the ombox for when main |category= is omitted (See p.template())
+]]
+local function catStub(page, pageDoc)
+	stubCats = {missing = {}, v = {}}
+	-- zwj and zwnj have semantical use in other other wikis, don't remove them
+	local zwj = '\226\128\141'  -- U+200D, E2 80 8D
+	local zwnj = '\226\128\140' -- U+200C, E2 80 8C
+	local disallowedUnicodeChars = '[^%w%p%s' .. zwj .. zwnj .. ']' -- for i18n we make this a separate string
+	local code
+	for k, _ in pairs(args) do
+		--Find category parameters and store the number (main cat = '')
+		table.insert(stubCats, string.match(k, '^category(%d*)$'))
+	end
+	table.sort(stubCats)
+	for k, v in ipairs(stubCats) do
+		--Get category names and, if called by p.templatepage, the optional sort key
+		local tsort, cat = args['tempsort' .. v], mw.ustring.gsub(args['category' .. v], disallowedUnicodeChars, '')--remove all hidden unicode chars 
+		--Do not place template in main category if |tempsort = 'no'. However, DO place articles of that template in the main category.
+		table.insert(stubCats.v,
+			 page and (--p.templatepage passes page; p.main does not, i.e. articles are categorized without sort keys.
+				v=='' and tsort == 'no'--if true, inserts 'true' in table, which category() will reject
+				or tsort and {cat, k = ' ', t = tsort}
+				or {cat, k = ' *', t = page.text}--note space in front of sort key
+			)
+			or cat
+		)
+		--Check category existance only if on the template page (i.e. stub documentation)
+		if page then
+			if not mw.title.new('Category:' .. cat).exists then
+				code = code or mw.html.create'code':wikitext'|category'
+				table.insert(stubCats.missing, tostring(mw.clone(code):wikitext(v)))
+			end
+			--[[
+			Checks non-demo stub template for documentation and flags if doc is present.
+			All stub cats names are checked and flagged if it does not match 'Category: [] stub'.
+			The main stub cat is exempt from the name check if the stub template has its own doc
+			(presumably, this doc would have an explanation as to why the main stub cat is non-conforming).
+			]]
+			table.insert(stubCats.v, v == '' and not p.demo and pageDoc.exists and
+				'Stub message templates with documentation subpages'
+				or not cat:match' stubs$' and {k = 'S', t = page.text}
+			)
+		end
+	end
+	--Add category names after loop is completed
+	category(stubCats.v)
+	return #stubCats.missing &gt; 0 and ombox{
+		--Changed, original msg:
+		--One or more of the stub categories defined in this template do not seem to exist!
+		--Please double-check the parameters {{para|category}}, {{para|category1}} and {{para|category2}}.
+		'The following parameter'
+			.. (#stubCats.missing == 1 and ' defines a stub category that does' or 's define stub categories that do')
+			.. ' not exist: ' .. mw.text.listToText(stubCats.missing),
+		{k = 'N', t = page.text}
+	}
+end
+
+--Shows population of categories found by catStub(). Outputs demo values if none
+local function population()
+	local wikitext, base = {}, '* [[:Category:%s]] (population: %s)\n'
+	if not args.category and stubCats[1] ~= false then
+		table.insert(stubCats, 1, false)
+	end
+	for _, v in ipairs(stubCats) do
+		table.insert(wikitext, base:format(
+			v and args['category' .. v] or '{{{category}}}',
+			v and mw.site.stats.pagesInCategory(args['category' .. v], 'all') or 0
+		))
+	end
+	return table.concat(wikitext)
+end
+
+--Includes standard stub documention and flags stub templates with bad parameter values.
+function p.templatepage(frame, page)
+	args, page = p:init(frame, page)
+	local tStubDoc = mw.title.new'Template:Stub documentation'
+	local pageDoc = page:subPageTitle('doc')
+	--Reorganization note: Original Asbox alternates between outputting categories and checking on params |category#=.
+	--Rather than checking multiple times and switching tasks, all stub category param operations have been rolled into catStub()
+	return Buffer(
+		ombox{--Show ombox warnings for missing args.
+			ifNot = args.category,
+			'The &lt;code&gt;|category&lt;/code&gt; parameter is not set. Please add an appropriate stub category.',
+			{k = 'C', t = page.text}
+		})
+		:_(ombox{
+			ifNot = args.subject or args.article or args.qualifier,
+			'This stub template contains no description! At least one of the parameters &lt;code&gt;|subject&lt;/code&gt;, &lt;code&gt;|article&lt;/code&gt; or &lt;code&gt;|qualifier&lt;/code&gt; must be defined.',
+			{k = 'D', t = page.text}
+		})
+		:_(catStub(page, pageDoc))--catStub() may also return an ombox if there are non-existing categories
+		:_(category{
+			done = p.demo ~= 'doc',--Outputs categories if not doc demo
+			'Stub message templates',
+			args.icon and
+				'Stub message templates using icon parameter'
+				or args.image and (
+					mw.title.new('Media:' .. mw.text.split(args.image, '|')[1]).exists--do nothing if exists. category() will reject true
+					or {k = 'B', t = page.text}
+				)
+				or 'Stub message templates without images',
+			args.imagealt and {k = 'I', t = page.text},
+		})
+		:_((not p.demo or p.demo == 'doc') and--Add standard stub template documentation
+			require('Module:Documentation').main{
+				content = Buffer(page.text ~= 'Stub' and--This comparison performed in {{Asbox/stubtree}} before it invokes Module:Asbox stubtree
+						require('Module:Asbox stubtree').subtree{args = {pagename = page.text}}
+					)
+					:_in'\n== About this template ==\nThis template is used to identify a':_(args.subject):_'stub':_(args.qualifier):_out' '--space
+					:_'. It uses {{[[Template:Asbox|asbox]]}}, which is a meta-template designed to ease the process of creating and maintaining stub templates.\n=== Usage ===\nTyping '
+					:_(mw.html.create'code'
+						:wikitext('{{', page.text == 'Stub' and 'stub' or page.text, '}}')
+					)
+					:_' produces the message shown at the beginning, and adds the article to the following categor'
+					:_(#stubCats &gt; 1 and 'ies' or 'y')
+					:_':\n'
+					:_(population())
+					:_(pageDoc.exists and--transclusion of /doc if it exists
+						frame:expandTemplate{title = pageDoc.text}
+					)
+					:_'\n== General information ==\n'
+					:_(frame:expandTemplate{title = tStubDoc.text})
+					:_'\n\n'(),
+				['link box'] = Buffer'This documentation is automatically generated by [[Module:Asbox]].'
+					:_in'The general information is transcluded from [[Template:Stub documentation]]. '
+						:_(mw.html.create'span'
+							:cssText'font-size:smaller;font-style:normal;line-height:130%'
+							:node(('([%s edit] | [%s history])'):format(
+								tStubDoc:fullUrl('action=edit', 'relative'),
+								tStubDoc:fullUrl('action=history', 'relative')
+							))
+						)
+						:_out()
+					:_(page.protectionLevels.edit and page.protectionLevels.edit[1] == 'sysop' and
+						"This template is [[WP:PROTECT|fully protected]] and any [[WP:CAT|categories]] should be added to the template's ["
+						.. pageDoc:fullUrl('action=edit&amp;preload=Template:Category_interwiki/preload', 'relative')
+						.. '| /doc] subpage, which is not protected.'
+					)' &lt;br/&gt;'
+			}
+		)()
+end
+
+function p.main(frame, page)
+	args, page = p:init(frame, page)
+	local output = mw.html.create'div'
+		:attr{role = 'note'}
+		:addClass'metadata plainlinks asbox stub'
+		:tag'table'
+			:attr{role = 'presentation'}
+			:tag'tr'
+				:addClass'noresize'
+				:node((args.icon or args.image) and
+					mw.html.create'td'
+						:wikitext(args.icon or ('[[File:%s|%spx|alt=%s]]'):format(
+							args.image or '',
+							args.pix or '40x30',
+							args.imagealt or 'Stub icon'
+						))
+				)
+				:tag'td'
+					:tag'p'
+						:addClass'asbox-body'
+						:wikitext(
+							Buffer'This':_(args.subject):_(args.article or 'article'):_(args.qualifier)' ',--space
+							' is a [[Wikipedia:stub|stub]]. You can help Wikipedia by [',
+							page:fullUrl('action=edit', 'relative'),
+							' expanding it].'
+						)
+					:done()
+					:node(args.note and
+						mw.html.create()
+							:tag'p'
+								:addClass'asbox-note'
+								:wikitext(args.note)
+							:done()
+					)
+		:allDone()
+		:node(args.name and
+			require'Module:Navbar'._navbar{
+				args.name,
+				mini = 'yes',
+			}
+			)
+	--[[
+	Stub categories for templates include a sort key; this ensures that all stub tags appear at the beginning of their respective categories.
+	Articles using the template do not need a sort key since they have unique names.
+	When p.demo equals 'doc', the demo stub categories will appear as those for a stub template.
+	Otherwise, any non-nil p.demo will emulate article space categories (plus any error cats unless set to 'art')
+	]]
+	if page.namespace == 0 then -- Main namespace
+		category'All stub articles'
+		catStub()
+	elseif p.demo then
+		if p.demo ~= 'doc' then catStub() end
+		--Unless p.demo is set to 'art', it will also include error categories normally only shown on
+		--the template but not in the article. The elseif after namespace == 0 means demo cats will never show in article space.
+		p.demodoc = p.demo ~= 'art' and p.templatepage(frame, page)
+		output = mw.html.create()
+			:node(output)
+			:tag'small':wikitext(
+				'Demo categories: ',
+				(category{done = true}:gsub('(%[%[)(Category:)([^|%]]-)(%|)', '%1%2%3|%2%3%4'):gsub('(%[%[)(Category:)', '%1:%2'))
+			):done()
+			:wikitext(p.demo == 'doc' and p.demodoc or nil)
+	else
+		--Checks for valid name; emulates original template's check using {{FULLPAGENAME:{{{name|}}}}}
+		local normalizedName = mw.title.new(args.name or '')
+		if normalizedName and normalizedName.fullText == page.fullText then
+			output = mw.html.create():node(output):wikitext(p.templatepage(frame, page))
+		elseif not page.isSubpage and page.namespace == 10 then-- Template namespace and not a subpage
+			category{{k = args.name and 'E' or 'W', t = page.text}}
+		end
+	end
+	return frame:extensionTag{ name = 'templatestyles', args = { src = templatestyles} } .. tostring(output:wikitext(not p.demo and category{done = true} or nil))
+end
+
+return p</text>
+      <sha1>snrnul49qox1a0ykl58l7yd3l2tjcu6</sha1>
+    </revision>
+  </page>
+</mediawiki>

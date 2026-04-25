@@ -1,0 +1,250 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Ancient Olympiads</title>
+    <ns>828</ns>
+    <id>26307</id>
+    <revision>
+      <id>2218862</id>
+      <timestamp>2025-05-15T18:48:32Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ancient Olympiads]]": Up to template-protection as dependency of template-protected [[Module:Year in various calendars]] ([Edit=Require template editor access] (indefinite) [Move=Require template editor access] (indefinite))</comment>
+      <origin>2218862</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1905" sha1="17qopx2ym0hhya55kggl11clcwqq2b5" xml:space="preserve">local data = mw.loadData( 'Module:Ancient Olympiads/data' )
+local lang = mw.language.getContentLanguage()
+local TableTools = require('Module:TableTools')
+
+local p = {}
+
+function p._main( inputYear )
+	-- Convert the input to an integer if possible. Return "N/A" if the input could
+	-- not be converted, or if the converted input is too big or too small.
+	inputYear = tonumber( inputYear )
+	if not inputYear or inputYear &gt; tonumber( lang:formatDate( 'Y' ) ) then
+		return "''N/A''"
+	end
+	local dataLength = TableTools.length(data)
+
+	-- Find the year in the data page and display the output.
+	for i = dataLength, 1, -1 do
+		local t = data[i]
+		if inputYear - 1 == t.year then
+			-- year of the Olympiad, test with = p._main( -495 )
+			-- The input year in the calendar is one after the expected (-775 for the year 776 BC). This is why all values need to be corrected by 1. 
+			-- Year of Olympiad creates autolink to same page, therefore eliminated here
+			return string.format(
+				'%s [[Olympiad]] ([[%s|victor]][[Winner of the Stadion race|)¹]]',
+				t.numberOl, t.winner
+			)
+		end
+        if inputYear &gt; t.year then
+			-- Years 2-4 of the Olympiad, test with = p._main( -494 )  etc.
+			-- It would be nice, if the string could be as follows:
+			-- '[[%s]] [[Olympiad]], [[%d BC|year %d]]',
+			-- t.numberOl, inputYear * - 1 + 1, inputYear - t.year
+			-- but unfortunately it links to the very same page and won't be displayed as a link but in bold.
+			return string.format(
+				'[[%s|%s]] [[Olympiad]], year %d',
+				t.yearBC, t.numberOl, inputYear - t.year 
+			)
+		end
+	end
+
+	-- If input year is before 776 BC (-775), the year of the first Olympiad.
+	return string.format(
+		'%d before [[776 BC|1st]] [[Olympiad]]',
+		inputYear * -1 - 775
+	)
+end
+
+function p.main( frame )
+	local args = require( 'Module:Arguments' ).getArgs( frame, {
+		parentOnly = true
+	} )
+	return p._main( args[ 1 ] )
+end
+
+return p</text>
+      <sha1>17qopx2ym0hhya55kggl11clcwqq2b5</sha1>
+    </revision>
+    <revision>
+      <id>2218863</id>
+      <parentid>2218862</parentid>
+      <timestamp>2025-05-15T20:34:25Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ancient Olympiads]]": Up to template-protection as dependency of template-protected [[Module:Year in various calendars]] ([Edit=Require template editor access] (indefinite) [Move=Require template editor access] (indefinite))</comment>
+      <origin>2218862</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1905" sha1="17qopx2ym0hhya55kggl11clcwqq2b5" xml:space="preserve">local data = mw.loadData( 'Module:Ancient Olympiads/data' )
+local lang = mw.language.getContentLanguage()
+local TableTools = require('Module:TableTools')
+
+local p = {}
+
+function p._main( inputYear )
+	-- Convert the input to an integer if possible. Return "N/A" if the input could
+	-- not be converted, or if the converted input is too big or too small.
+	inputYear = tonumber( inputYear )
+	if not inputYear or inputYear &gt; tonumber( lang:formatDate( 'Y' ) ) then
+		return "''N/A''"
+	end
+	local dataLength = TableTools.length(data)
+
+	-- Find the year in the data page and display the output.
+	for i = dataLength, 1, -1 do
+		local t = data[i]
+		if inputYear - 1 == t.year then
+			-- year of the Olympiad, test with = p._main( -495 )
+			-- The input year in the calendar is one after the expected (-775 for the year 776 BC). This is why all values need to be corrected by 1. 
+			-- Year of Olympiad creates autolink to same page, therefore eliminated here
+			return string.format(
+				'%s [[Olympiad]] ([[%s|victor]][[Winner of the Stadion race|)¹]]',
+				t.numberOl, t.winner
+			)
+		end
+        if inputYear &gt; t.year then
+			-- Years 2-4 of the Olympiad, test with = p._main( -494 )  etc.
+			-- It would be nice, if the string could be as follows:
+			-- '[[%s]] [[Olympiad]], [[%d BC|year %d]]',
+			-- t.numberOl, inputYear * - 1 + 1, inputYear - t.year
+			-- but unfortunately it links to the very same page and won't be displayed as a link but in bold.
+			return string.format(
+				'[[%s|%s]] [[Olympiad]], year %d',
+				t.yearBC, t.numberOl, inputYear - t.year 
+			)
+		end
+	end
+
+	-- If input year is before 776 BC (-775), the year of the first Olympiad.
+	return string.format(
+		'%d before [[776 BC|1st]] [[Olympiad]]',
+		inputYear * -1 - 775
+	)
+end
+
+function p.main( frame )
+	local args = require( 'Module:Arguments' ).getArgs( frame, {
+		parentOnly = true
+	} )
+	return p._main( args[ 1 ] )
+end
+
+return p</text>
+      <sha1>17qopx2ym0hhya55kggl11clcwqq2b5</sha1>
+    </revision>
+    <revision>
+      <id>26308</id>
+      <timestamp>2025-05-15T20:34:26Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported</comment>
+      <origin>26308</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1905" sha1="17qopx2ym0hhya55kggl11clcwqq2b5" xml:space="preserve">local data = mw.loadData( 'Module:Ancient Olympiads/data' )
+local lang = mw.language.getContentLanguage()
+local TableTools = require('Module:TableTools')
+
+local p = {}
+
+function p._main( inputYear )
+	-- Convert the input to an integer if possible. Return "N/A" if the input could
+	-- not be converted, or if the converted input is too big or too small.
+	inputYear = tonumber( inputYear )
+	if not inputYear or inputYear &gt; tonumber( lang:formatDate( 'Y' ) ) then
+		return "''N/A''"
+	end
+	local dataLength = TableTools.length(data)
+
+	-- Find the year in the data page and display the output.
+	for i = dataLength, 1, -1 do
+		local t = data[i]
+		if inputYear - 1 == t.year then
+			-- year of the Olympiad, test with = p._main( -495 )
+			-- The input year in the calendar is one after the expected (-775 for the year 776 BC). This is why all values need to be corrected by 1. 
+			-- Year of Olympiad creates autolink to same page, therefore eliminated here
+			return string.format(
+				'%s [[Olympiad]] ([[%s|victor]][[Winner of the Stadion race|)¹]]',
+				t.numberOl, t.winner
+			)
+		end
+        if inputYear &gt; t.year then
+			-- Years 2-4 of the Olympiad, test with = p._main( -494 )  etc.
+			-- It would be nice, if the string could be as follows:
+			-- '[[%s]] [[Olympiad]], [[%d BC|year %d]]',
+			-- t.numberOl, inputYear * - 1 + 1, inputYear - t.year
+			-- but unfortunately it links to the very same page and won't be displayed as a link but in bold.
+			return string.format(
+				'[[%s|%s]] [[Olympiad]], year %d',
+				t.yearBC, t.numberOl, inputYear - t.year 
+			)
+		end
+	end
+
+	-- If input year is before 776 BC (-775), the year of the first Olympiad.
+	return string.format(
+		'%d before [[776 BC|1st]] [[Olympiad]]',
+		inputYear * -1 - 775
+	)
+end
+
+function p.main( frame )
+	local args = require( 'Module:Arguments' ).getArgs( frame, {
+		parentOnly = true
+	} )
+	return p._main( args[ 1 ] )
+end
+
+return p</text>
+      <sha1>17qopx2ym0hhya55kggl11clcwqq2b5</sha1>
+    </revision>
+  </page>
+</mediawiki>

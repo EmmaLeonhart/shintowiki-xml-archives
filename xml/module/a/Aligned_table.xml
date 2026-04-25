@@ -1,0 +1,1895 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Aligned table</title>
+    <ns>828</ns>
+    <id>436</id>
+    <revision>
+      <id>490674</id>
+      <timestamp>2021-01-13T21:53:43Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Plastikspork</username>
+        <id>0</id>
+      </contributor>
+      <comment>Optional rowclass</comment>
+      <origin>490674</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5891" sha1="m9dwn0950shw2aiodgy0z837cvdja2z" xml:space="preserve">-- This module implements {{aligned table}}
+local p = {}
+
+local function isnotempty(s)
+	return s and s:match( '^%s*(.-)%s*$' ) ~= ''
+end
+
+function p.table(frame)
+	local args = (frame.args[3] ~= nil) and frame.args or frame:getParent().args
+	local entries = {}
+	local colclass = {}
+	local colstyle = {}
+	local cols = tonumber(args['cols']) or 2
+
+	-- create the root table
+	local root = mw.html.create('table')
+
+	-- add table style for fullwidth
+	if isnotempty(args['fullwidth']) then
+		root
+			:css('width', '100%')
+			:css('border-collapse', 'collapse')
+			:css('border-spacing', '0px 0px')
+			:css('border', 'none')
+	end
+
+	-- add table classes
+	if isnotempty(args['class']) then
+		root:addClass(args['class'])
+	end
+
+	-- add table style
+	if isnotempty(args['style']) then
+		root:cssText(args['style'])
+	end
+
+	-- build arrays with the column styles and classes
+	if isnotempty(args['leftright']) then
+		colstyle[1] = 'text-align:left;'
+		colstyle[2] = 'text-align:right;'
+	end
+	if isnotempty(args['rightleft']) then
+		colstyle[1] = 'text-align:right;'
+		colstyle[2] = 'text-align:left;'
+	end
+	for i = 1,cols do
+		colclass[ i ] = colclass[ i ] or ''
+		colstyle[ i ] = colstyle[ i ] or ''
+		if isnotempty(args['colstyle']) then
+			colstyle[ i ] = args['colstyle'] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colalign' .. tostring(i)]) then
+			colstyle[ i ] = 'text-align:' .. args['colalign' .. tostring(i)] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'align']) then
+			colstyle[ i ] = 'text-align:' .. args['col' .. tostring(i) .. 'align'] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['align' .. tostring(i)]) then
+			colstyle[ i ] = 'text-align:' .. args['align' .. tostring(i)] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colnowrap' .. tostring(i)]) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'nowrap']) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		elseif isnotempty(args['nowrap' .. tostring(i)]) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		end
+		if isnotempty(args['colwidth' .. tostring(i)]) then
+			colstyle[ i ] = 'width:' .. args['colwidth' .. tostring(i)] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'width']) then
+			colstyle[ i ] = 'width:' .. args['col' .. tostring(i) .. 'width'] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['colwidth']) then
+			colstyle[ i ] = 'width:' .. args['colwidth'] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colstyle' .. tostring(i)]) then
+			colstyle[ i ] = colstyle[ i ] .. args['colstyle' .. tostring(i)]
+		elseif isnotempty(args['col' .. tostring(i) .. 'style']) then
+			colstyle[ i ] = colstyle[ i ] .. args['col' .. tostring(i) .. 'style']
+		elseif isnotempty(args['style' .. tostring(i)]) then
+			colstyle[ i ] = colstyle[ i ] .. args['style' .. tostring(i)]
+		end
+		if isnotempty(args['colclass' .. tostring(i)]) then
+			colclass[ i ] =  args['colclass' .. tostring(i)]
+		elseif isnotempty(args['col' .. tostring(i) .. 'class']) then
+			colclass[ i ] =  args['col' .. tostring(i) .. 'class']
+		elseif isnotempty(args['class' .. tostring(i)]) then
+			colclass[ i ] =  args['class' .. tostring(i)]
+		end
+	end
+	-- compute the maximum cell index
+	local cellcount = 0
+	for k, v in pairs( args ) do
+		if type( k ) == 'number' then
+			cellcount = math.max(cellcount, k)
+		end
+	end
+	-- compute the number of rows
+	local rows = math.ceil(cellcount / cols)
+
+	-- build the table content
+	if isnotempty(args['title']) then
+		local caption = root:tag('caption')
+		caption:cssText(args['titlestyle'])
+		caption:wikitext(args['title'])
+	end
+	if isnotempty(args['above']) then
+		local row = root:tag('tr')
+		local cell = row:tag('th')
+		cell:attr('colspan', cols)
+		cell:cssText(args['abovestyle'])
+		cell:wikitext(args['above'])
+	end
+	for j=1,rows do
+		-- start a new row
+		local row = root:tag('tr')
+		if isnotempty(args['rowstyle']) then
+			row:cssText(args['rowstyle'])
+		else
+			row:css('vertical-align', 'top')
+		end
+		if isnotempty(args['rowclass']) then
+			row:addClass(args['rowclass'])
+		end
+		-- loop over the cells in the row
+		for i=1,cols do
+			local cell
+			if isnotempty(args['row' .. tostring(j) .. 'header']) then
+				cell = row:tag('th'):attr('scope','col')
+			elseif isnotempty(args['col' .. tostring(i) .. 'header']) then
+				cell = row:tag('th'):attr('scope','row')
+			else
+				cell = row:tag('td')
+			end
+			if args['class' .. tostring(j) .. '.' .. tostring(i)] then
+				cell:addClass(args['class' .. tostring(j) .. '.' .. tostring(i)])
+			else
+				if args['rowclass' .. tostring(j)] then
+					cell:addClass(args['rowclass' .. tostring(j)])
+				elseif args['row' .. tostring(j) .. 'class'] then
+					cell:addClass(args['row' .. tostring(j) .. 'class'])
+				elseif args['rowevenclass'] and math.fmod(j,2) == 0 then
+					cell:addClass(args['rowevenclass'])
+				elseif args['rowoddclass'] and math.fmod(j,2) == 1 then	
+					cell:addClass(args['rowoddclass'])
+				end
+				if colclass[i] ~= '' then
+					cell:addClass(colclass[i])
+				end
+			end
+			if args['style' .. tostring(j) .. '.' .. tostring(i)] then
+				cell:cssText(args['style' .. tostring(j) .. '.' .. tostring(i)])
+			else
+				if args['rowstyle' .. tostring(j)] then
+					cell:cssText(args['rowstyle' .. tostring(j)])
+				elseif args['rowevenstyle'] and math.fmod(j,2) == 0 then
+					cell:cssText(args['rowevenstyle'])
+				elseif args['rowoddstyle'] and math.fmod(j,2) == 1 then	
+					cell:cssText(args['rowoddstyle'])
+				elseif args['row' .. tostring(j) .. 'style'] then
+					cell:cssText(args['row' .. tostring(j) .. 'style'])
+				end
+				if isnotempty(colstyle[i]) then
+					cell:cssText(colstyle[i])
+				end
+			end
+			cell:wikitext(mw.ustring.gsub(args[cols*(j - 1) + i] or '', '^(.-)%s*$', '%1') or '')
+		end
+	end
+	-- return the root table
+	return tostring(root)
+end
+
+return p</text>
+      <sha1>m9dwn0950shw2aiodgy0z837cvdja2z</sha1>
+    </revision>
+    <revision>
+      <id>437</id>
+      <timestamp>2024-06-25T16:09:45Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported from [[:wikipedia:Module:Aligned_table]]: importing template</comment>
+      <origin>437</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5891" sha1="m9dwn0950shw2aiodgy0z837cvdja2z" xml:space="preserve">-- This module implements {{aligned table}}
+local p = {}
+
+local function isnotempty(s)
+	return s and s:match( '^%s*(.-)%s*$' ) ~= ''
+end
+
+function p.table(frame)
+	local args = (frame.args[3] ~= nil) and frame.args or frame:getParent().args
+	local entries = {}
+	local colclass = {}
+	local colstyle = {}
+	local cols = tonumber(args['cols']) or 2
+
+	-- create the root table
+	local root = mw.html.create('table')
+
+	-- add table style for fullwidth
+	if isnotempty(args['fullwidth']) then
+		root
+			:css('width', '100%')
+			:css('border-collapse', 'collapse')
+			:css('border-spacing', '0px 0px')
+			:css('border', 'none')
+	end
+
+	-- add table classes
+	if isnotempty(args['class']) then
+		root:addClass(args['class'])
+	end
+
+	-- add table style
+	if isnotempty(args['style']) then
+		root:cssText(args['style'])
+	end
+
+	-- build arrays with the column styles and classes
+	if isnotempty(args['leftright']) then
+		colstyle[1] = 'text-align:left;'
+		colstyle[2] = 'text-align:right;'
+	end
+	if isnotempty(args['rightleft']) then
+		colstyle[1] = 'text-align:right;'
+		colstyle[2] = 'text-align:left;'
+	end
+	for i = 1,cols do
+		colclass[ i ] = colclass[ i ] or ''
+		colstyle[ i ] = colstyle[ i ] or ''
+		if isnotempty(args['colstyle']) then
+			colstyle[ i ] = args['colstyle'] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colalign' .. tostring(i)]) then
+			colstyle[ i ] = 'text-align:' .. args['colalign' .. tostring(i)] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'align']) then
+			colstyle[ i ] = 'text-align:' .. args['col' .. tostring(i) .. 'align'] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['align' .. tostring(i)]) then
+			colstyle[ i ] = 'text-align:' .. args['align' .. tostring(i)] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colnowrap' .. tostring(i)]) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'nowrap']) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		elseif isnotempty(args['nowrap' .. tostring(i)]) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		end
+		if isnotempty(args['colwidth' .. tostring(i)]) then
+			colstyle[ i ] = 'width:' .. args['colwidth' .. tostring(i)] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'width']) then
+			colstyle[ i ] = 'width:' .. args['col' .. tostring(i) .. 'width'] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['colwidth']) then
+			colstyle[ i ] = 'width:' .. args['colwidth'] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colstyle' .. tostring(i)]) then
+			colstyle[ i ] = colstyle[ i ] .. args['colstyle' .. tostring(i)]
+		elseif isnotempty(args['col' .. tostring(i) .. 'style']) then
+			colstyle[ i ] = colstyle[ i ] .. args['col' .. tostring(i) .. 'style']
+		elseif isnotempty(args['style' .. tostring(i)]) then
+			colstyle[ i ] = colstyle[ i ] .. args['style' .. tostring(i)]
+		end
+		if isnotempty(args['colclass' .. tostring(i)]) then
+			colclass[ i ] =  args['colclass' .. tostring(i)]
+		elseif isnotempty(args['col' .. tostring(i) .. 'class']) then
+			colclass[ i ] =  args['col' .. tostring(i) .. 'class']
+		elseif isnotempty(args['class' .. tostring(i)]) then
+			colclass[ i ] =  args['class' .. tostring(i)]
+		end
+	end
+	-- compute the maximum cell index
+	local cellcount = 0
+	for k, v in pairs( args ) do
+		if type( k ) == 'number' then
+			cellcount = math.max(cellcount, k)
+		end
+	end
+	-- compute the number of rows
+	local rows = math.ceil(cellcount / cols)
+
+	-- build the table content
+	if isnotempty(args['title']) then
+		local caption = root:tag('caption')
+		caption:cssText(args['titlestyle'])
+		caption:wikitext(args['title'])
+	end
+	if isnotempty(args['above']) then
+		local row = root:tag('tr')
+		local cell = row:tag('th')
+		cell:attr('colspan', cols)
+		cell:cssText(args['abovestyle'])
+		cell:wikitext(args['above'])
+	end
+	for j=1,rows do
+		-- start a new row
+		local row = root:tag('tr')
+		if isnotempty(args['rowstyle']) then
+			row:cssText(args['rowstyle'])
+		else
+			row:css('vertical-align', 'top')
+		end
+		if isnotempty(args['rowclass']) then
+			row:addClass(args['rowclass'])
+		end
+		-- loop over the cells in the row
+		for i=1,cols do
+			local cell
+			if isnotempty(args['row' .. tostring(j) .. 'header']) then
+				cell = row:tag('th'):attr('scope','col')
+			elseif isnotempty(args['col' .. tostring(i) .. 'header']) then
+				cell = row:tag('th'):attr('scope','row')
+			else
+				cell = row:tag('td')
+			end
+			if args['class' .. tostring(j) .. '.' .. tostring(i)] then
+				cell:addClass(args['class' .. tostring(j) .. '.' .. tostring(i)])
+			else
+				if args['rowclass' .. tostring(j)] then
+					cell:addClass(args['rowclass' .. tostring(j)])
+				elseif args['row' .. tostring(j) .. 'class'] then
+					cell:addClass(args['row' .. tostring(j) .. 'class'])
+				elseif args['rowevenclass'] and math.fmod(j,2) == 0 then
+					cell:addClass(args['rowevenclass'])
+				elseif args['rowoddclass'] and math.fmod(j,2) == 1 then	
+					cell:addClass(args['rowoddclass'])
+				end
+				if colclass[i] ~= '' then
+					cell:addClass(colclass[i])
+				end
+			end
+			if args['style' .. tostring(j) .. '.' .. tostring(i)] then
+				cell:cssText(args['style' .. tostring(j) .. '.' .. tostring(i)])
+			else
+				if args['rowstyle' .. tostring(j)] then
+					cell:cssText(args['rowstyle' .. tostring(j)])
+				elseif args['rowevenstyle'] and math.fmod(j,2) == 0 then
+					cell:cssText(args['rowevenstyle'])
+				elseif args['rowoddstyle'] and math.fmod(j,2) == 1 then	
+					cell:cssText(args['rowoddstyle'])
+				elseif args['row' .. tostring(j) .. 'style'] then
+					cell:cssText(args['row' .. tostring(j) .. 'style'])
+				end
+				if isnotempty(colstyle[i]) then
+					cell:cssText(colstyle[i])
+				end
+			end
+			cell:wikitext(mw.ustring.gsub(args[cols*(j - 1) + i] or '', '^(.-)%s*$', '%1') or '')
+		end
+	end
+	-- return the root table
+	return tostring(root)
+end
+
+return p</text>
+      <sha1>m9dwn0950shw2aiodgy0z837cvdja2z</sha1>
+    </revision>
+    <revision>
+      <id>3303580</id>
+      <parentid>437</parentid>
+      <timestamp>2026-02-26T20:10:19Z</timestamp>
+      <contributor>
+        <username>en&gt;Plastikspork</username>
+        <id>0</id>
+      </contributor>
+      <comment>Optional rowclass</comment>
+      <origin>437</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5891" sha1="m9dwn0950shw2aiodgy0z837cvdja2z" xml:space="preserve">-- This module implements {{aligned table}}
+local p = {}
+
+local function isnotempty(s)
+	return s and s:match( '^%s*(.-)%s*$' ) ~= ''
+end
+
+function p.table(frame)
+	local args = (frame.args[3] ~= nil) and frame.args or frame:getParent().args
+	local entries = {}
+	local colclass = {}
+	local colstyle = {}
+	local cols = tonumber(args['cols']) or 2
+
+	-- create the root table
+	local root = mw.html.create('table')
+
+	-- add table style for fullwidth
+	if isnotempty(args['fullwidth']) then
+		root
+			:css('width', '100%')
+			:css('border-collapse', 'collapse')
+			:css('border-spacing', '0px 0px')
+			:css('border', 'none')
+	end
+
+	-- add table classes
+	if isnotempty(args['class']) then
+		root:addClass(args['class'])
+	end
+
+	-- add table style
+	if isnotempty(args['style']) then
+		root:cssText(args['style'])
+	end
+
+	-- build arrays with the column styles and classes
+	if isnotempty(args['leftright']) then
+		colstyle[1] = 'text-align:left;'
+		colstyle[2] = 'text-align:right;'
+	end
+	if isnotempty(args['rightleft']) then
+		colstyle[1] = 'text-align:right;'
+		colstyle[2] = 'text-align:left;'
+	end
+	for i = 1,cols do
+		colclass[ i ] = colclass[ i ] or ''
+		colstyle[ i ] = colstyle[ i ] or ''
+		if isnotempty(args['colstyle']) then
+			colstyle[ i ] = args['colstyle'] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colalign' .. tostring(i)]) then
+			colstyle[ i ] = 'text-align:' .. args['colalign' .. tostring(i)] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'align']) then
+			colstyle[ i ] = 'text-align:' .. args['col' .. tostring(i) .. 'align'] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['align' .. tostring(i)]) then
+			colstyle[ i ] = 'text-align:' .. args['align' .. tostring(i)] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colnowrap' .. tostring(i)]) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'nowrap']) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		elseif isnotempty(args['nowrap' .. tostring(i)]) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		end
+		if isnotempty(args['colwidth' .. tostring(i)]) then
+			colstyle[ i ] = 'width:' .. args['colwidth' .. tostring(i)] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'width']) then
+			colstyle[ i ] = 'width:' .. args['col' .. tostring(i) .. 'width'] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['colwidth']) then
+			colstyle[ i ] = 'width:' .. args['colwidth'] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colstyle' .. tostring(i)]) then
+			colstyle[ i ] = colstyle[ i ] .. args['colstyle' .. tostring(i)]
+		elseif isnotempty(args['col' .. tostring(i) .. 'style']) then
+			colstyle[ i ] = colstyle[ i ] .. args['col' .. tostring(i) .. 'style']
+		elseif isnotempty(args['style' .. tostring(i)]) then
+			colstyle[ i ] = colstyle[ i ] .. args['style' .. tostring(i)]
+		end
+		if isnotempty(args['colclass' .. tostring(i)]) then
+			colclass[ i ] =  args['colclass' .. tostring(i)]
+		elseif isnotempty(args['col' .. tostring(i) .. 'class']) then
+			colclass[ i ] =  args['col' .. tostring(i) .. 'class']
+		elseif isnotempty(args['class' .. tostring(i)]) then
+			colclass[ i ] =  args['class' .. tostring(i)]
+		end
+	end
+	-- compute the maximum cell index
+	local cellcount = 0
+	for k, v in pairs( args ) do
+		if type( k ) == 'number' then
+			cellcount = math.max(cellcount, k)
+		end
+	end
+	-- compute the number of rows
+	local rows = math.ceil(cellcount / cols)
+
+	-- build the table content
+	if isnotempty(args['title']) then
+		local caption = root:tag('caption')
+		caption:cssText(args['titlestyle'])
+		caption:wikitext(args['title'])
+	end
+	if isnotempty(args['above']) then
+		local row = root:tag('tr')
+		local cell = row:tag('th')
+		cell:attr('colspan', cols)
+		cell:cssText(args['abovestyle'])
+		cell:wikitext(args['above'])
+	end
+	for j=1,rows do
+		-- start a new row
+		local row = root:tag('tr')
+		if isnotempty(args['rowstyle']) then
+			row:cssText(args['rowstyle'])
+		else
+			row:css('vertical-align', 'top')
+		end
+		if isnotempty(args['rowclass']) then
+			row:addClass(args['rowclass'])
+		end
+		-- loop over the cells in the row
+		for i=1,cols do
+			local cell
+			if isnotempty(args['row' .. tostring(j) .. 'header']) then
+				cell = row:tag('th'):attr('scope','col')
+			elseif isnotempty(args['col' .. tostring(i) .. 'header']) then
+				cell = row:tag('th'):attr('scope','row')
+			else
+				cell = row:tag('td')
+			end
+			if args['class' .. tostring(j) .. '.' .. tostring(i)] then
+				cell:addClass(args['class' .. tostring(j) .. '.' .. tostring(i)])
+			else
+				if args['rowclass' .. tostring(j)] then
+					cell:addClass(args['rowclass' .. tostring(j)])
+				elseif args['row' .. tostring(j) .. 'class'] then
+					cell:addClass(args['row' .. tostring(j) .. 'class'])
+				elseif args['rowevenclass'] and math.fmod(j,2) == 0 then
+					cell:addClass(args['rowevenclass'])
+				elseif args['rowoddclass'] and math.fmod(j,2) == 1 then	
+					cell:addClass(args['rowoddclass'])
+				end
+				if colclass[i] ~= '' then
+					cell:addClass(colclass[i])
+				end
+			end
+			if args['style' .. tostring(j) .. '.' .. tostring(i)] then
+				cell:cssText(args['style' .. tostring(j) .. '.' .. tostring(i)])
+			else
+				if args['rowstyle' .. tostring(j)] then
+					cell:cssText(args['rowstyle' .. tostring(j)])
+				elseif args['rowevenstyle'] and math.fmod(j,2) == 0 then
+					cell:cssText(args['rowevenstyle'])
+				elseif args['rowoddstyle'] and math.fmod(j,2) == 1 then	
+					cell:cssText(args['rowoddstyle'])
+				elseif args['row' .. tostring(j) .. 'style'] then
+					cell:cssText(args['row' .. tostring(j) .. 'style'])
+				end
+				if isnotempty(colstyle[i]) then
+					cell:cssText(colstyle[i])
+				end
+			end
+			cell:wikitext(mw.ustring.gsub(args[cols*(j - 1) + i] or '', '^(.-)%s*$', '%1') or '')
+		end
+	end
+	-- return the root table
+	return tostring(root)
+end
+
+return p</text>
+      <sha1>m9dwn0950shw2aiodgy0z837cvdja2z</sha1>
+    </revision>
+    <revision>
+      <id>3303581</id>
+      <parentid>3303580</parentid>
+      <timestamp>2026-02-26T20:10:19Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: reimporting these to fix older errors</comment>
+      <origin>437</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5891" sha1="m9dwn0950shw2aiodgy0z837cvdja2z" xml:space="preserve">-- This module implements {{aligned table}}
+local p = {}
+
+local function isnotempty(s)
+	return s and s:match( '^%s*(.-)%s*$' ) ~= ''
+end
+
+function p.table(frame)
+	local args = (frame.args[3] ~= nil) and frame.args or frame:getParent().args
+	local entries = {}
+	local colclass = {}
+	local colstyle = {}
+	local cols = tonumber(args['cols']) or 2
+
+	-- create the root table
+	local root = mw.html.create('table')
+
+	-- add table style for fullwidth
+	if isnotempty(args['fullwidth']) then
+		root
+			:css('width', '100%')
+			:css('border-collapse', 'collapse')
+			:css('border-spacing', '0px 0px')
+			:css('border', 'none')
+	end
+
+	-- add table classes
+	if isnotempty(args['class']) then
+		root:addClass(args['class'])
+	end
+
+	-- add table style
+	if isnotempty(args['style']) then
+		root:cssText(args['style'])
+	end
+
+	-- build arrays with the column styles and classes
+	if isnotempty(args['leftright']) then
+		colstyle[1] = 'text-align:left;'
+		colstyle[2] = 'text-align:right;'
+	end
+	if isnotempty(args['rightleft']) then
+		colstyle[1] = 'text-align:right;'
+		colstyle[2] = 'text-align:left;'
+	end
+	for i = 1,cols do
+		colclass[ i ] = colclass[ i ] or ''
+		colstyle[ i ] = colstyle[ i ] or ''
+		if isnotempty(args['colstyle']) then
+			colstyle[ i ] = args['colstyle'] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colalign' .. tostring(i)]) then
+			colstyle[ i ] = 'text-align:' .. args['colalign' .. tostring(i)] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'align']) then
+			colstyle[ i ] = 'text-align:' .. args['col' .. tostring(i) .. 'align'] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['align' .. tostring(i)]) then
+			colstyle[ i ] = 'text-align:' .. args['align' .. tostring(i)] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colnowrap' .. tostring(i)]) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'nowrap']) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		elseif isnotempty(args['nowrap' .. tostring(i)]) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		end
+		if isnotempty(args['colwidth' .. tostring(i)]) then
+			colstyle[ i ] = 'width:' .. args['colwidth' .. tostring(i)] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'width']) then
+			colstyle[ i ] = 'width:' .. args['col' .. tostring(i) .. 'width'] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['colwidth']) then
+			colstyle[ i ] = 'width:' .. args['colwidth'] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colstyle' .. tostring(i)]) then
+			colstyle[ i ] = colstyle[ i ] .. args['colstyle' .. tostring(i)]
+		elseif isnotempty(args['col' .. tostring(i) .. 'style']) then
+			colstyle[ i ] = colstyle[ i ] .. args['col' .. tostring(i) .. 'style']
+		elseif isnotempty(args['style' .. tostring(i)]) then
+			colstyle[ i ] = colstyle[ i ] .. args['style' .. tostring(i)]
+		end
+		if isnotempty(args['colclass' .. tostring(i)]) then
+			colclass[ i ] =  args['colclass' .. tostring(i)]
+		elseif isnotempty(args['col' .. tostring(i) .. 'class']) then
+			colclass[ i ] =  args['col' .. tostring(i) .. 'class']
+		elseif isnotempty(args['class' .. tostring(i)]) then
+			colclass[ i ] =  args['class' .. tostring(i)]
+		end
+	end
+	-- compute the maximum cell index
+	local cellcount = 0
+	for k, v in pairs( args ) do
+		if type( k ) == 'number' then
+			cellcount = math.max(cellcount, k)
+		end
+	end
+	-- compute the number of rows
+	local rows = math.ceil(cellcount / cols)
+
+	-- build the table content
+	if isnotempty(args['title']) then
+		local caption = root:tag('caption')
+		caption:cssText(args['titlestyle'])
+		caption:wikitext(args['title'])
+	end
+	if isnotempty(args['above']) then
+		local row = root:tag('tr')
+		local cell = row:tag('th')
+		cell:attr('colspan', cols)
+		cell:cssText(args['abovestyle'])
+		cell:wikitext(args['above'])
+	end
+	for j=1,rows do
+		-- start a new row
+		local row = root:tag('tr')
+		if isnotempty(args['rowstyle']) then
+			row:cssText(args['rowstyle'])
+		else
+			row:css('vertical-align', 'top')
+		end
+		if isnotempty(args['rowclass']) then
+			row:addClass(args['rowclass'])
+		end
+		-- loop over the cells in the row
+		for i=1,cols do
+			local cell
+			if isnotempty(args['row' .. tostring(j) .. 'header']) then
+				cell = row:tag('th'):attr('scope','col')
+			elseif isnotempty(args['col' .. tostring(i) .. 'header']) then
+				cell = row:tag('th'):attr('scope','row')
+			else
+				cell = row:tag('td')
+			end
+			if args['class' .. tostring(j) .. '.' .. tostring(i)] then
+				cell:addClass(args['class' .. tostring(j) .. '.' .. tostring(i)])
+			else
+				if args['rowclass' .. tostring(j)] then
+					cell:addClass(args['rowclass' .. tostring(j)])
+				elseif args['row' .. tostring(j) .. 'class'] then
+					cell:addClass(args['row' .. tostring(j) .. 'class'])
+				elseif args['rowevenclass'] and math.fmod(j,2) == 0 then
+					cell:addClass(args['rowevenclass'])
+				elseif args['rowoddclass'] and math.fmod(j,2) == 1 then	
+					cell:addClass(args['rowoddclass'])
+				end
+				if colclass[i] ~= '' then
+					cell:addClass(colclass[i])
+				end
+			end
+			if args['style' .. tostring(j) .. '.' .. tostring(i)] then
+				cell:cssText(args['style' .. tostring(j) .. '.' .. tostring(i)])
+			else
+				if args['rowstyle' .. tostring(j)] then
+					cell:cssText(args['rowstyle' .. tostring(j)])
+				elseif args['rowevenstyle'] and math.fmod(j,2) == 0 then
+					cell:cssText(args['rowevenstyle'])
+				elseif args['rowoddstyle'] and math.fmod(j,2) == 1 then	
+					cell:cssText(args['rowoddstyle'])
+				elseif args['row' .. tostring(j) .. 'style'] then
+					cell:cssText(args['row' .. tostring(j) .. 'style'])
+				end
+				if isnotempty(colstyle[i]) then
+					cell:cssText(colstyle[i])
+				end
+			end
+			cell:wikitext(mw.ustring.gsub(args[cols*(j - 1) + i] or '', '^(.-)%s*$', '%1') or '')
+		end
+	end
+	-- return the root table
+	return tostring(root)
+end
+
+return p</text>
+      <sha1>m9dwn0950shw2aiodgy0z837cvdja2z</sha1>
+    </revision>
+    <revision>
+      <id>3557641</id>
+      <parentid>3303581</parentid>
+      <timestamp>2026-03-20T19:43:09Z</timestamp>
+      <contributor>
+        <username>en&gt;Plastikspork</username>
+        <id>0</id>
+      </contributor>
+      <comment>Optional rowclass</comment>
+      <origin>437</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5891" sha1="m9dwn0950shw2aiodgy0z837cvdja2z" xml:space="preserve">-- This module implements {{aligned table}}
+local p = {}
+
+local function isnotempty(s)
+	return s and s:match( '^%s*(.-)%s*$' ) ~= ''
+end
+
+function p.table(frame)
+	local args = (frame.args[3] ~= nil) and frame.args or frame:getParent().args
+	local entries = {}
+	local colclass = {}
+	local colstyle = {}
+	local cols = tonumber(args['cols']) or 2
+
+	-- create the root table
+	local root = mw.html.create('table')
+
+	-- add table style for fullwidth
+	if isnotempty(args['fullwidth']) then
+		root
+			:css('width', '100%')
+			:css('border-collapse', 'collapse')
+			:css('border-spacing', '0px 0px')
+			:css('border', 'none')
+	end
+
+	-- add table classes
+	if isnotempty(args['class']) then
+		root:addClass(args['class'])
+	end
+
+	-- add table style
+	if isnotempty(args['style']) then
+		root:cssText(args['style'])
+	end
+
+	-- build arrays with the column styles and classes
+	if isnotempty(args['leftright']) then
+		colstyle[1] = 'text-align:left;'
+		colstyle[2] = 'text-align:right;'
+	end
+	if isnotempty(args['rightleft']) then
+		colstyle[1] = 'text-align:right;'
+		colstyle[2] = 'text-align:left;'
+	end
+	for i = 1,cols do
+		colclass[ i ] = colclass[ i ] or ''
+		colstyle[ i ] = colstyle[ i ] or ''
+		if isnotempty(args['colstyle']) then
+			colstyle[ i ] = args['colstyle'] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colalign' .. tostring(i)]) then
+			colstyle[ i ] = 'text-align:' .. args['colalign' .. tostring(i)] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'align']) then
+			colstyle[ i ] = 'text-align:' .. args['col' .. tostring(i) .. 'align'] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['align' .. tostring(i)]) then
+			colstyle[ i ] = 'text-align:' .. args['align' .. tostring(i)] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colnowrap' .. tostring(i)]) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'nowrap']) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		elseif isnotempty(args['nowrap' .. tostring(i)]) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		end
+		if isnotempty(args['colwidth' .. tostring(i)]) then
+			colstyle[ i ] = 'width:' .. args['colwidth' .. tostring(i)] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'width']) then
+			colstyle[ i ] = 'width:' .. args['col' .. tostring(i) .. 'width'] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['colwidth']) then
+			colstyle[ i ] = 'width:' .. args['colwidth'] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colstyle' .. tostring(i)]) then
+			colstyle[ i ] = colstyle[ i ] .. args['colstyle' .. tostring(i)]
+		elseif isnotempty(args['col' .. tostring(i) .. 'style']) then
+			colstyle[ i ] = colstyle[ i ] .. args['col' .. tostring(i) .. 'style']
+		elseif isnotempty(args['style' .. tostring(i)]) then
+			colstyle[ i ] = colstyle[ i ] .. args['style' .. tostring(i)]
+		end
+		if isnotempty(args['colclass' .. tostring(i)]) then
+			colclass[ i ] =  args['colclass' .. tostring(i)]
+		elseif isnotempty(args['col' .. tostring(i) .. 'class']) then
+			colclass[ i ] =  args['col' .. tostring(i) .. 'class']
+		elseif isnotempty(args['class' .. tostring(i)]) then
+			colclass[ i ] =  args['class' .. tostring(i)]
+		end
+	end
+	-- compute the maximum cell index
+	local cellcount = 0
+	for k, v in pairs( args ) do
+		if type( k ) == 'number' then
+			cellcount = math.max(cellcount, k)
+		end
+	end
+	-- compute the number of rows
+	local rows = math.ceil(cellcount / cols)
+
+	-- build the table content
+	if isnotempty(args['title']) then
+		local caption = root:tag('caption')
+		caption:cssText(args['titlestyle'])
+		caption:wikitext(args['title'])
+	end
+	if isnotempty(args['above']) then
+		local row = root:tag('tr')
+		local cell = row:tag('th')
+		cell:attr('colspan', cols)
+		cell:cssText(args['abovestyle'])
+		cell:wikitext(args['above'])
+	end
+	for j=1,rows do
+		-- start a new row
+		local row = root:tag('tr')
+		if isnotempty(args['rowstyle']) then
+			row:cssText(args['rowstyle'])
+		else
+			row:css('vertical-align', 'top')
+		end
+		if isnotempty(args['rowclass']) then
+			row:addClass(args['rowclass'])
+		end
+		-- loop over the cells in the row
+		for i=1,cols do
+			local cell
+			if isnotempty(args['row' .. tostring(j) .. 'header']) then
+				cell = row:tag('th'):attr('scope','col')
+			elseif isnotempty(args['col' .. tostring(i) .. 'header']) then
+				cell = row:tag('th'):attr('scope','row')
+			else
+				cell = row:tag('td')
+			end
+			if args['class' .. tostring(j) .. '.' .. tostring(i)] then
+				cell:addClass(args['class' .. tostring(j) .. '.' .. tostring(i)])
+			else
+				if args['rowclass' .. tostring(j)] then
+					cell:addClass(args['rowclass' .. tostring(j)])
+				elseif args['row' .. tostring(j) .. 'class'] then
+					cell:addClass(args['row' .. tostring(j) .. 'class'])
+				elseif args['rowevenclass'] and math.fmod(j,2) == 0 then
+					cell:addClass(args['rowevenclass'])
+				elseif args['rowoddclass'] and math.fmod(j,2) == 1 then	
+					cell:addClass(args['rowoddclass'])
+				end
+				if colclass[i] ~= '' then
+					cell:addClass(colclass[i])
+				end
+			end
+			if args['style' .. tostring(j) .. '.' .. tostring(i)] then
+				cell:cssText(args['style' .. tostring(j) .. '.' .. tostring(i)])
+			else
+				if args['rowstyle' .. tostring(j)] then
+					cell:cssText(args['rowstyle' .. tostring(j)])
+				elseif args['rowevenstyle'] and math.fmod(j,2) == 0 then
+					cell:cssText(args['rowevenstyle'])
+				elseif args['rowoddstyle'] and math.fmod(j,2) == 1 then	
+					cell:cssText(args['rowoddstyle'])
+				elseif args['row' .. tostring(j) .. 'style'] then
+					cell:cssText(args['row' .. tostring(j) .. 'style'])
+				end
+				if isnotempty(colstyle[i]) then
+					cell:cssText(colstyle[i])
+				end
+			end
+			cell:wikitext(mw.ustring.gsub(args[cols*(j - 1) + i] or '', '^(.-)%s*$', '%1') or '')
+		end
+	end
+	-- return the root table
+	return tostring(root)
+end
+
+return p</text>
+      <sha1>m9dwn0950shw2aiodgy0z837cvdja2z</sha1>
+    </revision>
+    <revision>
+      <id>3557642</id>
+      <parentid>3557641</parentid>
+      <timestamp>2026-03-20T19:43:10Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>437</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5891" sha1="m9dwn0950shw2aiodgy0z837cvdja2z" xml:space="preserve">-- This module implements {{aligned table}}
+local p = {}
+
+local function isnotempty(s)
+	return s and s:match( '^%s*(.-)%s*$' ) ~= ''
+end
+
+function p.table(frame)
+	local args = (frame.args[3] ~= nil) and frame.args or frame:getParent().args
+	local entries = {}
+	local colclass = {}
+	local colstyle = {}
+	local cols = tonumber(args['cols']) or 2
+
+	-- create the root table
+	local root = mw.html.create('table')
+
+	-- add table style for fullwidth
+	if isnotempty(args['fullwidth']) then
+		root
+			:css('width', '100%')
+			:css('border-collapse', 'collapse')
+			:css('border-spacing', '0px 0px')
+			:css('border', 'none')
+	end
+
+	-- add table classes
+	if isnotempty(args['class']) then
+		root:addClass(args['class'])
+	end
+
+	-- add table style
+	if isnotempty(args['style']) then
+		root:cssText(args['style'])
+	end
+
+	-- build arrays with the column styles and classes
+	if isnotempty(args['leftright']) then
+		colstyle[1] = 'text-align:left;'
+		colstyle[2] = 'text-align:right;'
+	end
+	if isnotempty(args['rightleft']) then
+		colstyle[1] = 'text-align:right;'
+		colstyle[2] = 'text-align:left;'
+	end
+	for i = 1,cols do
+		colclass[ i ] = colclass[ i ] or ''
+		colstyle[ i ] = colstyle[ i ] or ''
+		if isnotempty(args['colstyle']) then
+			colstyle[ i ] = args['colstyle'] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colalign' .. tostring(i)]) then
+			colstyle[ i ] = 'text-align:' .. args['colalign' .. tostring(i)] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'align']) then
+			colstyle[ i ] = 'text-align:' .. args['col' .. tostring(i) .. 'align'] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['align' .. tostring(i)]) then
+			colstyle[ i ] = 'text-align:' .. args['align' .. tostring(i)] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colnowrap' .. tostring(i)]) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'nowrap']) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		elseif isnotempty(args['nowrap' .. tostring(i)]) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		end
+		if isnotempty(args['colwidth' .. tostring(i)]) then
+			colstyle[ i ] = 'width:' .. args['colwidth' .. tostring(i)] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'width']) then
+			colstyle[ i ] = 'width:' .. args['col' .. tostring(i) .. 'width'] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['colwidth']) then
+			colstyle[ i ] = 'width:' .. args['colwidth'] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colstyle' .. tostring(i)]) then
+			colstyle[ i ] = colstyle[ i ] .. args['colstyle' .. tostring(i)]
+		elseif isnotempty(args['col' .. tostring(i) .. 'style']) then
+			colstyle[ i ] = colstyle[ i ] .. args['col' .. tostring(i) .. 'style']
+		elseif isnotempty(args['style' .. tostring(i)]) then
+			colstyle[ i ] = colstyle[ i ] .. args['style' .. tostring(i)]
+		end
+		if isnotempty(args['colclass' .. tostring(i)]) then
+			colclass[ i ] =  args['colclass' .. tostring(i)]
+		elseif isnotempty(args['col' .. tostring(i) .. 'class']) then
+			colclass[ i ] =  args['col' .. tostring(i) .. 'class']
+		elseif isnotempty(args['class' .. tostring(i)]) then
+			colclass[ i ] =  args['class' .. tostring(i)]
+		end
+	end
+	-- compute the maximum cell index
+	local cellcount = 0
+	for k, v in pairs( args ) do
+		if type( k ) == 'number' then
+			cellcount = math.max(cellcount, k)
+		end
+	end
+	-- compute the number of rows
+	local rows = math.ceil(cellcount / cols)
+
+	-- build the table content
+	if isnotempty(args['title']) then
+		local caption = root:tag('caption')
+		caption:cssText(args['titlestyle'])
+		caption:wikitext(args['title'])
+	end
+	if isnotempty(args['above']) then
+		local row = root:tag('tr')
+		local cell = row:tag('th')
+		cell:attr('colspan', cols)
+		cell:cssText(args['abovestyle'])
+		cell:wikitext(args['above'])
+	end
+	for j=1,rows do
+		-- start a new row
+		local row = root:tag('tr')
+		if isnotempty(args['rowstyle']) then
+			row:cssText(args['rowstyle'])
+		else
+			row:css('vertical-align', 'top')
+		end
+		if isnotempty(args['rowclass']) then
+			row:addClass(args['rowclass'])
+		end
+		-- loop over the cells in the row
+		for i=1,cols do
+			local cell
+			if isnotempty(args['row' .. tostring(j) .. 'header']) then
+				cell = row:tag('th'):attr('scope','col')
+			elseif isnotempty(args['col' .. tostring(i) .. 'header']) then
+				cell = row:tag('th'):attr('scope','row')
+			else
+				cell = row:tag('td')
+			end
+			if args['class' .. tostring(j) .. '.' .. tostring(i)] then
+				cell:addClass(args['class' .. tostring(j) .. '.' .. tostring(i)])
+			else
+				if args['rowclass' .. tostring(j)] then
+					cell:addClass(args['rowclass' .. tostring(j)])
+				elseif args['row' .. tostring(j) .. 'class'] then
+					cell:addClass(args['row' .. tostring(j) .. 'class'])
+				elseif args['rowevenclass'] and math.fmod(j,2) == 0 then
+					cell:addClass(args['rowevenclass'])
+				elseif args['rowoddclass'] and math.fmod(j,2) == 1 then	
+					cell:addClass(args['rowoddclass'])
+				end
+				if colclass[i] ~= '' then
+					cell:addClass(colclass[i])
+				end
+			end
+			if args['style' .. tostring(j) .. '.' .. tostring(i)] then
+				cell:cssText(args['style' .. tostring(j) .. '.' .. tostring(i)])
+			else
+				if args['rowstyle' .. tostring(j)] then
+					cell:cssText(args['rowstyle' .. tostring(j)])
+				elseif args['rowevenstyle'] and math.fmod(j,2) == 0 then
+					cell:cssText(args['rowevenstyle'])
+				elseif args['rowoddstyle'] and math.fmod(j,2) == 1 then	
+					cell:cssText(args['rowoddstyle'])
+				elseif args['row' .. tostring(j) .. 'style'] then
+					cell:cssText(args['row' .. tostring(j) .. 'style'])
+				end
+				if isnotempty(colstyle[i]) then
+					cell:cssText(colstyle[i])
+				end
+			end
+			cell:wikitext(mw.ustring.gsub(args[cols*(j - 1) + i] or '', '^(.-)%s*$', '%1') or '')
+		end
+	end
+	-- return the root table
+	return tostring(root)
+end
+
+return p</text>
+      <sha1>m9dwn0950shw2aiodgy0z837cvdja2z</sha1>
+    </revision>
+    <revision>
+      <id>3558256</id>
+      <parentid>3557642</parentid>
+      <timestamp>2026-03-20T19:49:23Z</timestamp>
+      <contributor>
+        <username>en&gt;Plastikspork</username>
+        <id>0</id>
+      </contributor>
+      <comment>Optional rowclass</comment>
+      <origin>437</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5891" sha1="m9dwn0950shw2aiodgy0z837cvdja2z" xml:space="preserve">-- This module implements {{aligned table}}
+local p = {}
+
+local function isnotempty(s)
+	return s and s:match( '^%s*(.-)%s*$' ) ~= ''
+end
+
+function p.table(frame)
+	local args = (frame.args[3] ~= nil) and frame.args or frame:getParent().args
+	local entries = {}
+	local colclass = {}
+	local colstyle = {}
+	local cols = tonumber(args['cols']) or 2
+
+	-- create the root table
+	local root = mw.html.create('table')
+
+	-- add table style for fullwidth
+	if isnotempty(args['fullwidth']) then
+		root
+			:css('width', '100%')
+			:css('border-collapse', 'collapse')
+			:css('border-spacing', '0px 0px')
+			:css('border', 'none')
+	end
+
+	-- add table classes
+	if isnotempty(args['class']) then
+		root:addClass(args['class'])
+	end
+
+	-- add table style
+	if isnotempty(args['style']) then
+		root:cssText(args['style'])
+	end
+
+	-- build arrays with the column styles and classes
+	if isnotempty(args['leftright']) then
+		colstyle[1] = 'text-align:left;'
+		colstyle[2] = 'text-align:right;'
+	end
+	if isnotempty(args['rightleft']) then
+		colstyle[1] = 'text-align:right;'
+		colstyle[2] = 'text-align:left;'
+	end
+	for i = 1,cols do
+		colclass[ i ] = colclass[ i ] or ''
+		colstyle[ i ] = colstyle[ i ] or ''
+		if isnotempty(args['colstyle']) then
+			colstyle[ i ] = args['colstyle'] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colalign' .. tostring(i)]) then
+			colstyle[ i ] = 'text-align:' .. args['colalign' .. tostring(i)] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'align']) then
+			colstyle[ i ] = 'text-align:' .. args['col' .. tostring(i) .. 'align'] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['align' .. tostring(i)]) then
+			colstyle[ i ] = 'text-align:' .. args['align' .. tostring(i)] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colnowrap' .. tostring(i)]) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'nowrap']) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		elseif isnotempty(args['nowrap' .. tostring(i)]) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		end
+		if isnotempty(args['colwidth' .. tostring(i)]) then
+			colstyle[ i ] = 'width:' .. args['colwidth' .. tostring(i)] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'width']) then
+			colstyle[ i ] = 'width:' .. args['col' .. tostring(i) .. 'width'] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['colwidth']) then
+			colstyle[ i ] = 'width:' .. args['colwidth'] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colstyle' .. tostring(i)]) then
+			colstyle[ i ] = colstyle[ i ] .. args['colstyle' .. tostring(i)]
+		elseif isnotempty(args['col' .. tostring(i) .. 'style']) then
+			colstyle[ i ] = colstyle[ i ] .. args['col' .. tostring(i) .. 'style']
+		elseif isnotempty(args['style' .. tostring(i)]) then
+			colstyle[ i ] = colstyle[ i ] .. args['style' .. tostring(i)]
+		end
+		if isnotempty(args['colclass' .. tostring(i)]) then
+			colclass[ i ] =  args['colclass' .. tostring(i)]
+		elseif isnotempty(args['col' .. tostring(i) .. 'class']) then
+			colclass[ i ] =  args['col' .. tostring(i) .. 'class']
+		elseif isnotempty(args['class' .. tostring(i)]) then
+			colclass[ i ] =  args['class' .. tostring(i)]
+		end
+	end
+	-- compute the maximum cell index
+	local cellcount = 0
+	for k, v in pairs( args ) do
+		if type( k ) == 'number' then
+			cellcount = math.max(cellcount, k)
+		end
+	end
+	-- compute the number of rows
+	local rows = math.ceil(cellcount / cols)
+
+	-- build the table content
+	if isnotempty(args['title']) then
+		local caption = root:tag('caption')
+		caption:cssText(args['titlestyle'])
+		caption:wikitext(args['title'])
+	end
+	if isnotempty(args['above']) then
+		local row = root:tag('tr')
+		local cell = row:tag('th')
+		cell:attr('colspan', cols)
+		cell:cssText(args['abovestyle'])
+		cell:wikitext(args['above'])
+	end
+	for j=1,rows do
+		-- start a new row
+		local row = root:tag('tr')
+		if isnotempty(args['rowstyle']) then
+			row:cssText(args['rowstyle'])
+		else
+			row:css('vertical-align', 'top')
+		end
+		if isnotempty(args['rowclass']) then
+			row:addClass(args['rowclass'])
+		end
+		-- loop over the cells in the row
+		for i=1,cols do
+			local cell
+			if isnotempty(args['row' .. tostring(j) .. 'header']) then
+				cell = row:tag('th'):attr('scope','col')
+			elseif isnotempty(args['col' .. tostring(i) .. 'header']) then
+				cell = row:tag('th'):attr('scope','row')
+			else
+				cell = row:tag('td')
+			end
+			if args['class' .. tostring(j) .. '.' .. tostring(i)] then
+				cell:addClass(args['class' .. tostring(j) .. '.' .. tostring(i)])
+			else
+				if args['rowclass' .. tostring(j)] then
+					cell:addClass(args['rowclass' .. tostring(j)])
+				elseif args['row' .. tostring(j) .. 'class'] then
+					cell:addClass(args['row' .. tostring(j) .. 'class'])
+				elseif args['rowevenclass'] and math.fmod(j,2) == 0 then
+					cell:addClass(args['rowevenclass'])
+				elseif args['rowoddclass'] and math.fmod(j,2) == 1 then	
+					cell:addClass(args['rowoddclass'])
+				end
+				if colclass[i] ~= '' then
+					cell:addClass(colclass[i])
+				end
+			end
+			if args['style' .. tostring(j) .. '.' .. tostring(i)] then
+				cell:cssText(args['style' .. tostring(j) .. '.' .. tostring(i)])
+			else
+				if args['rowstyle' .. tostring(j)] then
+					cell:cssText(args['rowstyle' .. tostring(j)])
+				elseif args['rowevenstyle'] and math.fmod(j,2) == 0 then
+					cell:cssText(args['rowevenstyle'])
+				elseif args['rowoddstyle'] and math.fmod(j,2) == 1 then	
+					cell:cssText(args['rowoddstyle'])
+				elseif args['row' .. tostring(j) .. 'style'] then
+					cell:cssText(args['row' .. tostring(j) .. 'style'])
+				end
+				if isnotempty(colstyle[i]) then
+					cell:cssText(colstyle[i])
+				end
+			end
+			cell:wikitext(mw.ustring.gsub(args[cols*(j - 1) + i] or '', '^(.-)%s*$', '%1') or '')
+		end
+	end
+	-- return the root table
+	return tostring(root)
+end
+
+return p</text>
+      <sha1>m9dwn0950shw2aiodgy0z837cvdja2z</sha1>
+    </revision>
+    <revision>
+      <id>3558257</id>
+      <parentid>3558256</parentid>
+      <timestamp>2026-03-20T19:49:24Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting </comment>
+      <origin>437</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5891" sha1="m9dwn0950shw2aiodgy0z837cvdja2z" xml:space="preserve">-- This module implements {{aligned table}}
+local p = {}
+
+local function isnotempty(s)
+	return s and s:match( '^%s*(.-)%s*$' ) ~= ''
+end
+
+function p.table(frame)
+	local args = (frame.args[3] ~= nil) and frame.args or frame:getParent().args
+	local entries = {}
+	local colclass = {}
+	local colstyle = {}
+	local cols = tonumber(args['cols']) or 2
+
+	-- create the root table
+	local root = mw.html.create('table')
+
+	-- add table style for fullwidth
+	if isnotempty(args['fullwidth']) then
+		root
+			:css('width', '100%')
+			:css('border-collapse', 'collapse')
+			:css('border-spacing', '0px 0px')
+			:css('border', 'none')
+	end
+
+	-- add table classes
+	if isnotempty(args['class']) then
+		root:addClass(args['class'])
+	end
+
+	-- add table style
+	if isnotempty(args['style']) then
+		root:cssText(args['style'])
+	end
+
+	-- build arrays with the column styles and classes
+	if isnotempty(args['leftright']) then
+		colstyle[1] = 'text-align:left;'
+		colstyle[2] = 'text-align:right;'
+	end
+	if isnotempty(args['rightleft']) then
+		colstyle[1] = 'text-align:right;'
+		colstyle[2] = 'text-align:left;'
+	end
+	for i = 1,cols do
+		colclass[ i ] = colclass[ i ] or ''
+		colstyle[ i ] = colstyle[ i ] or ''
+		if isnotempty(args['colstyle']) then
+			colstyle[ i ] = args['colstyle'] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colalign' .. tostring(i)]) then
+			colstyle[ i ] = 'text-align:' .. args['colalign' .. tostring(i)] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'align']) then
+			colstyle[ i ] = 'text-align:' .. args['col' .. tostring(i) .. 'align'] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['align' .. tostring(i)]) then
+			colstyle[ i ] = 'text-align:' .. args['align' .. tostring(i)] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colnowrap' .. tostring(i)]) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'nowrap']) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		elseif isnotempty(args['nowrap' .. tostring(i)]) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		end
+		if isnotempty(args['colwidth' .. tostring(i)]) then
+			colstyle[ i ] = 'width:' .. args['colwidth' .. tostring(i)] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'width']) then
+			colstyle[ i ] = 'width:' .. args['col' .. tostring(i) .. 'width'] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['colwidth']) then
+			colstyle[ i ] = 'width:' .. args['colwidth'] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colstyle' .. tostring(i)]) then
+			colstyle[ i ] = colstyle[ i ] .. args['colstyle' .. tostring(i)]
+		elseif isnotempty(args['col' .. tostring(i) .. 'style']) then
+			colstyle[ i ] = colstyle[ i ] .. args['col' .. tostring(i) .. 'style']
+		elseif isnotempty(args['style' .. tostring(i)]) then
+			colstyle[ i ] = colstyle[ i ] .. args['style' .. tostring(i)]
+		end
+		if isnotempty(args['colclass' .. tostring(i)]) then
+			colclass[ i ] =  args['colclass' .. tostring(i)]
+		elseif isnotempty(args['col' .. tostring(i) .. 'class']) then
+			colclass[ i ] =  args['col' .. tostring(i) .. 'class']
+		elseif isnotempty(args['class' .. tostring(i)]) then
+			colclass[ i ] =  args['class' .. tostring(i)]
+		end
+	end
+	-- compute the maximum cell index
+	local cellcount = 0
+	for k, v in pairs( args ) do
+		if type( k ) == 'number' then
+			cellcount = math.max(cellcount, k)
+		end
+	end
+	-- compute the number of rows
+	local rows = math.ceil(cellcount / cols)
+
+	-- build the table content
+	if isnotempty(args['title']) then
+		local caption = root:tag('caption')
+		caption:cssText(args['titlestyle'])
+		caption:wikitext(args['title'])
+	end
+	if isnotempty(args['above']) then
+		local row = root:tag('tr')
+		local cell = row:tag('th')
+		cell:attr('colspan', cols)
+		cell:cssText(args['abovestyle'])
+		cell:wikitext(args['above'])
+	end
+	for j=1,rows do
+		-- start a new row
+		local row = root:tag('tr')
+		if isnotempty(args['rowstyle']) then
+			row:cssText(args['rowstyle'])
+		else
+			row:css('vertical-align', 'top')
+		end
+		if isnotempty(args['rowclass']) then
+			row:addClass(args['rowclass'])
+		end
+		-- loop over the cells in the row
+		for i=1,cols do
+			local cell
+			if isnotempty(args['row' .. tostring(j) .. 'header']) then
+				cell = row:tag('th'):attr('scope','col')
+			elseif isnotempty(args['col' .. tostring(i) .. 'header']) then
+				cell = row:tag('th'):attr('scope','row')
+			else
+				cell = row:tag('td')
+			end
+			if args['class' .. tostring(j) .. '.' .. tostring(i)] then
+				cell:addClass(args['class' .. tostring(j) .. '.' .. tostring(i)])
+			else
+				if args['rowclass' .. tostring(j)] then
+					cell:addClass(args['rowclass' .. tostring(j)])
+				elseif args['row' .. tostring(j) .. 'class'] then
+					cell:addClass(args['row' .. tostring(j) .. 'class'])
+				elseif args['rowevenclass'] and math.fmod(j,2) == 0 then
+					cell:addClass(args['rowevenclass'])
+				elseif args['rowoddclass'] and math.fmod(j,2) == 1 then	
+					cell:addClass(args['rowoddclass'])
+				end
+				if colclass[i] ~= '' then
+					cell:addClass(colclass[i])
+				end
+			end
+			if args['style' .. tostring(j) .. '.' .. tostring(i)] then
+				cell:cssText(args['style' .. tostring(j) .. '.' .. tostring(i)])
+			else
+				if args['rowstyle' .. tostring(j)] then
+					cell:cssText(args['rowstyle' .. tostring(j)])
+				elseif args['rowevenstyle'] and math.fmod(j,2) == 0 then
+					cell:cssText(args['rowevenstyle'])
+				elseif args['rowoddstyle'] and math.fmod(j,2) == 1 then	
+					cell:cssText(args['rowoddstyle'])
+				elseif args['row' .. tostring(j) .. 'style'] then
+					cell:cssText(args['row' .. tostring(j) .. 'style'])
+				end
+				if isnotempty(colstyle[i]) then
+					cell:cssText(colstyle[i])
+				end
+			end
+			cell:wikitext(mw.ustring.gsub(args[cols*(j - 1) + i] or '', '^(.-)%s*$', '%1') or '')
+		end
+	end
+	-- return the root table
+	return tostring(root)
+end
+
+return p</text>
+      <sha1>m9dwn0950shw2aiodgy0z837cvdja2z</sha1>
+    </revision>
+    <revision>
+      <id>3562735</id>
+      <parentid>3558257</parentid>
+      <timestamp>2026-03-22T19:01:34Z</timestamp>
+      <contributor>
+        <username>en&gt;Plastikspork</username>
+        <id>0</id>
+      </contributor>
+      <comment>Optional rowclass</comment>
+      <origin>437</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5891" sha1="m9dwn0950shw2aiodgy0z837cvdja2z" xml:space="preserve">-- This module implements {{aligned table}}
+local p = {}
+
+local function isnotempty(s)
+	return s and s:match( '^%s*(.-)%s*$' ) ~= ''
+end
+
+function p.table(frame)
+	local args = (frame.args[3] ~= nil) and frame.args or frame:getParent().args
+	local entries = {}
+	local colclass = {}
+	local colstyle = {}
+	local cols = tonumber(args['cols']) or 2
+
+	-- create the root table
+	local root = mw.html.create('table')
+
+	-- add table style for fullwidth
+	if isnotempty(args['fullwidth']) then
+		root
+			:css('width', '100%')
+			:css('border-collapse', 'collapse')
+			:css('border-spacing', '0px 0px')
+			:css('border', 'none')
+	end
+
+	-- add table classes
+	if isnotempty(args['class']) then
+		root:addClass(args['class'])
+	end
+
+	-- add table style
+	if isnotempty(args['style']) then
+		root:cssText(args['style'])
+	end
+
+	-- build arrays with the column styles and classes
+	if isnotempty(args['leftright']) then
+		colstyle[1] = 'text-align:left;'
+		colstyle[2] = 'text-align:right;'
+	end
+	if isnotempty(args['rightleft']) then
+		colstyle[1] = 'text-align:right;'
+		colstyle[2] = 'text-align:left;'
+	end
+	for i = 1,cols do
+		colclass[ i ] = colclass[ i ] or ''
+		colstyle[ i ] = colstyle[ i ] or ''
+		if isnotempty(args['colstyle']) then
+			colstyle[ i ] = args['colstyle'] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colalign' .. tostring(i)]) then
+			colstyle[ i ] = 'text-align:' .. args['colalign' .. tostring(i)] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'align']) then
+			colstyle[ i ] = 'text-align:' .. args['col' .. tostring(i) .. 'align'] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['align' .. tostring(i)]) then
+			colstyle[ i ] = 'text-align:' .. args['align' .. tostring(i)] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colnowrap' .. tostring(i)]) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'nowrap']) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		elseif isnotempty(args['nowrap' .. tostring(i)]) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		end
+		if isnotempty(args['colwidth' .. tostring(i)]) then
+			colstyle[ i ] = 'width:' .. args['colwidth' .. tostring(i)] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'width']) then
+			colstyle[ i ] = 'width:' .. args['col' .. tostring(i) .. 'width'] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['colwidth']) then
+			colstyle[ i ] = 'width:' .. args['colwidth'] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colstyle' .. tostring(i)]) then
+			colstyle[ i ] = colstyle[ i ] .. args['colstyle' .. tostring(i)]
+		elseif isnotempty(args['col' .. tostring(i) .. 'style']) then
+			colstyle[ i ] = colstyle[ i ] .. args['col' .. tostring(i) .. 'style']
+		elseif isnotempty(args['style' .. tostring(i)]) then
+			colstyle[ i ] = colstyle[ i ] .. args['style' .. tostring(i)]
+		end
+		if isnotempty(args['colclass' .. tostring(i)]) then
+			colclass[ i ] =  args['colclass' .. tostring(i)]
+		elseif isnotempty(args['col' .. tostring(i) .. 'class']) then
+			colclass[ i ] =  args['col' .. tostring(i) .. 'class']
+		elseif isnotempty(args['class' .. tostring(i)]) then
+			colclass[ i ] =  args['class' .. tostring(i)]
+		end
+	end
+	-- compute the maximum cell index
+	local cellcount = 0
+	for k, v in pairs( args ) do
+		if type( k ) == 'number' then
+			cellcount = math.max(cellcount, k)
+		end
+	end
+	-- compute the number of rows
+	local rows = math.ceil(cellcount / cols)
+
+	-- build the table content
+	if isnotempty(args['title']) then
+		local caption = root:tag('caption')
+		caption:cssText(args['titlestyle'])
+		caption:wikitext(args['title'])
+	end
+	if isnotempty(args['above']) then
+		local row = root:tag('tr')
+		local cell = row:tag('th')
+		cell:attr('colspan', cols)
+		cell:cssText(args['abovestyle'])
+		cell:wikitext(args['above'])
+	end
+	for j=1,rows do
+		-- start a new row
+		local row = root:tag('tr')
+		if isnotempty(args['rowstyle']) then
+			row:cssText(args['rowstyle'])
+		else
+			row:css('vertical-align', 'top')
+		end
+		if isnotempty(args['rowclass']) then
+			row:addClass(args['rowclass'])
+		end
+		-- loop over the cells in the row
+		for i=1,cols do
+			local cell
+			if isnotempty(args['row' .. tostring(j) .. 'header']) then
+				cell = row:tag('th'):attr('scope','col')
+			elseif isnotempty(args['col' .. tostring(i) .. 'header']) then
+				cell = row:tag('th'):attr('scope','row')
+			else
+				cell = row:tag('td')
+			end
+			if args['class' .. tostring(j) .. '.' .. tostring(i)] then
+				cell:addClass(args['class' .. tostring(j) .. '.' .. tostring(i)])
+			else
+				if args['rowclass' .. tostring(j)] then
+					cell:addClass(args['rowclass' .. tostring(j)])
+				elseif args['row' .. tostring(j) .. 'class'] then
+					cell:addClass(args['row' .. tostring(j) .. 'class'])
+				elseif args['rowevenclass'] and math.fmod(j,2) == 0 then
+					cell:addClass(args['rowevenclass'])
+				elseif args['rowoddclass'] and math.fmod(j,2) == 1 then	
+					cell:addClass(args['rowoddclass'])
+				end
+				if colclass[i] ~= '' then
+					cell:addClass(colclass[i])
+				end
+			end
+			if args['style' .. tostring(j) .. '.' .. tostring(i)] then
+				cell:cssText(args['style' .. tostring(j) .. '.' .. tostring(i)])
+			else
+				if args['rowstyle' .. tostring(j)] then
+					cell:cssText(args['rowstyle' .. tostring(j)])
+				elseif args['rowevenstyle'] and math.fmod(j,2) == 0 then
+					cell:cssText(args['rowevenstyle'])
+				elseif args['rowoddstyle'] and math.fmod(j,2) == 1 then	
+					cell:cssText(args['rowoddstyle'])
+				elseif args['row' .. tostring(j) .. 'style'] then
+					cell:cssText(args['row' .. tostring(j) .. 'style'])
+				end
+				if isnotempty(colstyle[i]) then
+					cell:cssText(colstyle[i])
+				end
+			end
+			cell:wikitext(mw.ustring.gsub(args[cols*(j - 1) + i] or '', '^(.-)%s*$', '%1') or '')
+		end
+	end
+	-- return the root table
+	return tostring(root)
+end
+
+return p</text>
+      <sha1>m9dwn0950shw2aiodgy0z837cvdja2z</sha1>
+    </revision>
+    <revision>
+      <id>3562736</id>
+      <parentid>3562735</parentid>
+      <timestamp>2026-03-22T19:01:34Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>437</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5891" sha1="m9dwn0950shw2aiodgy0z837cvdja2z" xml:space="preserve">-- This module implements {{aligned table}}
+local p = {}
+
+local function isnotempty(s)
+	return s and s:match( '^%s*(.-)%s*$' ) ~= ''
+end
+
+function p.table(frame)
+	local args = (frame.args[3] ~= nil) and frame.args or frame:getParent().args
+	local entries = {}
+	local colclass = {}
+	local colstyle = {}
+	local cols = tonumber(args['cols']) or 2
+
+	-- create the root table
+	local root = mw.html.create('table')
+
+	-- add table style for fullwidth
+	if isnotempty(args['fullwidth']) then
+		root
+			:css('width', '100%')
+			:css('border-collapse', 'collapse')
+			:css('border-spacing', '0px 0px')
+			:css('border', 'none')
+	end
+
+	-- add table classes
+	if isnotempty(args['class']) then
+		root:addClass(args['class'])
+	end
+
+	-- add table style
+	if isnotempty(args['style']) then
+		root:cssText(args['style'])
+	end
+
+	-- build arrays with the column styles and classes
+	if isnotempty(args['leftright']) then
+		colstyle[1] = 'text-align:left;'
+		colstyle[2] = 'text-align:right;'
+	end
+	if isnotempty(args['rightleft']) then
+		colstyle[1] = 'text-align:right;'
+		colstyle[2] = 'text-align:left;'
+	end
+	for i = 1,cols do
+		colclass[ i ] = colclass[ i ] or ''
+		colstyle[ i ] = colstyle[ i ] or ''
+		if isnotempty(args['colstyle']) then
+			colstyle[ i ] = args['colstyle'] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colalign' .. tostring(i)]) then
+			colstyle[ i ] = 'text-align:' .. args['colalign' .. tostring(i)] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'align']) then
+			colstyle[ i ] = 'text-align:' .. args['col' .. tostring(i) .. 'align'] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['align' .. tostring(i)]) then
+			colstyle[ i ] = 'text-align:' .. args['align' .. tostring(i)] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colnowrap' .. tostring(i)]) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'nowrap']) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		elseif isnotempty(args['nowrap' .. tostring(i)]) then
+			colstyle[ i ] = 'white-space:nowrap;' .. colstyle[ i ]
+		end
+		if isnotempty(args['colwidth' .. tostring(i)]) then
+			colstyle[ i ] = 'width:' .. args['colwidth' .. tostring(i)] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['col' .. tostring(i) .. 'width']) then
+			colstyle[ i ] = 'width:' .. args['col' .. tostring(i) .. 'width'] .. ';' .. colstyle[ i ]
+		elseif isnotempty(args['colwidth']) then
+			colstyle[ i ] = 'width:' .. args['colwidth'] .. ';' .. colstyle[ i ]
+		end
+		if isnotempty(args['colstyle' .. tostring(i)]) then
+			colstyle[ i ] = colstyle[ i ] .. args['colstyle' .. tostring(i)]
+		elseif isnotempty(args['col' .. tostring(i) .. 'style']) then
+			colstyle[ i ] = colstyle[ i ] .. args['col' .. tostring(i) .. 'style']
+		elseif isnotempty(args['style' .. tostring(i)]) then
+			colstyle[ i ] = colstyle[ i ] .. args['style' .. tostring(i)]
+		end
+		if isnotempty(args['colclass' .. tostring(i)]) then
+			colclass[ i ] =  args['colclass' .. tostring(i)]
+		elseif isnotempty(args['col' .. tostring(i) .. 'class']) then
+			colclass[ i ] =  args['col' .. tostring(i) .. 'class']
+		elseif isnotempty(args['class' .. tostring(i)]) then
+			colclass[ i ] =  args['class' .. tostring(i)]
+		end
+	end
+	-- compute the maximum cell index
+	local cellcount = 0
+	for k, v in pairs( args ) do
+		if type( k ) == 'number' then
+			cellcount = math.max(cellcount, k)
+		end
+	end
+	-- compute the number of rows
+	local rows = math.ceil(cellcount / cols)
+
+	-- build the table content
+	if isnotempty(args['title']) then
+		local caption = root:tag('caption')
+		caption:cssText(args['titlestyle'])
+		caption:wikitext(args['title'])
+	end
+	if isnotempty(args['above']) then
+		local row = root:tag('tr')
+		local cell = row:tag('th')
+		cell:attr('colspan', cols)
+		cell:cssText(args['abovestyle'])
+		cell:wikitext(args['above'])
+	end
+	for j=1,rows do
+		-- start a new row
+		local row = root:tag('tr')
+		if isnotempty(args['rowstyle']) then
+			row:cssText(args['rowstyle'])
+		else
+			row:css('vertical-align', 'top')
+		end
+		if isnotempty(args['rowclass']) then
+			row:addClass(args['rowclass'])
+		end
+		-- loop over the cells in the row
+		for i=1,cols do
+			local cell
+			if isnotempty(args['row' .. tostring(j) .. 'header']) then
+				cell = row:tag('th'):attr('scope','col')
+			elseif isnotempty(args['col' .. tostring(i) .. 'header']) then
+				cell = row:tag('th'):attr('scope','row')
+			else
+				cell = row:tag('td')
+			end
+			if args['class' .. tostring(j) .. '.' .. tostring(i)] then
+				cell:addClass(args['class' .. tostring(j) .. '.' .. tostring(i)])
+			else
+				if args['rowclass' .. tostring(j)] then
+					cell:addClass(args['rowclass' .. tostring(j)])
+				elseif args['row' .. tostring(j) .. 'class'] then
+					cell:addClass(args['row' .. tostring(j) .. 'class'])
+				elseif args['rowevenclass'] and math.fmod(j,2) == 0 then
+					cell:addClass(args['rowevenclass'])
+				elseif args['rowoddclass'] and math.fmod(j,2) == 1 then	
+					cell:addClass(args['rowoddclass'])
+				end
+				if colclass[i] ~= '' then
+					cell:addClass(colclass[i])
+				end
+			end
+			if args['style' .. tostring(j) .. '.' .. tostring(i)] then
+				cell:cssText(args['style' .. tostring(j) .. '.' .. tostring(i)])
+			else
+				if args['rowstyle' .. tostring(j)] then
+					cell:cssText(args['rowstyle' .. tostring(j)])
+				elseif args['rowevenstyle'] and math.fmod(j,2) == 0 then
+					cell:cssText(args['rowevenstyle'])
+				elseif args['rowoddstyle'] and math.fmod(j,2) == 1 then	
+					cell:cssText(args['rowoddstyle'])
+				elseif args['row' .. tostring(j) .. 'style'] then
+					cell:cssText(args['row' .. tostring(j) .. 'style'])
+				end
+				if isnotempty(colstyle[i]) then
+					cell:cssText(colstyle[i])
+				end
+			end
+			cell:wikitext(mw.ustring.gsub(args[cols*(j - 1) + i] or '', '^(.-)%s*$', '%1') or '')
+		end
+	end
+	-- return the root table
+	return tostring(root)
+end
+
+return p</text>
+      <sha1>m9dwn0950shw2aiodgy0z837cvdja2z</sha1>
+    </revision>
+  </page>
+</mediawiki>

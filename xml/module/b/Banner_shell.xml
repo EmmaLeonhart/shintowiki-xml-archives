@@ -1,0 +1,1278 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Banner shell</title>
+    <ns>828</ns>
+    <id>17351</id>
+    <revision>
+      <id>1165390</id>
+      <timestamp>2025-01-18T16:25:02Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Aidan9382</username>
+        <id>0</id>
+      </contributor>
+      <comment>You[[User:Timrollpickering| ]] seem to have toggled sandbox mode there</comment>
+      <origin>1165390</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="8400" sha1="7yjuimnhw7mb1w6lz31o1aawqd3ac5m" xml:space="preserve">require('strict')
+local p = {}
+local sandbox-- = '/sandbox' -- BE SURE TO COMMENT OUT this definition when deploying to live
+local yesno = require('Module:Yesno')
+
+local shell = function(frame, header, content, collapsed, class)
+	local styles = frame:extensionTag('templatestyles', '', {src = 'Module:Message box/tmbox.css'})
+		.. frame:extensionTag('templatestyles', '', {src = 'Module:Banner shell' .. (sandbox or '') .. '/styles.css'})
+	local content_row
+	if content then
+		content_row = mw.html.create('tr')
+			:tag('td')
+			:attr('colspan', '2')
+			:addClass('banner-shell-inner')
+			:addClass('outercollapse')
+			:wikitext(content)
+			:done()
+	end
+	local holder = mw.html.create('table')
+		:attr('role', 'presentation')
+		:addClass('tmbox')
+		:addClass('tmbox-notice')
+		:addClass('banner-shell')
+		:addClass(class) -- allow additional class to be specified
+		:addClass(content and 'mw-collapsible' or nil)
+		:addClass(collapsed and 'mw-collapsed' or nil)
+		:node(header)
+		:node(content_row)
+	return styles .. tostring(holder)
+end
+
+p.banner_holder = function(frame)
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = {'Template:Banner holder'}})
+	local image = '[[File:' .. (args.image or 'NewFavicon icon.svg')
+		.. '|' .. (args.size or '24') .. 'px'
+		.. '|link=' .. (args.image_link or '')
+		.. '|alt=' .. (args.alt or '') .. ']]'
+	local image_cell = mw.html.create('td')
+		:addClass('mbox-image')
+		:wikitext(image)
+	local text_cell = mw.html.create('td')
+		:addClass('mbox-text')
+		:addClass('banner-shell-header')
+		:tag('span')
+		:addClass('nowrap')
+		:css('float', 'left')
+		:wikitext(string.rep('&amp;nbsp;', 10))
+		:done()
+		:wikitext(args.text or 'Other talk page banners')
+	local header = mw.html.create('tr')
+		:node(image_cell)
+		:node(text_cell)
+	return shell(frame, header, args[1], yesno(args.collapsed))
+end
+
+local DuplicateBanners = function(text)
+	local capture = '&lt;span class="wpb%-project"&gt;([^&lt;&gt;]*)&lt;/span&gt;'
+	local banners = {}
+	for project in text:gmatch(capture) do
+		if banners[project] == true then
+			return project
+		end
+		banners[project] = true
+	end
+end
+
+p.banner_shell = function(frame)
+	local cfg = mw.loadData('Module:Banner shell/config' .. (sandbox or ''))
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = {cfg.template}})
+	local title = args.demo_page and mw.title.new(args.demo_page) or mw.title.getCurrentTitle()
+	local pagetype = require('Module:Pagetype')._main{
+		page = title.prefixedText,
+		dab = cfg.page_types.dab,
+		sia = 'set index article',
+		soft_redirect = cfg.page_types.soft_redirect,
+		nonexistent = cfg.page_types.nonexistent,
+		timedtext = cfg.page_types.timedtext,
+		defaultns = 'extended'
+	}
+	local lang = mw.language.getContentLanguage()
+	local classmask = require('Module:WikiProject banner' .. (sandbox or '')).class_mask
+	local class = classmask(args.class or '', title.talkPageTitle, false, pagetype)
+	local demo = not yesno(args.category or true, true) or args.demo_page
+	local out = {}
+	local addCategory = function(category, sort_key)
+		if not demo and title.isTalkPage then
+			local category_title = mw.title.new('Category:' .. category)
+			table.insert(out, '[[' .. category_title.prefixedText .. (sort_key and ('|' .. sort_key) or '') .. ']]')
+		end
+	end
+	if demo and not args.demo_page then
+		pagetype = 'article'
+	end
+	local blp = args.blp and args.blp:lower()
+	if yesno(blp) or blp=='activepol' or yesno(args.living) then
+		table.insert(out, frame:expandTemplate{
+			title = cfg.blp_template.blp,
+			args = {activepol = blp=='activepol' and 'yes'}
+		})
+	elseif blp=='other' then
+		table.insert(out, frame:expandTemplate{
+			title = cfg.blp_template.blpo}
+		)
+	end
+	local vital
+	if yesno(args.vital) then
+		local page = mw.ustring.upper(mw.ustring.sub(title.subjectPageTitle.text, 1, 1)) -- get first letter of article name
+		local codepoint = mw.ustring.codepoint(page, 1, 1)
+		if codepoint&lt;65 or codepoint&gt;90 then --first letter is not between A-Z
+			page = 'others'
+		end
+		local data_page = mw.title.new('Wikipedia:Vital articles/data/' .. page .. '.json')
+		if data_page.exists then
+			local index = title.subjectPageTitle.text
+			index = tostring(tonumber(index))==index and tonumber(index) or index --convert to number if page is numerical, otherwise loadJsonData does not work
+			local data = mw.loadJsonData(data_page.fullText)[index]
+			if data then
+				local level = data.level and tostring(data.level)
+				if level and data.topic then
+					local link = 'Wikipedia:Vital articles/Level/' .. level
+					if (level=='4' or level=='5') then
+						link = link .. '/' .. data.topic
+					end
+					if data.sublist then
+						link = link .. '/' .. data.sublist
+					end
+					if data.section then
+						link = link .. '#' .. data.section
+					end
+					if not mw.title.new(link).exists then -- add tracking category if link does not exist
+						addCategory(cfg.vital.attention, 'L')
+					end
+					vital = cfg.vital.with_level:format(link, level)
+				else
+					vital = cfg.vital.without_level
+				end
+				for _, cat in ipairs(cfg.vital.categories) do
+					if cat:find('_CLASS') and (class=='NA' or class=='') then
+						addCategory(cfg.vital.attention, class=='NA' and 'N' or 'U')
+					elseif level==nil then
+						addCategory(cfg.vital.attention, 'V')
+					elseif data.topic==nil then
+						addCategory(cfg.vital.attention, 'T')
+					else
+						local category = cat
+							:gsub('_CLASS', class .. '-Class')
+							:gsub('_LEVEL', level)
+							:gsub('_TOPIC', data.topic)
+						addCategory(category)
+					end
+				end
+				addCategory(cfg.vital.all)
+			else
+				addCategory(cfg.vital.not_listed)
+			end
+		end
+	end
+	local text, icon_image, icon_str
+	if class=='NA' then
+		icon_image = cfg.icons.type[pagetype] or cfg.icons.default
+		icon_str = pagetype=='page' and 'Non-article page' or lang:ucfirst(pagetype)
+		text = {cfg.rating.not_required:format(vital or pagetype)}
+		if args.class then
+			addCategory(cfg.tracking.redundant_class)
+		end
+	elseif class=='' then
+		icon_image = cfg.icons.unassessed
+		icon_str =  'Unassessed article'
+		text = {cfg.rating.not_yet:format(vital or pagetype)}
+		addCategory('All unassessed articles')
+	else
+		icon_image = cfg.icons.quality[class] or cfg.icons.unassessed
+		icon_str =  class .. '-Class ' .. pagetype
+		text = {cfg.rating.rated:format(vital or pagetype, class)}
+	end
+	local icon = string.format('[[File:%s|%s|35px|class=noviewer|alt=]]', icon_image, icon_str)
+	table.insert(text, ' ' .. cfg.rating.scale)
+	if args[1] then
+		table.insert(text, '&lt;br&gt;' .. cfg.project.interest .. ' ')
+		table.insert(text, yesno(args.collapsed) and cfg.project.collapsed or cfg.project.uncollapsed)
+		local duplicate_cat = DuplicateBanners(args[1])
+		if duplicate_cat and title.isTalkPage then
+			addCategory(cfg.tracking.duplicate, duplicate_cat)
+		end
+	elseif not yesno(args.vital) and class~='' then -- if no projects and not vital and assessed then add class super category
+		if class == 'NA' then
+			addCategory('NA-Class pages')
+		else
+			addCategory(class .. '-Class articles')
+		end
+	end
+	local header = mw.html.create('tr')
+		:tag('td')
+			:addClass('assess')
+			:wikitext(icon)
+			:done()
+		:tag('td')
+			:addClass('banner-shell-header')
+			:css('text-align', 'left')
+			:css('font-weight', 'normal')
+			:wikitext(table.concat(text))
+			:done()
+	table.insert(
+		out,
+		shell(frame, header, args[1], yesno(args.collapsed), 'wpbs')
+	)
+	if args.listas then
+		table.insert(out, frame:preprocess('{{DEFAULTSORT:' .. args.listas .. '}}'))
+	end
+	if not demo then
+		local tracking = require('Module:Check for unknown parameters')._check({
+			unknown = cfg.tracking.unknown,
+			preview = cfg.tracking.preview,
+			'1', 'blp', 'category', 'class', 'collapsed', 'demo_page', 'listas', 'vital'
+		}, frame:getParent().args)
+		table.insert(out, tracking)
+		if args.category and yesno(args.category)~=false then -- category should not be "yes"
+			addCategory(cfg.tracking.invalid, 'category')
+		end
+		if args.collapsed and yesno(args.collapsed)~=true then -- collapsed should not be "no"
+			addCategory(cfg.tracking.invalid, 'collapsed')
+		end
+		if yesno(blp)==nil and blp~=nil and blp~='other' and blp~='activepol' then
+			addCategory(cfg.tracking.invalid, 'blp')
+		end
+		if pagetype=='article' and args.class and class=='' then -- find pages with invalid class parameter
+			addCategory(cfg.tracking.invalid, 'Zclass')
+		end
+	end
+	return table.concat(out)
+end
+
+return p</text>
+      <sha1>7yjuimnhw7mb1w6lz31o1aawqd3ac5m</sha1>
+    </revision>
+    <revision>
+      <id>1165391</id>
+      <parentid>1165390</parentid>
+      <timestamp>2025-04-27T22:45:11Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:Banner_shell]]: I am planning on using this template</comment>
+      <origin>1165390</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="8400" sha1="7yjuimnhw7mb1w6lz31o1aawqd3ac5m" xml:space="preserve">require('strict')
+local p = {}
+local sandbox-- = '/sandbox' -- BE SURE TO COMMENT OUT this definition when deploying to live
+local yesno = require('Module:Yesno')
+
+local shell = function(frame, header, content, collapsed, class)
+	local styles = frame:extensionTag('templatestyles', '', {src = 'Module:Message box/tmbox.css'})
+		.. frame:extensionTag('templatestyles', '', {src = 'Module:Banner shell' .. (sandbox or '') .. '/styles.css'})
+	local content_row
+	if content then
+		content_row = mw.html.create('tr')
+			:tag('td')
+			:attr('colspan', '2')
+			:addClass('banner-shell-inner')
+			:addClass('outercollapse')
+			:wikitext(content)
+			:done()
+	end
+	local holder = mw.html.create('table')
+		:attr('role', 'presentation')
+		:addClass('tmbox')
+		:addClass('tmbox-notice')
+		:addClass('banner-shell')
+		:addClass(class) -- allow additional class to be specified
+		:addClass(content and 'mw-collapsible' or nil)
+		:addClass(collapsed and 'mw-collapsed' or nil)
+		:node(header)
+		:node(content_row)
+	return styles .. tostring(holder)
+end
+
+p.banner_holder = function(frame)
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = {'Template:Banner holder'}})
+	local image = '[[File:' .. (args.image or 'NewFavicon icon.svg')
+		.. '|' .. (args.size or '24') .. 'px'
+		.. '|link=' .. (args.image_link or '')
+		.. '|alt=' .. (args.alt or '') .. ']]'
+	local image_cell = mw.html.create('td')
+		:addClass('mbox-image')
+		:wikitext(image)
+	local text_cell = mw.html.create('td')
+		:addClass('mbox-text')
+		:addClass('banner-shell-header')
+		:tag('span')
+		:addClass('nowrap')
+		:css('float', 'left')
+		:wikitext(string.rep('&amp;nbsp;', 10))
+		:done()
+		:wikitext(args.text or 'Other talk page banners')
+	local header = mw.html.create('tr')
+		:node(image_cell)
+		:node(text_cell)
+	return shell(frame, header, args[1], yesno(args.collapsed))
+end
+
+local DuplicateBanners = function(text)
+	local capture = '&lt;span class="wpb%-project"&gt;([^&lt;&gt;]*)&lt;/span&gt;'
+	local banners = {}
+	for project in text:gmatch(capture) do
+		if banners[project] == true then
+			return project
+		end
+		banners[project] = true
+	end
+end
+
+p.banner_shell = function(frame)
+	local cfg = mw.loadData('Module:Banner shell/config' .. (sandbox or ''))
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = {cfg.template}})
+	local title = args.demo_page and mw.title.new(args.demo_page) or mw.title.getCurrentTitle()
+	local pagetype = require('Module:Pagetype')._main{
+		page = title.prefixedText,
+		dab = cfg.page_types.dab,
+		sia = 'set index article',
+		soft_redirect = cfg.page_types.soft_redirect,
+		nonexistent = cfg.page_types.nonexistent,
+		timedtext = cfg.page_types.timedtext,
+		defaultns = 'extended'
+	}
+	local lang = mw.language.getContentLanguage()
+	local classmask = require('Module:WikiProject banner' .. (sandbox or '')).class_mask
+	local class = classmask(args.class or '', title.talkPageTitle, false, pagetype)
+	local demo = not yesno(args.category or true, true) or args.demo_page
+	local out = {}
+	local addCategory = function(category, sort_key)
+		if not demo and title.isTalkPage then
+			local category_title = mw.title.new('Category:' .. category)
+			table.insert(out, '[[' .. category_title.prefixedText .. (sort_key and ('|' .. sort_key) or '') .. ']]')
+		end
+	end
+	if demo and not args.demo_page then
+		pagetype = 'article'
+	end
+	local blp = args.blp and args.blp:lower()
+	if yesno(blp) or blp=='activepol' or yesno(args.living) then
+		table.insert(out, frame:expandTemplate{
+			title = cfg.blp_template.blp,
+			args = {activepol = blp=='activepol' and 'yes'}
+		})
+	elseif blp=='other' then
+		table.insert(out, frame:expandTemplate{
+			title = cfg.blp_template.blpo}
+		)
+	end
+	local vital
+	if yesno(args.vital) then
+		local page = mw.ustring.upper(mw.ustring.sub(title.subjectPageTitle.text, 1, 1)) -- get first letter of article name
+		local codepoint = mw.ustring.codepoint(page, 1, 1)
+		if codepoint&lt;65 or codepoint&gt;90 then --first letter is not between A-Z
+			page = 'others'
+		end
+		local data_page = mw.title.new('Wikipedia:Vital articles/data/' .. page .. '.json')
+		if data_page.exists then
+			local index = title.subjectPageTitle.text
+			index = tostring(tonumber(index))==index and tonumber(index) or index --convert to number if page is numerical, otherwise loadJsonData does not work
+			local data = mw.loadJsonData(data_page.fullText)[index]
+			if data then
+				local level = data.level and tostring(data.level)
+				if level and data.topic then
+					local link = 'Wikipedia:Vital articles/Level/' .. level
+					if (level=='4' or level=='5') then
+						link = link .. '/' .. data.topic
+					end
+					if data.sublist then
+						link = link .. '/' .. data.sublist
+					end
+					if data.section then
+						link = link .. '#' .. data.section
+					end
+					if not mw.title.new(link).exists then -- add tracking category if link does not exist
+						addCategory(cfg.vital.attention, 'L')
+					end
+					vital = cfg.vital.with_level:format(link, level)
+				else
+					vital = cfg.vital.without_level
+				end
+				for _, cat in ipairs(cfg.vital.categories) do
+					if cat:find('_CLASS') and (class=='NA' or class=='') then
+						addCategory(cfg.vital.attention, class=='NA' and 'N' or 'U')
+					elseif level==nil then
+						addCategory(cfg.vital.attention, 'V')
+					elseif data.topic==nil then
+						addCategory(cfg.vital.attention, 'T')
+					else
+						local category = cat
+							:gsub('_CLASS', class .. '-Class')
+							:gsub('_LEVEL', level)
+							:gsub('_TOPIC', data.topic)
+						addCategory(category)
+					end
+				end
+				addCategory(cfg.vital.all)
+			else
+				addCategory(cfg.vital.not_listed)
+			end
+		end
+	end
+	local text, icon_image, icon_str
+	if class=='NA' then
+		icon_image = cfg.icons.type[pagetype] or cfg.icons.default
+		icon_str = pagetype=='page' and 'Non-article page' or lang:ucfirst(pagetype)
+		text = {cfg.rating.not_required:format(vital or pagetype)}
+		if args.class then
+			addCategory(cfg.tracking.redundant_class)
+		end
+	elseif class=='' then
+		icon_image = cfg.icons.unassessed
+		icon_str =  'Unassessed article'
+		text = {cfg.rating.not_yet:format(vital or pagetype)}
+		addCategory('All unassessed articles')
+	else
+		icon_image = cfg.icons.quality[class] or cfg.icons.unassessed
+		icon_str =  class .. '-Class ' .. pagetype
+		text = {cfg.rating.rated:format(vital or pagetype, class)}
+	end
+	local icon = string.format('[[File:%s|%s|35px|class=noviewer|alt=]]', icon_image, icon_str)
+	table.insert(text, ' ' .. cfg.rating.scale)
+	if args[1] then
+		table.insert(text, '&lt;br&gt;' .. cfg.project.interest .. ' ')
+		table.insert(text, yesno(args.collapsed) and cfg.project.collapsed or cfg.project.uncollapsed)
+		local duplicate_cat = DuplicateBanners(args[1])
+		if duplicate_cat and title.isTalkPage then
+			addCategory(cfg.tracking.duplicate, duplicate_cat)
+		end
+	elseif not yesno(args.vital) and class~='' then -- if no projects and not vital and assessed then add class super category
+		if class == 'NA' then
+			addCategory('NA-Class pages')
+		else
+			addCategory(class .. '-Class articles')
+		end
+	end
+	local header = mw.html.create('tr')
+		:tag('td')
+			:addClass('assess')
+			:wikitext(icon)
+			:done()
+		:tag('td')
+			:addClass('banner-shell-header')
+			:css('text-align', 'left')
+			:css('font-weight', 'normal')
+			:wikitext(table.concat(text))
+			:done()
+	table.insert(
+		out,
+		shell(frame, header, args[1], yesno(args.collapsed), 'wpbs')
+	)
+	if args.listas then
+		table.insert(out, frame:preprocess('{{DEFAULTSORT:' .. args.listas .. '}}'))
+	end
+	if not demo then
+		local tracking = require('Module:Check for unknown parameters')._check({
+			unknown = cfg.tracking.unknown,
+			preview = cfg.tracking.preview,
+			'1', 'blp', 'category', 'class', 'collapsed', 'demo_page', 'listas', 'vital'
+		}, frame:getParent().args)
+		table.insert(out, tracking)
+		if args.category and yesno(args.category)~=false then -- category should not be "yes"
+			addCategory(cfg.tracking.invalid, 'category')
+		end
+		if args.collapsed and yesno(args.collapsed)~=true then -- collapsed should not be "no"
+			addCategory(cfg.tracking.invalid, 'collapsed')
+		end
+		if yesno(blp)==nil and blp~=nil and blp~='other' and blp~='activepol' then
+			addCategory(cfg.tracking.invalid, 'blp')
+		end
+		if pagetype=='article' and args.class and class=='' then -- find pages with invalid class parameter
+			addCategory(cfg.tracking.invalid, 'Zclass')
+		end
+	end
+	return table.concat(out)
+end
+
+return p</text>
+      <sha1>7yjuimnhw7mb1w6lz31o1aawqd3ac5m</sha1>
+    </revision>
+    <revision>
+      <id>1165392</id>
+      <parentid>1165391</parentid>
+      <timestamp>2025-04-28T02:49:39Z</timestamp>
+      <contributor>
+        <username>en&gt;Aidan9382</username>
+        <id>0</id>
+      </contributor>
+      <comment>You[[User:Timrollpickering| ]] seem to have toggled sandbox mode there</comment>
+      <origin>1165390</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="8400" sha1="7yjuimnhw7mb1w6lz31o1aawqd3ac5m" xml:space="preserve">require('strict')
+local p = {}
+local sandbox-- = '/sandbox' -- BE SURE TO COMMENT OUT this definition when deploying to live
+local yesno = require('Module:Yesno')
+
+local shell = function(frame, header, content, collapsed, class)
+	local styles = frame:extensionTag('templatestyles', '', {src = 'Module:Message box/tmbox.css'})
+		.. frame:extensionTag('templatestyles', '', {src = 'Module:Banner shell' .. (sandbox or '') .. '/styles.css'})
+	local content_row
+	if content then
+		content_row = mw.html.create('tr')
+			:tag('td')
+			:attr('colspan', '2')
+			:addClass('banner-shell-inner')
+			:addClass('outercollapse')
+			:wikitext(content)
+			:done()
+	end
+	local holder = mw.html.create('table')
+		:attr('role', 'presentation')
+		:addClass('tmbox')
+		:addClass('tmbox-notice')
+		:addClass('banner-shell')
+		:addClass(class) -- allow additional class to be specified
+		:addClass(content and 'mw-collapsible' or nil)
+		:addClass(collapsed and 'mw-collapsed' or nil)
+		:node(header)
+		:node(content_row)
+	return styles .. tostring(holder)
+end
+
+p.banner_holder = function(frame)
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = {'Template:Banner holder'}})
+	local image = '[[File:' .. (args.image or 'NewFavicon icon.svg')
+		.. '|' .. (args.size or '24') .. 'px'
+		.. '|link=' .. (args.image_link or '')
+		.. '|alt=' .. (args.alt or '') .. ']]'
+	local image_cell = mw.html.create('td')
+		:addClass('mbox-image')
+		:wikitext(image)
+	local text_cell = mw.html.create('td')
+		:addClass('mbox-text')
+		:addClass('banner-shell-header')
+		:tag('span')
+		:addClass('nowrap')
+		:css('float', 'left')
+		:wikitext(string.rep('&amp;nbsp;', 10))
+		:done()
+		:wikitext(args.text or 'Other talk page banners')
+	local header = mw.html.create('tr')
+		:node(image_cell)
+		:node(text_cell)
+	return shell(frame, header, args[1], yesno(args.collapsed))
+end
+
+local DuplicateBanners = function(text)
+	local capture = '&lt;span class="wpb%-project"&gt;([^&lt;&gt;]*)&lt;/span&gt;'
+	local banners = {}
+	for project in text:gmatch(capture) do
+		if banners[project] == true then
+			return project
+		end
+		banners[project] = true
+	end
+end
+
+p.banner_shell = function(frame)
+	local cfg = mw.loadData('Module:Banner shell/config' .. (sandbox or ''))
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = {cfg.template}})
+	local title = args.demo_page and mw.title.new(args.demo_page) or mw.title.getCurrentTitle()
+	local pagetype = require('Module:Pagetype')._main{
+		page = title.prefixedText,
+		dab = cfg.page_types.dab,
+		sia = 'set index article',
+		soft_redirect = cfg.page_types.soft_redirect,
+		nonexistent = cfg.page_types.nonexistent,
+		timedtext = cfg.page_types.timedtext,
+		defaultns = 'extended'
+	}
+	local lang = mw.language.getContentLanguage()
+	local classmask = require('Module:WikiProject banner' .. (sandbox or '')).class_mask
+	local class = classmask(args.class or '', title.talkPageTitle, false, pagetype)
+	local demo = not yesno(args.category or true, true) or args.demo_page
+	local out = {}
+	local addCategory = function(category, sort_key)
+		if not demo and title.isTalkPage then
+			local category_title = mw.title.new('Category:' .. category)
+			table.insert(out, '[[' .. category_title.prefixedText .. (sort_key and ('|' .. sort_key) or '') .. ']]')
+		end
+	end
+	if demo and not args.demo_page then
+		pagetype = 'article'
+	end
+	local blp = args.blp and args.blp:lower()
+	if yesno(blp) or blp=='activepol' or yesno(args.living) then
+		table.insert(out, frame:expandTemplate{
+			title = cfg.blp_template.blp,
+			args = {activepol = blp=='activepol' and 'yes'}
+		})
+	elseif blp=='other' then
+		table.insert(out, frame:expandTemplate{
+			title = cfg.blp_template.blpo}
+		)
+	end
+	local vital
+	if yesno(args.vital) then
+		local page = mw.ustring.upper(mw.ustring.sub(title.subjectPageTitle.text, 1, 1)) -- get first letter of article name
+		local codepoint = mw.ustring.codepoint(page, 1, 1)
+		if codepoint&lt;65 or codepoint&gt;90 then --first letter is not between A-Z
+			page = 'others'
+		end
+		local data_page = mw.title.new('Wikipedia:Vital articles/data/' .. page .. '.json')
+		if data_page.exists then
+			local index = title.subjectPageTitle.text
+			index = tostring(tonumber(index))==index and tonumber(index) or index --convert to number if page is numerical, otherwise loadJsonData does not work
+			local data = mw.loadJsonData(data_page.fullText)[index]
+			if data then
+				local level = data.level and tostring(data.level)
+				if level and data.topic then
+					local link = 'Wikipedia:Vital articles/Level/' .. level
+					if (level=='4' or level=='5') then
+						link = link .. '/' .. data.topic
+					end
+					if data.sublist then
+						link = link .. '/' .. data.sublist
+					end
+					if data.section then
+						link = link .. '#' .. data.section
+					end
+					if not mw.title.new(link).exists then -- add tracking category if link does not exist
+						addCategory(cfg.vital.attention, 'L')
+					end
+					vital = cfg.vital.with_level:format(link, level)
+				else
+					vital = cfg.vital.without_level
+				end
+				for _, cat in ipairs(cfg.vital.categories) do
+					if cat:find('_CLASS') and (class=='NA' or class=='') then
+						addCategory(cfg.vital.attention, class=='NA' and 'N' or 'U')
+					elseif level==nil then
+						addCategory(cfg.vital.attention, 'V')
+					elseif data.topic==nil then
+						addCategory(cfg.vital.attention, 'T')
+					else
+						local category = cat
+							:gsub('_CLASS', class .. '-Class')
+							:gsub('_LEVEL', level)
+							:gsub('_TOPIC', data.topic)
+						addCategory(category)
+					end
+				end
+				addCategory(cfg.vital.all)
+			else
+				addCategory(cfg.vital.not_listed)
+			end
+		end
+	end
+	local text, icon_image, icon_str
+	if class=='NA' then
+		icon_image = cfg.icons.type[pagetype] or cfg.icons.default
+		icon_str = pagetype=='page' and 'Non-article page' or lang:ucfirst(pagetype)
+		text = {cfg.rating.not_required:format(vital or pagetype)}
+		if args.class then
+			addCategory(cfg.tracking.redundant_class)
+		end
+	elseif class=='' then
+		icon_image = cfg.icons.unassessed
+		icon_str =  'Unassessed article'
+		text = {cfg.rating.not_yet:format(vital or pagetype)}
+		addCategory('All unassessed articles')
+	else
+		icon_image = cfg.icons.quality[class] or cfg.icons.unassessed
+		icon_str =  class .. '-Class ' .. pagetype
+		text = {cfg.rating.rated:format(vital or pagetype, class)}
+	end
+	local icon = string.format('[[File:%s|%s|35px|class=noviewer|alt=]]', icon_image, icon_str)
+	table.insert(text, ' ' .. cfg.rating.scale)
+	if args[1] then
+		table.insert(text, '&lt;br&gt;' .. cfg.project.interest .. ' ')
+		table.insert(text, yesno(args.collapsed) and cfg.project.collapsed or cfg.project.uncollapsed)
+		local duplicate_cat = DuplicateBanners(args[1])
+		if duplicate_cat and title.isTalkPage then
+			addCategory(cfg.tracking.duplicate, duplicate_cat)
+		end
+	elseif not yesno(args.vital) and class~='' then -- if no projects and not vital and assessed then add class super category
+		if class == 'NA' then
+			addCategory('NA-Class pages')
+		else
+			addCategory(class .. '-Class articles')
+		end
+	end
+	local header = mw.html.create('tr')
+		:tag('td')
+			:addClass('assess')
+			:wikitext(icon)
+			:done()
+		:tag('td')
+			:addClass('banner-shell-header')
+			:css('text-align', 'left')
+			:css('font-weight', 'normal')
+			:wikitext(table.concat(text))
+			:done()
+	table.insert(
+		out,
+		shell(frame, header, args[1], yesno(args.collapsed), 'wpbs')
+	)
+	if args.listas then
+		table.insert(out, frame:preprocess('{{DEFAULTSORT:' .. args.listas .. '}}'))
+	end
+	if not demo then
+		local tracking = require('Module:Check for unknown parameters')._check({
+			unknown = cfg.tracking.unknown,
+			preview = cfg.tracking.preview,
+			'1', 'blp', 'category', 'class', 'collapsed', 'demo_page', 'listas', 'vital'
+		}, frame:getParent().args)
+		table.insert(out, tracking)
+		if args.category and yesno(args.category)~=false then -- category should not be "yes"
+			addCategory(cfg.tracking.invalid, 'category')
+		end
+		if args.collapsed and yesno(args.collapsed)~=true then -- collapsed should not be "no"
+			addCategory(cfg.tracking.invalid, 'collapsed')
+		end
+		if yesno(blp)==nil and blp~=nil and blp~='other' and blp~='activepol' then
+			addCategory(cfg.tracking.invalid, 'blp')
+		end
+		if pagetype=='article' and args.class and class=='' then -- find pages with invalid class parameter
+			addCategory(cfg.tracking.invalid, 'Zclass')
+		end
+	end
+	return table.concat(out)
+end
+
+return p</text>
+      <sha1>7yjuimnhw7mb1w6lz31o1aawqd3ac5m</sha1>
+    </revision>
+    <revision>
+      <id>1165393</id>
+      <parentid>1165392</parentid>
+      <timestamp>2025-04-28T02:49:40Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>1165390</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="8400" sha1="7yjuimnhw7mb1w6lz31o1aawqd3ac5m" xml:space="preserve">require('strict')
+local p = {}
+local sandbox-- = '/sandbox' -- BE SURE TO COMMENT OUT this definition when deploying to live
+local yesno = require('Module:Yesno')
+
+local shell = function(frame, header, content, collapsed, class)
+	local styles = frame:extensionTag('templatestyles', '', {src = 'Module:Message box/tmbox.css'})
+		.. frame:extensionTag('templatestyles', '', {src = 'Module:Banner shell' .. (sandbox or '') .. '/styles.css'})
+	local content_row
+	if content then
+		content_row = mw.html.create('tr')
+			:tag('td')
+			:attr('colspan', '2')
+			:addClass('banner-shell-inner')
+			:addClass('outercollapse')
+			:wikitext(content)
+			:done()
+	end
+	local holder = mw.html.create('table')
+		:attr('role', 'presentation')
+		:addClass('tmbox')
+		:addClass('tmbox-notice')
+		:addClass('banner-shell')
+		:addClass(class) -- allow additional class to be specified
+		:addClass(content and 'mw-collapsible' or nil)
+		:addClass(collapsed and 'mw-collapsed' or nil)
+		:node(header)
+		:node(content_row)
+	return styles .. tostring(holder)
+end
+
+p.banner_holder = function(frame)
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = {'Template:Banner holder'}})
+	local image = '[[File:' .. (args.image or 'NewFavicon icon.svg')
+		.. '|' .. (args.size or '24') .. 'px'
+		.. '|link=' .. (args.image_link or '')
+		.. '|alt=' .. (args.alt or '') .. ']]'
+	local image_cell = mw.html.create('td')
+		:addClass('mbox-image')
+		:wikitext(image)
+	local text_cell = mw.html.create('td')
+		:addClass('mbox-text')
+		:addClass('banner-shell-header')
+		:tag('span')
+		:addClass('nowrap')
+		:css('float', 'left')
+		:wikitext(string.rep('&amp;nbsp;', 10))
+		:done()
+		:wikitext(args.text or 'Other talk page banners')
+	local header = mw.html.create('tr')
+		:node(image_cell)
+		:node(text_cell)
+	return shell(frame, header, args[1], yesno(args.collapsed))
+end
+
+local DuplicateBanners = function(text)
+	local capture = '&lt;span class="wpb%-project"&gt;([^&lt;&gt;]*)&lt;/span&gt;'
+	local banners = {}
+	for project in text:gmatch(capture) do
+		if banners[project] == true then
+			return project
+		end
+		banners[project] = true
+	end
+end
+
+p.banner_shell = function(frame)
+	local cfg = mw.loadData('Module:Banner shell/config' .. (sandbox or ''))
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = {cfg.template}})
+	local title = args.demo_page and mw.title.new(args.demo_page) or mw.title.getCurrentTitle()
+	local pagetype = require('Module:Pagetype')._main{
+		page = title.prefixedText,
+		dab = cfg.page_types.dab,
+		sia = 'set index article',
+		soft_redirect = cfg.page_types.soft_redirect,
+		nonexistent = cfg.page_types.nonexistent,
+		timedtext = cfg.page_types.timedtext,
+		defaultns = 'extended'
+	}
+	local lang = mw.language.getContentLanguage()
+	local classmask = require('Module:WikiProject banner' .. (sandbox or '')).class_mask
+	local class = classmask(args.class or '', title.talkPageTitle, false, pagetype)
+	local demo = not yesno(args.category or true, true) or args.demo_page
+	local out = {}
+	local addCategory = function(category, sort_key)
+		if not demo and title.isTalkPage then
+			local category_title = mw.title.new('Category:' .. category)
+			table.insert(out, '[[' .. category_title.prefixedText .. (sort_key and ('|' .. sort_key) or '') .. ']]')
+		end
+	end
+	if demo and not args.demo_page then
+		pagetype = 'article'
+	end
+	local blp = args.blp and args.blp:lower()
+	if yesno(blp) or blp=='activepol' or yesno(args.living) then
+		table.insert(out, frame:expandTemplate{
+			title = cfg.blp_template.blp,
+			args = {activepol = blp=='activepol' and 'yes'}
+		})
+	elseif blp=='other' then
+		table.insert(out, frame:expandTemplate{
+			title = cfg.blp_template.blpo}
+		)
+	end
+	local vital
+	if yesno(args.vital) then
+		local page = mw.ustring.upper(mw.ustring.sub(title.subjectPageTitle.text, 1, 1)) -- get first letter of article name
+		local codepoint = mw.ustring.codepoint(page, 1, 1)
+		if codepoint&lt;65 or codepoint&gt;90 then --first letter is not between A-Z
+			page = 'others'
+		end
+		local data_page = mw.title.new('Wikipedia:Vital articles/data/' .. page .. '.json')
+		if data_page.exists then
+			local index = title.subjectPageTitle.text
+			index = tostring(tonumber(index))==index and tonumber(index) or index --convert to number if page is numerical, otherwise loadJsonData does not work
+			local data = mw.loadJsonData(data_page.fullText)[index]
+			if data then
+				local level = data.level and tostring(data.level)
+				if level and data.topic then
+					local link = 'Wikipedia:Vital articles/Level/' .. level
+					if (level=='4' or level=='5') then
+						link = link .. '/' .. data.topic
+					end
+					if data.sublist then
+						link = link .. '/' .. data.sublist
+					end
+					if data.section then
+						link = link .. '#' .. data.section
+					end
+					if not mw.title.new(link).exists then -- add tracking category if link does not exist
+						addCategory(cfg.vital.attention, 'L')
+					end
+					vital = cfg.vital.with_level:format(link, level)
+				else
+					vital = cfg.vital.without_level
+				end
+				for _, cat in ipairs(cfg.vital.categories) do
+					if cat:find('_CLASS') and (class=='NA' or class=='') then
+						addCategory(cfg.vital.attention, class=='NA' and 'N' or 'U')
+					elseif level==nil then
+						addCategory(cfg.vital.attention, 'V')
+					elseif data.topic==nil then
+						addCategory(cfg.vital.attention, 'T')
+					else
+						local category = cat
+							:gsub('_CLASS', class .. '-Class')
+							:gsub('_LEVEL', level)
+							:gsub('_TOPIC', data.topic)
+						addCategory(category)
+					end
+				end
+				addCategory(cfg.vital.all)
+			else
+				addCategory(cfg.vital.not_listed)
+			end
+		end
+	end
+	local text, icon_image, icon_str
+	if class=='NA' then
+		icon_image = cfg.icons.type[pagetype] or cfg.icons.default
+		icon_str = pagetype=='page' and 'Non-article page' or lang:ucfirst(pagetype)
+		text = {cfg.rating.not_required:format(vital or pagetype)}
+		if args.class then
+			addCategory(cfg.tracking.redundant_class)
+		end
+	elseif class=='' then
+		icon_image = cfg.icons.unassessed
+		icon_str =  'Unassessed article'
+		text = {cfg.rating.not_yet:format(vital or pagetype)}
+		addCategory('All unassessed articles')
+	else
+		icon_image = cfg.icons.quality[class] or cfg.icons.unassessed
+		icon_str =  class .. '-Class ' .. pagetype
+		text = {cfg.rating.rated:format(vital or pagetype, class)}
+	end
+	local icon = string.format('[[File:%s|%s|35px|class=noviewer|alt=]]', icon_image, icon_str)
+	table.insert(text, ' ' .. cfg.rating.scale)
+	if args[1] then
+		table.insert(text, '&lt;br&gt;' .. cfg.project.interest .. ' ')
+		table.insert(text, yesno(args.collapsed) and cfg.project.collapsed or cfg.project.uncollapsed)
+		local duplicate_cat = DuplicateBanners(args[1])
+		if duplicate_cat and title.isTalkPage then
+			addCategory(cfg.tracking.duplicate, duplicate_cat)
+		end
+	elseif not yesno(args.vital) and class~='' then -- if no projects and not vital and assessed then add class super category
+		if class == 'NA' then
+			addCategory('NA-Class pages')
+		else
+			addCategory(class .. '-Class articles')
+		end
+	end
+	local header = mw.html.create('tr')
+		:tag('td')
+			:addClass('assess')
+			:wikitext(icon)
+			:done()
+		:tag('td')
+			:addClass('banner-shell-header')
+			:css('text-align', 'left')
+			:css('font-weight', 'normal')
+			:wikitext(table.concat(text))
+			:done()
+	table.insert(
+		out,
+		shell(frame, header, args[1], yesno(args.collapsed), 'wpbs')
+	)
+	if args.listas then
+		table.insert(out, frame:preprocess('{{DEFAULTSORT:' .. args.listas .. '}}'))
+	end
+	if not demo then
+		local tracking = require('Module:Check for unknown parameters')._check({
+			unknown = cfg.tracking.unknown,
+			preview = cfg.tracking.preview,
+			'1', 'blp', 'category', 'class', 'collapsed', 'demo_page', 'listas', 'vital'
+		}, frame:getParent().args)
+		table.insert(out, tracking)
+		if args.category and yesno(args.category)~=false then -- category should not be "yes"
+			addCategory(cfg.tracking.invalid, 'category')
+		end
+		if args.collapsed and yesno(args.collapsed)~=true then -- collapsed should not be "no"
+			addCategory(cfg.tracking.invalid, 'collapsed')
+		end
+		if yesno(blp)==nil and blp~=nil and blp~='other' and blp~='activepol' then
+			addCategory(cfg.tracking.invalid, 'blp')
+		end
+		if pagetype=='article' and args.class and class=='' then -- find pages with invalid class parameter
+			addCategory(cfg.tracking.invalid, 'Zclass')
+		end
+	end
+	return table.concat(out)
+end
+
+return p</text>
+      <sha1>7yjuimnhw7mb1w6lz31o1aawqd3ac5m</sha1>
+    </revision>
+    <revision>
+      <id>17352</id>
+      <timestamp>2025-05-03T05:26:29Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Text replacement - "{{DEFAULTSORT\:[^]]+}}" to ""</comment>
+      <origin>17352</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="8363" sha1="7gzx3rady558k5pud49zugrck4s2w1s" xml:space="preserve">require('strict')
+local p = {}
+local sandbox-- = '/sandbox' -- BE SURE TO COMMENT OUT this definition when deploying to live
+local yesno = require('Module:Yesno')
+
+local shell = function(frame, header, content, collapsed, class)
+	local styles = frame:extensionTag('templatestyles', '', {src = 'Module:Message box/tmbox.css'})
+		.. frame:extensionTag('templatestyles', '', {src = 'Module:Banner shell' .. (sandbox or '') .. '/styles.css'})
+	local content_row
+	if content then
+		content_row = mw.html.create('tr')
+			:tag('td')
+			:attr('colspan', '2')
+			:addClass('banner-shell-inner')
+			:addClass('outercollapse')
+			:wikitext(content)
+			:done()
+	end
+	local holder = mw.html.create('table')
+		:attr('role', 'presentation')
+		:addClass('tmbox')
+		:addClass('tmbox-notice')
+		:addClass('banner-shell')
+		:addClass(class) -- allow additional class to be specified
+		:addClass(content and 'mw-collapsible' or nil)
+		:addClass(collapsed and 'mw-collapsed' or nil)
+		:node(header)
+		:node(content_row)
+	return styles .. tostring(holder)
+end
+
+p.banner_holder = function(frame)
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = {'Template:Banner holder'}})
+	local image = '[[File:' .. (args.image or 'NewFavicon icon.svg')
+		.. '|' .. (args.size or '24') .. 'px'
+		.. '|link=' .. (args.image_link or '')
+		.. '|alt=' .. (args.alt or '') .. ']]'
+	local image_cell = mw.html.create('td')
+		:addClass('mbox-image')
+		:wikitext(image)
+	local text_cell = mw.html.create('td')
+		:addClass('mbox-text')
+		:addClass('banner-shell-header')
+		:tag('span')
+		:addClass('nowrap')
+		:css('float', 'left')
+		:wikitext(string.rep('&amp;nbsp;', 10))
+		:done()
+		:wikitext(args.text or 'Other talk page banners')
+	local header = mw.html.create('tr')
+		:node(image_cell)
+		:node(text_cell)
+	return shell(frame, header, args[1], yesno(args.collapsed))
+end
+
+local DuplicateBanners = function(text)
+	local capture = '&lt;span class="wpb%-project"&gt;([^&lt;&gt;]*)&lt;/span&gt;'
+	local banners = {}
+	for project in text:gmatch(capture) do
+		if banners[project] == true then
+			return project
+		end
+		banners[project] = true
+	end
+end
+
+p.banner_shell = function(frame)
+	local cfg = mw.loadData('Module:Banner shell/config' .. (sandbox or ''))
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = {cfg.template}})
+	local title = args.demo_page and mw.title.new(args.demo_page) or mw.title.getCurrentTitle()
+	local pagetype = require('Module:Pagetype')._main{
+		page = title.prefixedText,
+		dab = cfg.page_types.dab,
+		sia = 'set index article',
+		soft_redirect = cfg.page_types.soft_redirect,
+		nonexistent = cfg.page_types.nonexistent,
+		timedtext = cfg.page_types.timedtext,
+		defaultns = 'extended'
+	}
+	local lang = mw.language.getContentLanguage()
+	local classmask = require('Module:WikiProject banner' .. (sandbox or '')).class_mask
+	local class = classmask(args.class or '', title.talkPageTitle, false, pagetype)
+	local demo = not yesno(args.category or true, true) or args.demo_page
+	local out = {}
+	local addCategory = function(category, sort_key)
+		if not demo and title.isTalkPage then
+			local category_title = mw.title.new('Category:' .. category)
+			table.insert(out, '[[' .. category_title.prefixedText .. (sort_key and ('|' .. sort_key) or '') .. ']]')
+		end
+	end
+	if demo and not args.demo_page then
+		pagetype = 'article'
+	end
+	local blp = args.blp and args.blp:lower()
+	if yesno(blp) or blp=='activepol' or yesno(args.living) then
+		table.insert(out, frame:expandTemplate{
+			title = cfg.blp_template.blp,
+			args = {activepol = blp=='activepol' and 'yes'}
+		})
+	elseif blp=='other' then
+		table.insert(out, frame:expandTemplate{
+			title = cfg.blp_template.blpo}
+		)
+	end
+	local vital
+	if yesno(args.vital) then
+		local page = mw.ustring.upper(mw.ustring.sub(title.subjectPageTitle.text, 1, 1)) -- get first letter of article name
+		local codepoint = mw.ustring.codepoint(page, 1, 1)
+		if codepoint&lt;65 or codepoint&gt;90 then --first letter is not between A-Z
+			page = 'others'
+		end
+		local data_page = mw.title.new('Wikipedia:Vital articles/data/' .. page .. '.json')
+		if data_page.exists then
+			local index = title.subjectPageTitle.text
+			index = tostring(tonumber(index))==index and tonumber(index) or index --convert to number if page is numerical, otherwise loadJsonData does not work
+			local data = mw.loadJsonData(data_page.fullText)[index]
+			if data then
+				local level = data.level and tostring(data.level)
+				if level and data.topic then
+					local link = 'Wikipedia:Vital articles/Level/' .. level
+					if (level=='4' or level=='5') then
+						link = link .. '/' .. data.topic
+					end
+					if data.sublist then
+						link = link .. '/' .. data.sublist
+					end
+					if data.section then
+						link = link .. '#' .. data.section
+					end
+					if not mw.title.new(link).exists then -- add tracking category if link does not exist
+						addCategory(cfg.vital.attention, 'L')
+					end
+					vital = cfg.vital.with_level:format(link, level)
+				else
+					vital = cfg.vital.without_level
+				end
+				for _, cat in ipairs(cfg.vital.categories) do
+					if cat:find('_CLASS') and (class=='NA' or class=='') then
+						addCategory(cfg.vital.attention, class=='NA' and 'N' or 'U')
+					elseif level==nil then
+						addCategory(cfg.vital.attention, 'V')
+					elseif data.topic==nil then
+						addCategory(cfg.vital.attention, 'T')
+					else
+						local category = cat
+							:gsub('_CLASS', class .. '-Class')
+							:gsub('_LEVEL', level)
+							:gsub('_TOPIC', data.topic)
+						addCategory(category)
+					end
+				end
+				addCategory(cfg.vital.all)
+			else
+				addCategory(cfg.vital.not_listed)
+			end
+		end
+	end
+	local text, icon_image, icon_str
+	if class=='NA' then
+		icon_image = cfg.icons.type[pagetype] or cfg.icons.default
+		icon_str = pagetype=='page' and 'Non-article page' or lang:ucfirst(pagetype)
+		text = {cfg.rating.not_required:format(vital or pagetype)}
+		if args.class then
+			addCategory(cfg.tracking.redundant_class)
+		end
+	elseif class=='' then
+		icon_image = cfg.icons.unassessed
+		icon_str =  'Unassessed article'
+		text = {cfg.rating.not_yet:format(vital or pagetype)}
+		addCategory('All unassessed articles')
+	else
+		icon_image = cfg.icons.quality[class] or cfg.icons.unassessed
+		icon_str =  class .. '-Class ' .. pagetype
+		text = {cfg.rating.rated:format(vital or pagetype, class)}
+	end
+	local icon = string.format('[[File:%s|%s|35px|class=noviewer|alt=]]', icon_image, icon_str)
+	table.insert(text, ' ' .. cfg.rating.scale)
+	if args[1] then
+		table.insert(text, '&lt;br&gt;' .. cfg.project.interest .. ' ')
+		table.insert(text, yesno(args.collapsed) and cfg.project.collapsed or cfg.project.uncollapsed)
+		local duplicate_cat = DuplicateBanners(args[1])
+		if duplicate_cat and title.isTalkPage then
+			addCategory(cfg.tracking.duplicate, duplicate_cat)
+		end
+	elseif not yesno(args.vital) and class~='' then -- if no projects and not vital and assessed then add class super category
+		if class == 'NA' then
+			addCategory('NA-Class pages')
+		else
+			addCategory(class .. '-Class articles')
+		end
+	end
+	local header = mw.html.create('tr')
+		:tag('td')
+			:addClass('assess')
+			:wikitext(icon)
+			:done()
+		:tag('td')
+			:addClass('banner-shell-header')
+			:css('text-align', 'left')
+			:css('font-weight', 'normal')
+			:wikitext(table.concat(text))
+			:done()
+	table.insert(
+		out,
+		shell(frame, header, args[1], yesno(args.collapsed), 'wpbs')
+	)
+	if args.listas then
+		table.insert(out, frame:preprocess(''))
+	end
+	if not demo then
+		local tracking = require('Module:Check for unknown parameters')._check({
+			unknown = cfg.tracking.unknown,
+			preview = cfg.tracking.preview,
+			'1', 'blp', 'category', 'class', 'collapsed', 'demo_page', 'listas', 'vital'
+		}, frame:getParent().args)
+		table.insert(out, tracking)
+		if args.category and yesno(args.category)~=false then -- category should not be "yes"
+			addCategory(cfg.tracking.invalid, 'category')
+		end
+		if args.collapsed and yesno(args.collapsed)~=true then -- collapsed should not be "no"
+			addCategory(cfg.tracking.invalid, 'collapsed')
+		end
+		if yesno(blp)==nil and blp~=nil and blp~='other' and blp~='activepol' then
+			addCategory(cfg.tracking.invalid, 'blp')
+		end
+		if pagetype=='article' and args.class and class=='' then -- find pages with invalid class parameter
+			addCategory(cfg.tracking.invalid, 'Zclass')
+		end
+	end
+	return table.concat(out)
+end
+
+return p</text>
+      <sha1>7gzx3rady558k5pud49zugrck4s2w1s</sha1>
+    </revision>
+  </page>
+</mediawiki>

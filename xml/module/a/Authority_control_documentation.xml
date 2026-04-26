@@ -1,0 +1,622 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Authority control/documentation</title>
+    <ns>828</ns>
+    <id>594</id>
+    <revision>
+      <id>511227</id>
+      <timestamp>2024-01-12T16:40:01Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Swpb</username>
+        <id>0</id>
+      </contributor>
+      <origin>511227</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="11399" sha1="o2xe97it2o03rejsx9nd05k762nej2d" xml:space="preserve">require('strict')
+local p = {}
+local configfile = 'Module:Authority control/config' -- default configuation module
+local arg = mw.getCurrentFrame().args.config
+if arg and arg~='' then
+	configfile = 'Module:Authority control/config/' .. arg
+end
+local config
+if mw.title.new(configfile).exists then
+	config = mw.loadData(configfile)
+else
+	return error('Invalid configuration file',0)
+end
+local title = mw.title.getCurrentTitle()
+local namespace = title.namespace
+local testcases = title.subpageText == config.i18n.testcases
+local makelink = require(config.i18n.ACmodule).makelink
+local lang = mw.getContentLanguage()
+
+local function needsAttention(sortkey)
+	return '[[' .. config.i18n.category .. ':' .. config.i18n.attentioncat .. '|' .. sortkey .. title.text .. ']]'
+end
+
+local function addCat(cat,sortkey)
+	if cat and cat ~= '' and (namespace == 0 or namespace == 14 or testcases) then
+		local redlinkcat = ''
+		if testcases == false and mw.title.new(cat, 14).exists == false then
+			redlinkcat = needsAttention('N')
+		end
+		if sortkey then
+			cat = '[[' .. config.i18n.category .. ':'..cat..'|' .. sortkey .. title.text .. ']]'
+		else
+			cat = '[[' .. config.i18n.category .. ':'..cat..']]'
+		end
+		cat = cat .. redlinkcat
+		return cat
+	else
+		return ''
+	end
+end
+
+-- Creates a human-readable standalone wikitable version of conf, and tracking categories with page counts, for use in the documentation
+function p.docConfTable(frame)
+	local function checkcat(category,label)
+		local ret='[[:Category:'..category..'|'..label..']]'
+		--if mw.title.new(category,14).exists == false then
+			--ret = ret..' &lt;span class="plainlinks" style="font-size:85%;"&gt;&amp;#91;['..tostring(mw.uri.fullUrl('Category:'..category,'action=edit&amp;preload=Template:Authority_control/preload'))..' create]&amp;#93;&lt;/span&gt;'
+		--end
+		return ret
+	end
+	local doc = ''
+	local a, P, f = 0, 0, 0 --cumulative sums
+	local count = frame.args.count or false
+	local columns = 3 + (count and 1 or 0)
+	local row = function(conf)
+		local category = conf.category or conf[1]
+		local articleCat = string.format(config.i18n.cat,category)
+		local articleCount = mw.site.stats.pagesInCategory(articleCat,config.i18n.pages)
+		local errorCat = conf.errorcat or string.format(
+			config.i18n.cat,
+			config.i18n.faulty .. ' ' .. category
+		)
+		local errorCount =  mw.site.stats.pagesInCategory(errorCat,config.i18n.pages)
+		P = P + 1 --property count
+		a = a + articleCount
+		f = f + errorCount
+		local getstatement = function(id,propid,qualid)
+			local statement = mw.wikibase.getBestStatements('P' .. id, 'P' .. propid)
+			local value
+			if statement and statement[1] and statement[1].mainsnak.datavalue.value.id then
+				value = statement[1].mainsnak.datavalue.value.id
+				local qual
+				if qualid and statement[1].qualifiers['P' .. qualid][1].datavalue.value then
+					qual = statement[1].qualifiers['P' .. qualid][1].datavalue.value
+				end
+				return value, qual
+			end
+		end
+		local _, example = getstatement(conf.property, 1855, conf.property)
+		if not example then example = '' end
+		example = frame:expandTemplate{title = "Hlist", args = {'\n' .. makelink(conf,{id=example},1)}} .. '\n'
+		local getname = function(nameprop)
+			local name = getstatement(conf.property,nameprop)
+			if name then
+				return frame:expandTemplate{title='Wikidata fallback link',args={name}}
+			end
+		end
+		local name = getname(1629) or getname(10726) or getname(9073) or getname(2378) or ''
+		local out = ''
+		if conf.remark then
+			out = out .. '&lt;tr&gt;&lt;td rowspan=2&gt;'
+		else
+			out = out .. '&lt;tr&gt;&lt;td&gt;'
+		end
+		out = out .. name .. '&lt;/td&gt;' ..
+			'&lt;td style="text-align: center"&gt;' .. config.sections[conf.section].name .. '&lt;/td&gt;' ..
+			'&lt;td data-sort-value=' .. conf.property .. '&gt;' .. frame:expandTemplate{title='Wikidata property link',args={id='f',conf.property}} .. '&lt;/td&gt;' ..
+			'&lt;td&gt;' .. example .. '&lt;/td&gt;'
+		if count then
+			out = out .. '&lt;td style="text-align: right;"&gt;'..checkcat(articleCat,lang:formatNum(articleCount))..' ('..checkcat(errorCat,errorCount)..')&lt;/td&gt;'
+		end
+		out = out .. '&lt;/tr&gt;'
+		if conf.remark then
+			out = out .. "&lt;tr class='expand-child'&gt;&lt;td colspan=" .. columns .. "&gt;'''Remarks:''' " .. frame:preprocess{text = conf.remark} .. "&lt;/td&gt;&lt;/tr&gt;"
+		end
+		return out
+	end
+	local doc = '&lt;table class="wikitable sortable"&gt;' ..
+	  '&lt;tr&gt;&lt;th&gt;' .. lang:ucfirst(config.i18n.identifier) .. '&lt;/th&gt;' ..
+	  '&lt;th&gt;' .. config.i18n.Section .. '&lt;/th&gt;' ..
+	  '&lt;th data-sort-type=number&gt;' .. config.i18n.WDproperty .. '&lt;/th&gt;' ..
+	  '&lt;th&gt;' .. config.i18n.Appears_as .. '&lt;/th&gt;'
+	if count then
+	 	doc = doc .. '&lt;th&gt;[[:' .. config.i18n.category .. ':' .. config.i18n.maincat .. '|' .. config.i18n.Articles .. ']] '
+	 		.. '([[:' .. config.i18n.category .. ':' .. config.i18n.faultcat .. '|' .. config.i18n.Faults .. ']])&lt;/th&gt;'
+	end
+	doc = doc .. '&lt;/tr&gt;'
+	for _, conf in pairs(config.config) do
+		doc = doc .. row(conf)
+	end
+	if count then
+		doc = doc .. '&lt;tr&gt;&lt;th style="text-align: right;" colspan=' .. columns-1 .. '&gt;' .. config.i18n.Totals .. '&lt;/th&gt;' ..
+			'&lt;th style="text-align: right;"&gt;' .. P .. '&lt;/th&gt;' ..
+			'&lt;th style="text-align: right;"&gt;' .. lang:formatNum(a) .. ' ([[:' .. config.i18n.category .. ':' .. config.i18n.allfaultycat .. '|' .. f .. ']])&lt;/th&gt;&lt;/tr&gt;'
+	end
+	doc = doc .. '&lt;/table&gt;'
+	return doc
+end
+
+function p.errorTable(frame)
+	local Table = '&lt;table class="wikitable sortable"&gt;'..
+	  '&lt;tr&gt;&lt;th&gt;' .. config.i18n.WDproperty .. '&lt;/th&gt;'..
+	  '&lt;th&gt;' .. lang:ucfirst(config.i18n.faulty) .. ' ' .. config.i18n.identifiers .. '&lt;/th&gt;'..
+	  '&lt;th&gt;[[:' .. config.i18n.category .. ':' .. config.i18n.faultcat .. '|' .. config.i18n.Tracking_category .. ']]&lt;/th&gt;&lt;/tr&gt;'
+	local f, P = 0, 0, 0 --cumulative sums
+	for _, conf in pairs(config.config) do
+		local category = conf.errorcat or string.format(
+			config.i18n.cat,
+			config.i18n.faulty .. ' '  .. (conf.category or conf[1])
+		)
+		local count =  mw.site.stats.pagesInCategory(category,'pages')
+		if count &gt; 0 then
+			P = P + 1
+			f = f + count
+			Table = Table..'&lt;tr&gt;&lt;td&gt;'..frame:expandTemplate{ title = config.i18n.linktemplate, args = { id = 'f', conf.property } } .. '&lt;/td&gt;'..
+				'&lt;td style="text-align:center;"&gt;'..tostring(count)..'&lt;/td&gt;'..
+				'&lt;td&gt;[[:' .. config.i18n.category .. ':'..category..']]&lt;/td&gt;&lt;/tr&gt;'
+		end
+	end
+	Table = Table..'&lt;tr&gt;&lt;th&gt;' .. config.i18n.Totals .. '&lt;/th&gt;'..
+		'&lt;th style="text-align:center;"&gt;' .. '[[:' .. config.i18n.category .. ':' .. config.i18n.allfaultycat .. '|' .. tostring(f) .. ']]&lt;/th&gt;'..
+		'&lt;th style="text-align:center;"&gt;'..tostring(P)..'&lt;/th&gt;&lt;/tr&gt;&lt;/table&gt;'
+	return Table
+end
+
+function p.whitelisttable(frame)
+	local Table = '&lt;table class="wikitable sortable"&gt;'..
+	  '&lt;tr&gt;&lt;th&gt;' .. config.i18n.Code .. '&lt;/th&gt;'..
+	  '&lt;th&gt;' .. config.i18n.Topic .. '&lt;/th&gt;'..
+	  '&lt;th&gt;' .. lang:ucfirst(config.i18n.identifiers) .. '&lt;/th&gt;&lt;/tr&gt;'
+	for code, wlist in pairs(config.whitelists) do
+		Table = Table .. '&lt;tr&gt;&lt;th&gt;' .. code .. '&lt;/th&gt;'..
+			'&lt;td&gt;[[' .. mw.wikibase.getSitelink('Q' .. wlist.topic) .. ']]&lt;/td&gt;'
+		local plist = {}
+		for _, property in pairs(wlist.properties) do
+			table.insert(plist,frame:expandTemplate{title='Wikidata property link', args={'P' .. property}})
+		end
+		Table = Table .. '&lt;td&gt;' .. table.concat(plist,', ') .. '&lt;/td&gt;&lt;/tr&gt;'
+	end
+	Table = Table .. '&lt;/table&gt;'
+	return Table
+end
+
+function p.sectiontable(frame)
+	local Table = '&lt;table class="wikitable sortable"&gt;'..
+	  '&lt;tr&gt;&lt;th&gt;' .. config.i18n.Section .. '&lt;/th&gt;' ..
+	  '&lt;th&gt;' .. config.i18n.Description .. '&lt;/th&gt;'..
+	  '&lt;th&gt;' .. lang:ucfirst(config.i18n.identifiers) .. '&lt;/th&gt;&lt;/tr&gt;'
+	for number,section in ipairs(config.sections) do
+		Table = Table .. '&lt;tr&gt;&lt;th&gt;' .. number .. '&lt;/th&gt;' ..	'&lt;td&gt;' .. section.name .. '&lt;/td&gt;'
+		local plist = {}
+		for _,id in pairs(config.config) do
+			if id.section == number then
+				table.insert(plist,frame:expandTemplate{title=config.i18n.linktemplate, args={'P' .. id.property}})
+			end
+		end
+		Table = Table .. '&lt;td&gt;' .. table.concat(plist,', ') .. '&lt;/td&gt;&lt;/tr&gt;'
+	end
+	Table = Table .. '&lt;/table&gt;'
+	return Table
+end
+
+-- Main/External Call for Pages with authority control identifiers
+function p.autoDetect(frame)
+	local function whichTOC(frame) -- standardize TOC behavior via {{CatAutoTOC}}
+		return frame:expandTemplate{ title = 'CatAutoTOC', args = { align = 'center' } }
+	end
+	local function wpa(frame,id,faulty)
+		for _,conf in pairs(config.config) do
+			if conf.category == id or conf[1] == id then
+				local getname = function(nameprop)
+					local name = mw.wikibase.getBestStatements('P'..conf.property,nameprop)
+					if name and name[1] and name[1].mainsnak.datavalue.value.id then
+						return frame:expandTemplate{title='Wikidata fallback link',args={name[1].mainsnak.datavalue.value.id}}
+					end
+				end
+				local name = getname('P1629') or getname('P10726') or getname('P9073') or getname('P2378') or ''
+				local outString = frame:expandTemplate{ title = 'Category explanation', args = {'articles with '..name..' identifiers.'..' Please do not add [[Wikipedia:Categorization#Subcategorization|subcategories]].\nPages in this category should only be added by [[Module:Authority control]].'}}
+					.. frame:expandTemplate{ title = 'Cat more', args = {'Wikipedia:Authority control', ':d:Property:P'..conf.property} }
+					.. frame:expandTemplate{ title = 'Possibly empty category' }
+					.. frame:expandTemplate{ title = 'Wikipedia category', args = { hidden = 'yes', tracking = 'yes' } }
+					.. frame:expandTemplate{ title = 'Polluted category' }
+					.. whichTOC( frame )
+				if faulty then
+					outString = outString .. addCat(config.i18n.faultcat,id) .. addCat(string.format(config.i18n.cat, id))
+				else
+					outString = outString .. addCat(config.i18n.maincat,id)
+				end
+				return outString
+			end
+		end
+	end
+	if namespace == 14 then --cat space
+		local wpfaultyID = mw.ustring.match(title.text, 'Articles with faulty (.+) identifiers')
+		local wpID = mw.ustring.match(title.text, 'Articles with (.+) identifiers')
+		if wpfaultyID then
+			return wpa(frame,wpfaultyID,true)-- must be before wpID check, in case they both match
+		elseif wpID then
+			return wpa(frame,wpID,false)
+		else
+			return needsAttention('U')
+		end
+	end
+end
+
+function p.idproposal(frame)
+	local property = frame.args.property or ''
+	local out = '&lt;ul&gt;&lt;li&gt;Wikidata property: ' .. frame:expandTemplate{title='Wikidata property link', args={'P' .. property}} .. '&lt;/li&gt;'
+	out = out .. '&lt;li&gt;Section: '
+	local section = frame.args.section or ''
+	if section~='' then
+		out = out .. config.sections[section].name .. ' (' .. section .. ')'
+	else
+		out = out .. 'Not specified'
+	end
+	out = out .. '&lt;/li&gt;&lt;li&gt;Link: '
+	local link = frame.args.link or ''
+	if link=='' then
+		link = mw.wikibase.getBestStatements('P'..property,'P1630') or ''
+		link = link[1].mainsnak.datavalue.value
+	end	
+	if link~='' then
+		out = out .. '&lt;code&gt;' .. link .. '&lt;/code&gt;'
+	else
+		out = out .. 'Not specified'
+	end
+	out = out .. '&lt;/li&gt;&lt;li&gt;Label: '
+	local label = frame.args.label or ''
+	if label~='' then
+		out = out .. label
+	else
+		out = out .. 'Not specified'
+	end
+	out = out .. '&lt;/li&gt;&lt;li&gt;Example: '
+	local example = mw.wikibase.getBestStatements('P'..property,'P1855') or ''
+	if example then
+		example = example[1].qualifiers['P'..property][1].datavalue.value
+		example = frame:expandTemplate{title = "Hlist", args = {'\n' .. makelink({[1]='',link=link,label=label},{id=example},1)}} .. '\n'
+		out = out .. example
+	else
+		out = out .. 'Not available'
+	end
+	out = out .. '&lt;/li&gt;&lt;/ul&gt;'
+	return out
+end
+
+return p</text>
+      <sha1>o2xe97it2o03rejsx9nd05k762nej2d</sha1>
+    </revision>
+    <revision>
+      <id>595</id>
+      <timestamp>2024-06-28T09:35:41Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported from [[:wikipedia:Module:Authority_control/documentation]]</comment>
+      <origin>595</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="11399" sha1="o2xe97it2o03rejsx9nd05k762nej2d" xml:space="preserve">require('strict')
+local p = {}
+local configfile = 'Module:Authority control/config' -- default configuation module
+local arg = mw.getCurrentFrame().args.config
+if arg and arg~='' then
+	configfile = 'Module:Authority control/config/' .. arg
+end
+local config
+if mw.title.new(configfile).exists then
+	config = mw.loadData(configfile)
+else
+	return error('Invalid configuration file',0)
+end
+local title = mw.title.getCurrentTitle()
+local namespace = title.namespace
+local testcases = title.subpageText == config.i18n.testcases
+local makelink = require(config.i18n.ACmodule).makelink
+local lang = mw.getContentLanguage()
+
+local function needsAttention(sortkey)
+	return '[[' .. config.i18n.category .. ':' .. config.i18n.attentioncat .. '|' .. sortkey .. title.text .. ']]'
+end
+
+local function addCat(cat,sortkey)
+	if cat and cat ~= '' and (namespace == 0 or namespace == 14 or testcases) then
+		local redlinkcat = ''
+		if testcases == false and mw.title.new(cat, 14).exists == false then
+			redlinkcat = needsAttention('N')
+		end
+		if sortkey then
+			cat = '[[' .. config.i18n.category .. ':'..cat..'|' .. sortkey .. title.text .. ']]'
+		else
+			cat = '[[' .. config.i18n.category .. ':'..cat..']]'
+		end
+		cat = cat .. redlinkcat
+		return cat
+	else
+		return ''
+	end
+end
+
+-- Creates a human-readable standalone wikitable version of conf, and tracking categories with page counts, for use in the documentation
+function p.docConfTable(frame)
+	local function checkcat(category,label)
+		local ret='[[:Category:'..category..'|'..label..']]'
+		--if mw.title.new(category,14).exists == false then
+			--ret = ret..' &lt;span class="plainlinks" style="font-size:85%;"&gt;&amp;#91;['..tostring(mw.uri.fullUrl('Category:'..category,'action=edit&amp;preload=Template:Authority_control/preload'))..' create]&amp;#93;&lt;/span&gt;'
+		--end
+		return ret
+	end
+	local doc = ''
+	local a, P, f = 0, 0, 0 --cumulative sums
+	local count = frame.args.count or false
+	local columns = 3 + (count and 1 or 0)
+	local row = function(conf)
+		local category = conf.category or conf[1]
+		local articleCat = string.format(config.i18n.cat,category)
+		local articleCount = mw.site.stats.pagesInCategory(articleCat,config.i18n.pages)
+		local errorCat = conf.errorcat or string.format(
+			config.i18n.cat,
+			config.i18n.faulty .. ' ' .. category
+		)
+		local errorCount =  mw.site.stats.pagesInCategory(errorCat,config.i18n.pages)
+		P = P + 1 --property count
+		a = a + articleCount
+		f = f + errorCount
+		local getstatement = function(id,propid,qualid)
+			local statement = mw.wikibase.getBestStatements('P' .. id, 'P' .. propid)
+			local value
+			if statement and statement[1] and statement[1].mainsnak.datavalue.value.id then
+				value = statement[1].mainsnak.datavalue.value.id
+				local qual
+				if qualid and statement[1].qualifiers['P' .. qualid][1].datavalue.value then
+					qual = statement[1].qualifiers['P' .. qualid][1].datavalue.value
+				end
+				return value, qual
+			end
+		end
+		local _, example = getstatement(conf.property, 1855, conf.property)
+		if not example then example = '' end
+		example = frame:expandTemplate{title = "Hlist", args = {'\n' .. makelink(conf,{id=example},1)}} .. '\n'
+		local getname = function(nameprop)
+			local name = getstatement(conf.property,nameprop)
+			if name then
+				return frame:expandTemplate{title='Wikidata fallback link',args={name}}
+			end
+		end
+		local name = getname(1629) or getname(10726) or getname(9073) or getname(2378) or ''
+		local out = ''
+		if conf.remark then
+			out = out .. '&lt;tr&gt;&lt;td rowspan=2&gt;'
+		else
+			out = out .. '&lt;tr&gt;&lt;td&gt;'
+		end
+		out = out .. name .. '&lt;/td&gt;' ..
+			'&lt;td style="text-align: center"&gt;' .. config.sections[conf.section].name .. '&lt;/td&gt;' ..
+			'&lt;td data-sort-value=' .. conf.property .. '&gt;' .. frame:expandTemplate{title='Wikidata property link',args={id='f',conf.property}} .. '&lt;/td&gt;' ..
+			'&lt;td&gt;' .. example .. '&lt;/td&gt;'
+		if count then
+			out = out .. '&lt;td style="text-align: right;"&gt;'..checkcat(articleCat,lang:formatNum(articleCount))..' ('..checkcat(errorCat,errorCount)..')&lt;/td&gt;'
+		end
+		out = out .. '&lt;/tr&gt;'
+		if conf.remark then
+			out = out .. "&lt;tr class='expand-child'&gt;&lt;td colspan=" .. columns .. "&gt;'''Remarks:''' " .. frame:preprocess{text = conf.remark} .. "&lt;/td&gt;&lt;/tr&gt;"
+		end
+		return out
+	end
+	local doc = '&lt;table class="wikitable sortable"&gt;' ..
+	  '&lt;tr&gt;&lt;th&gt;' .. lang:ucfirst(config.i18n.identifier) .. '&lt;/th&gt;' ..
+	  '&lt;th&gt;' .. config.i18n.Section .. '&lt;/th&gt;' ..
+	  '&lt;th data-sort-type=number&gt;' .. config.i18n.WDproperty .. '&lt;/th&gt;' ..
+	  '&lt;th&gt;' .. config.i18n.Appears_as .. '&lt;/th&gt;'
+	if count then
+	 	doc = doc .. '&lt;th&gt;[[:' .. config.i18n.category .. ':' .. config.i18n.maincat .. '|' .. config.i18n.Articles .. ']] '
+	 		.. '([[:' .. config.i18n.category .. ':' .. config.i18n.faultcat .. '|' .. config.i18n.Faults .. ']])&lt;/th&gt;'
+	end
+	doc = doc .. '&lt;/tr&gt;'
+	for _, conf in pairs(config.config) do
+		doc = doc .. row(conf)
+	end
+	if count then
+		doc = doc .. '&lt;tr&gt;&lt;th style="text-align: right;" colspan=' .. columns-1 .. '&gt;' .. config.i18n.Totals .. '&lt;/th&gt;' ..
+			'&lt;th style="text-align: right;"&gt;' .. P .. '&lt;/th&gt;' ..
+			'&lt;th style="text-align: right;"&gt;' .. lang:formatNum(a) .. ' ([[:' .. config.i18n.category .. ':' .. config.i18n.allfaultycat .. '|' .. f .. ']])&lt;/th&gt;&lt;/tr&gt;'
+	end
+	doc = doc .. '&lt;/table&gt;'
+	return doc
+end
+
+function p.errorTable(frame)
+	local Table = '&lt;table class="wikitable sortable"&gt;'..
+	  '&lt;tr&gt;&lt;th&gt;' .. config.i18n.WDproperty .. '&lt;/th&gt;'..
+	  '&lt;th&gt;' .. lang:ucfirst(config.i18n.faulty) .. ' ' .. config.i18n.identifiers .. '&lt;/th&gt;'..
+	  '&lt;th&gt;[[:' .. config.i18n.category .. ':' .. config.i18n.faultcat .. '|' .. config.i18n.Tracking_category .. ']]&lt;/th&gt;&lt;/tr&gt;'
+	local f, P = 0, 0, 0 --cumulative sums
+	for _, conf in pairs(config.config) do
+		local category = conf.errorcat or string.format(
+			config.i18n.cat,
+			config.i18n.faulty .. ' '  .. (conf.category or conf[1])
+		)
+		local count =  mw.site.stats.pagesInCategory(category,'pages')
+		if count &gt; 0 then
+			P = P + 1
+			f = f + count
+			Table = Table..'&lt;tr&gt;&lt;td&gt;'..frame:expandTemplate{ title = config.i18n.linktemplate, args = { id = 'f', conf.property } } .. '&lt;/td&gt;'..
+				'&lt;td style="text-align:center;"&gt;'..tostring(count)..'&lt;/td&gt;'..
+				'&lt;td&gt;[[:' .. config.i18n.category .. ':'..category..']]&lt;/td&gt;&lt;/tr&gt;'
+		end
+	end
+	Table = Table..'&lt;tr&gt;&lt;th&gt;' .. config.i18n.Totals .. '&lt;/th&gt;'..
+		'&lt;th style="text-align:center;"&gt;' .. '[[:' .. config.i18n.category .. ':' .. config.i18n.allfaultycat .. '|' .. tostring(f) .. ']]&lt;/th&gt;'..
+		'&lt;th style="text-align:center;"&gt;'..tostring(P)..'&lt;/th&gt;&lt;/tr&gt;&lt;/table&gt;'
+	return Table
+end
+
+function p.whitelisttable(frame)
+	local Table = '&lt;table class="wikitable sortable"&gt;'..
+	  '&lt;tr&gt;&lt;th&gt;' .. config.i18n.Code .. '&lt;/th&gt;'..
+	  '&lt;th&gt;' .. config.i18n.Topic .. '&lt;/th&gt;'..
+	  '&lt;th&gt;' .. lang:ucfirst(config.i18n.identifiers) .. '&lt;/th&gt;&lt;/tr&gt;'
+	for code, wlist in pairs(config.whitelists) do
+		Table = Table .. '&lt;tr&gt;&lt;th&gt;' .. code .. '&lt;/th&gt;'..
+			'&lt;td&gt;[[' .. mw.wikibase.getSitelink('Q' .. wlist.topic) .. ']]&lt;/td&gt;'
+		local plist = {}
+		for _, property in pairs(wlist.properties) do
+			table.insert(plist,frame:expandTemplate{title='Wikidata property link', args={'P' .. property}})
+		end
+		Table = Table .. '&lt;td&gt;' .. table.concat(plist,', ') .. '&lt;/td&gt;&lt;/tr&gt;'
+	end
+	Table = Table .. '&lt;/table&gt;'
+	return Table
+end
+
+function p.sectiontable(frame)
+	local Table = '&lt;table class="wikitable sortable"&gt;'..
+	  '&lt;tr&gt;&lt;th&gt;' .. config.i18n.Section .. '&lt;/th&gt;' ..
+	  '&lt;th&gt;' .. config.i18n.Description .. '&lt;/th&gt;'..
+	  '&lt;th&gt;' .. lang:ucfirst(config.i18n.identifiers) .. '&lt;/th&gt;&lt;/tr&gt;'
+	for number,section in ipairs(config.sections) do
+		Table = Table .. '&lt;tr&gt;&lt;th&gt;' .. number .. '&lt;/th&gt;' ..	'&lt;td&gt;' .. section.name .. '&lt;/td&gt;'
+		local plist = {}
+		for _,id in pairs(config.config) do
+			if id.section == number then
+				table.insert(plist,frame:expandTemplate{title=config.i18n.linktemplate, args={'P' .. id.property}})
+			end
+		end
+		Table = Table .. '&lt;td&gt;' .. table.concat(plist,', ') .. '&lt;/td&gt;&lt;/tr&gt;'
+	end
+	Table = Table .. '&lt;/table&gt;'
+	return Table
+end
+
+-- Main/External Call for Pages with authority control identifiers
+function p.autoDetect(frame)
+	local function whichTOC(frame) -- standardize TOC behavior via {{CatAutoTOC}}
+		return frame:expandTemplate{ title = 'CatAutoTOC', args = { align = 'center' } }
+	end
+	local function wpa(frame,id,faulty)
+		for _,conf in pairs(config.config) do
+			if conf.category == id or conf[1] == id then
+				local getname = function(nameprop)
+					local name = mw.wikibase.getBestStatements('P'..conf.property,nameprop)
+					if name and name[1] and name[1].mainsnak.datavalue.value.id then
+						return frame:expandTemplate{title='Wikidata fallback link',args={name[1].mainsnak.datavalue.value.id}}
+					end
+				end
+				local name = getname('P1629') or getname('P10726') or getname('P9073') or getname('P2378') or ''
+				local outString = frame:expandTemplate{ title = 'Category explanation', args = {'articles with '..name..' identifiers.'..' Please do not add [[Wikipedia:Categorization#Subcategorization|subcategories]].\nPages in this category should only be added by [[Module:Authority control]].'}}
+					.. frame:expandTemplate{ title = 'Cat more', args = {'Wikipedia:Authority control', ':d:Property:P'..conf.property} }
+					.. frame:expandTemplate{ title = 'Possibly empty category' }
+					.. frame:expandTemplate{ title = 'Wikipedia category', args = { hidden = 'yes', tracking = 'yes' } }
+					.. frame:expandTemplate{ title = 'Polluted category' }
+					.. whichTOC( frame )
+				if faulty then
+					outString = outString .. addCat(config.i18n.faultcat,id) .. addCat(string.format(config.i18n.cat, id))
+				else
+					outString = outString .. addCat(config.i18n.maincat,id)
+				end
+				return outString
+			end
+		end
+	end
+	if namespace == 14 then --cat space
+		local wpfaultyID = mw.ustring.match(title.text, 'Articles with faulty (.+) identifiers')
+		local wpID = mw.ustring.match(title.text, 'Articles with (.+) identifiers')
+		if wpfaultyID then
+			return wpa(frame,wpfaultyID,true)-- must be before wpID check, in case they both match
+		elseif wpID then
+			return wpa(frame,wpID,false)
+		else
+			return needsAttention('U')
+		end
+	end
+end
+
+function p.idproposal(frame)
+	local property = frame.args.property or ''
+	local out = '&lt;ul&gt;&lt;li&gt;Wikidata property: ' .. frame:expandTemplate{title='Wikidata property link', args={'P' .. property}} .. '&lt;/li&gt;'
+	out = out .. '&lt;li&gt;Section: '
+	local section = frame.args.section or ''
+	if section~='' then
+		out = out .. config.sections[section].name .. ' (' .. section .. ')'
+	else
+		out = out .. 'Not specified'
+	end
+	out = out .. '&lt;/li&gt;&lt;li&gt;Link: '
+	local link = frame.args.link or ''
+	if link=='' then
+		link = mw.wikibase.getBestStatements('P'..property,'P1630') or ''
+		link = link[1].mainsnak.datavalue.value
+	end	
+	if link~='' then
+		out = out .. '&lt;code&gt;' .. link .. '&lt;/code&gt;'
+	else
+		out = out .. 'Not specified'
+	end
+	out = out .. '&lt;/li&gt;&lt;li&gt;Label: '
+	local label = frame.args.label or ''
+	if label~='' then
+		out = out .. label
+	else
+		out = out .. 'Not specified'
+	end
+	out = out .. '&lt;/li&gt;&lt;li&gt;Example: '
+	local example = mw.wikibase.getBestStatements('P'..property,'P1855') or ''
+	if example then
+		example = example[1].qualifiers['P'..property][1].datavalue.value
+		example = frame:expandTemplate{title = "Hlist", args = {'\n' .. makelink({[1]='',link=link,label=label},{id=example},1)}} .. '\n'
+		out = out .. example
+	else
+		out = out .. 'Not available'
+	end
+	out = out .. '&lt;/li&gt;&lt;/ul&gt;'
+	return out
+end
+
+return p</text>
+      <sha1>o2xe97it2o03rejsx9nd05k762nej2d</sha1>
+    </revision>
+  </page>
+</mediawiki>

@@ -1,0 +1,770 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Category handler/doc</title>
+    <ns>828</ns>
+    <id>7538</id>
+    <revision>
+      <id>884879</id>
+      <timestamp>2024-10-19T02:06:51Z</timestamp>
+      <contributor>
+        <username>en&gt;64.114 etc</username>
+        <id>0</id>
+      </contributor>
+      <origin>884879</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="17449" sha1="6utm8kra6bp5oiypm78vdend30prjkm" xml:space="preserve">{{Used in system}}
+{{Module rating|p}}
+{{cascade-protected template|page=module}}
+{{Lua|Module:Category handler/data|Module:Category handler/shared|Module:Category handler/blacklist|Module:Yesno|Module:Arguments}}
+
+This module implements the {{tl|category handler}} template. The category handler template helps other templates to automate both categorization and [[Wikipedia:Category suppression|category suppression]]. For information about using the category handler template in other templates, please see the '''[[Template:Category handler|template documentation]]'''. Keep reading for information about using the category handler module in other Lua modules, or for information on exporting this module to other wikis.
+
+== Use from other Lua modules ==
+
+=== When not to use this module ===
+
+For cases where a module only needs to categorise in one of the namespaces main (articles), file (images) or category, then using this module is overkill. Instead, you can simply get a title object using [[mw:Extension:Scribunto/Lua reference manual#mw.title.getCurrentTitle|mw.title.getCurrentTitle]] and check the &lt;code&gt;nsText&lt;/code&gt; field. For example:
+&lt;syntaxhighlight lang="lua"&gt;
+local title = mw.title.getCurrentTitle()
+if title.nsText == 'File' then
+    -- do something
+end
+&lt;/syntaxhighlight&gt;
+However, if your module needs to categorize in any other namespace, then we recommend you use this module, since it provides proper category suppression and makes it easy to select how to categorize in the different namespaces.
+
+=== Namespaces ===
+
+This module detects and groups all the different [[Wikipedia:Namespace|namespaces]] used on Wikipedia into several types. These types are used as parameter names in this module.
+
+:'''main''' = Main/article space, as in normal Wikipedia articles.
+:'''talk''' = Any talk space, such as page names that start with "Talk:", "User talk:", "File talk:" and so on.
+:'''user, wikipedia, file ... = The other namespaces except the talk pages. Namespace aliases are also accepted. See the table below for the full list.'''
+:'''other''' = Any namespaces that were not specified as a parameter to the template. See examples below.
+
+;List of possible namespace parameters
+(excluding &lt;code&gt;''talk''&lt;/code&gt; and &lt;code&gt;''other''&lt;/code&gt;)
+{{#invoke:Namespace detect|table}}
+
+=== Basic usage ===
+
+This module takes two or more parameters. Here's an example using a hello world program:
+
+&lt;syntaxhighlight lang="lua"&gt;
+p = {}
+local categoryHandler = require( 'Module:Category handler' ).main
+
+function p.main( frame )
+    local result = 'Hello world!'
+    local category = categoryHandler{
+        '[[Category:Somecat]]',
+        nocat = frame.args.nocat -- So "nocat=true/false" works
+    }
+    category = category or '' -- Check that we don't have a nil value for the category variable.
+    return result .. category
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+
+The above example uses the default settings for the category handler module. That means the example module will categorize on pages in the following namespaces:
+:'''main''', '''file''', '''help''', '''category''', '''portal''' and '''book'''
+But it will ''not'' categorize in any other namespaces, e.g.:
+:'''talk''', '''user''', '''wikipedia''', '''mediawiki''', '''template''' ...
+
+And it will ''not'' categorize on blacklisted pages. (See section [[#Blacklist|blacklist]] below.)
+
+The reason the category handler module does not categorize in some of the namespaces is that in those namespaces most modules and templates are just demonstrated or listed, not used. Thus most modules and templates should not categorize in those namespaces.
+
+Any module or template that is meant for one or more of the namespaces where this module categorizes can use the basic syntax as shown above.
+
+=== Advanced usage ===
+
+This module takes one or more parameters named after the different page types as listed in section [[#Namespaces|namespaces]] above. By using those parameters you can specify exactly in which namespaces your template should categorize. Like this:
+
+&lt;syntaxhighlight lang="lua"&gt;
+p = {}
+local categoryHandler = require( 'Module:Category handler' ).main
+
+function p.main( frame )
+    local result = 'This is a module meant for articles and talk pages.'
+    local category = categoryHandler{
+        main = '[[Category:Somecat1]]', -- Categorize in main (article) space
+        talk = '[[Category:Somecat2]]', -- Categorize in talk space
+        nocat = frame.args.nocat -- So "nocat=true/false" works
+    }
+    category = category or '' -- Check that we don't have a nil value for the category variable.
+    return result .. category
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+
+The above module will only categorize in main and talk space. But it will not categorize on /archive pages since they are blacklisted. (See section [[#Blacklist|blacklist]] below.) And if you need to demonstrate (discuss) the module on a talkpage, then you can feed "&lt;code&gt;nocat='true'&lt;/code&gt;" to prevent that template from categorizing. (See section [[#Nocat|nocat]] below.) Like this:
+
+&lt;pre&gt;
+== My new module ==
+Hey guys, have you seen my new module?
+{{#invoke:mymodule|main|nocat=true}}
+Nice, isn't it?
+--~~~~
+&lt;/pre&gt;
+
+Sometimes we want to use the same category in several namespaces, then do like this:
+
+&lt;syntaxhighlight lang="lua"&gt;
+p = {}
+local categoryHandler = require( 'Module:Category handler' ).main
+
+function p.main( frame )
+    local result = 'This is a module used in several namespaces.'
+    local category = categoryHandler{
+        main = '[[Category:Somecat1]]',
+        [ 1 ] = '[[Category:Somecat2]]', -- For help and user space
+        help = 1,
+        user = 1,
+        talk = '', -- No categories on talk pages
+        other = '[[Category:Somecat3]]', -- For all other namespaces
+        nocat = frame.args.nocat -- So "nocat=true/false" works
+    }
+    category = category or '' -- Check that we don't have a nil value for the category variable.
+    return result .. category
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+
+In the above example we use a numbered parameter to feed one of the categories, and then we tell this module to use that numbered parameter for both the help and user space.
+
+The category handler module understands an unlimited number of numbered parameters.
+
+The '''other''' parameter defines what should be used in the remaining namespaces that have not explicitly been fed data.
+
+Note the empty but defined '''talk''' parameter. That stops this module from showing what has been fed to the '''other''' parameter, when in talk space.
+
+The category handler module also has a parameter called '''all'''. It works like this:
+
+&lt;syntaxhighlight lang="lua"&gt;
+p = {}
+local categoryHandler = require( 'Module:Category handler' ).main
+
+function p.main( frame )
+    local result = 'This is a module used in all namespaces.'
+    local category = categoryHandler{
+        all = '[[Category:Somecat1]]', -- Categorize in all namespaces
+        nocat = frame.args.nocat -- So "nocat=true/false" works
+    }
+    category = category or '' -- Check that we don't have a nil value for the category variable.
+    return result .. category
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+
+The above example will categorize in all namespaces, but not on blacklisted pages. If you want to demonstrate that module on a page, then use "&lt;code&gt;nocat=true&lt;/code&gt;" to prevent the template from categorizing. 
+
+We suggest avoiding the '''all''' parameter, since modules and templates should preferably only categorize in the namespaces they need to.
+
+The all parameter can also be combined with the rest of the parameters. Like this:
+
+&lt;syntaxhighlight lang="lua"&gt;
+p = {}
+local categoryHandler = require( 'Module:Category handler' ).main
+
+function p.main( frame )
+    local result = 'This is a module used in all namespaces.'
+    local category = categoryHandler{
+        all = '[[Category:Somecat1]]', -- Categorize in all namespaces
+        main = '[[Category:Somecat2]]', -- And add this in main space
+        other = '[[Category:Somecat3]]', -- And add this in all other namespaces
+        nocat = frame.args.nocat -- So "nocat=true/false" works
+    }
+    category = category or '' -- Check that we don't have a nil value for the category variable.
+    return result .. category
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+
+If the above module is placed on an article, then it will add the categories "Somecat1" and "Somecat2". But on all other types of pages it will instead add "Somecat1" and "Somecat3". As the example shows, the all parameter works independently of the rest of the parameters.
+
+=== Subpages ===
+
+The category handler module understands the '''subpage''' parameter. Like this:
+
+&lt;syntaxhighlight lang="lua"&gt;
+p = {}
+local categoryHandler = require( 'Module:Category handler' ).main
+
+function p.main( frame )
+    local result = 'This is a module used in all namespaces.'
+    local category = categoryHandler{
+        subpage = 'no' -- Don't categorize on subpages
+        wikipedia = '[[Category:Somecat]]',
+        nocat = frame.args.nocat -- So "nocat=true/false" works
+    }
+    category = category or '' -- Check that we don't have a nil value for the category variable.
+    return result .. category
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+
+If "&lt;code&gt;subpage='no'&lt;/code&gt;" then this template will ''not'' categorize on subpages. For the rare occasion you ''only'' want to categorize on subpages, then use "&lt;code&gt;subpage='only'&lt;/code&gt;". If '''subpage''' is empty or undefined then this template categorizes both on basepages and on subpages.
+
+=== Blacklist ===
+
+This module has a blacklist of the pages and page types where templates should not auto-categorize. Thus modules that use this meta-template will for instance not categorize on /archive pages and on the subpages of [[Wikipedia:Template messages]].
+
+If you want a template to categorize on a blacklisted page, then feed "&lt;code&gt;&lt;nowiki&gt;nocat = false&lt;/nowiki&gt;&lt;/code&gt;" to the module when you place it on the page, thus skipping the blacklist check. Note that this module only categorizes if it has data for the namespace. For instance, if the basic syntax is used (see [[#Basic usage|basic usage]] above), then even if you set "&lt;code&gt;nocat = false&lt;/code&gt;" the template will not categorize on a talk page, since it has no data for talk pages. But it has data for help space, so on a blacklisted help page it will categorize.
+
+The blacklist is located in the configuration table &lt;code&gt;cfg.blacklist&lt;/code&gt; near the top of the module code.
+
+=== The "nocat" parameter ===
+
+This module understands the '''nocat''' parameter:
+
+* If "&lt;code&gt;nocat = true&lt;/code&gt;" then this template does ''not'' categorize.
+* If '''nocat''' is &lt;code&gt;nil&lt;/code&gt; then this template categorizes as usual.
+* If "&lt;code&gt;nocat = false&lt;/code&gt;" this template categorizes even when on blacklisted pages. (See section [[#Blacklist|blacklist]] above.)
+* The nocat parameter also accepts aliases for &lt;code&gt;true&lt;/code&gt; and &lt;code&gt;false&lt;/code&gt; as defined by [[Module:Yesno]], e.g. "yes", "y", "true", and 1 for &lt;code&gt;true&lt;/code&gt;, and "no", "n", "false", and 0 for &lt;code&gt;false&lt;/code&gt;.
+
+Modules and templates that use {{tlf|category handler}} should forward '''nocat''', so they too understand '''nocat'''. The code "&lt;code&gt;nocat = frame.args.nocat&lt;/code&gt;" shown in the examples on this page does that.
+
+=== The "categories" parameter ===
+
+For backwards compatibility this module also understands the '''categories''' parameter. It works the same as '''nocat'''. Like this:
+
+* If "&lt;code&gt;categories = false&lt;/code&gt;" then this template does ''not'' categorize.
+* If '''categories''' is empty or undefined then this template categorizes as usual.
+* If "&lt;code&gt;categories = true&lt;/code&gt;" this template categorizes even when on blacklisted pages.
+* The categories parameter also accepts aliases for &lt;code&gt;true&lt;/code&gt; and &lt;code&gt;false&lt;/code&gt; as defined by [[Module:Yesno]], e.g. "yes", "y", "true", and 1 for &lt;code&gt;true&lt;/code&gt;, and "no", "n", "false", and 0 for &lt;code&gt;false&lt;/code&gt;.
+
+=== The "category2" parameter ===
+
+For backwards compatibility this template kind of supports the old "category =" parameter. But the parameter name "category" is already used in this module to feed category data for when in category space. So instead this template uses '''category2''' for the usage similar to '''nocat'''. Like this:
+
+* If "&lt;code&gt;category2 = "&lt;/code&gt;" (empty but defined), or "&lt;code&gt;category2 = 'no'&lt;/code&gt;", or if '''category2''' is fed any other data (except as described in the next two points), then this template does ''not'' categorize.
+* If '''category2''' is undefined or if "&lt;code&gt;category2 = '¬'&lt;/code&gt;", then this template categorizes as usual.
+* If "&lt;code&gt;category2 = 'yes'&lt;/code&gt;" this template categorizes even when on blacklisted pages.
+
+=== Categories and text ===
+
+Besides from categories, you can feed anything else to this module, for instance some text. Like this:
+
+&lt;syntaxhighlight lang="lua"&gt;
+p = {}
+local categoryHandler = require( 'Module:Category handler' ).main
+
+function p.main( frame )
+    local result = 'This is a module used on talk pages.'
+    local category = categoryHandler{
+        talk = '[[Category:Somecat]]',
+        other = '&lt;p class="error"&gt;This module should only be used on talk pages.&lt;/p&gt;',
+        nocat = frame.args.nocat -- So "nocat=true/false" works
+    }
+    category = category or '' -- Check that we don't have a nil value for the category variable.
+    return result .. category
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+
+When the module code above is used on anything other than a talk page, it will look like this:
+
+:This is a module used on talk pages.{{#invoke:category handler|main
+| talk = [[Category:Somecat]]
+| other = &lt;p class="error"&gt;This module should only be used on talk pages.&lt;/p&gt;
+| nocat = {{{nocat|}}} &lt;!--So "nocat=true/false" works--&gt;
+}}
+
+That text will not show on blacklisted pages, so don't use this method to show any important information. Feeding "&lt;code&gt;nocat = 'true'&lt;/code&gt;" to the template hides the text, just as it suppresses any categories.
+
+=== The "page" parameter ===
+
+For testing and demonstration purposes this module can take a parameter named '''page'''. Like this:
+
+&lt;syntaxhighlight lang="lua"&gt;
+p = {}
+local categoryHandler = require( 'Module:Category handler' ).main
+
+function p.main( frame )
+    local category = categoryHandler{
+        main = 'Category:Some cat',
+        talk = 'Category:Talk cat',
+        nocat = frame.args.nocat, -- So "nocat=true/false" works
+        page = 'User talk:Example'
+    }
+    return category
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+
+In the above code we on purpose left out the brackets around the category names so we see the output on the page. No matter on what kind of page the code above is used it will return this:
+
+:{{#invoke:category handler|main
+| main = Category:Some cat
+| talk = Category:Talk cat
+| nocat = {{{nocat|}}} &lt;!--So "nocat=true/false" works--&gt;
+| page = User talk:Example
+}}
+
+The '''page''' parameter makes this module behave exactly as if on that page. Even the blacklist works. The pagename doesn't have to be an existing page.
+
+If the '''page''' parameter is empty or undefined, the name of the current page determines the result.
+
+You can make it so your module also understands the '''page''' parameter. That means you can test how your template will categorize on different pages, without having to actually edit those pages. Then do like this:
+
+&lt;syntaxhighlight lang="lua"&gt;
+p = {}
+local categoryHandler = require( 'Module:Category handler' ).main
+
+function p.main( frame )
+    local category = categoryHandler{
+        main = 'Category:Some cat',
+        talk = 'Category:Talk cat',
+        nocat = frame.args.nocat, -- So "nocat=true/false" works
+        page = frame.args.page -- For testing
+    }
+    return category
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+
+=== Parameters ===
+
+List of all parameters:
+
+* First positional parameter - for default settings
+* subpage = 'no' / 'only'
+* 1, 2, 3 ...
+* all = '&lt;nowiki&gt;[[Category:Somecat]]&lt;/nowiki&gt;' / 'Text'
+* main = 1, 2, 3 ... / '&lt;nowiki&gt;[[Category:Somecat]]&lt;/nowiki&gt;' / 'Text'
+* ...
+* other = 1, 2, 3 ... / '&lt;nowiki&gt;[[Category:Somecat]]&lt;/nowiki&gt;' / 'Text'
+* nocat = frame.args.nocat / true / false / 'yes' / 'no' / 'y' / 'n' / 'true' / 'false' / 1 / 0
+* categories = frame.args.categories / false / true / 'no' / 'yes' / 'n' / 'y' / 'false' / 'true' / 0 / 1
+* category2 = frame.args.category or '¬' / 'no' / 'not defined' / '¬' / 'yes'
+* page = frame.args.page / 'User:Example'
+
+Note that empty values to the "main" ... "other" parameters have special meaning (see examples above). The "all" parameter doesn't understand numbered parameters, since there should never be a need for that.
+
+== Exporting to other wikis ==
+
+This module can be exported to other wikis by changing the configuration values in the &lt;code&gt;cfg&lt;/code&gt; table. All the variable values are configurable, so after the configuration values have been set there should be no need to alter the main module code. Details of each configuration value are included in the module code comments. In addition, this module requires [[Module:Namespace detect]] to be available on the local wiki.
+
+== See also ==
+
+* {{tl|Category handler}} – for using this module with templates, rather than Lua modules.
+* [[Wikipedia:Category suppression]] – The how-to guide.
+* [[Wikipedia:WikiProject Category Suppression]] – The WikiProject.
+* [[Wikipedia:Namespace]] – Lists all the namespaces.
+&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>6utm8kra6bp5oiypm78vdend30prjkm</sha1>
+    </revision>
+    <revision>
+      <id>7539</id>
+      <timestamp>2025-01-07T10:27:26Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: importing modules</comment>
+      <origin>7539</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="17449" sha1="6utm8kra6bp5oiypm78vdend30prjkm" xml:space="preserve">{{Used in system}}
+{{Module rating|p}}
+{{cascade-protected template|page=module}}
+{{Lua|Module:Category handler/data|Module:Category handler/shared|Module:Category handler/blacklist|Module:Yesno|Module:Arguments}}
+
+This module implements the {{tl|category handler}} template. The category handler template helps other templates to automate both categorization and [[Wikipedia:Category suppression|category suppression]]. For information about using the category handler template in other templates, please see the '''[[Template:Category handler|template documentation]]'''. Keep reading for information about using the category handler module in other Lua modules, or for information on exporting this module to other wikis.
+
+== Use from other Lua modules ==
+
+=== When not to use this module ===
+
+For cases where a module only needs to categorise in one of the namespaces main (articles), file (images) or category, then using this module is overkill. Instead, you can simply get a title object using [[mw:Extension:Scribunto/Lua reference manual#mw.title.getCurrentTitle|mw.title.getCurrentTitle]] and check the &lt;code&gt;nsText&lt;/code&gt; field. For example:
+&lt;syntaxhighlight lang="lua"&gt;
+local title = mw.title.getCurrentTitle()
+if title.nsText == 'File' then
+    -- do something
+end
+&lt;/syntaxhighlight&gt;
+However, if your module needs to categorize in any other namespace, then we recommend you use this module, since it provides proper category suppression and makes it easy to select how to categorize in the different namespaces.
+
+=== Namespaces ===
+
+This module detects and groups all the different [[Wikipedia:Namespace|namespaces]] used on Wikipedia into several types. These types are used as parameter names in this module.
+
+:'''main''' = Main/article space, as in normal Wikipedia articles.
+:'''talk''' = Any talk space, such as page names that start with "Talk:", "User talk:", "File talk:" and so on.
+:'''user, wikipedia, file ... = The other namespaces except the talk pages. Namespace aliases are also accepted. See the table below for the full list.'''
+:'''other''' = Any namespaces that were not specified as a parameter to the template. See examples below.
+
+;List of possible namespace parameters
+(excluding &lt;code&gt;''talk''&lt;/code&gt; and &lt;code&gt;''other''&lt;/code&gt;)
+{{#invoke:Namespace detect|table}}
+
+=== Basic usage ===
+
+This module takes two or more parameters. Here's an example using a hello world program:
+
+&lt;syntaxhighlight lang="lua"&gt;
+p = {}
+local categoryHandler = require( 'Module:Category handler' ).main
+
+function p.main( frame )
+    local result = 'Hello world!'
+    local category = categoryHandler{
+        '[[Category:Somecat]]',
+        nocat = frame.args.nocat -- So "nocat=true/false" works
+    }
+    category = category or '' -- Check that we don't have a nil value for the category variable.
+    return result .. category
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+
+The above example uses the default settings for the category handler module. That means the example module will categorize on pages in the following namespaces:
+:'''main''', '''file''', '''help''', '''category''', '''portal''' and '''book'''
+But it will ''not'' categorize in any other namespaces, e.g.:
+:'''talk''', '''user''', '''wikipedia''', '''mediawiki''', '''template''' ...
+
+And it will ''not'' categorize on blacklisted pages. (See section [[#Blacklist|blacklist]] below.)
+
+The reason the category handler module does not categorize in some of the namespaces is that in those namespaces most modules and templates are just demonstrated or listed, not used. Thus most modules and templates should not categorize in those namespaces.
+
+Any module or template that is meant for one or more of the namespaces where this module categorizes can use the basic syntax as shown above.
+
+=== Advanced usage ===
+
+This module takes one or more parameters named after the different page types as listed in section [[#Namespaces|namespaces]] above. By using those parameters you can specify exactly in which namespaces your template should categorize. Like this:
+
+&lt;syntaxhighlight lang="lua"&gt;
+p = {}
+local categoryHandler = require( 'Module:Category handler' ).main
+
+function p.main( frame )
+    local result = 'This is a module meant for articles and talk pages.'
+    local category = categoryHandler{
+        main = '[[Category:Somecat1]]', -- Categorize in main (article) space
+        talk = '[[Category:Somecat2]]', -- Categorize in talk space
+        nocat = frame.args.nocat -- So "nocat=true/false" works
+    }
+    category = category or '' -- Check that we don't have a nil value for the category variable.
+    return result .. category
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+
+The above module will only categorize in main and talk space. But it will not categorize on /archive pages since they are blacklisted. (See section [[#Blacklist|blacklist]] below.) And if you need to demonstrate (discuss) the module on a talkpage, then you can feed "&lt;code&gt;nocat='true'&lt;/code&gt;" to prevent that template from categorizing. (See section [[#Nocat|nocat]] below.) Like this:
+
+&lt;pre&gt;
+== My new module ==
+Hey guys, have you seen my new module?
+{{#invoke:mymodule|main|nocat=true}}
+Nice, isn't it?
+--~~~~
+&lt;/pre&gt;
+
+Sometimes we want to use the same category in several namespaces, then do like this:
+
+&lt;syntaxhighlight lang="lua"&gt;
+p = {}
+local categoryHandler = require( 'Module:Category handler' ).main
+
+function p.main( frame )
+    local result = 'This is a module used in several namespaces.'
+    local category = categoryHandler{
+        main = '[[Category:Somecat1]]',
+        [ 1 ] = '[[Category:Somecat2]]', -- For help and user space
+        help = 1,
+        user = 1,
+        talk = '', -- No categories on talk pages
+        other = '[[Category:Somecat3]]', -- For all other namespaces
+        nocat = frame.args.nocat -- So "nocat=true/false" works
+    }
+    category = category or '' -- Check that we don't have a nil value for the category variable.
+    return result .. category
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+
+In the above example we use a numbered parameter to feed one of the categories, and then we tell this module to use that numbered parameter for both the help and user space.
+
+The category handler module understands an unlimited number of numbered parameters.
+
+The '''other''' parameter defines what should be used in the remaining namespaces that have not explicitly been fed data.
+
+Note the empty but defined '''talk''' parameter. That stops this module from showing what has been fed to the '''other''' parameter, when in talk space.
+
+The category handler module also has a parameter called '''all'''. It works like this:
+
+&lt;syntaxhighlight lang="lua"&gt;
+p = {}
+local categoryHandler = require( 'Module:Category handler' ).main
+
+function p.main( frame )
+    local result = 'This is a module used in all namespaces.'
+    local category = categoryHandler{
+        all = '[[Category:Somecat1]]', -- Categorize in all namespaces
+        nocat = frame.args.nocat -- So "nocat=true/false" works
+    }
+    category = category or '' -- Check that we don't have a nil value for the category variable.
+    return result .. category
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+
+The above example will categorize in all namespaces, but not on blacklisted pages. If you want to demonstrate that module on a page, then use "&lt;code&gt;nocat=true&lt;/code&gt;" to prevent the template from categorizing. 
+
+We suggest avoiding the '''all''' parameter, since modules and templates should preferably only categorize in the namespaces they need to.
+
+The all parameter can also be combined with the rest of the parameters. Like this:
+
+&lt;syntaxhighlight lang="lua"&gt;
+p = {}
+local categoryHandler = require( 'Module:Category handler' ).main
+
+function p.main( frame )
+    local result = 'This is a module used in all namespaces.'
+    local category = categoryHandler{
+        all = '[[Category:Somecat1]]', -- Categorize in all namespaces
+        main = '[[Category:Somecat2]]', -- And add this in main space
+        other = '[[Category:Somecat3]]', -- And add this in all other namespaces
+        nocat = frame.args.nocat -- So "nocat=true/false" works
+    }
+    category = category or '' -- Check that we don't have a nil value for the category variable.
+    return result .. category
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+
+If the above module is placed on an article, then it will add the categories "Somecat1" and "Somecat2". But on all other types of pages it will instead add "Somecat1" and "Somecat3". As the example shows, the all parameter works independently of the rest of the parameters.
+
+=== Subpages ===
+
+The category handler module understands the '''subpage''' parameter. Like this:
+
+&lt;syntaxhighlight lang="lua"&gt;
+p = {}
+local categoryHandler = require( 'Module:Category handler' ).main
+
+function p.main( frame )
+    local result = 'This is a module used in all namespaces.'
+    local category = categoryHandler{
+        subpage = 'no' -- Don't categorize on subpages
+        wikipedia = '[[Category:Somecat]]',
+        nocat = frame.args.nocat -- So "nocat=true/false" works
+    }
+    category = category or '' -- Check that we don't have a nil value for the category variable.
+    return result .. category
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+
+If "&lt;code&gt;subpage='no'&lt;/code&gt;" then this template will ''not'' categorize on subpages. For the rare occasion you ''only'' want to categorize on subpages, then use "&lt;code&gt;subpage='only'&lt;/code&gt;". If '''subpage''' is empty or undefined then this template categorizes both on basepages and on subpages.
+
+=== Blacklist ===
+
+This module has a blacklist of the pages and page types where templates should not auto-categorize. Thus modules that use this meta-template will for instance not categorize on /archive pages and on the subpages of [[Wikipedia:Template messages]].
+
+If you want a template to categorize on a blacklisted page, then feed "&lt;code&gt;&lt;nowiki&gt;nocat = false&lt;/nowiki&gt;&lt;/code&gt;" to the module when you place it on the page, thus skipping the blacklist check. Note that this module only categorizes if it has data for the namespace. For instance, if the basic syntax is used (see [[#Basic usage|basic usage]] above), then even if you set "&lt;code&gt;nocat = false&lt;/code&gt;" the template will not categorize on a talk page, since it has no data for talk pages. But it has data for help space, so on a blacklisted help page it will categorize.
+
+The blacklist is located in the configuration table &lt;code&gt;cfg.blacklist&lt;/code&gt; near the top of the module code.
+
+=== The "nocat" parameter ===
+
+This module understands the '''nocat''' parameter:
+
+* If "&lt;code&gt;nocat = true&lt;/code&gt;" then this template does ''not'' categorize.
+* If '''nocat''' is &lt;code&gt;nil&lt;/code&gt; then this template categorizes as usual.
+* If "&lt;code&gt;nocat = false&lt;/code&gt;" this template categorizes even when on blacklisted pages. (See section [[#Blacklist|blacklist]] above.)
+* The nocat parameter also accepts aliases for &lt;code&gt;true&lt;/code&gt; and &lt;code&gt;false&lt;/code&gt; as defined by [[Module:Yesno]], e.g. "yes", "y", "true", and 1 for &lt;code&gt;true&lt;/code&gt;, and "no", "n", "false", and 0 for &lt;code&gt;false&lt;/code&gt;.
+
+Modules and templates that use {{tlf|category handler}} should forward '''nocat''', so they too understand '''nocat'''. The code "&lt;code&gt;nocat = frame.args.nocat&lt;/code&gt;" shown in the examples on this page does that.
+
+=== The "categories" parameter ===
+
+For backwards compatibility this module also understands the '''categories''' parameter. It works the same as '''nocat'''. Like this:
+
+* If "&lt;code&gt;categories = false&lt;/code&gt;" then this template does ''not'' categorize.
+* If '''categories''' is empty or undefined then this template categorizes as usual.
+* If "&lt;code&gt;categories = true&lt;/code&gt;" this template categorizes even when on blacklisted pages.
+* The categories parameter also accepts aliases for &lt;code&gt;true&lt;/code&gt; and &lt;code&gt;false&lt;/code&gt; as defined by [[Module:Yesno]], e.g. "yes", "y", "true", and 1 for &lt;code&gt;true&lt;/code&gt;, and "no", "n", "false", and 0 for &lt;code&gt;false&lt;/code&gt;.
+
+=== The "category2" parameter ===
+
+For backwards compatibility this template kind of supports the old "category =" parameter. But the parameter name "category" is already used in this module to feed category data for when in category space. So instead this template uses '''category2''' for the usage similar to '''nocat'''. Like this:
+
+* If "&lt;code&gt;category2 = "&lt;/code&gt;" (empty but defined), or "&lt;code&gt;category2 = 'no'&lt;/code&gt;", or if '''category2''' is fed any other data (except as described in the next two points), then this template does ''not'' categorize.
+* If '''category2''' is undefined or if "&lt;code&gt;category2 = '¬'&lt;/code&gt;", then this template categorizes as usual.
+* If "&lt;code&gt;category2 = 'yes'&lt;/code&gt;" this template categorizes even when on blacklisted pages.
+
+=== Categories and text ===
+
+Besides from categories, you can feed anything else to this module, for instance some text. Like this:
+
+&lt;syntaxhighlight lang="lua"&gt;
+p = {}
+local categoryHandler = require( 'Module:Category handler' ).main
+
+function p.main( frame )
+    local result = 'This is a module used on talk pages.'
+    local category = categoryHandler{
+        talk = '[[Category:Somecat]]',
+        other = '&lt;p class="error"&gt;This module should only be used on talk pages.&lt;/p&gt;',
+        nocat = frame.args.nocat -- So "nocat=true/false" works
+    }
+    category = category or '' -- Check that we don't have a nil value for the category variable.
+    return result .. category
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+
+When the module code above is used on anything other than a talk page, it will look like this:
+
+:This is a module used on talk pages.{{#invoke:category handler|main
+| talk = [[Category:Somecat]]
+| other = &lt;p class="error"&gt;This module should only be used on talk pages.&lt;/p&gt;
+| nocat = {{{nocat|}}} &lt;!--So "nocat=true/false" works--&gt;
+}}
+
+That text will not show on blacklisted pages, so don't use this method to show any important information. Feeding "&lt;code&gt;nocat = 'true'&lt;/code&gt;" to the template hides the text, just as it suppresses any categories.
+
+=== The "page" parameter ===
+
+For testing and demonstration purposes this module can take a parameter named '''page'''. Like this:
+
+&lt;syntaxhighlight lang="lua"&gt;
+p = {}
+local categoryHandler = require( 'Module:Category handler' ).main
+
+function p.main( frame )
+    local category = categoryHandler{
+        main = 'Category:Some cat',
+        talk = 'Category:Talk cat',
+        nocat = frame.args.nocat, -- So "nocat=true/false" works
+        page = 'User talk:Example'
+    }
+    return category
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+
+In the above code we on purpose left out the brackets around the category names so we see the output on the page. No matter on what kind of page the code above is used it will return this:
+
+:{{#invoke:category handler|main
+| main = Category:Some cat
+| talk = Category:Talk cat
+| nocat = {{{nocat|}}} &lt;!--So "nocat=true/false" works--&gt;
+| page = User talk:Example
+}}
+
+The '''page''' parameter makes this module behave exactly as if on that page. Even the blacklist works. The pagename doesn't have to be an existing page.
+
+If the '''page''' parameter is empty or undefined, the name of the current page determines the result.
+
+You can make it so your module also understands the '''page''' parameter. That means you can test how your template will categorize on different pages, without having to actually edit those pages. Then do like this:
+
+&lt;syntaxhighlight lang="lua"&gt;
+p = {}
+local categoryHandler = require( 'Module:Category handler' ).main
+
+function p.main( frame )
+    local category = categoryHandler{
+        main = 'Category:Some cat',
+        talk = 'Category:Talk cat',
+        nocat = frame.args.nocat, -- So "nocat=true/false" works
+        page = frame.args.page -- For testing
+    }
+    return category
+end
+
+return p
+&lt;/syntaxhighlight&gt;
+
+=== Parameters ===
+
+List of all parameters:
+
+* First positional parameter - for default settings
+* subpage = 'no' / 'only'
+* 1, 2, 3 ...
+* all = '&lt;nowiki&gt;[[Category:Somecat]]&lt;/nowiki&gt;' / 'Text'
+* main = 1, 2, 3 ... / '&lt;nowiki&gt;[[Category:Somecat]]&lt;/nowiki&gt;' / 'Text'
+* ...
+* other = 1, 2, 3 ... / '&lt;nowiki&gt;[[Category:Somecat]]&lt;/nowiki&gt;' / 'Text'
+* nocat = frame.args.nocat / true / false / 'yes' / 'no' / 'y' / 'n' / 'true' / 'false' / 1 / 0
+* categories = frame.args.categories / false / true / 'no' / 'yes' / 'n' / 'y' / 'false' / 'true' / 0 / 1
+* category2 = frame.args.category or '¬' / 'no' / 'not defined' / '¬' / 'yes'
+* page = frame.args.page / 'User:Example'
+
+Note that empty values to the "main" ... "other" parameters have special meaning (see examples above). The "all" parameter doesn't understand numbered parameters, since there should never be a need for that.
+
+== Exporting to other wikis ==
+
+This module can be exported to other wikis by changing the configuration values in the &lt;code&gt;cfg&lt;/code&gt; table. All the variable values are configurable, so after the configuration values have been set there should be no need to alter the main module code. Details of each configuration value are included in the module code comments. In addition, this module requires [[Module:Namespace detect]] to be available on the local wiki.
+
+== See also ==
+
+* {{tl|Category handler}} – for using this module with templates, rather than Lua modules.
+* [[Wikipedia:Category suppression]] – The how-to guide.
+* [[Wikipedia:WikiProject Category Suppression]] – The WikiProject.
+* [[Wikipedia:Namespace]] – Lists all the namespaces.
+&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>6utm8kra6bp5oiypm78vdend30prjkm</sha1>
+    </revision>
+  </page>
+</mediawiki>

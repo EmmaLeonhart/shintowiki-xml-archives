@@ -1,0 +1,2460 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:BaseConvert</title>
+    <ns>828</ns>
+    <id>9175</id>
+    <revision>
+      <id>968461</id>
+      <timestamp>2022-04-13T04:58:12Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Johnuniq</username>
+        <id>0</id>
+      </contributor>
+      <comment>update from [[Module:BaseConvert/sandbox]] per talk; this removes globals</comment>
+      <origin>968461</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2918" sha1="pittardebat8getcpz6hwvf6a7wspqr" xml:space="preserve">local p = {}
+
+local digits = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+local function normalizeFullWidthChars(s)
+	return mw.ustring.gsub(s, '[！-～]', function(s)
+		return mw.ustring.char(mw.ustring.codepoint(s, 1) - 0xFEE0)
+	end)
+end
+
+local function _convert(n, base, from, precision, width, default, prefix, suffix)
+	n = tostring(n)
+
+	-- strip off any leading '0x' (unless x is a valid digit in the input base)
+	from = tonumber(from)
+	if not from or from &lt; 34 then
+		local c
+		n, c = n:gsub('^(-?)0[Xx]', '%1')
+		if c &gt; 0 and not from then from = 16 end
+	end
+
+	-- check for a negative sign. Do this while the input is still in string form,
+	-- because tonumber doesn't support negative numbers in non-10 bases.
+	local sign = ''
+	local c
+	n, c = n:gsub('^-', '')
+	if c &gt; 0 then sign = '-' end
+
+	-- replace any full-width Unicode characters in the string with their ASCII equivalents
+	n = normalizeFullWidthChars(n)
+
+	-- handle scientific notation with whitespace around the 'e' e.g. '5 e7'
+	n = n:gsub('%s*[eE]%s*', 'e')
+
+	from = from or 10
+	local num = tonumber(n, from)
+	base = tonumber(base)
+	precision = tonumber(precision)
+	width = tonumber(width)
+
+	if not num or not base then return default or n end
+
+	local i, f = math.modf(num)
+
+	local t = {}
+	repeat
+		local d = (i % base) + 1
+		i = math.floor(i / base)
+		table.insert(t, 1, digits:sub(d, d))
+	until i == 0
+	while #t &lt; (width or 0) do
+		table.insert(t, 1, '0')
+	end
+	local intPart = table.concat(t, '')
+
+	-- compute the fractional part
+	local tf = {}
+	while f &gt; 0 and #tf &lt; (precision or 10) do
+		f = f * base
+		i, f = math.modf(f)
+		table.insert(tf, digits:sub(i + 1, i + 1))
+	end
+
+	-- add trailing zeros if needed
+	if precision and #tf &lt; precision then
+		for i = 1, precision - #tf do
+			table.insert(tf, '0')
+		end
+	end
+
+	local fracPart = table.concat(tf, '')
+
+	-- remove trailing zeros if not needed
+	if not precision then
+		fracPart = fracPart:gsub('0*$', '')
+	end
+
+	-- add the radix point if needed
+	if #fracPart &gt; 0 then
+		fracPart = '.' .. fracPart
+	end
+
+	return (prefix or '') .. sign .. intPart .. fracPart .. (suffix or '')
+end
+
+function p.convert(frame)
+	-- Allow for invocation via #invoke or directly from another module
+	local args
+	if frame == mw.getCurrentFrame() then
+		args = frame.args
+	else
+		args = frame
+	end
+
+	local n = args.n
+	local base = args.base
+	local from = args.from
+	local precision = args.precision
+	local width = args.width
+	local default = args.default
+	local prefix = args.prefix
+	local suffix = args.suffix
+	return _convert(n, base, from, precision, width, default, prefix, suffix)
+end
+
+setmetatable(p, {
+	__index = function(t, k)
+		local from, base = k:match('^([0-9]+)to([0-9]+)$')
+		if not from then return nil end
+		return function(frame)
+			local args = frame.args
+			return _convert(mw.text.trim(args[1]), base, from, args.precision, args.width,
+				args.default, args.prefix, args.suffix)
+		end
+	end
+})
+
+return p</text>
+      <sha1>pittardebat8getcpz6hwvf6a7wspqr</sha1>
+    </revision>
+    <revision>
+      <id>968462</id>
+      <parentid>968461</parentid>
+      <timestamp>2025-01-16T03:01:46Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:BaseConvert]]</comment>
+      <origin>968461</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2918" sha1="pittardebat8getcpz6hwvf6a7wspqr" xml:space="preserve">local p = {}
+
+local digits = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+local function normalizeFullWidthChars(s)
+	return mw.ustring.gsub(s, '[！-～]', function(s)
+		return mw.ustring.char(mw.ustring.codepoint(s, 1) - 0xFEE0)
+	end)
+end
+
+local function _convert(n, base, from, precision, width, default, prefix, suffix)
+	n = tostring(n)
+
+	-- strip off any leading '0x' (unless x is a valid digit in the input base)
+	from = tonumber(from)
+	if not from or from &lt; 34 then
+		local c
+		n, c = n:gsub('^(-?)0[Xx]', '%1')
+		if c &gt; 0 and not from then from = 16 end
+	end
+
+	-- check for a negative sign. Do this while the input is still in string form,
+	-- because tonumber doesn't support negative numbers in non-10 bases.
+	local sign = ''
+	local c
+	n, c = n:gsub('^-', '')
+	if c &gt; 0 then sign = '-' end
+
+	-- replace any full-width Unicode characters in the string with their ASCII equivalents
+	n = normalizeFullWidthChars(n)
+
+	-- handle scientific notation with whitespace around the 'e' e.g. '5 e7'
+	n = n:gsub('%s*[eE]%s*', 'e')
+
+	from = from or 10
+	local num = tonumber(n, from)
+	base = tonumber(base)
+	precision = tonumber(precision)
+	width = tonumber(width)
+
+	if not num or not base then return default or n end
+
+	local i, f = math.modf(num)
+
+	local t = {}
+	repeat
+		local d = (i % base) + 1
+		i = math.floor(i / base)
+		table.insert(t, 1, digits:sub(d, d))
+	until i == 0
+	while #t &lt; (width or 0) do
+		table.insert(t, 1, '0')
+	end
+	local intPart = table.concat(t, '')
+
+	-- compute the fractional part
+	local tf = {}
+	while f &gt; 0 and #tf &lt; (precision or 10) do
+		f = f * base
+		i, f = math.modf(f)
+		table.insert(tf, digits:sub(i + 1, i + 1))
+	end
+
+	-- add trailing zeros if needed
+	if precision and #tf &lt; precision then
+		for i = 1, precision - #tf do
+			table.insert(tf, '0')
+		end
+	end
+
+	local fracPart = table.concat(tf, '')
+
+	-- remove trailing zeros if not needed
+	if not precision then
+		fracPart = fracPart:gsub('0*$', '')
+	end
+
+	-- add the radix point if needed
+	if #fracPart &gt; 0 then
+		fracPart = '.' .. fracPart
+	end
+
+	return (prefix or '') .. sign .. intPart .. fracPart .. (suffix or '')
+end
+
+function p.convert(frame)
+	-- Allow for invocation via #invoke or directly from another module
+	local args
+	if frame == mw.getCurrentFrame() then
+		args = frame.args
+	else
+		args = frame
+	end
+
+	local n = args.n
+	local base = args.base
+	local from = args.from
+	local precision = args.precision
+	local width = args.width
+	local default = args.default
+	local prefix = args.prefix
+	local suffix = args.suffix
+	return _convert(n, base, from, precision, width, default, prefix, suffix)
+end
+
+setmetatable(p, {
+	__index = function(t, k)
+		local from, base = k:match('^([0-9]+)to([0-9]+)$')
+		if not from then return nil end
+		return function(frame)
+			local args = frame.args
+			return _convert(mw.text.trim(args[1]), base, from, args.precision, args.width,
+				args.default, args.prefix, args.suffix)
+		end
+	end
+})
+
+return p</text>
+      <sha1>pittardebat8getcpz6hwvf6a7wspqr</sha1>
+    </revision>
+    <revision>
+      <id>968463</id>
+      <parentid>968462</parentid>
+      <timestamp>2025-01-16T09:43:01Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Adding [[Category:mass bump]] on using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>968463</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2942" sha1="iz32nvno0y0e3guweaihxmv545062hl" xml:space="preserve">local p = {}
+
+local digits = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+local function normalizeFullWidthChars(s)
+	return mw.ustring.gsub(s, '[！-～]', function(s)
+		return mw.ustring.char(mw.ustring.codepoint(s, 1) - 0xFEE0)
+	end)
+end
+
+local function _convert(n, base, from, precision, width, default, prefix, suffix)
+	n = tostring(n)
+
+	-- strip off any leading '0x' (unless x is a valid digit in the input base)
+	from = tonumber(from)
+	if not from or from &lt; 34 then
+		local c
+		n, c = n:gsub('^(-?)0[Xx]', '%1')
+		if c &gt; 0 and not from then from = 16 end
+	end
+
+	-- check for a negative sign. Do this while the input is still in string form,
+	-- because tonumber doesn't support negative numbers in non-10 bases.
+	local sign = ''
+	local c
+	n, c = n:gsub('^-', '')
+	if c &gt; 0 then sign = '-' end
+
+	-- replace any full-width Unicode characters in the string with their ASCII equivalents
+	n = normalizeFullWidthChars(n)
+
+	-- handle scientific notation with whitespace around the 'e' e.g. '5 e7'
+	n = n:gsub('%s*[eE]%s*', 'e')
+
+	from = from or 10
+	local num = tonumber(n, from)
+	base = tonumber(base)
+	precision = tonumber(precision)
+	width = tonumber(width)
+
+	if not num or not base then return default or n end
+
+	local i, f = math.modf(num)
+
+	local t = {}
+	repeat
+		local d = (i % base) + 1
+		i = math.floor(i / base)
+		table.insert(t, 1, digits:sub(d, d))
+	until i == 0
+	while #t &lt; (width or 0) do
+		table.insert(t, 1, '0')
+	end
+	local intPart = table.concat(t, '')
+
+	-- compute the fractional part
+	local tf = {}
+	while f &gt; 0 and #tf &lt; (precision or 10) do
+		f = f * base
+		i, f = math.modf(f)
+		table.insert(tf, digits:sub(i + 1, i + 1))
+	end
+
+	-- add trailing zeros if needed
+	if precision and #tf &lt; precision then
+		for i = 1, precision - #tf do
+			table.insert(tf, '0')
+		end
+	end
+
+	local fracPart = table.concat(tf, '')
+
+	-- remove trailing zeros if not needed
+	if not precision then
+		fracPart = fracPart:gsub('0*$', '')
+	end
+
+	-- add the radix point if needed
+	if #fracPart &gt; 0 then
+		fracPart = '.' .. fracPart
+	end
+
+	return (prefix or '') .. sign .. intPart .. fracPart .. (suffix or '')
+end
+
+function p.convert(frame)
+	-- Allow for invocation via #invoke or directly from another module
+	local args
+	if frame == mw.getCurrentFrame() then
+		args = frame.args
+	else
+		args = frame
+	end
+
+	local n = args.n
+	local base = args.base
+	local from = args.from
+	local precision = args.precision
+	local width = args.width
+	local default = args.default
+	local prefix = args.prefix
+	local suffix = args.suffix
+	return _convert(n, base, from, precision, width, default, prefix, suffix)
+end
+
+setmetatable(p, {
+	__index = function(t, k)
+		local from, base = k:match('^([0-9]+)to([0-9]+)$')
+		if not from then return nil end
+		return function(frame)
+			local args = frame.args
+			return _convert(mw.text.trim(args[1]), base, from, args.precision, args.width,
+				args.default, args.prefix, args.suffix)
+		end
+	end
+})
+
+return p
+
+[[Category:mass bump]]</text>
+      <sha1>iz32nvno0y0e3guweaihxmv545062hl</sha1>
+    </revision>
+    <revision>
+      <id>968464</id>
+      <parentid>968463</parentid>
+      <timestamp>2025-02-17T05:26:01Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <origin>968464</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2962" sha1="sdgwvk77y1k9ed6hsupe9uzjc2j6i83" xml:space="preserve">local p = {}
+
+local digits = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+local function normalizeFullWidthChars(s)
+	return mw.ustring.gsub(s, '[！-～]', function(s)
+		return mw.ustring.char(mw.ustring.codepoint(s, 1) - 0xFEE0)
+	end)
+end
+
+local function _convert(n, base, from, precision, width, default, prefix, suffix)
+	n = tostring(n)
+
+	-- strip off any leading '0x' (unless x is a valid digit in the input base)
+	from = tonumber(from)
+	if not from or from &lt; 34 then
+		local c
+		n, c = n:gsub('^(-?)0[Xx]', '%1')
+		if c &gt; 0 and not from then from = 16 end
+	end
+
+	-- check for a negative sign. Do this while the input is still in string form,
+	-- because tonumber doesn't support negative numbers in non-10 bases.
+	local sign = ''
+	local c
+	n, c = n:gsub('^-', '')
+	if c &gt; 0 then sign = '-' end
+
+	-- replace any full-width Unicode characters in the string with their ASCII equivalents
+	n = normalizeFullWidthChars(n)
+
+	-- handle scientific notation with whitespace around the 'e' e.g. '5 e7'
+	n = n:gsub('%s*[eE]%s*', 'e')
+
+	from = from or 10
+	local num = tonumber(n, from)
+	base = tonumber(base)
+	precision = tonumber(precision)
+	width = tonumber(width)
+
+	if not num or not base then return default or n end
+
+	local i, f = math.modf(num)
+
+	local t = {}
+	repeat
+		local d = (i % base) + 1
+		i = math.floor(i / base)
+		table.insert(t, 1, digits:sub(d, d))
+	until i == 0
+	while #t &lt; (width or 0) do
+		table.insert(t, 1, '0')
+	end
+	local intPart = table.concat(t, '')
+
+	-- compute the fractional part
+	local tf = {}
+	while f &gt; 0 and #tf &lt; (precision or 10) do
+		f = f * base
+		i, f = math.modf(f)
+		table.insert(tf, digits:sub(i + 1, i + 1))
+	end
+
+	-- add trailing zeros if needed
+	if precision and #tf &lt; precision then
+		for i = 1, precision - #tf do
+			table.insert(tf, '0')
+		end
+	end
+
+	local fracPart = table.concat(tf, '')
+
+	-- remove trailing zeros if not needed
+	if not precision then
+		fracPart = fracPart:gsub('0*$', '')
+	end
+
+	-- add the radix point if needed
+	if #fracPart &gt; 0 then
+		fracPart = '.' .. fracPart
+	end
+
+	return (prefix or '') .. sign .. intPart .. fracPart .. (suffix or '')
+end
+
+function p.convert(frame)
+	-- Allow for invocation via #invoke or directly from another module
+	local args
+	if frame == mw.getCurrentFrame() then
+		args = frame.args
+	else
+		args = frame
+	end
+
+	local n = args.n
+	local base = args.base
+	local from = args.from
+	local precision = args.precision
+	local width = args.width
+	local default = args.default
+	local prefix = args.prefix
+	local suffix = args.suffix
+	return _convert(n, base, from, precision, width, default, prefix, suffix)
+end
+
+setmetatable(p, {
+	__index = function(t, k)
+		local from, base = k:match('^([0-9]+)to([0-9]+)$')
+		if not from then return nil end
+		return function(frame)
+			local args = frame.args
+			return _convert(mw.text.trim(args[1]), base, from, args.precision, args.width,
+				args.default, args.prefix, args.suffix)
+		end
+	end
+})
+
+return p
+
+[[Category:Automatic wikipedia redirects]]</text>
+      <sha1>sdgwvk77y1k9ed6hsupe9uzjc2j6i83</sha1>
+    </revision>
+    <revision>
+      <id>968465</id>
+      <parentid>968464</parentid>
+      <timestamp>2025-02-17T05:34:07Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <origin>968465</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2918" sha1="pittardebat8getcpz6hwvf6a7wspqr" xml:space="preserve">local p = {}
+
+local digits = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+local function normalizeFullWidthChars(s)
+	return mw.ustring.gsub(s, '[！-～]', function(s)
+		return mw.ustring.char(mw.ustring.codepoint(s, 1) - 0xFEE0)
+	end)
+end
+
+local function _convert(n, base, from, precision, width, default, prefix, suffix)
+	n = tostring(n)
+
+	-- strip off any leading '0x' (unless x is a valid digit in the input base)
+	from = tonumber(from)
+	if not from or from &lt; 34 then
+		local c
+		n, c = n:gsub('^(-?)0[Xx]', '%1')
+		if c &gt; 0 and not from then from = 16 end
+	end
+
+	-- check for a negative sign. Do this while the input is still in string form,
+	-- because tonumber doesn't support negative numbers in non-10 bases.
+	local sign = ''
+	local c
+	n, c = n:gsub('^-', '')
+	if c &gt; 0 then sign = '-' end
+
+	-- replace any full-width Unicode characters in the string with their ASCII equivalents
+	n = normalizeFullWidthChars(n)
+
+	-- handle scientific notation with whitespace around the 'e' e.g. '5 e7'
+	n = n:gsub('%s*[eE]%s*', 'e')
+
+	from = from or 10
+	local num = tonumber(n, from)
+	base = tonumber(base)
+	precision = tonumber(precision)
+	width = tonumber(width)
+
+	if not num or not base then return default or n end
+
+	local i, f = math.modf(num)
+
+	local t = {}
+	repeat
+		local d = (i % base) + 1
+		i = math.floor(i / base)
+		table.insert(t, 1, digits:sub(d, d))
+	until i == 0
+	while #t &lt; (width or 0) do
+		table.insert(t, 1, '0')
+	end
+	local intPart = table.concat(t, '')
+
+	-- compute the fractional part
+	local tf = {}
+	while f &gt; 0 and #tf &lt; (precision or 10) do
+		f = f * base
+		i, f = math.modf(f)
+		table.insert(tf, digits:sub(i + 1, i + 1))
+	end
+
+	-- add trailing zeros if needed
+	if precision and #tf &lt; precision then
+		for i = 1, precision - #tf do
+			table.insert(tf, '0')
+		end
+	end
+
+	local fracPart = table.concat(tf, '')
+
+	-- remove trailing zeros if not needed
+	if not precision then
+		fracPart = fracPart:gsub('0*$', '')
+	end
+
+	-- add the radix point if needed
+	if #fracPart &gt; 0 then
+		fracPart = '.' .. fracPart
+	end
+
+	return (prefix or '') .. sign .. intPart .. fracPart .. (suffix or '')
+end
+
+function p.convert(frame)
+	-- Allow for invocation via #invoke or directly from another module
+	local args
+	if frame == mw.getCurrentFrame() then
+		args = frame.args
+	else
+		args = frame
+	end
+
+	local n = args.n
+	local base = args.base
+	local from = args.from
+	local precision = args.precision
+	local width = args.width
+	local default = args.default
+	local prefix = args.prefix
+	local suffix = args.suffix
+	return _convert(n, base, from, precision, width, default, prefix, suffix)
+end
+
+setmetatable(p, {
+	__index = function(t, k)
+		local from, base = k:match('^([0-9]+)to([0-9]+)$')
+		if not from then return nil end
+		return function(frame)
+			local args = frame.args
+			return _convert(mw.text.trim(args[1]), base, from, args.precision, args.width,
+				args.default, args.prefix, args.suffix)
+		end
+	end
+})
+
+return p</text>
+      <sha1>pittardebat8getcpz6hwvf6a7wspqr</sha1>
+    </revision>
+    <revision>
+      <id>968466</id>
+      <parentid>968465</parentid>
+      <timestamp>2025-02-18T22:59:26Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>linking to namespace</comment>
+      <origin>968466</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2983" sha1="s8zfpm4kebnhlrzqi3wh2yr3lx3rv3d" xml:space="preserve">local p = {}
+
+local digits = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+local function normalizeFullWidthChars(s)
+	return mw.ustring.gsub(s, '[！-～]', function(s)
+		return mw.ustring.char(mw.ustring.codepoint(s, 1) - 0xFEE0)
+	end)
+end
+
+local function _convert(n, base, from, precision, width, default, prefix, suffix)
+	n = tostring(n)
+
+	-- strip off any leading '0x' (unless x is a valid digit in the input base)
+	from = tonumber(from)
+	if not from or from &lt; 34 then
+		local c
+		n, c = n:gsub('^(-?)0[Xx]', '%1')
+		if c &gt; 0 and not from then from = 16 end
+	end
+
+	-- check for a negative sign. Do this while the input is still in string form,
+	-- because tonumber doesn't support negative numbers in non-10 bases.
+	local sign = ''
+	local c
+	n, c = n:gsub('^-', '')
+	if c &gt; 0 then sign = '-' end
+
+	-- replace any full-width Unicode characters in the string with their ASCII equivalents
+	n = normalizeFullWidthChars(n)
+
+	-- handle scientific notation with whitespace around the 'e' e.g. '5 e7'
+	n = n:gsub('%s*[eE]%s*', 'e')
+
+	from = from or 10
+	local num = tonumber(n, from)
+	base = tonumber(base)
+	precision = tonumber(precision)
+	width = tonumber(width)
+
+	if not num or not base then return default or n end
+
+	local i, f = math.modf(num)
+
+	local t = {}
+	repeat
+		local d = (i % base) + 1
+		i = math.floor(i / base)
+		table.insert(t, 1, digits:sub(d, d))
+	until i == 0
+	while #t &lt; (width or 0) do
+		table.insert(t, 1, '0')
+	end
+	local intPart = table.concat(t, '')
+
+	-- compute the fractional part
+	local tf = {}
+	while f &gt; 0 and #tf &lt; (precision or 10) do
+		f = f * base
+		i, f = math.modf(f)
+		table.insert(tf, digits:sub(i + 1, i + 1))
+	end
+
+	-- add trailing zeros if needed
+	if precision and #tf &lt; precision then
+		for i = 1, precision - #tf do
+			table.insert(tf, '0')
+		end
+	end
+
+	local fracPart = table.concat(tf, '')
+
+	-- remove trailing zeros if not needed
+	if not precision then
+		fracPart = fracPart:gsub('0*$', '')
+	end
+
+	-- add the radix point if needed
+	if #fracPart &gt; 0 then
+		fracPart = '.' .. fracPart
+	end
+
+	return (prefix or '') .. sign .. intPart .. fracPart .. (suffix or '')
+end
+
+function p.convert(frame)
+	-- Allow for invocation via #invoke or directly from another module
+	local args
+	if frame == mw.getCurrentFrame() then
+		args = frame.args
+	else
+		args = frame
+	end
+
+	local n = args.n
+	local base = args.base
+	local from = args.from
+	local precision = args.precision
+	local width = args.width
+	local default = args.default
+	local prefix = args.prefix
+	local suffix = args.suffix
+	return _convert(n, base, from, precision, width, default, prefix, suffix)
+end
+
+setmetatable(p, {
+	__index = function(t, k)
+		local from, base = k:match('^([0-9]+)to([0-9]+)$')
+		if not from then return nil end
+		return function(frame)
+			local args = frame.args
+			return _convert(mw.text.trim(args[1]), base, from, args.precision, args.width,
+				args.default, args.prefix, args.suffix)
+		end
+	end
+})
+
+return p[[Category:Automatic wikipedia redirects in {{subst:NAMESPACE}}]]</text>
+      <sha1>s8zfpm4kebnhlrzqi3wh2yr3lx3rv3d</sha1>
+    </revision>
+    <revision>
+      <id>968467</id>
+      <parentid>968466</parentid>
+      <timestamp>2025-02-19T01:00:52Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <origin>968467</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3059" sha1="2wxr9gvaw4zqv8cha1ldgf0v2qmtxqv" xml:space="preserve">local p = {}
+
+local digits = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+local function normalizeFullWidthChars(s)
+	return mw.ustring.gsub(s, '[！-～]', function(s)
+		return mw.ustring.char(mw.ustring.codepoint(s, 1) - 0xFEE0)
+	end)
+end
+
+local function _convert(n, base, from, precision, width, default, prefix, suffix)
+	n = tostring(n)
+
+	-- strip off any leading '0x' (unless x is a valid digit in the input base)
+	from = tonumber(from)
+	if not from or from &lt; 34 then
+		local c
+		n, c = n:gsub('^(-?)0[Xx]', '%1')
+		if c &gt; 0 and not from then from = 16 end
+	end
+
+	-- check for a negative sign. Do this while the input is still in string form,
+	-- because tonumber doesn't support negative numbers in non-10 bases.
+	local sign = ''
+	local c
+	n, c = n:gsub('^-', '')
+	if c &gt; 0 then sign = '-' end
+
+	-- replace any full-width Unicode characters in the string with their ASCII equivalents
+	n = normalizeFullWidthChars(n)
+
+	-- handle scientific notation with whitespace around the 'e' e.g. '5 e7'
+	n = n:gsub('%s*[eE]%s*', 'e')
+
+	from = from or 10
+	local num = tonumber(n, from)
+	base = tonumber(base)
+	precision = tonumber(precision)
+	width = tonumber(width)
+
+	if not num or not base then return default or n end
+
+	local i, f = math.modf(num)
+
+	local t = {}
+	repeat
+		local d = (i % base) + 1
+		i = math.floor(i / base)
+		table.insert(t, 1, digits:sub(d, d))
+	until i == 0
+	while #t &lt; (width or 0) do
+		table.insert(t, 1, '0')
+	end
+	local intPart = table.concat(t, '')
+
+	-- compute the fractional part
+	local tf = {}
+	while f &gt; 0 and #tf &lt; (precision or 10) do
+		f = f * base
+		i, f = math.modf(f)
+		table.insert(tf, digits:sub(i + 1, i + 1))
+	end
+
+	-- add trailing zeros if needed
+	if precision and #tf &lt; precision then
+		for i = 1, precision - #tf do
+			table.insert(tf, '0')
+		end
+	end
+
+	local fracPart = table.concat(tf, '')
+
+	-- remove trailing zeros if not needed
+	if not precision then
+		fracPart = fracPart:gsub('0*$', '')
+	end
+
+	-- add the radix point if needed
+	if #fracPart &gt; 0 then
+		fracPart = '.' .. fracPart
+	end
+
+	return (prefix or '') .. sign .. intPart .. fracPart .. (suffix or '')
+end
+
+function p.convert(frame)
+	-- Allow for invocation via #invoke or directly from another module
+	local args
+	if frame == mw.getCurrentFrame() then
+		args = frame.args
+	else
+		args = frame
+	end
+
+	local n = args.n
+	local base = args.base
+	local from = args.from
+	local precision = args.precision
+	local width = args.width
+	local default = args.default
+	local prefix = args.prefix
+	local suffix = args.suffix
+	return _convert(n, base, from, precision, width, default, prefix, suffix)
+end
+
+setmetatable(p, {
+	__index = function(t, k)
+		local from, base = k:match('^([0-9]+)to([0-9]+)$')
+		if not from then return nil end
+		return function(frame)
+			local args = frame.args
+			return _convert(mw.text.trim(args[1]), base, from, args.precision, args.width,
+				args.default, args.prefix, args.suffix)
+		end
+	end
+})
+
+return p[[Category:Automatic wikipedia redirects in {{subst:NAMESPACE}}]]
+[[Category:Automatic wikipedia redirects in namespace {{subst:NAMESPACE}}]]</text>
+      <sha1>2wxr9gvaw4zqv8cha1ldgf0v2qmtxqv</sha1>
+    </revision>
+    <revision>
+      <id>968468</id>
+      <parentid>968467</parentid>
+      <timestamp>2025-03-11T03:41:25Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Copying from [[Category:Automatic wikipedia redirects]] to [[Category:qq]][[sn:{{subst:PAGENAME}}]][[Category:qq]] using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>968468</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3115" sha1="9nmwnewkhgjunef1rmey8xftaqbleww" xml:space="preserve">local p = {}
+
+local digits = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+local function normalizeFullWidthChars(s)
+	return mw.ustring.gsub(s, '[！-～]', function(s)
+		return mw.ustring.char(mw.ustring.codepoint(s, 1) - 0xFEE0)
+	end)
+end
+
+local function _convert(n, base, from, precision, width, default, prefix, suffix)
+	n = tostring(n)
+
+	-- strip off any leading '0x' (unless x is a valid digit in the input base)
+	from = tonumber(from)
+	if not from or from &lt; 34 then
+		local c
+		n, c = n:gsub('^(-?)0[Xx]', '%1')
+		if c &gt; 0 and not from then from = 16 end
+	end
+
+	-- check for a negative sign. Do this while the input is still in string form,
+	-- because tonumber doesn't support negative numbers in non-10 bases.
+	local sign = ''
+	local c
+	n, c = n:gsub('^-', '')
+	if c &gt; 0 then sign = '-' end
+
+	-- replace any full-width Unicode characters in the string with their ASCII equivalents
+	n = normalizeFullWidthChars(n)
+
+	-- handle scientific notation with whitespace around the 'e' e.g. '5 e7'
+	n = n:gsub('%s*[eE]%s*', 'e')
+
+	from = from or 10
+	local num = tonumber(n, from)
+	base = tonumber(base)
+	precision = tonumber(precision)
+	width = tonumber(width)
+
+	if not num or not base then return default or n end
+
+	local i, f = math.modf(num)
+
+	local t = {}
+	repeat
+		local d = (i % base) + 1
+		i = math.floor(i / base)
+		table.insert(t, 1, digits:sub(d, d))
+	until i == 0
+	while #t &lt; (width or 0) do
+		table.insert(t, 1, '0')
+	end
+	local intPart = table.concat(t, '')
+
+	-- compute the fractional part
+	local tf = {}
+	while f &gt; 0 and #tf &lt; (precision or 10) do
+		f = f * base
+		i, f = math.modf(f)
+		table.insert(tf, digits:sub(i + 1, i + 1))
+	end
+
+	-- add trailing zeros if needed
+	if precision and #tf &lt; precision then
+		for i = 1, precision - #tf do
+			table.insert(tf, '0')
+		end
+	end
+
+	local fracPart = table.concat(tf, '')
+
+	-- remove trailing zeros if not needed
+	if not precision then
+		fracPart = fracPart:gsub('0*$', '')
+	end
+
+	-- add the radix point if needed
+	if #fracPart &gt; 0 then
+		fracPart = '.' .. fracPart
+	end
+
+	return (prefix or '') .. sign .. intPart .. fracPart .. (suffix or '')
+end
+
+function p.convert(frame)
+	-- Allow for invocation via #invoke or directly from another module
+	local args
+	if frame == mw.getCurrentFrame() then
+		args = frame.args
+	else
+		args = frame
+	end
+
+	local n = args.n
+	local base = args.base
+	local from = args.from
+	local precision = args.precision
+	local width = args.width
+	local default = args.default
+	local prefix = args.prefix
+	local suffix = args.suffix
+	return _convert(n, base, from, precision, width, default, prefix, suffix)
+end
+
+setmetatable(p, {
+	__index = function(t, k)
+		local from, base = k:match('^([0-9]+)to([0-9]+)$')
+		if not from then return nil end
+		return function(frame)
+			local args = frame.args
+			return _convert(mw.text.trim(args[1]), base, from, args.precision, args.width,
+				args.default, args.prefix, args.suffix)
+		end
+	end
+})
+
+return p[[Category:Automatic wikipedia redirects in {{subst:NAMESPACE}}]]
+[[Category:Automatic wikipedia redirects in namespace {{subst:NAMESPACE}}]]
+[[Category:qq]][[sn:{{subst:PAGENAME}}]][[Category:qq]]</text>
+      <sha1>9nmwnewkhgjunef1rmey8xftaqbleww</sha1>
+    </revision>
+    <revision>
+      <id>968469</id>
+      <parentid>968468</parentid>
+      <timestamp>2025-03-11T22:41:04Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Auto generating page. date placed far in the past so it is attributed to Immanuelle and FireflyBot sends them messages if it is ever imported to Wikipedia.</comment>
+      <origin>968469</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="177" sha1="kktn7fclzzt08q7dr6jrnuk1xnbswgf" xml:space="preserve">#redirect[[en:Module:BaseConvert]]
+&lt;includeonly&gt;[[Category:Erroneous transclusions of Module:BaseConvert]]&lt;/includeonly&gt;
+&lt;noinclude&gt;[[Category:Wikipedia overwrites]]&lt;/noinclude&gt;</text>
+      <sha1>kktn7fclzzt08q7dr6jrnuk1xnbswgf</sha1>
+    </revision>
+    <revision>
+      <id>9176</id>
+      <timestamp>2025-05-20T08:08:23Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Bot: remove deleted category Wikipedia overwrites</comment>
+      <origin>9176</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="144" sha1="8skpzl5r7ud4dencwrwpwai2o9oyt90" xml:space="preserve">#redirect[[en:Module:BaseConvert]]
+&lt;includeonly&gt;[[Category:Erroneous transclusions of Module:BaseConvert]]&lt;/includeonly&gt;
+&lt;noinclude&gt;&lt;/noinclude&gt;</text>
+      <sha1>8skpzl5r7ud4dencwrwpwai2o9oyt90</sha1>
+    </revision>
+    <revision>
+      <id>3303869</id>
+      <parentid>9176</parentid>
+      <timestamp>2026-02-26T20:11:09Z</timestamp>
+      <contributor>
+        <username>en&gt;Johnuniq</username>
+        <id>0</id>
+      </contributor>
+      <comment>update from [[Module:BaseConvert/sandbox]] per talk; this removes globals</comment>
+      <origin>3303869</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2918" sha1="pittardebat8getcpz6hwvf6a7wspqr" xml:space="preserve">local p = {}
+
+local digits = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+local function normalizeFullWidthChars(s)
+	return mw.ustring.gsub(s, '[！-～]', function(s)
+		return mw.ustring.char(mw.ustring.codepoint(s, 1) - 0xFEE0)
+	end)
+end
+
+local function _convert(n, base, from, precision, width, default, prefix, suffix)
+	n = tostring(n)
+
+	-- strip off any leading '0x' (unless x is a valid digit in the input base)
+	from = tonumber(from)
+	if not from or from &lt; 34 then
+		local c
+		n, c = n:gsub('^(-?)0[Xx]', '%1')
+		if c &gt; 0 and not from then from = 16 end
+	end
+
+	-- check for a negative sign. Do this while the input is still in string form,
+	-- because tonumber doesn't support negative numbers in non-10 bases.
+	local sign = ''
+	local c
+	n, c = n:gsub('^-', '')
+	if c &gt; 0 then sign = '-' end
+
+	-- replace any full-width Unicode characters in the string with their ASCII equivalents
+	n = normalizeFullWidthChars(n)
+
+	-- handle scientific notation with whitespace around the 'e' e.g. '5 e7'
+	n = n:gsub('%s*[eE]%s*', 'e')
+
+	from = from or 10
+	local num = tonumber(n, from)
+	base = tonumber(base)
+	precision = tonumber(precision)
+	width = tonumber(width)
+
+	if not num or not base then return default or n end
+
+	local i, f = math.modf(num)
+
+	local t = {}
+	repeat
+		local d = (i % base) + 1
+		i = math.floor(i / base)
+		table.insert(t, 1, digits:sub(d, d))
+	until i == 0
+	while #t &lt; (width or 0) do
+		table.insert(t, 1, '0')
+	end
+	local intPart = table.concat(t, '')
+
+	-- compute the fractional part
+	local tf = {}
+	while f &gt; 0 and #tf &lt; (precision or 10) do
+		f = f * base
+		i, f = math.modf(f)
+		table.insert(tf, digits:sub(i + 1, i + 1))
+	end
+
+	-- add trailing zeros if needed
+	if precision and #tf &lt; precision then
+		for i = 1, precision - #tf do
+			table.insert(tf, '0')
+		end
+	end
+
+	local fracPart = table.concat(tf, '')
+
+	-- remove trailing zeros if not needed
+	if not precision then
+		fracPart = fracPart:gsub('0*$', '')
+	end
+
+	-- add the radix point if needed
+	if #fracPart &gt; 0 then
+		fracPart = '.' .. fracPart
+	end
+
+	return (prefix or '') .. sign .. intPart .. fracPart .. (suffix or '')
+end
+
+function p.convert(frame)
+	-- Allow for invocation via #invoke or directly from another module
+	local args
+	if frame == mw.getCurrentFrame() then
+		args = frame.args
+	else
+		args = frame
+	end
+
+	local n = args.n
+	local base = args.base
+	local from = args.from
+	local precision = args.precision
+	local width = args.width
+	local default = args.default
+	local prefix = args.prefix
+	local suffix = args.suffix
+	return _convert(n, base, from, precision, width, default, prefix, suffix)
+end
+
+setmetatable(p, {
+	__index = function(t, k)
+		local from, base = k:match('^([0-9]+)to([0-9]+)$')
+		if not from then return nil end
+		return function(frame)
+			local args = frame.args
+			return _convert(mw.text.trim(args[1]), base, from, args.precision, args.width,
+				args.default, args.prefix, args.suffix)
+		end
+	end
+})
+
+return p</text>
+      <sha1>pittardebat8getcpz6hwvf6a7wspqr</sha1>
+    </revision>
+    <revision>
+      <id>3303870</id>
+      <parentid>3303869</parentid>
+      <timestamp>2026-02-26T20:11:09Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: reimporting these to fix older errors</comment>
+      <origin>3303869</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2918" sha1="pittardebat8getcpz6hwvf6a7wspqr" xml:space="preserve">local p = {}
+
+local digits = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+local function normalizeFullWidthChars(s)
+	return mw.ustring.gsub(s, '[！-～]', function(s)
+		return mw.ustring.char(mw.ustring.codepoint(s, 1) - 0xFEE0)
+	end)
+end
+
+local function _convert(n, base, from, precision, width, default, prefix, suffix)
+	n = tostring(n)
+
+	-- strip off any leading '0x' (unless x is a valid digit in the input base)
+	from = tonumber(from)
+	if not from or from &lt; 34 then
+		local c
+		n, c = n:gsub('^(-?)0[Xx]', '%1')
+		if c &gt; 0 and not from then from = 16 end
+	end
+
+	-- check for a negative sign. Do this while the input is still in string form,
+	-- because tonumber doesn't support negative numbers in non-10 bases.
+	local sign = ''
+	local c
+	n, c = n:gsub('^-', '')
+	if c &gt; 0 then sign = '-' end
+
+	-- replace any full-width Unicode characters in the string with their ASCII equivalents
+	n = normalizeFullWidthChars(n)
+
+	-- handle scientific notation with whitespace around the 'e' e.g. '5 e7'
+	n = n:gsub('%s*[eE]%s*', 'e')
+
+	from = from or 10
+	local num = tonumber(n, from)
+	base = tonumber(base)
+	precision = tonumber(precision)
+	width = tonumber(width)
+
+	if not num or not base then return default or n end
+
+	local i, f = math.modf(num)
+
+	local t = {}
+	repeat
+		local d = (i % base) + 1
+		i = math.floor(i / base)
+		table.insert(t, 1, digits:sub(d, d))
+	until i == 0
+	while #t &lt; (width or 0) do
+		table.insert(t, 1, '0')
+	end
+	local intPart = table.concat(t, '')
+
+	-- compute the fractional part
+	local tf = {}
+	while f &gt; 0 and #tf &lt; (precision or 10) do
+		f = f * base
+		i, f = math.modf(f)
+		table.insert(tf, digits:sub(i + 1, i + 1))
+	end
+
+	-- add trailing zeros if needed
+	if precision and #tf &lt; precision then
+		for i = 1, precision - #tf do
+			table.insert(tf, '0')
+		end
+	end
+
+	local fracPart = table.concat(tf, '')
+
+	-- remove trailing zeros if not needed
+	if not precision then
+		fracPart = fracPart:gsub('0*$', '')
+	end
+
+	-- add the radix point if needed
+	if #fracPart &gt; 0 then
+		fracPart = '.' .. fracPart
+	end
+
+	return (prefix or '') .. sign .. intPart .. fracPart .. (suffix or '')
+end
+
+function p.convert(frame)
+	-- Allow for invocation via #invoke or directly from another module
+	local args
+	if frame == mw.getCurrentFrame() then
+		args = frame.args
+	else
+		args = frame
+	end
+
+	local n = args.n
+	local base = args.base
+	local from = args.from
+	local precision = args.precision
+	local width = args.width
+	local default = args.default
+	local prefix = args.prefix
+	local suffix = args.suffix
+	return _convert(n, base, from, precision, width, default, prefix, suffix)
+end
+
+setmetatable(p, {
+	__index = function(t, k)
+		local from, base = k:match('^([0-9]+)to([0-9]+)$')
+		if not from then return nil end
+		return function(frame)
+			local args = frame.args
+			return _convert(mw.text.trim(args[1]), base, from, args.precision, args.width,
+				args.default, args.prefix, args.suffix)
+		end
+	end
+})
+
+return p</text>
+      <sha1>pittardebat8getcpz6hwvf6a7wspqr</sha1>
+    </revision>
+    <revision>
+      <id>3407981</id>
+      <parentid>3303870</parentid>
+      <timestamp>2026-03-12T20:27:25Z</timestamp>
+      <contributor>
+        <username>en&gt;Johnuniq</username>
+        <id>0</id>
+      </contributor>
+      <comment>update from [[Module:BaseConvert/sandbox]] per talk; this removes globals</comment>
+      <origin>3303869</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2918" sha1="pittardebat8getcpz6hwvf6a7wspqr" xml:space="preserve">local p = {}
+
+local digits = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+local function normalizeFullWidthChars(s)
+	return mw.ustring.gsub(s, '[！-～]', function(s)
+		return mw.ustring.char(mw.ustring.codepoint(s, 1) - 0xFEE0)
+	end)
+end
+
+local function _convert(n, base, from, precision, width, default, prefix, suffix)
+	n = tostring(n)
+
+	-- strip off any leading '0x' (unless x is a valid digit in the input base)
+	from = tonumber(from)
+	if not from or from &lt; 34 then
+		local c
+		n, c = n:gsub('^(-?)0[Xx]', '%1')
+		if c &gt; 0 and not from then from = 16 end
+	end
+
+	-- check for a negative sign. Do this while the input is still in string form,
+	-- because tonumber doesn't support negative numbers in non-10 bases.
+	local sign = ''
+	local c
+	n, c = n:gsub('^-', '')
+	if c &gt; 0 then sign = '-' end
+
+	-- replace any full-width Unicode characters in the string with their ASCII equivalents
+	n = normalizeFullWidthChars(n)
+
+	-- handle scientific notation with whitespace around the 'e' e.g. '5 e7'
+	n = n:gsub('%s*[eE]%s*', 'e')
+
+	from = from or 10
+	local num = tonumber(n, from)
+	base = tonumber(base)
+	precision = tonumber(precision)
+	width = tonumber(width)
+
+	if not num or not base then return default or n end
+
+	local i, f = math.modf(num)
+
+	local t = {}
+	repeat
+		local d = (i % base) + 1
+		i = math.floor(i / base)
+		table.insert(t, 1, digits:sub(d, d))
+	until i == 0
+	while #t &lt; (width or 0) do
+		table.insert(t, 1, '0')
+	end
+	local intPart = table.concat(t, '')
+
+	-- compute the fractional part
+	local tf = {}
+	while f &gt; 0 and #tf &lt; (precision or 10) do
+		f = f * base
+		i, f = math.modf(f)
+		table.insert(tf, digits:sub(i + 1, i + 1))
+	end
+
+	-- add trailing zeros if needed
+	if precision and #tf &lt; precision then
+		for i = 1, precision - #tf do
+			table.insert(tf, '0')
+		end
+	end
+
+	local fracPart = table.concat(tf, '')
+
+	-- remove trailing zeros if not needed
+	if not precision then
+		fracPart = fracPart:gsub('0*$', '')
+	end
+
+	-- add the radix point if needed
+	if #fracPart &gt; 0 then
+		fracPart = '.' .. fracPart
+	end
+
+	return (prefix or '') .. sign .. intPart .. fracPart .. (suffix or '')
+end
+
+function p.convert(frame)
+	-- Allow for invocation via #invoke or directly from another module
+	local args
+	if frame == mw.getCurrentFrame() then
+		args = frame.args
+	else
+		args = frame
+	end
+
+	local n = args.n
+	local base = args.base
+	local from = args.from
+	local precision = args.precision
+	local width = args.width
+	local default = args.default
+	local prefix = args.prefix
+	local suffix = args.suffix
+	return _convert(n, base, from, precision, width, default, prefix, suffix)
+end
+
+setmetatable(p, {
+	__index = function(t, k)
+		local from, base = k:match('^([0-9]+)to([0-9]+)$')
+		if not from then return nil end
+		return function(frame)
+			local args = frame.args
+			return _convert(mw.text.trim(args[1]), base, from, args.precision, args.width,
+				args.default, args.prefix, args.suffix)
+		end
+	end
+})
+
+return p</text>
+      <sha1>pittardebat8getcpz6hwvf6a7wspqr</sha1>
+    </revision>
+    <revision>
+      <id>3407982</id>
+      <parentid>3407981</parentid>
+      <timestamp>2026-03-12T20:27:25Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3303869</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2918" sha1="pittardebat8getcpz6hwvf6a7wspqr" xml:space="preserve">local p = {}
+
+local digits = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+local function normalizeFullWidthChars(s)
+	return mw.ustring.gsub(s, '[！-～]', function(s)
+		return mw.ustring.char(mw.ustring.codepoint(s, 1) - 0xFEE0)
+	end)
+end
+
+local function _convert(n, base, from, precision, width, default, prefix, suffix)
+	n = tostring(n)
+
+	-- strip off any leading '0x' (unless x is a valid digit in the input base)
+	from = tonumber(from)
+	if not from or from &lt; 34 then
+		local c
+		n, c = n:gsub('^(-?)0[Xx]', '%1')
+		if c &gt; 0 and not from then from = 16 end
+	end
+
+	-- check for a negative sign. Do this while the input is still in string form,
+	-- because tonumber doesn't support negative numbers in non-10 bases.
+	local sign = ''
+	local c
+	n, c = n:gsub('^-', '')
+	if c &gt; 0 then sign = '-' end
+
+	-- replace any full-width Unicode characters in the string with their ASCII equivalents
+	n = normalizeFullWidthChars(n)
+
+	-- handle scientific notation with whitespace around the 'e' e.g. '5 e7'
+	n = n:gsub('%s*[eE]%s*', 'e')
+
+	from = from or 10
+	local num = tonumber(n, from)
+	base = tonumber(base)
+	precision = tonumber(precision)
+	width = tonumber(width)
+
+	if not num or not base then return default or n end
+
+	local i, f = math.modf(num)
+
+	local t = {}
+	repeat
+		local d = (i % base) + 1
+		i = math.floor(i / base)
+		table.insert(t, 1, digits:sub(d, d))
+	until i == 0
+	while #t &lt; (width or 0) do
+		table.insert(t, 1, '0')
+	end
+	local intPart = table.concat(t, '')
+
+	-- compute the fractional part
+	local tf = {}
+	while f &gt; 0 and #tf &lt; (precision or 10) do
+		f = f * base
+		i, f = math.modf(f)
+		table.insert(tf, digits:sub(i + 1, i + 1))
+	end
+
+	-- add trailing zeros if needed
+	if precision and #tf &lt; precision then
+		for i = 1, precision - #tf do
+			table.insert(tf, '0')
+		end
+	end
+
+	local fracPart = table.concat(tf, '')
+
+	-- remove trailing zeros if not needed
+	if not precision then
+		fracPart = fracPart:gsub('0*$', '')
+	end
+
+	-- add the radix point if needed
+	if #fracPart &gt; 0 then
+		fracPart = '.' .. fracPart
+	end
+
+	return (prefix or '') .. sign .. intPart .. fracPart .. (suffix or '')
+end
+
+function p.convert(frame)
+	-- Allow for invocation via #invoke or directly from another module
+	local args
+	if frame == mw.getCurrentFrame() then
+		args = frame.args
+	else
+		args = frame
+	end
+
+	local n = args.n
+	local base = args.base
+	local from = args.from
+	local precision = args.precision
+	local width = args.width
+	local default = args.default
+	local prefix = args.prefix
+	local suffix = args.suffix
+	return _convert(n, base, from, precision, width, default, prefix, suffix)
+end
+
+setmetatable(p, {
+	__index = function(t, k)
+		local from, base = k:match('^([0-9]+)to([0-9]+)$')
+		if not from then return nil end
+		return function(frame)
+			local args = frame.args
+			return _convert(mw.text.trim(args[1]), base, from, args.precision, args.width,
+				args.default, args.prefix, args.suffix)
+		end
+	end
+})
+
+return p</text>
+      <sha1>pittardebat8getcpz6hwvf6a7wspqr</sha1>
+    </revision>
+    <revision>
+      <id>3562369</id>
+      <parentid>3407982</parentid>
+      <timestamp>2026-03-22T18:48:08Z</timestamp>
+      <contributor>
+        <username>en&gt;Johnuniq</username>
+        <id>0</id>
+      </contributor>
+      <comment>update from [[Module:BaseConvert/sandbox]] per talk; this removes globals</comment>
+      <origin>3303869</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2918" sha1="pittardebat8getcpz6hwvf6a7wspqr" xml:space="preserve">local p = {}
+
+local digits = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+local function normalizeFullWidthChars(s)
+	return mw.ustring.gsub(s, '[！-～]', function(s)
+		return mw.ustring.char(mw.ustring.codepoint(s, 1) - 0xFEE0)
+	end)
+end
+
+local function _convert(n, base, from, precision, width, default, prefix, suffix)
+	n = tostring(n)
+
+	-- strip off any leading '0x' (unless x is a valid digit in the input base)
+	from = tonumber(from)
+	if not from or from &lt; 34 then
+		local c
+		n, c = n:gsub('^(-?)0[Xx]', '%1')
+		if c &gt; 0 and not from then from = 16 end
+	end
+
+	-- check for a negative sign. Do this while the input is still in string form,
+	-- because tonumber doesn't support negative numbers in non-10 bases.
+	local sign = ''
+	local c
+	n, c = n:gsub('^-', '')
+	if c &gt; 0 then sign = '-' end
+
+	-- replace any full-width Unicode characters in the string with their ASCII equivalents
+	n = normalizeFullWidthChars(n)
+
+	-- handle scientific notation with whitespace around the 'e' e.g. '5 e7'
+	n = n:gsub('%s*[eE]%s*', 'e')
+
+	from = from or 10
+	local num = tonumber(n, from)
+	base = tonumber(base)
+	precision = tonumber(precision)
+	width = tonumber(width)
+
+	if not num or not base then return default or n end
+
+	local i, f = math.modf(num)
+
+	local t = {}
+	repeat
+		local d = (i % base) + 1
+		i = math.floor(i / base)
+		table.insert(t, 1, digits:sub(d, d))
+	until i == 0
+	while #t &lt; (width or 0) do
+		table.insert(t, 1, '0')
+	end
+	local intPart = table.concat(t, '')
+
+	-- compute the fractional part
+	local tf = {}
+	while f &gt; 0 and #tf &lt; (precision or 10) do
+		f = f * base
+		i, f = math.modf(f)
+		table.insert(tf, digits:sub(i + 1, i + 1))
+	end
+
+	-- add trailing zeros if needed
+	if precision and #tf &lt; precision then
+		for i = 1, precision - #tf do
+			table.insert(tf, '0')
+		end
+	end
+
+	local fracPart = table.concat(tf, '')
+
+	-- remove trailing zeros if not needed
+	if not precision then
+		fracPart = fracPart:gsub('0*$', '')
+	end
+
+	-- add the radix point if needed
+	if #fracPart &gt; 0 then
+		fracPart = '.' .. fracPart
+	end
+
+	return (prefix or '') .. sign .. intPart .. fracPart .. (suffix or '')
+end
+
+function p.convert(frame)
+	-- Allow for invocation via #invoke or directly from another module
+	local args
+	if frame == mw.getCurrentFrame() then
+		args = frame.args
+	else
+		args = frame
+	end
+
+	local n = args.n
+	local base = args.base
+	local from = args.from
+	local precision = args.precision
+	local width = args.width
+	local default = args.default
+	local prefix = args.prefix
+	local suffix = args.suffix
+	return _convert(n, base, from, precision, width, default, prefix, suffix)
+end
+
+setmetatable(p, {
+	__index = function(t, k)
+		local from, base = k:match('^([0-9]+)to([0-9]+)$')
+		if not from then return nil end
+		return function(frame)
+			local args = frame.args
+			return _convert(mw.text.trim(args[1]), base, from, args.precision, args.width,
+				args.default, args.prefix, args.suffix)
+		end
+	end
+})
+
+return p</text>
+      <sha1>pittardebat8getcpz6hwvf6a7wspqr</sha1>
+    </revision>
+    <revision>
+      <id>3562370</id>
+      <parentid>3562369</parentid>
+      <timestamp>2026-03-22T18:48:08Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3303869</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2918" sha1="pittardebat8getcpz6hwvf6a7wspqr" xml:space="preserve">local p = {}
+
+local digits = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+local function normalizeFullWidthChars(s)
+	return mw.ustring.gsub(s, '[！-～]', function(s)
+		return mw.ustring.char(mw.ustring.codepoint(s, 1) - 0xFEE0)
+	end)
+end
+
+local function _convert(n, base, from, precision, width, default, prefix, suffix)
+	n = tostring(n)
+
+	-- strip off any leading '0x' (unless x is a valid digit in the input base)
+	from = tonumber(from)
+	if not from or from &lt; 34 then
+		local c
+		n, c = n:gsub('^(-?)0[Xx]', '%1')
+		if c &gt; 0 and not from then from = 16 end
+	end
+
+	-- check for a negative sign. Do this while the input is still in string form,
+	-- because tonumber doesn't support negative numbers in non-10 bases.
+	local sign = ''
+	local c
+	n, c = n:gsub('^-', '')
+	if c &gt; 0 then sign = '-' end
+
+	-- replace any full-width Unicode characters in the string with their ASCII equivalents
+	n = normalizeFullWidthChars(n)
+
+	-- handle scientific notation with whitespace around the 'e' e.g. '5 e7'
+	n = n:gsub('%s*[eE]%s*', 'e')
+
+	from = from or 10
+	local num = tonumber(n, from)
+	base = tonumber(base)
+	precision = tonumber(precision)
+	width = tonumber(width)
+
+	if not num or not base then return default or n end
+
+	local i, f = math.modf(num)
+
+	local t = {}
+	repeat
+		local d = (i % base) + 1
+		i = math.floor(i / base)
+		table.insert(t, 1, digits:sub(d, d))
+	until i == 0
+	while #t &lt; (width or 0) do
+		table.insert(t, 1, '0')
+	end
+	local intPart = table.concat(t, '')
+
+	-- compute the fractional part
+	local tf = {}
+	while f &gt; 0 and #tf &lt; (precision or 10) do
+		f = f * base
+		i, f = math.modf(f)
+		table.insert(tf, digits:sub(i + 1, i + 1))
+	end
+
+	-- add trailing zeros if needed
+	if precision and #tf &lt; precision then
+		for i = 1, precision - #tf do
+			table.insert(tf, '0')
+		end
+	end
+
+	local fracPart = table.concat(tf, '')
+
+	-- remove trailing zeros if not needed
+	if not precision then
+		fracPart = fracPart:gsub('0*$', '')
+	end
+
+	-- add the radix point if needed
+	if #fracPart &gt; 0 then
+		fracPart = '.' .. fracPart
+	end
+
+	return (prefix or '') .. sign .. intPart .. fracPart .. (suffix or '')
+end
+
+function p.convert(frame)
+	-- Allow for invocation via #invoke or directly from another module
+	local args
+	if frame == mw.getCurrentFrame() then
+		args = frame.args
+	else
+		args = frame
+	end
+
+	local n = args.n
+	local base = args.base
+	local from = args.from
+	local precision = args.precision
+	local width = args.width
+	local default = args.default
+	local prefix = args.prefix
+	local suffix = args.suffix
+	return _convert(n, base, from, precision, width, default, prefix, suffix)
+end
+
+setmetatable(p, {
+	__index = function(t, k)
+		local from, base = k:match('^([0-9]+)to([0-9]+)$')
+		if not from then return nil end
+		return function(frame)
+			local args = frame.args
+			return _convert(mw.text.trim(args[1]), base, from, args.precision, args.width,
+				args.default, args.prefix, args.suffix)
+		end
+	end
+})
+
+return p</text>
+      <sha1>pittardebat8getcpz6hwvf6a7wspqr</sha1>
+    </revision>
+    <revision>
+      <id>3562628</id>
+      <parentid>3562370</parentid>
+      <timestamp>2026-03-22T19:01:21Z</timestamp>
+      <contributor>
+        <username>en&gt;Johnuniq</username>
+        <id>0</id>
+      </contributor>
+      <comment>update from [[Module:BaseConvert/sandbox]] per talk; this removes globals</comment>
+      <origin>3303869</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2918" sha1="pittardebat8getcpz6hwvf6a7wspqr" xml:space="preserve">local p = {}
+
+local digits = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+local function normalizeFullWidthChars(s)
+	return mw.ustring.gsub(s, '[！-～]', function(s)
+		return mw.ustring.char(mw.ustring.codepoint(s, 1) - 0xFEE0)
+	end)
+end
+
+local function _convert(n, base, from, precision, width, default, prefix, suffix)
+	n = tostring(n)
+
+	-- strip off any leading '0x' (unless x is a valid digit in the input base)
+	from = tonumber(from)
+	if not from or from &lt; 34 then
+		local c
+		n, c = n:gsub('^(-?)0[Xx]', '%1')
+		if c &gt; 0 and not from then from = 16 end
+	end
+
+	-- check for a negative sign. Do this while the input is still in string form,
+	-- because tonumber doesn't support negative numbers in non-10 bases.
+	local sign = ''
+	local c
+	n, c = n:gsub('^-', '')
+	if c &gt; 0 then sign = '-' end
+
+	-- replace any full-width Unicode characters in the string with their ASCII equivalents
+	n = normalizeFullWidthChars(n)
+
+	-- handle scientific notation with whitespace around the 'e' e.g. '5 e7'
+	n = n:gsub('%s*[eE]%s*', 'e')
+
+	from = from or 10
+	local num = tonumber(n, from)
+	base = tonumber(base)
+	precision = tonumber(precision)
+	width = tonumber(width)
+
+	if not num or not base then return default or n end
+
+	local i, f = math.modf(num)
+
+	local t = {}
+	repeat
+		local d = (i % base) + 1
+		i = math.floor(i / base)
+		table.insert(t, 1, digits:sub(d, d))
+	until i == 0
+	while #t &lt; (width or 0) do
+		table.insert(t, 1, '0')
+	end
+	local intPart = table.concat(t, '')
+
+	-- compute the fractional part
+	local tf = {}
+	while f &gt; 0 and #tf &lt; (precision or 10) do
+		f = f * base
+		i, f = math.modf(f)
+		table.insert(tf, digits:sub(i + 1, i + 1))
+	end
+
+	-- add trailing zeros if needed
+	if precision and #tf &lt; precision then
+		for i = 1, precision - #tf do
+			table.insert(tf, '0')
+		end
+	end
+
+	local fracPart = table.concat(tf, '')
+
+	-- remove trailing zeros if not needed
+	if not precision then
+		fracPart = fracPart:gsub('0*$', '')
+	end
+
+	-- add the radix point if needed
+	if #fracPart &gt; 0 then
+		fracPart = '.' .. fracPart
+	end
+
+	return (prefix or '') .. sign .. intPart .. fracPart .. (suffix or '')
+end
+
+function p.convert(frame)
+	-- Allow for invocation via #invoke or directly from another module
+	local args
+	if frame == mw.getCurrentFrame() then
+		args = frame.args
+	else
+		args = frame
+	end
+
+	local n = args.n
+	local base = args.base
+	local from = args.from
+	local precision = args.precision
+	local width = args.width
+	local default = args.default
+	local prefix = args.prefix
+	local suffix = args.suffix
+	return _convert(n, base, from, precision, width, default, prefix, suffix)
+end
+
+setmetatable(p, {
+	__index = function(t, k)
+		local from, base = k:match('^([0-9]+)to([0-9]+)$')
+		if not from then return nil end
+		return function(frame)
+			local args = frame.args
+			return _convert(mw.text.trim(args[1]), base, from, args.precision, args.width,
+				args.default, args.prefix, args.suffix)
+		end
+	end
+})
+
+return p</text>
+      <sha1>pittardebat8getcpz6hwvf6a7wspqr</sha1>
+    </revision>
+    <revision>
+      <id>3562629</id>
+      <parentid>3562628</parentid>
+      <timestamp>2026-03-22T19:01:21Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3303869</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2918" sha1="pittardebat8getcpz6hwvf6a7wspqr" xml:space="preserve">local p = {}
+
+local digits = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+local function normalizeFullWidthChars(s)
+	return mw.ustring.gsub(s, '[！-～]', function(s)
+		return mw.ustring.char(mw.ustring.codepoint(s, 1) - 0xFEE0)
+	end)
+end
+
+local function _convert(n, base, from, precision, width, default, prefix, suffix)
+	n = tostring(n)
+
+	-- strip off any leading '0x' (unless x is a valid digit in the input base)
+	from = tonumber(from)
+	if not from or from &lt; 34 then
+		local c
+		n, c = n:gsub('^(-?)0[Xx]', '%1')
+		if c &gt; 0 and not from then from = 16 end
+	end
+
+	-- check for a negative sign. Do this while the input is still in string form,
+	-- because tonumber doesn't support negative numbers in non-10 bases.
+	local sign = ''
+	local c
+	n, c = n:gsub('^-', '')
+	if c &gt; 0 then sign = '-' end
+
+	-- replace any full-width Unicode characters in the string with their ASCII equivalents
+	n = normalizeFullWidthChars(n)
+
+	-- handle scientific notation with whitespace around the 'e' e.g. '5 e7'
+	n = n:gsub('%s*[eE]%s*', 'e')
+
+	from = from or 10
+	local num = tonumber(n, from)
+	base = tonumber(base)
+	precision = tonumber(precision)
+	width = tonumber(width)
+
+	if not num or not base then return default or n end
+
+	local i, f = math.modf(num)
+
+	local t = {}
+	repeat
+		local d = (i % base) + 1
+		i = math.floor(i / base)
+		table.insert(t, 1, digits:sub(d, d))
+	until i == 0
+	while #t &lt; (width or 0) do
+		table.insert(t, 1, '0')
+	end
+	local intPart = table.concat(t, '')
+
+	-- compute the fractional part
+	local tf = {}
+	while f &gt; 0 and #tf &lt; (precision or 10) do
+		f = f * base
+		i, f = math.modf(f)
+		table.insert(tf, digits:sub(i + 1, i + 1))
+	end
+
+	-- add trailing zeros if needed
+	if precision and #tf &lt; precision then
+		for i = 1, precision - #tf do
+			table.insert(tf, '0')
+		end
+	end
+
+	local fracPart = table.concat(tf, '')
+
+	-- remove trailing zeros if not needed
+	if not precision then
+		fracPart = fracPart:gsub('0*$', '')
+	end
+
+	-- add the radix point if needed
+	if #fracPart &gt; 0 then
+		fracPart = '.' .. fracPart
+	end
+
+	return (prefix or '') .. sign .. intPart .. fracPart .. (suffix or '')
+end
+
+function p.convert(frame)
+	-- Allow for invocation via #invoke or directly from another module
+	local args
+	if frame == mw.getCurrentFrame() then
+		args = frame.args
+	else
+		args = frame
+	end
+
+	local n = args.n
+	local base = args.base
+	local from = args.from
+	local precision = args.precision
+	local width = args.width
+	local default = args.default
+	local prefix = args.prefix
+	local suffix = args.suffix
+	return _convert(n, base, from, precision, width, default, prefix, suffix)
+end
+
+setmetatable(p, {
+	__index = function(t, k)
+		local from, base = k:match('^([0-9]+)to([0-9]+)$')
+		if not from then return nil end
+		return function(frame)
+			local args = frame.args
+			return _convert(mw.text.trim(args[1]), base, from, args.precision, args.width,
+				args.default, args.prefix, args.suffix)
+		end
+	end
+})
+
+return p</text>
+      <sha1>pittardebat8getcpz6hwvf6a7wspqr</sha1>
+    </revision>
+    <revision>
+      <id>3646360</id>
+      <parentid>3562629</parentid>
+      <timestamp>2026-04-24T16:31:04Z</timestamp>
+      <contributor>
+        <username>en&gt;Johnuniq</username>
+        <id>0</id>
+      </contributor>
+      <comment>update from [[Module:BaseConvert/sandbox]] per talk; this removes globals</comment>
+      <origin>3303869</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2918" sha1="pittardebat8getcpz6hwvf6a7wspqr" xml:space="preserve">local p = {}
+
+local digits = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+local function normalizeFullWidthChars(s)
+	return mw.ustring.gsub(s, '[！-～]', function(s)
+		return mw.ustring.char(mw.ustring.codepoint(s, 1) - 0xFEE0)
+	end)
+end
+
+local function _convert(n, base, from, precision, width, default, prefix, suffix)
+	n = tostring(n)
+
+	-- strip off any leading '0x' (unless x is a valid digit in the input base)
+	from = tonumber(from)
+	if not from or from &lt; 34 then
+		local c
+		n, c = n:gsub('^(-?)0[Xx]', '%1')
+		if c &gt; 0 and not from then from = 16 end
+	end
+
+	-- check for a negative sign. Do this while the input is still in string form,
+	-- because tonumber doesn't support negative numbers in non-10 bases.
+	local sign = ''
+	local c
+	n, c = n:gsub('^-', '')
+	if c &gt; 0 then sign = '-' end
+
+	-- replace any full-width Unicode characters in the string with their ASCII equivalents
+	n = normalizeFullWidthChars(n)
+
+	-- handle scientific notation with whitespace around the 'e' e.g. '5 e7'
+	n = n:gsub('%s*[eE]%s*', 'e')
+
+	from = from or 10
+	local num = tonumber(n, from)
+	base = tonumber(base)
+	precision = tonumber(precision)
+	width = tonumber(width)
+
+	if not num or not base then return default or n end
+
+	local i, f = math.modf(num)
+
+	local t = {}
+	repeat
+		local d = (i % base) + 1
+		i = math.floor(i / base)
+		table.insert(t, 1, digits:sub(d, d))
+	until i == 0
+	while #t &lt; (width or 0) do
+		table.insert(t, 1, '0')
+	end
+	local intPart = table.concat(t, '')
+
+	-- compute the fractional part
+	local tf = {}
+	while f &gt; 0 and #tf &lt; (precision or 10) do
+		f = f * base
+		i, f = math.modf(f)
+		table.insert(tf, digits:sub(i + 1, i + 1))
+	end
+
+	-- add trailing zeros if needed
+	if precision and #tf &lt; precision then
+		for i = 1, precision - #tf do
+			table.insert(tf, '0')
+		end
+	end
+
+	local fracPart = table.concat(tf, '')
+
+	-- remove trailing zeros if not needed
+	if not precision then
+		fracPart = fracPart:gsub('0*$', '')
+	end
+
+	-- add the radix point if needed
+	if #fracPart &gt; 0 then
+		fracPart = '.' .. fracPart
+	end
+
+	return (prefix or '') .. sign .. intPart .. fracPart .. (suffix or '')
+end
+
+function p.convert(frame)
+	-- Allow for invocation via #invoke or directly from another module
+	local args
+	if frame == mw.getCurrentFrame() then
+		args = frame.args
+	else
+		args = frame
+	end
+
+	local n = args.n
+	local base = args.base
+	local from = args.from
+	local precision = args.precision
+	local width = args.width
+	local default = args.default
+	local prefix = args.prefix
+	local suffix = args.suffix
+	return _convert(n, base, from, precision, width, default, prefix, suffix)
+end
+
+setmetatable(p, {
+	__index = function(t, k)
+		local from, base = k:match('^([0-9]+)to([0-9]+)$')
+		if not from then return nil end
+		return function(frame)
+			local args = frame.args
+			return _convert(mw.text.trim(args[1]), base, from, args.precision, args.width,
+				args.default, args.prefix, args.suffix)
+		end
+	end
+})
+
+return p</text>
+      <sha1>pittardebat8getcpz6hwvf6a7wspqr</sha1>
+    </revision>
+    <revision>
+      <id>3646361</id>
+      <parentid>3646360</parentid>
+      <timestamp>2026-04-24T16:31:05Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: trying to do a last fix of these, they will be fixed and not bloat the site</comment>
+      <origin>3303869</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2918" sha1="pittardebat8getcpz6hwvf6a7wspqr" xml:space="preserve">local p = {}
+
+local digits = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+local function normalizeFullWidthChars(s)
+	return mw.ustring.gsub(s, '[！-～]', function(s)
+		return mw.ustring.char(mw.ustring.codepoint(s, 1) - 0xFEE0)
+	end)
+end
+
+local function _convert(n, base, from, precision, width, default, prefix, suffix)
+	n = tostring(n)
+
+	-- strip off any leading '0x' (unless x is a valid digit in the input base)
+	from = tonumber(from)
+	if not from or from &lt; 34 then
+		local c
+		n, c = n:gsub('^(-?)0[Xx]', '%1')
+		if c &gt; 0 and not from then from = 16 end
+	end
+
+	-- check for a negative sign. Do this while the input is still in string form,
+	-- because tonumber doesn't support negative numbers in non-10 bases.
+	local sign = ''
+	local c
+	n, c = n:gsub('^-', '')
+	if c &gt; 0 then sign = '-' end
+
+	-- replace any full-width Unicode characters in the string with their ASCII equivalents
+	n = normalizeFullWidthChars(n)
+
+	-- handle scientific notation with whitespace around the 'e' e.g. '5 e7'
+	n = n:gsub('%s*[eE]%s*', 'e')
+
+	from = from or 10
+	local num = tonumber(n, from)
+	base = tonumber(base)
+	precision = tonumber(precision)
+	width = tonumber(width)
+
+	if not num or not base then return default or n end
+
+	local i, f = math.modf(num)
+
+	local t = {}
+	repeat
+		local d = (i % base) + 1
+		i = math.floor(i / base)
+		table.insert(t, 1, digits:sub(d, d))
+	until i == 0
+	while #t &lt; (width or 0) do
+		table.insert(t, 1, '0')
+	end
+	local intPart = table.concat(t, '')
+
+	-- compute the fractional part
+	local tf = {}
+	while f &gt; 0 and #tf &lt; (precision or 10) do
+		f = f * base
+		i, f = math.modf(f)
+		table.insert(tf, digits:sub(i + 1, i + 1))
+	end
+
+	-- add trailing zeros if needed
+	if precision and #tf &lt; precision then
+		for i = 1, precision - #tf do
+			table.insert(tf, '0')
+		end
+	end
+
+	local fracPart = table.concat(tf, '')
+
+	-- remove trailing zeros if not needed
+	if not precision then
+		fracPart = fracPart:gsub('0*$', '')
+	end
+
+	-- add the radix point if needed
+	if #fracPart &gt; 0 then
+		fracPart = '.' .. fracPart
+	end
+
+	return (prefix or '') .. sign .. intPart .. fracPart .. (suffix or '')
+end
+
+function p.convert(frame)
+	-- Allow for invocation via #invoke or directly from another module
+	local args
+	if frame == mw.getCurrentFrame() then
+		args = frame.args
+	else
+		args = frame
+	end
+
+	local n = args.n
+	local base = args.base
+	local from = args.from
+	local precision = args.precision
+	local width = args.width
+	local default = args.default
+	local prefix = args.prefix
+	local suffix = args.suffix
+	return _convert(n, base, from, precision, width, default, prefix, suffix)
+end
+
+setmetatable(p, {
+	__index = function(t, k)
+		local from, base = k:match('^([0-9]+)to([0-9]+)$')
+		if not from then return nil end
+		return function(frame)
+			local args = frame.args
+			return _convert(mw.text.trim(args[1]), base, from, args.precision, args.width,
+				args.default, args.prefix, args.suffix)
+		end
+	end
+})
+
+return p</text>
+      <sha1>pittardebat8getcpz6hwvf6a7wspqr</sha1>
+    </revision>
+  </page>
+</mediawiki>

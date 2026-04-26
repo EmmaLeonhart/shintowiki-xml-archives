@@ -1,0 +1,908 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Category see also</title>
+    <ns>828</ns>
+    <id>1148</id>
+    <revision>
+      <id>550454</id>
+      <timestamp>2021-06-02T21:14:44Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Fayenatic london</username>
+        <id>0</id>
+      </contributor>
+      <comment>better without the colon before "the categories"</comment>
+      <origin>550454</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3478" sha1="mlc7jb2xerlzd1c0evanx91aam9l3of" xml:space="preserve">-- This module implements {{Category see also}}
+
+local mHatnote = require('Module:Hatnote')
+
+local p = {}
+
+local function makeWikitextError(msg)
+	return string.format(
+		'&lt;strong class="error"&gt;Error: %s ([[Template:Category see also]])&lt;/strong&gt;',
+		msg
+	)
+end
+
+-- Gets the length of the sequence seq. Usually this should be done with the #
+-- operator, but we need to work with tables that get their values through an
+-- __index metamethod.
+local function getSequenceLength(seq)
+	local length = 0
+	for i in ipairs(seq) do
+		length = i
+	end
+	return length
+end
+
+-- Given a table of options, returns a function that formats categories for
+-- those options.
+--
+-- Options:
+-- project - a project code such as "fr" (for the French Wikipedia)
+-- showPrefix - a boolean value for whether to show the "Category:" prefix
+--              (and the project prefix if specified)
+--
+-- This is implemented as a function generator rather than a simple function
+-- so that we can just process the options once, instead of every time we
+-- generate a category.
+local function newCategoryLinker(options)
+	local formatString
+	if options.project then
+		if options.showPrefix then
+			formatString = '[[:' .. options.project .. ':Category:%s]]'
+		else
+			formatString = '[[:' .. options.project .. ':Category:%s|%s]]'
+		end
+	else
+		if options.showPrefix then
+			formatString = '[[:Category:%s]]'
+		else
+			formatString = '[[:Category:%s|%s]]'
+		end
+	end
+	return function (category)
+		local title = mw.title.new(category)
+		local pageName, display
+		if not title then
+			-- category is not a valid title, usually because of invalid
+			-- characters like &lt; or [. Raise an error and suppress the stack
+			-- level information so that we can catch it and format the error
+			-- message as wikitext.
+			error(string.format(
+				"'%s' is not a valid category name",
+				category
+			), 0)
+		elseif title.namespace == 14 then -- Category namespace
+			pageName = title.text
+			display = title.text
+		else
+			pageName = title.prefixedText
+			display = category
+		end
+		-- We can get away with using two arguments even when
+		-- options.showDisplay is false, as string.format ignores extra
+		-- arguments as long as there is an argument for each flag in the
+		-- format string.
+		return formatString:format(pageName, display)
+	end
+end
+
+function p._main(args)
+	local nLinks = getSequenceLength(args)
+
+	if nLinks &lt; 1 then
+		return makeWikitextError('at least one parameter required')
+	end
+
+	local makeCategoryLink = newCategoryLinker{
+		project = args.project,
+		showPrefix = nLinks == 1,
+	}
+
+	local links = {}
+	for i, cat in ipairs(args) do
+		local success, categoryLink = pcall(makeCategoryLink, cat)
+		if success then
+			links[i] = categoryLink
+		else
+			-- If there was an error, then categoryLink is the error message.
+			return makeWikitextError(categoryLink)
+		end
+	end
+
+	local formatString
+	if nLinks == 1 then
+		formatString = '%s: %s'
+	else
+		formatString = '%s the categories %s'
+	end
+
+	-- Don't output a comma before the "and" if we have only two links.
+	local conjunction
+	if nLinks == 2 then
+		conjunction = ' and '
+	else
+		conjunction = ', and '
+	end
+
+	local hatnoteText = formatString:format(
+		args.LABEL or 'See also',
+		mw.text.listToText(links, ', ', conjunction)
+	)
+	return mHatnote._hatnote(hatnoteText, {selfref = true})
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {
+		wrappers = 'Template:Category see also',
+	})
+	return p._main(args)
+end
+
+return p</text>
+      <sha1>mlc7jb2xerlzd1c0evanx91aam9l3of</sha1>
+    </revision>
+    <revision>
+      <id>550455</id>
+      <parentid>550454</parentid>
+      <timestamp>2024-06-29T04:50:17Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:Category_see_also]]</comment>
+      <origin>550454</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3478" sha1="mlc7jb2xerlzd1c0evanx91aam9l3of" xml:space="preserve">-- This module implements {{Category see also}}
+
+local mHatnote = require('Module:Hatnote')
+
+local p = {}
+
+local function makeWikitextError(msg)
+	return string.format(
+		'&lt;strong class="error"&gt;Error: %s ([[Template:Category see also]])&lt;/strong&gt;',
+		msg
+	)
+end
+
+-- Gets the length of the sequence seq. Usually this should be done with the #
+-- operator, but we need to work with tables that get their values through an
+-- __index metamethod.
+local function getSequenceLength(seq)
+	local length = 0
+	for i in ipairs(seq) do
+		length = i
+	end
+	return length
+end
+
+-- Given a table of options, returns a function that formats categories for
+-- those options.
+--
+-- Options:
+-- project - a project code such as "fr" (for the French Wikipedia)
+-- showPrefix - a boolean value for whether to show the "Category:" prefix
+--              (and the project prefix if specified)
+--
+-- This is implemented as a function generator rather than a simple function
+-- so that we can just process the options once, instead of every time we
+-- generate a category.
+local function newCategoryLinker(options)
+	local formatString
+	if options.project then
+		if options.showPrefix then
+			formatString = '[[:' .. options.project .. ':Category:%s]]'
+		else
+			formatString = '[[:' .. options.project .. ':Category:%s|%s]]'
+		end
+	else
+		if options.showPrefix then
+			formatString = '[[:Category:%s]]'
+		else
+			formatString = '[[:Category:%s|%s]]'
+		end
+	end
+	return function (category)
+		local title = mw.title.new(category)
+		local pageName, display
+		if not title then
+			-- category is not a valid title, usually because of invalid
+			-- characters like &lt; or [. Raise an error and suppress the stack
+			-- level information so that we can catch it and format the error
+			-- message as wikitext.
+			error(string.format(
+				"'%s' is not a valid category name",
+				category
+			), 0)
+		elseif title.namespace == 14 then -- Category namespace
+			pageName = title.text
+			display = title.text
+		else
+			pageName = title.prefixedText
+			display = category
+		end
+		-- We can get away with using two arguments even when
+		-- options.showDisplay is false, as string.format ignores extra
+		-- arguments as long as there is an argument for each flag in the
+		-- format string.
+		return formatString:format(pageName, display)
+	end
+end
+
+function p._main(args)
+	local nLinks = getSequenceLength(args)
+
+	if nLinks &lt; 1 then
+		return makeWikitextError('at least one parameter required')
+	end
+
+	local makeCategoryLink = newCategoryLinker{
+		project = args.project,
+		showPrefix = nLinks == 1,
+	}
+
+	local links = {}
+	for i, cat in ipairs(args) do
+		local success, categoryLink = pcall(makeCategoryLink, cat)
+		if success then
+			links[i] = categoryLink
+		else
+			-- If there was an error, then categoryLink is the error message.
+			return makeWikitextError(categoryLink)
+		end
+	end
+
+	local formatString
+	if nLinks == 1 then
+		formatString = '%s: %s'
+	else
+		formatString = '%s the categories %s'
+	end
+
+	-- Don't output a comma before the "and" if we have only two links.
+	local conjunction
+	if nLinks == 2 then
+		conjunction = ' and '
+	else
+		conjunction = ', and '
+	end
+
+	local hatnoteText = formatString:format(
+		args.LABEL or 'See also',
+		mw.text.listToText(links, ', ', conjunction)
+	)
+	return mHatnote._hatnote(hatnoteText, {selfref = true})
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {
+		wrappers = 'Template:Category see also',
+	})
+	return p._main(args)
+end
+
+return p</text>
+      <sha1>mlc7jb2xerlzd1c0evanx91aam9l3of</sha1>
+    </revision>
+    <revision>
+      <id>550456</id>
+      <parentid>550455</parentid>
+      <timestamp>2024-12-20T03:13:11Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Adding [[Category:pages from wikipedia]][[en:{{subst:PAGENAME}}]][[Category:pages from wikipedia]] on using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>550456</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3571" sha1="beaxujb2ah0gt17flh4ggaid7jyb8fo" xml:space="preserve">-- This module implements {{Category see also}}
+
+local mHatnote = require('Module:Hatnote')
+
+local p = {}
+
+local function makeWikitextError(msg)
+	return string.format(
+		'&lt;strong class="error"&gt;Error: %s ([[Template:Category see also]])&lt;/strong&gt;',
+		msg
+	)
+end
+
+-- Gets the length of the sequence seq. Usually this should be done with the #
+-- operator, but we need to work with tables that get their values through an
+-- __index metamethod.
+local function getSequenceLength(seq)
+	local length = 0
+	for i in ipairs(seq) do
+		length = i
+	end
+	return length
+end
+
+-- Given a table of options, returns a function that formats categories for
+-- those options.
+--
+-- Options:
+-- project - a project code such as "fr" (for the French Wikipedia)
+-- showPrefix - a boolean value for whether to show the "Category:" prefix
+--              (and the project prefix if specified)
+--
+-- This is implemented as a function generator rather than a simple function
+-- so that we can just process the options once, instead of every time we
+-- generate a category.
+local function newCategoryLinker(options)
+	local formatString
+	if options.project then
+		if options.showPrefix then
+			formatString = '[[:' .. options.project .. ':Category:%s]]'
+		else
+			formatString = '[[:' .. options.project .. ':Category:%s|%s]]'
+		end
+	else
+		if options.showPrefix then
+			formatString = '[[:Category:%s]]'
+		else
+			formatString = '[[:Category:%s|%s]]'
+		end
+	end
+	return function (category)
+		local title = mw.title.new(category)
+		local pageName, display
+		if not title then
+			-- category is not a valid title, usually because of invalid
+			-- characters like &lt; or [. Raise an error and suppress the stack
+			-- level information so that we can catch it and format the error
+			-- message as wikitext.
+			error(string.format(
+				"'%s' is not a valid category name",
+				category
+			), 0)
+		elseif title.namespace == 14 then -- Category namespace
+			pageName = title.text
+			display = title.text
+		else
+			pageName = title.prefixedText
+			display = category
+		end
+		-- We can get away with using two arguments even when
+		-- options.showDisplay is false, as string.format ignores extra
+		-- arguments as long as there is an argument for each flag in the
+		-- format string.
+		return formatString:format(pageName, display)
+	end
+end
+
+function p._main(args)
+	local nLinks = getSequenceLength(args)
+
+	if nLinks &lt; 1 then
+		return makeWikitextError('at least one parameter required')
+	end
+
+	local makeCategoryLink = newCategoryLinker{
+		project = args.project,
+		showPrefix = nLinks == 1,
+	}
+
+	local links = {}
+	for i, cat in ipairs(args) do
+		local success, categoryLink = pcall(makeCategoryLink, cat)
+		if success then
+			links[i] = categoryLink
+		else
+			-- If there was an error, then categoryLink is the error message.
+			return makeWikitextError(categoryLink)
+		end
+	end
+
+	local formatString
+	if nLinks == 1 then
+		formatString = '%s: %s'
+	else
+		formatString = '%s the categories %s'
+	end
+
+	-- Don't output a comma before the "and" if we have only two links.
+	local conjunction
+	if nLinks == 2 then
+		conjunction = ' and '
+	else
+		conjunction = ', and '
+	end
+
+	local hatnoteText = formatString:format(
+		args.LABEL or 'See also',
+		mw.text.listToText(links, ', ', conjunction)
+	)
+	return mHatnote._hatnote(hatnoteText, {selfref = true})
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {
+		wrappers = 'Template:Category see also',
+	})
+	return p._main(args)
+end
+
+return p
+
+[[Category:pages from wikipedia]][[en:{{subst:PAGENAME}}]][[Category:pages from wikipedia]]</text>
+      <sha1>beaxujb2ah0gt17flh4ggaid7jyb8fo</sha1>
+    </revision>
+    <revision>
+      <id>550457</id>
+      <parentid>550456</parentid>
+      <timestamp>2024-12-20T03:50:16Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Undo revision [[Special:Diff/217312|217312]] by [[Special:Contributions/Immanuelle|Immanuelle]] ([[User talk:Immanuelle|talk]])</comment>
+      <origin>550457</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3478" sha1="mlc7jb2xerlzd1c0evanx91aam9l3of" xml:space="preserve">-- This module implements {{Category see also}}
+
+local mHatnote = require('Module:Hatnote')
+
+local p = {}
+
+local function makeWikitextError(msg)
+	return string.format(
+		'&lt;strong class="error"&gt;Error: %s ([[Template:Category see also]])&lt;/strong&gt;',
+		msg
+	)
+end
+
+-- Gets the length of the sequence seq. Usually this should be done with the #
+-- operator, but we need to work with tables that get their values through an
+-- __index metamethod.
+local function getSequenceLength(seq)
+	local length = 0
+	for i in ipairs(seq) do
+		length = i
+	end
+	return length
+end
+
+-- Given a table of options, returns a function that formats categories for
+-- those options.
+--
+-- Options:
+-- project - a project code such as "fr" (for the French Wikipedia)
+-- showPrefix - a boolean value for whether to show the "Category:" prefix
+--              (and the project prefix if specified)
+--
+-- This is implemented as a function generator rather than a simple function
+-- so that we can just process the options once, instead of every time we
+-- generate a category.
+local function newCategoryLinker(options)
+	local formatString
+	if options.project then
+		if options.showPrefix then
+			formatString = '[[:' .. options.project .. ':Category:%s]]'
+		else
+			formatString = '[[:' .. options.project .. ':Category:%s|%s]]'
+		end
+	else
+		if options.showPrefix then
+			formatString = '[[:Category:%s]]'
+		else
+			formatString = '[[:Category:%s|%s]]'
+		end
+	end
+	return function (category)
+		local title = mw.title.new(category)
+		local pageName, display
+		if not title then
+			-- category is not a valid title, usually because of invalid
+			-- characters like &lt; or [. Raise an error and suppress the stack
+			-- level information so that we can catch it and format the error
+			-- message as wikitext.
+			error(string.format(
+				"'%s' is not a valid category name",
+				category
+			), 0)
+		elseif title.namespace == 14 then -- Category namespace
+			pageName = title.text
+			display = title.text
+		else
+			pageName = title.prefixedText
+			display = category
+		end
+		-- We can get away with using two arguments even when
+		-- options.showDisplay is false, as string.format ignores extra
+		-- arguments as long as there is an argument for each flag in the
+		-- format string.
+		return formatString:format(pageName, display)
+	end
+end
+
+function p._main(args)
+	local nLinks = getSequenceLength(args)
+
+	if nLinks &lt; 1 then
+		return makeWikitextError('at least one parameter required')
+	end
+
+	local makeCategoryLink = newCategoryLinker{
+		project = args.project,
+		showPrefix = nLinks == 1,
+	}
+
+	local links = {}
+	for i, cat in ipairs(args) do
+		local success, categoryLink = pcall(makeCategoryLink, cat)
+		if success then
+			links[i] = categoryLink
+		else
+			-- If there was an error, then categoryLink is the error message.
+			return makeWikitextError(categoryLink)
+		end
+	end
+
+	local formatString
+	if nLinks == 1 then
+		formatString = '%s: %s'
+	else
+		formatString = '%s the categories %s'
+	end
+
+	-- Don't output a comma before the "and" if we have only two links.
+	local conjunction
+	if nLinks == 2 then
+		conjunction = ' and '
+	else
+		conjunction = ', and '
+	end
+
+	local hatnoteText = formatString:format(
+		args.LABEL or 'See also',
+		mw.text.listToText(links, ', ', conjunction)
+	)
+	return mHatnote._hatnote(hatnoteText, {selfref = true})
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {
+		wrappers = 'Template:Category see also',
+	})
+	return p._main(args)
+end
+
+return p</text>
+      <sha1>mlc7jb2xerlzd1c0evanx91aam9l3of</sha1>
+    </revision>
+    <revision>
+      <id>550458</id>
+      <parentid>550457</parentid>
+      <timestamp>2025-04-06T00:14:41Z</timestamp>
+      <contributor>
+        <username>en&gt;Fayenatic london</username>
+        <id>0</id>
+      </contributor>
+      <comment>better without the colon before "the categories"</comment>
+      <origin>550457</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3478" sha1="mlc7jb2xerlzd1c0evanx91aam9l3of" xml:space="preserve">-- This module implements {{Category see also}}
+
+local mHatnote = require('Module:Hatnote')
+
+local p = {}
+
+local function makeWikitextError(msg)
+	return string.format(
+		'&lt;strong class="error"&gt;Error: %s ([[Template:Category see also]])&lt;/strong&gt;',
+		msg
+	)
+end
+
+-- Gets the length of the sequence seq. Usually this should be done with the #
+-- operator, but we need to work with tables that get their values through an
+-- __index metamethod.
+local function getSequenceLength(seq)
+	local length = 0
+	for i in ipairs(seq) do
+		length = i
+	end
+	return length
+end
+
+-- Given a table of options, returns a function that formats categories for
+-- those options.
+--
+-- Options:
+-- project - a project code such as "fr" (for the French Wikipedia)
+-- showPrefix - a boolean value for whether to show the "Category:" prefix
+--              (and the project prefix if specified)
+--
+-- This is implemented as a function generator rather than a simple function
+-- so that we can just process the options once, instead of every time we
+-- generate a category.
+local function newCategoryLinker(options)
+	local formatString
+	if options.project then
+		if options.showPrefix then
+			formatString = '[[:' .. options.project .. ':Category:%s]]'
+		else
+			formatString = '[[:' .. options.project .. ':Category:%s|%s]]'
+		end
+	else
+		if options.showPrefix then
+			formatString = '[[:Category:%s]]'
+		else
+			formatString = '[[:Category:%s|%s]]'
+		end
+	end
+	return function (category)
+		local title = mw.title.new(category)
+		local pageName, display
+		if not title then
+			-- category is not a valid title, usually because of invalid
+			-- characters like &lt; or [. Raise an error and suppress the stack
+			-- level information so that we can catch it and format the error
+			-- message as wikitext.
+			error(string.format(
+				"'%s' is not a valid category name",
+				category
+			), 0)
+		elseif title.namespace == 14 then -- Category namespace
+			pageName = title.text
+			display = title.text
+		else
+			pageName = title.prefixedText
+			display = category
+		end
+		-- We can get away with using two arguments even when
+		-- options.showDisplay is false, as string.format ignores extra
+		-- arguments as long as there is an argument for each flag in the
+		-- format string.
+		return formatString:format(pageName, display)
+	end
+end
+
+function p._main(args)
+	local nLinks = getSequenceLength(args)
+
+	if nLinks &lt; 1 then
+		return makeWikitextError('at least one parameter required')
+	end
+
+	local makeCategoryLink = newCategoryLinker{
+		project = args.project,
+		showPrefix = nLinks == 1,
+	}
+
+	local links = {}
+	for i, cat in ipairs(args) do
+		local success, categoryLink = pcall(makeCategoryLink, cat)
+		if success then
+			links[i] = categoryLink
+		else
+			-- If there was an error, then categoryLink is the error message.
+			return makeWikitextError(categoryLink)
+		end
+	end
+
+	local formatString
+	if nLinks == 1 then
+		formatString = '%s: %s'
+	else
+		formatString = '%s the categories %s'
+	end
+
+	-- Don't output a comma before the "and" if we have only two links.
+	local conjunction
+	if nLinks == 2 then
+		conjunction = ' and '
+	else
+		conjunction = ', and '
+	end
+
+	local hatnoteText = formatString:format(
+		args.LABEL or 'See also',
+		mw.text.listToText(links, ', ', conjunction)
+	)
+	return mHatnote._hatnote(hatnoteText, {selfref = true})
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {
+		wrappers = 'Template:Category see also',
+	})
+	return p._main(args)
+end
+
+return p</text>
+      <sha1>mlc7jb2xerlzd1c0evanx91aam9l3of</sha1>
+    </revision>
+    <revision>
+      <id>1149</id>
+      <timestamp>2025-04-06T00:14:42Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: reimporting to fix errors</comment>
+      <origin>1149</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3478" sha1="mlc7jb2xerlzd1c0evanx91aam9l3of" xml:space="preserve">-- This module implements {{Category see also}}
+
+local mHatnote = require('Module:Hatnote')
+
+local p = {}
+
+local function makeWikitextError(msg)
+	return string.format(
+		'&lt;strong class="error"&gt;Error: %s ([[Template:Category see also]])&lt;/strong&gt;',
+		msg
+	)
+end
+
+-- Gets the length of the sequence seq. Usually this should be done with the #
+-- operator, but we need to work with tables that get their values through an
+-- __index metamethod.
+local function getSequenceLength(seq)
+	local length = 0
+	for i in ipairs(seq) do
+		length = i
+	end
+	return length
+end
+
+-- Given a table of options, returns a function that formats categories for
+-- those options.
+--
+-- Options:
+-- project - a project code such as "fr" (for the French Wikipedia)
+-- showPrefix - a boolean value for whether to show the "Category:" prefix
+--              (and the project prefix if specified)
+--
+-- This is implemented as a function generator rather than a simple function
+-- so that we can just process the options once, instead of every time we
+-- generate a category.
+local function newCategoryLinker(options)
+	local formatString
+	if options.project then
+		if options.showPrefix then
+			formatString = '[[:' .. options.project .. ':Category:%s]]'
+		else
+			formatString = '[[:' .. options.project .. ':Category:%s|%s]]'
+		end
+	else
+		if options.showPrefix then
+			formatString = '[[:Category:%s]]'
+		else
+			formatString = '[[:Category:%s|%s]]'
+		end
+	end
+	return function (category)
+		local title = mw.title.new(category)
+		local pageName, display
+		if not title then
+			-- category is not a valid title, usually because of invalid
+			-- characters like &lt; or [. Raise an error and suppress the stack
+			-- level information so that we can catch it and format the error
+			-- message as wikitext.
+			error(string.format(
+				"'%s' is not a valid category name",
+				category
+			), 0)
+		elseif title.namespace == 14 then -- Category namespace
+			pageName = title.text
+			display = title.text
+		else
+			pageName = title.prefixedText
+			display = category
+		end
+		-- We can get away with using two arguments even when
+		-- options.showDisplay is false, as string.format ignores extra
+		-- arguments as long as there is an argument for each flag in the
+		-- format string.
+		return formatString:format(pageName, display)
+	end
+end
+
+function p._main(args)
+	local nLinks = getSequenceLength(args)
+
+	if nLinks &lt; 1 then
+		return makeWikitextError('at least one parameter required')
+	end
+
+	local makeCategoryLink = newCategoryLinker{
+		project = args.project,
+		showPrefix = nLinks == 1,
+	}
+
+	local links = {}
+	for i, cat in ipairs(args) do
+		local success, categoryLink = pcall(makeCategoryLink, cat)
+		if success then
+			links[i] = categoryLink
+		else
+			-- If there was an error, then categoryLink is the error message.
+			return makeWikitextError(categoryLink)
+		end
+	end
+
+	local formatString
+	if nLinks == 1 then
+		formatString = '%s: %s'
+	else
+		formatString = '%s the categories %s'
+	end
+
+	-- Don't output a comma before the "and" if we have only two links.
+	local conjunction
+	if nLinks == 2 then
+		conjunction = ' and '
+	else
+		conjunction = ', and '
+	end
+
+	local hatnoteText = formatString:format(
+		args.LABEL or 'See also',
+		mw.text.listToText(links, ', ', conjunction)
+	)
+	return mHatnote._hatnote(hatnoteText, {selfref = true})
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {
+		wrappers = 'Template:Category see also',
+	})
+	return p._main(args)
+end
+
+return p</text>
+      <sha1>mlc7jb2xerlzd1c0evanx91aam9l3of</sha1>
+    </revision>
+  </page>
+</mediawiki>

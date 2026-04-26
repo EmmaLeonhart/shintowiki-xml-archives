@@ -1,0 +1,226 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Autotranslate</title>
+    <ns>828</ns>
+    <id>56320</id>
+    <revision>
+      <id>2938473</id>
+      <timestamp>2020-05-21T10:42:28Z</timestamp>
+      <contributor>
+        <username>d&gt;Jasper Deng</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>5 revisions imported from [[:commons:Module:Autotranslate]]: Introducing this template for use by me and other CU's</comment>
+      <origin>2938473</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2688" sha1="s8od7zfrj3v3cz5lt1l0kbteodckiag" xml:space="preserve">  --[[
+  __  __           _       _           _         _        _                       _       _       
+ |  \/  | ___   __| |_   _| | ___ _   / \  _   _| |_ ___ | |_ _ __ __ _ _ __  ___| | __ _| |_ ___ 
+ | |\/| |/ _ \ / _` | | | | |/ _ (_) / _ \| | | | __/ _ \| __| '__/ _` | '_ \/ __| |/ _` | __/ _ \
+ | |  | | (_) | (_| | |_| | |  __/_ / ___ \ |_| | || (_) | |_| | | (_| | | | \__ \ | (_| | ||  __/
+ |_|  |_|\___/ \__,_|\__,_|_|\___(_)_/   \_\__,_|\__\___/ \__|_|  \__,_|_| |_|___/_|\__,_|\__\___|
+ 
+ Authors and maintainers:
+* User:Zolo   - original version
+* User:Jarekt 
+]]
+
+-- local function to help normalize input arguments
+local function normalize_input_args(input_args, output_args)
+	for name, value in pairs( input_args ) do 
+		if value ~= '' then -- nuke empty strings
+			if type(name)=='string' then name=string.lower(name) end -- convert to lower case
+			output_args[name] = value
+		end
+	end
+	return output_args
+end
+
+-- initialize object to be returned
+local p = {}
+
+--[[
+autotranslate
+ 
+This function is the core part of the Autotranslate template. 
+ 
+Usage from a template:
+{{#invoke:autotranslate|autotranslate|base=|lang= }}
+ 
+Parameters:
+  frame.args.base - base page name
+  frame.args.lang - desired language (often user's native language)
+
+ Error Handling:
+
+]]
+function p.autotranslate(frame) 
+
+	-- switch to lowercase parameters to make them case independent
+	local args = {}
+	args = normalize_input_args(frame:getParent().args, args)
+	args = normalize_input_args(frame.args, args)
+
+	-- get language fallback list
+	if not args.lang or not mw.language.isSupportedLanguage(args.lang) then
+		args.lang = frame:callParserFunction( "int", "lang" )           -- get user's chosen language 
+	end
+	local langList = mw.language.getFallbacksFor(args.lang)
+	table.insert(langList,1,args.lang)
+
+	-- find base page
+	local base = args.base
+	args.base = nil
+	assert(base and  #base&gt;0, 'Base page not provided for autotranslate' )
+	if not mw.ustring.find(base,':') then   -- if base page does not indicate namespace
+		base = 'Template:' .. base          -- than assume it is a template 
+	end
+ 
+	-- find base template language subpage
+	local page = args.default  -- default page if provided or nil otherwise
+	for _, language in ipairs(langList) do
+		if mw.title.new(base .. '/' .. language).exists then
+			page =  base .. '/' .. language -- returns only the page
+			break
+		end
+	end
+	assert(page, string.format('No fallback page found for autotranslate (base=[[%s]], lang=%s)', base, args.lang))
+ 
+	-- Transclude {{page |....}} with template arguments the same as the ones passed to {{autotranslate}} template.
+	return frame:expandTemplate{ title = page, args = args}
+end
+
+return p</text>
+      <sha1>s8od7zfrj3v3cz5lt1l0kbteodckiag</sha1>
+    </revision>
+    <revision>
+      <id>56321</id>
+      <timestamp>2025-08-11T09:31:21Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: importing wikidata q template</comment>
+      <origin>56321</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2688" sha1="s8od7zfrj3v3cz5lt1l0kbteodckiag" xml:space="preserve">  --[[
+  __  __           _       _           _         _        _                       _       _       
+ |  \/  | ___   __| |_   _| | ___ _   / \  _   _| |_ ___ | |_ _ __ __ _ _ __  ___| | __ _| |_ ___ 
+ | |\/| |/ _ \ / _` | | | | |/ _ (_) / _ \| | | | __/ _ \| __| '__/ _` | '_ \/ __| |/ _` | __/ _ \
+ | |  | | (_) | (_| | |_| | |  __/_ / ___ \ |_| | || (_) | |_| | | (_| | | | \__ \ | (_| | ||  __/
+ |_|  |_|\___/ \__,_|\__,_|_|\___(_)_/   \_\__,_|\__\___/ \__|_|  \__,_|_| |_|___/_|\__,_|\__\___|
+ 
+ Authors and maintainers:
+* User:Zolo   - original version
+* User:Jarekt 
+]]
+
+-- local function to help normalize input arguments
+local function normalize_input_args(input_args, output_args)
+	for name, value in pairs( input_args ) do 
+		if value ~= '' then -- nuke empty strings
+			if type(name)=='string' then name=string.lower(name) end -- convert to lower case
+			output_args[name] = value
+		end
+	end
+	return output_args
+end
+
+-- initialize object to be returned
+local p = {}
+
+--[[
+autotranslate
+ 
+This function is the core part of the Autotranslate template. 
+ 
+Usage from a template:
+{{#invoke:autotranslate|autotranslate|base=|lang= }}
+ 
+Parameters:
+  frame.args.base - base page name
+  frame.args.lang - desired language (often user's native language)
+
+ Error Handling:
+
+]]
+function p.autotranslate(frame) 
+
+	-- switch to lowercase parameters to make them case independent
+	local args = {}
+	args = normalize_input_args(frame:getParent().args, args)
+	args = normalize_input_args(frame.args, args)
+
+	-- get language fallback list
+	if not args.lang or not mw.language.isSupportedLanguage(args.lang) then
+		args.lang = frame:callParserFunction( "int", "lang" )           -- get user's chosen language 
+	end
+	local langList = mw.language.getFallbacksFor(args.lang)
+	table.insert(langList,1,args.lang)
+
+	-- find base page
+	local base = args.base
+	args.base = nil
+	assert(base and  #base&gt;0, 'Base page not provided for autotranslate' )
+	if not mw.ustring.find(base,':') then   -- if base page does not indicate namespace
+		base = 'Template:' .. base          -- than assume it is a template 
+	end
+ 
+	-- find base template language subpage
+	local page = args.default  -- default page if provided or nil otherwise
+	for _, language in ipairs(langList) do
+		if mw.title.new(base .. '/' .. language).exists then
+			page =  base .. '/' .. language -- returns only the page
+			break
+		end
+	end
+	assert(page, string.format('No fallback page found for autotranslate (base=[[%s]], lang=%s)', base, args.lang))
+ 
+	-- Transclude {{page |....}} with template arguments the same as the ones passed to {{autotranslate}} template.
+	return frame:expandTemplate{ title = page, args = args}
+end
+
+return p</text>
+      <sha1>s8od7zfrj3v3cz5lt1l0kbteodckiag</sha1>
+    </revision>
+  </page>
+</mediawiki>

@@ -1,0 +1,548 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Charmap</title>
+    <ns>828</ns>
+    <id>166411</id>
+    <revision>
+      <id>3646305</id>
+      <timestamp>2026-04-24T16:30:56Z</timestamp>
+      <contributor>
+        <username>en&gt;GKFX</username>
+        <id>0</id>
+      </contributor>
+      <comment>Update from sandbox.</comment>
+      <origin>3646305</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7993" sha1="92firw91i2ds7j6uf3xiomlsatrytis" xml:space="preserve">local p = {}
+local unicode_convert = require('Module:Unicode convert')
+local numcr2namecr = mw.loadData('Module:Numcr2namecr')
+local yesno = require('Module:Yesno')
+local GB18030_cache = {}
+
+-- Input e.g. "  A  B  FF  ", output "10 11 255"
+local function hex2dec_words(s)
+	local x = mw.text.split(mw.text.trim(s or ''), '%s+')
+	if #x == 1 and x[1] == '' then return '' end
+	for i = 1, #x do
+		x[i] = tonumber(x[i], 16) or 0
+	end
+	return table.concat(x, ' ')
+end
+
+-- Wrapper to let us replace Template:UTF-8 and Template:UTF-16
+local function template(title, args)
+	if title == 'UTF-8' then
+		return unicode_convert.getUTF8{ args = args }
+	elseif title == 'UTF-16' then
+		return unicode_convert.getUTF16{ args = args }
+	elseif title == 'hex2dec' then
+		return tostring(tonumber(args[1], 16))
+	elseif title == 'charmap/numcharref' then
+		local format = args['base'] == 'dec' and '&amp;amp;#%d;&lt;wbr&gt;' or '&amp;amp;#x%02X;&lt;wbr&gt;'
+		return format:format(tonumber(args[1], 16))
+	elseif title == 'charmap/showchar' then
+		return '&amp;#x' .. mw.text.trim(args[1]) .. ';'
+	elseif title == 'GB18030' then
+		if GB18030_cache[args[1]] then
+			if args['base'] == 'dec' then
+				return mw.getCurrentFrame():expandTemplate{
+					title = 'GB18030/decimal', args = { GB18030_cache[args[1]] }}
+			else return GB18030_cache[args[1]] end
+		elseif os.clock() &gt; 7 then
+			return "''currently unavailable''"
+		else
+			GB18030_cache[args[1]] = mw.getCurrentFrame():expandTemplate{title = 'GB18030', args = {args[1]}}
+			if args['base'] == 'dec' then
+				return hex2dec_words(GB18030_cache[args[1]])
+			else return GB18030_cache[args[1]] end
+		end
+	else
+		return mw.getCurrentFrame():expandTemplate{ title = title, args = args }
+	end
+end
+
+local function _multiUTF(args)
+	local code = args[1] or ''
+	local encoding = args[2] or 'UTF-8'
+	local output = ''
+	local pstp_sep = encoding:sub(1, 8) == 'charmap/' and '' or ' '
+	local words = mw.text.split(mw.text.trim(code), '%s')
+	
+	if not (encoding == 'charmap/showchar' or encoding == 'hex2dec') then
+		output = '|| '
+		for i = 1, #words do
+			output = output .. template(encoding, {words[i], base = 'dec'})
+			if i == 4 then break end
+			output = output .. pstp_sep
+		end
+		output = output .. '|| '
+	end
+	
+	for i = 1, #words do
+		output = output .. template(encoding, {words[i]})
+		if i == 4 then break end
+		output = output .. pstp_sep
+	end
+	
+	return output
+end
+
+local function paramCoalesce(args, arg1, arg2)
+	if args[arg1] ~= nil and args[arg1] ~= '' then return args[arg1] end
+	if arg2 ~= nil and args[arg2] ~= nil and args[arg2] ~= '' then return args[arg2] end
+	return nil
+end
+
+p.alt = function(frame, n)
+	n = n or frame.args[1]
+	local args = frame:getParent().args
+	if args['map' .. n] == '' or args['map' .. n] == nil then return ''	end
+	
+	local output = '|-\n| ' .. args['map' .. n]
+	local codes = {}
+	for i = 1, 10 do
+		if args['name' .. i] and args['name' .. i] ~= '' then
+			local x = args['map' .. n .. 'char' .. i] or ''
+			output = output .. ' || ' .. hex2dec_words(x) .. ' || ' .. frame:callParserFunction('uc', x)
+		end
+	end
+	return output .. '\n'
+end
+
+p.head = function(frame)
+	local output = '|- style="text-align:center;"\n'
+	codes = {} -- May contain nils if bad input
+	infos = {} -- boolean array
+	names = {} -- string array
+	args = frame:getParent().args
+	for i = 1, 10 do
+		if args['name' .. i] and args['name' .. i] ~= '' then
+			-- The parser function uc: preserves strip markers.
+			codes[1 + #names] = frame:callParserFunction('uc', mw.text.trim(args[i]))
+			infos[1 + #names] = paramCoalesce(args, 'Info' .. i, 'Info') == 'yes'
+			names[1 + #names] = frame:callParserFunction('uc', args['name' .. i])
+		end
+	end
+	
+	if #names &gt; 0 then
+		output = output .. "! " .. frame:preprocess('&lt;templatestyles src="Module:Charmap/styles.css"/&gt;') ..
+			(next(codes) == nil and 'Character' or 'Unicode') .. " name"
+		for i, n in ipairs(names) do
+			-- Display the character in smallcaps
+			output = output .. '\n| colspan="2" class="smallcaps-cm" | ' .. n
+		end
+	end
+
+	output = output .. '\n|-\n! style="text-align:left;" | Encodings || decimal || hex' ..
+		string.rep('|| dec || hex', #names - 1) ..
+		'\n|-\n| [[Unicode]]'
+	for i, n in ipairs(names) do
+		local code = codes[i] or '';
+		-- padleft, get to form U+XXXX or U+XXXX+XXXX.
+		code = (#code &gt;= 4) and code:gsub(' ', '+') or ('0000' .. (code or '')):sub(-4)
+		output = output .. ' || ' .. _multiUTF{codes[i] or '0', 'hex2dec'} .. ' || ' ..
+			(infos[i] and '[http://www.fileformat.info/info/unicode/char/%s/index.htm U+%s]' or 'U+%s'):format(code, code)
+	end
+	
+	output = output .. '\n|-\n| [[UTF-8]]'
+	for i, n in ipairs(names) do
+		output = output .. _multiUTF{codes[i]}
+	end
+	
+	local outsideBMP = false -- Do we need to show surrogate pairs?
+	for i, n in ipairs(names) do
+		if (tonumber(codes[i] or '', 16) or 0) &gt; 0xFFFF then
+			outsideBMP = true
+			break
+		end
+	end
+	
+	if outsideBMP then
+		output = output .. '\n|-\n| [[UTF-16]]'
+		for i, n in ipairs(names) do
+			output = output .. _multiUTF{codes[i], 'UTF-16'}
+		end
+	end
+	
+	if yesno(args['IncludeGB']) then
+		output = output .. '\n|-\n| [[GB 18030]]'
+		for i, n in ipairs(names) do
+			output = output .. _multiUTF{codes[i], 'GB18030'}
+		end
+	end
+	
+	if #names &gt; 4 then
+		output = output .. '\n|- class="template-charmap-numchr"\n| [[Numeric character reference]]'
+	else
+		output = output .. '\n|-\n| [[Numeric character reference]]'
+	end
+	for i, n in ipairs(names) do
+		output = output .. _multiUTF{codes[i], 'charmap/numcharref'}
+	end
+	
+	return output
+end
+
+p.named = function(frame, n)
+	n = n or frame.args[1]
+	local args = frame:getParent().args
+	local refchars = {}
+	local empty = true;
+	local namedref = (n == 'html') and '[[List of XML and HTML character entity references|Named character reference]]' or
+		args['namedref' .. n] or '';
+	for i = 1, 10 do
+		if args['name' .. i] and args['name' .. i] ~= '' then
+			local x = (n == 'html') and
+				(numcr2namecr[tonumber(args[i], 16)] or '') or
+				args['ref' .. n .. 'char' .. i] or ''
+			empty = empty and #x == 0
+			refchars[1 + #refchars] = x
+		end
+	end
+	if empty then return '' end
+	return '|- style="text-align:center"\n| ' .. namedref ..
+		(' || colspan="2" | %s'):rep(#refchars):format(unpack(refchars)) .. '\n'
+end
+
+-- Draw a preview block, possibly with multiple styles
+function preview(args, i)
+	local result = ''
+	for j = 1, math.huge do
+		local label = paramCoalesce(args, 'style' .. i .. '-' .. j .. 'label', 'style' .. j .. 'label')
+		if not label then break end
+		local div = mw.html.create('div'):tag('div')
+		div:tag('span'):wikitext(label)
+		div:tag('span')
+			:cssText(args['style' .. j]):cssText(args['style' .. i .. '-' .. j])
+			:wikitext(paramCoalesce(args, 'image' .. i .. '-' .. j, 'image' .. i) or
+				_multiUTF{args[i] or '20', 'charmap/showchar'})
+		result = result .. tostring(div)
+	end
+	-- Setting the font-size on the cell changes its padding.
+	local size = (result == '') and (paramCoalesce(args, 'size' .. i, 'size') or '150%') or '100%'
+	local cell =  ' || colspan="2" style="font-size:' .. size .. '" | '
+	if result == '' then
+		return cell .. (paramCoalesce(args, 'image' .. i) or _multiUTF{args[i] or '20', 'charmap/showchar'})
+	else
+		return cell .. '&lt;div&gt;' .. result .. '&lt;/div&gt;'
+	end
+end
+
+p.main = function(frame)
+	-- text-align:center: ''
+	local output = {'{| class="wikitable template-charmap" style="text-align:right"\n',
+		'|+Character information\n',
+		'|- style="text-align:center"\n', -- Otherwise mobile site tries aligning preview cells right
+		'! scope="row" | Preview'}
+	local args = frame:getParent().args
+	for i = 1, 10 do
+		--  Header row with the symbol in a large font or an image
+		if args['name' .. i] and args['name' .. i] ~= '' then
+			output[1 + #output] = preview(args, i)
+		end
+	end
+	output[1 + #output] = '\n' .. p.head(frame) .. '\n' .. p.named(frame, 'html')
+	for i = 1, 10 do
+		output[1 + #output] = p.alt(frame, i)
+	end
+	for i = 1, 5 do
+		output[1 + #output] = p.named(frame, i)
+	end
+	return table.concat(output) .. '|}'
+end
+
+return p</text>
+      <sha1>92firw91i2ds7j6uf3xiomlsatrytis</sha1>
+    </revision>
+    <revision>
+      <id>3646306</id>
+      <parentid>3646305</parentid>
+      <timestamp>2026-04-24T16:30:56Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: trying to do a last fix of these, they will be fixed and not bloat the site</comment>
+      <origin>3646305</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7993" sha1="92firw91i2ds7j6uf3xiomlsatrytis" xml:space="preserve">local p = {}
+local unicode_convert = require('Module:Unicode convert')
+local numcr2namecr = mw.loadData('Module:Numcr2namecr')
+local yesno = require('Module:Yesno')
+local GB18030_cache = {}
+
+-- Input e.g. "  A  B  FF  ", output "10 11 255"
+local function hex2dec_words(s)
+	local x = mw.text.split(mw.text.trim(s or ''), '%s+')
+	if #x == 1 and x[1] == '' then return '' end
+	for i = 1, #x do
+		x[i] = tonumber(x[i], 16) or 0
+	end
+	return table.concat(x, ' ')
+end
+
+-- Wrapper to let us replace Template:UTF-8 and Template:UTF-16
+local function template(title, args)
+	if title == 'UTF-8' then
+		return unicode_convert.getUTF8{ args = args }
+	elseif title == 'UTF-16' then
+		return unicode_convert.getUTF16{ args = args }
+	elseif title == 'hex2dec' then
+		return tostring(tonumber(args[1], 16))
+	elseif title == 'charmap/numcharref' then
+		local format = args['base'] == 'dec' and '&amp;amp;#%d;&lt;wbr&gt;' or '&amp;amp;#x%02X;&lt;wbr&gt;'
+		return format:format(tonumber(args[1], 16))
+	elseif title == 'charmap/showchar' then
+		return '&amp;#x' .. mw.text.trim(args[1]) .. ';'
+	elseif title == 'GB18030' then
+		if GB18030_cache[args[1]] then
+			if args['base'] == 'dec' then
+				return mw.getCurrentFrame():expandTemplate{
+					title = 'GB18030/decimal', args = { GB18030_cache[args[1]] }}
+			else return GB18030_cache[args[1]] end
+		elseif os.clock() &gt; 7 then
+			return "''currently unavailable''"
+		else
+			GB18030_cache[args[1]] = mw.getCurrentFrame():expandTemplate{title = 'GB18030', args = {args[1]}}
+			if args['base'] == 'dec' then
+				return hex2dec_words(GB18030_cache[args[1]])
+			else return GB18030_cache[args[1]] end
+		end
+	else
+		return mw.getCurrentFrame():expandTemplate{ title = title, args = args }
+	end
+end
+
+local function _multiUTF(args)
+	local code = args[1] or ''
+	local encoding = args[2] or 'UTF-8'
+	local output = ''
+	local pstp_sep = encoding:sub(1, 8) == 'charmap/' and '' or ' '
+	local words = mw.text.split(mw.text.trim(code), '%s')
+	
+	if not (encoding == 'charmap/showchar' or encoding == 'hex2dec') then
+		output = '|| '
+		for i = 1, #words do
+			output = output .. template(encoding, {words[i], base = 'dec'})
+			if i == 4 then break end
+			output = output .. pstp_sep
+		end
+		output = output .. '|| '
+	end
+	
+	for i = 1, #words do
+		output = output .. template(encoding, {words[i]})
+		if i == 4 then break end
+		output = output .. pstp_sep
+	end
+	
+	return output
+end
+
+local function paramCoalesce(args, arg1, arg2)
+	if args[arg1] ~= nil and args[arg1] ~= '' then return args[arg1] end
+	if arg2 ~= nil and args[arg2] ~= nil and args[arg2] ~= '' then return args[arg2] end
+	return nil
+end
+
+p.alt = function(frame, n)
+	n = n or frame.args[1]
+	local args = frame:getParent().args
+	if args['map' .. n] == '' or args['map' .. n] == nil then return ''	end
+	
+	local output = '|-\n| ' .. args['map' .. n]
+	local codes = {}
+	for i = 1, 10 do
+		if args['name' .. i] and args['name' .. i] ~= '' then
+			local x = args['map' .. n .. 'char' .. i] or ''
+			output = output .. ' || ' .. hex2dec_words(x) .. ' || ' .. frame:callParserFunction('uc', x)
+		end
+	end
+	return output .. '\n'
+end
+
+p.head = function(frame)
+	local output = '|- style="text-align:center;"\n'
+	codes = {} -- May contain nils if bad input
+	infos = {} -- boolean array
+	names = {} -- string array
+	args = frame:getParent().args
+	for i = 1, 10 do
+		if args['name' .. i] and args['name' .. i] ~= '' then
+			-- The parser function uc: preserves strip markers.
+			codes[1 + #names] = frame:callParserFunction('uc', mw.text.trim(args[i]))
+			infos[1 + #names] = paramCoalesce(args, 'Info' .. i, 'Info') == 'yes'
+			names[1 + #names] = frame:callParserFunction('uc', args['name' .. i])
+		end
+	end
+	
+	if #names &gt; 0 then
+		output = output .. "! " .. frame:preprocess('&lt;templatestyles src="Module:Charmap/styles.css"/&gt;') ..
+			(next(codes) == nil and 'Character' or 'Unicode') .. " name"
+		for i, n in ipairs(names) do
+			-- Display the character in smallcaps
+			output = output .. '\n| colspan="2" class="smallcaps-cm" | ' .. n
+		end
+	end
+
+	output = output .. '\n|-\n! style="text-align:left;" | Encodings || decimal || hex' ..
+		string.rep('|| dec || hex', #names - 1) ..
+		'\n|-\n| [[Unicode]]'
+	for i, n in ipairs(names) do
+		local code = codes[i] or '';
+		-- padleft, get to form U+XXXX or U+XXXX+XXXX.
+		code = (#code &gt;= 4) and code:gsub(' ', '+') or ('0000' .. (code or '')):sub(-4)
+		output = output .. ' || ' .. _multiUTF{codes[i] or '0', 'hex2dec'} .. ' || ' ..
+			(infos[i] and '[http://www.fileformat.info/info/unicode/char/%s/index.htm U+%s]' or 'U+%s'):format(code, code)
+	end
+	
+	output = output .. '\n|-\n| [[UTF-8]]'
+	for i, n in ipairs(names) do
+		output = output .. _multiUTF{codes[i]}
+	end
+	
+	local outsideBMP = false -- Do we need to show surrogate pairs?
+	for i, n in ipairs(names) do
+		if (tonumber(codes[i] or '', 16) or 0) &gt; 0xFFFF then
+			outsideBMP = true
+			break
+		end
+	end
+	
+	if outsideBMP then
+		output = output .. '\n|-\n| [[UTF-16]]'
+		for i, n in ipairs(names) do
+			output = output .. _multiUTF{codes[i], 'UTF-16'}
+		end
+	end
+	
+	if yesno(args['IncludeGB']) then
+		output = output .. '\n|-\n| [[GB 18030]]'
+		for i, n in ipairs(names) do
+			output = output .. _multiUTF{codes[i], 'GB18030'}
+		end
+	end
+	
+	if #names &gt; 4 then
+		output = output .. '\n|- class="template-charmap-numchr"\n| [[Numeric character reference]]'
+	else
+		output = output .. '\n|-\n| [[Numeric character reference]]'
+	end
+	for i, n in ipairs(names) do
+		output = output .. _multiUTF{codes[i], 'charmap/numcharref'}
+	end
+	
+	return output
+end
+
+p.named = function(frame, n)
+	n = n or frame.args[1]
+	local args = frame:getParent().args
+	local refchars = {}
+	local empty = true;
+	local namedref = (n == 'html') and '[[List of XML and HTML character entity references|Named character reference]]' or
+		args['namedref' .. n] or '';
+	for i = 1, 10 do
+		if args['name' .. i] and args['name' .. i] ~= '' then
+			local x = (n == 'html') and
+				(numcr2namecr[tonumber(args[i], 16)] or '') or
+				args['ref' .. n .. 'char' .. i] or ''
+			empty = empty and #x == 0
+			refchars[1 + #refchars] = x
+		end
+	end
+	if empty then return '' end
+	return '|- style="text-align:center"\n| ' .. namedref ..
+		(' || colspan="2" | %s'):rep(#refchars):format(unpack(refchars)) .. '\n'
+end
+
+-- Draw a preview block, possibly with multiple styles
+function preview(args, i)
+	local result = ''
+	for j = 1, math.huge do
+		local label = paramCoalesce(args, 'style' .. i .. '-' .. j .. 'label', 'style' .. j .. 'label')
+		if not label then break end
+		local div = mw.html.create('div'):tag('div')
+		div:tag('span'):wikitext(label)
+		div:tag('span')
+			:cssText(args['style' .. j]):cssText(args['style' .. i .. '-' .. j])
+			:wikitext(paramCoalesce(args, 'image' .. i .. '-' .. j, 'image' .. i) or
+				_multiUTF{args[i] or '20', 'charmap/showchar'})
+		result = result .. tostring(div)
+	end
+	-- Setting the font-size on the cell changes its padding.
+	local size = (result == '') and (paramCoalesce(args, 'size' .. i, 'size') or '150%') or '100%'
+	local cell =  ' || colspan="2" style="font-size:' .. size .. '" | '
+	if result == '' then
+		return cell .. (paramCoalesce(args, 'image' .. i) or _multiUTF{args[i] or '20', 'charmap/showchar'})
+	else
+		return cell .. '&lt;div&gt;' .. result .. '&lt;/div&gt;'
+	end
+end
+
+p.main = function(frame)
+	-- text-align:center: ''
+	local output = {'{| class="wikitable template-charmap" style="text-align:right"\n',
+		'|+Character information\n',
+		'|- style="text-align:center"\n', -- Otherwise mobile site tries aligning preview cells right
+		'! scope="row" | Preview'}
+	local args = frame:getParent().args
+	for i = 1, 10 do
+		--  Header row with the symbol in a large font or an image
+		if args['name' .. i] and args['name' .. i] ~= '' then
+			output[1 + #output] = preview(args, i)
+		end
+	end
+	output[1 + #output] = '\n' .. p.head(frame) .. '\n' .. p.named(frame, 'html')
+	for i = 1, 10 do
+		output[1 + #output] = p.alt(frame, i)
+	end
+	for i = 1, 5 do
+		output[1 + #output] = p.named(frame, i)
+	end
+	return table.concat(output) .. '|}'
+end
+
+return p</text>
+      <sha1>92firw91i2ds7j6uf3xiomlsatrytis</sha1>
+    </revision>
+  </page>
+</mediawiki>

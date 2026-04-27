@@ -1,0 +1,692 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Check for deprecated parameters</title>
+    <ns>828</ns>
+    <id>14238</id>
+    <revision>
+      <id>1155605</id>
+      <timestamp>2021-05-09T23:53:33Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Izno</username>
+        <id>0</id>
+      </contributor>
+      <comment>use if preview</comment>
+      <origin>1155605</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1974" sha1="0dd53q4069rs3e3umzmi1hyeb6ll4if" xml:space="preserve">-- This module may be used to compare the arguments passed to the parent
+-- with a list of arguments, returning a specified result if an argument is
+-- on the list
+local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and trim(s) ~= ''
+end
+
+function p.check (frame)
+	-- create the table of deprecated values and their matching new value
+	local args = frame.args
+	local dep_values = {}
+	for k, v in pairs(args) do
+		if k == 'ignoreblank' or k == 'preview' or k == 'deprecated' then else
+			dep_values[k] = v
+		end
+	end
+
+	-- loop over the parent args and see if any are deprecated
+	local values = {}
+	local ignoreblank = isnotempty(frame.args['ignoreblank'])
+	local pargs = frame:getParent().args
+	for k, v in pairs(pargs) do
+		if ignoreblank then
+			if dep_values[k] and v~='' then
+				table.insert(values, k)
+			end
+		else
+			if dep_values[k] then
+				table.insert(values, k)
+			end	
+		end
+	end
+	
+	-- add results to the output tables
+	local res = {}
+	if #values &gt; 0 then
+		local preview = frame.args['preview'] or
+			'Page using [['..frame:getParent():getTitle()..']] with deprecated parameter _VALUE_'
+		if isnotempty(preview) then
+			preview = require('Module:If preview')._warning({
+				preview
+			})
+		end
+		-- Kind of dangerous to trust that this is never nil, but I guess it's
+		-- preferable to display that the use of the module is broken rather than
+		-- have some sort of tracking category for pages which have an unknown
+		-- parent tracking template.
+		local category = frame.args['category']
+		for k, v in pairs(values) do
+			local c = category:gsub('_VALUE_', v)
+			table.insert(res, c)
+			if v == '' then
+				-- Fix odd bug for | = which gets stripped to the empty string
+				-- and breaks category links
+				v = ' '
+			end
+			local p = preview:gsub(
+				'_VALUE_',
+				'"'..v..'". Replace with "'..dep_values[v]..'".'
+			)
+			table.insert(res, p )
+		end
+	end
+
+	return table.concat(res)
+end
+
+return p</text>
+      <sha1>0dd53q4069rs3e3umzmi1hyeb6ll4if</sha1>
+    </revision>
+    <revision>
+      <id>1155606</id>
+      <parentid>1155605</parentid>
+      <timestamp>2025-04-11T15:55:30Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:Check_for_deprecated_parameters]]: Mass importing wikipedia</comment>
+      <origin>1155605</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1974" sha1="0dd53q4069rs3e3umzmi1hyeb6ll4if" xml:space="preserve">-- This module may be used to compare the arguments passed to the parent
+-- with a list of arguments, returning a specified result if an argument is
+-- on the list
+local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and trim(s) ~= ''
+end
+
+function p.check (frame)
+	-- create the table of deprecated values and their matching new value
+	local args = frame.args
+	local dep_values = {}
+	for k, v in pairs(args) do
+		if k == 'ignoreblank' or k == 'preview' or k == 'deprecated' then else
+			dep_values[k] = v
+		end
+	end
+
+	-- loop over the parent args and see if any are deprecated
+	local values = {}
+	local ignoreblank = isnotempty(frame.args['ignoreblank'])
+	local pargs = frame:getParent().args
+	for k, v in pairs(pargs) do
+		if ignoreblank then
+			if dep_values[k] and v~='' then
+				table.insert(values, k)
+			end
+		else
+			if dep_values[k] then
+				table.insert(values, k)
+			end	
+		end
+	end
+	
+	-- add results to the output tables
+	local res = {}
+	if #values &gt; 0 then
+		local preview = frame.args['preview'] or
+			'Page using [['..frame:getParent():getTitle()..']] with deprecated parameter _VALUE_'
+		if isnotempty(preview) then
+			preview = require('Module:If preview')._warning({
+				preview
+			})
+		end
+		-- Kind of dangerous to trust that this is never nil, but I guess it's
+		-- preferable to display that the use of the module is broken rather than
+		-- have some sort of tracking category for pages which have an unknown
+		-- parent tracking template.
+		local category = frame.args['category']
+		for k, v in pairs(values) do
+			local c = category:gsub('_VALUE_', v)
+			table.insert(res, c)
+			if v == '' then
+				-- Fix odd bug for | = which gets stripped to the empty string
+				-- and breaks category links
+				v = ' '
+			end
+			local p = preview:gsub(
+				'_VALUE_',
+				'"'..v..'". Replace with "'..dep_values[v]..'".'
+			)
+			table.insert(res, p )
+		end
+	end
+
+	return table.concat(res)
+end
+
+return p</text>
+      <sha1>0dd53q4069rs3e3umzmi1hyeb6ll4if</sha1>
+    </revision>
+    <revision>
+      <id>14239</id>
+      <timestamp>2025-05-18T22:56:41Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Text replacement - "category:" to "Category:"</comment>
+      <origin>14239</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1974" sha1="g2xkyflzo1rvvsgdpt8m6f45r4ge7ra" xml:space="preserve">-- This module may be used to compare the arguments passed to the parent
+-- with a list of arguments, returning a specified result if an argument is
+-- on the list
+local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and trim(s) ~= ''
+end
+
+function p.check (frame)
+	-- create the table of deprecated values and their matching new value
+	local args = frame.args
+	local dep_values = {}
+	for k, v in pairs(args) do
+		if k == 'ignoreblank' or k == 'preview' or k == 'deprecated' then else
+			dep_values[k] = v
+		end
+	end
+
+	-- loop over the parent args and see if any are deprecated
+	local values = {}
+	local ignoreblank = isnotempty(frame.args['ignoreblank'])
+	local pargs = frame:getParent().args
+	for k, v in pairs(pargs) do
+		if ignoreblank then
+			if dep_values[k] and v~='' then
+				table.insert(values, k)
+			end
+		else
+			if dep_values[k] then
+				table.insert(values, k)
+			end	
+		end
+	end
+	
+	-- add results to the output tables
+	local res = {}
+	if #values &gt; 0 then
+		local preview = frame.args['preview'] or
+			'Page using [['..frame:getParent():getTitle()..']] with deprecated parameter _VALUE_'
+		if isnotempty(preview) then
+			preview = require('Module:If preview')._warning({
+				preview
+			})
+		end
+		-- Kind of dangerous to trust that this is never nil, but I guess it's
+		-- preferable to display that the use of the module is broken rather than
+		-- have some sort of tracking category for pages which have an unknown
+		-- parent tracking template.
+		local category = frame.args['category']
+		for k, v in pairs(values) do
+			local c = Category:gsub('_VALUE_', v)
+			table.insert(res, c)
+			if v == '' then
+				-- Fix odd bug for | = which gets stripped to the empty string
+				-- and breaks category links
+				v = ' '
+			end
+			local p = preview:gsub(
+				'_VALUE_',
+				'"'..v..'". Replace with "'..dep_values[v]..'".'
+			)
+			table.insert(res, p )
+		end
+	end
+
+	return table.concat(res)
+end
+
+return p</text>
+      <sha1>g2xkyflzo1rvvsgdpt8m6f45r4ge7ra</sha1>
+    </revision>
+    <revision>
+      <id>3407342</id>
+      <parentid>14239</parentid>
+      <timestamp>2025-11-20T11:54:16Z</timestamp>
+      <contributor>
+        <username>en&gt;Hike395</username>
+        <id>0</id>
+      </contributor>
+      <comment>remove "deprecated" from list of parameters to this module</comment>
+      <origin>3407342</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2565" sha1="hbqvye2osjqyf06qui57756bcd4now3" xml:space="preserve">-- This module may be used to compare the arguments passed to the parent
+-- with a list of arguments, returning a specified result if an argument is
+-- on the list
+local p = {}
+
+local function isnotempty(s)
+	return s and mw.text.trim(s) ~= ''
+end
+
+local function scanValues(values,results,args,replaceTable)
+    for k, v in pairs(values) do
+		local c = args.category:gsub('_VALUE_', v)
+		table.insert(results, c)
+		if v == '' then
+			-- Fix odd bug for | = which gets stripped to the empty string
+			-- and breaks category links
+			v = ' '
+		end
+        local replaceString = '"'..v..'". '
+        local replaceValue = replaceTable and replaceTable[v]
+        replaceString = replaceString..(replaceValue and 'Replace with "'..replaceValue..'".' or 'It should be removed.')
+		local p = args.preview:gsub('_VALUE_',replaceString)
+		table.insert(results, p )
+	end
+end
+
+function p.check (frame)
+	-- create the table of deprecated values and their matching new value
+	return p._check(frame.args, frame:getParent().args, frame:getParent():getTitle())
+end
+
+local moduleParams = {ignoreblank=true, preview=true, _category=true, _remove=true}
+
+function p._check(args, pargs, caller)
+	local dep_values = {}
+	for k, v in pairs(args) do
+        if not moduleParams[k] then
+			dep_values[k] = v
+		end
+	end
+
+	-- Parse params to remove
+	local removes = {}
+	if args['_remove'] then
+		for r in args['_remove']:gmatch("([^;]+)") do
+            removes[mw.text.trim(r)] = 1
+		end
+	end
+	
+	-- loop over the parent args and see if any are deprecated
+	local values = {}
+	local remove_values = {}
+	local ignoreblank = isnotempty(args['ignoreblank'])
+	for k, v in pairs(pargs) do
+        if not ignoreblank or isnotempty(v) then
+			if dep_values[k] then
+				table.insert(values, k)
+			elseif removes[k] then
+				table.insert(remove_values, k)
+			end
+		end
+	end
+
+    -- find out about calling context
+    local title = mw.title.getCurrentTitle()
+
+    -- create local defaulted arguments
+    local category = args["_category"] or title.ff == 0 and "[[Category:Pages with deprecated parameters]]" or ""
+	local preview = args['preview'] or 'Page using [['..caller..']] with deprecated parameter _VALUE_'
+	if isnotempty(preview) then
+		preview = require('Module:If preview')._warning({preview})
+	end
+    local localArgs = {category=category,preview=preview}
+	
+    -- scan through values and remove_values and create output results
+	local results = {}
+    scanValues(values,results,localArgs,dep_values)
+    scanValues(remove_values,results,localArgs)
+	return table.concat(results)
+end
+
+return p</text>
+      <sha1>hbqvye2osjqyf06qui57756bcd4now3</sha1>
+    </revision>
+    <revision>
+      <id>3407343</id>
+      <parentid>3407342</parentid>
+      <timestamp>2026-03-12T20:21:25Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3407342</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2565" sha1="hbqvye2osjqyf06qui57756bcd4now3" xml:space="preserve">-- This module may be used to compare the arguments passed to the parent
+-- with a list of arguments, returning a specified result if an argument is
+-- on the list
+local p = {}
+
+local function isnotempty(s)
+	return s and mw.text.trim(s) ~= ''
+end
+
+local function scanValues(values,results,args,replaceTable)
+    for k, v in pairs(values) do
+		local c = args.category:gsub('_VALUE_', v)
+		table.insert(results, c)
+		if v == '' then
+			-- Fix odd bug for | = which gets stripped to the empty string
+			-- and breaks category links
+			v = ' '
+		end
+        local replaceString = '"'..v..'". '
+        local replaceValue = replaceTable and replaceTable[v]
+        replaceString = replaceString..(replaceValue and 'Replace with "'..replaceValue..'".' or 'It should be removed.')
+		local p = args.preview:gsub('_VALUE_',replaceString)
+		table.insert(results, p )
+	end
+end
+
+function p.check (frame)
+	-- create the table of deprecated values and their matching new value
+	return p._check(frame.args, frame:getParent().args, frame:getParent():getTitle())
+end
+
+local moduleParams = {ignoreblank=true, preview=true, _category=true, _remove=true}
+
+function p._check(args, pargs, caller)
+	local dep_values = {}
+	for k, v in pairs(args) do
+        if not moduleParams[k] then
+			dep_values[k] = v
+		end
+	end
+
+	-- Parse params to remove
+	local removes = {}
+	if args['_remove'] then
+		for r in args['_remove']:gmatch("([^;]+)") do
+            removes[mw.text.trim(r)] = 1
+		end
+	end
+	
+	-- loop over the parent args and see if any are deprecated
+	local values = {}
+	local remove_values = {}
+	local ignoreblank = isnotempty(args['ignoreblank'])
+	for k, v in pairs(pargs) do
+        if not ignoreblank or isnotempty(v) then
+			if dep_values[k] then
+				table.insert(values, k)
+			elseif removes[k] then
+				table.insert(remove_values, k)
+			end
+		end
+	end
+
+    -- find out about calling context
+    local title = mw.title.getCurrentTitle()
+
+    -- create local defaulted arguments
+    local category = args["_category"] or title.ff == 0 and "[[Category:Pages with deprecated parameters]]" or ""
+	local preview = args['preview'] or 'Page using [['..caller..']] with deprecated parameter _VALUE_'
+	if isnotempty(preview) then
+		preview = require('Module:If preview')._warning({preview})
+	end
+    local localArgs = {category=category,preview=preview}
+	
+    -- scan through values and remove_values and create output results
+	local results = {}
+    scanValues(values,results,localArgs,dep_values)
+    scanValues(remove_values,results,localArgs)
+	return table.concat(results)
+end
+
+return p</text>
+      <sha1>hbqvye2osjqyf06qui57756bcd4now3</sha1>
+    </revision>
+    <revision>
+      <id>3408217</id>
+      <parentid>3407343</parentid>
+      <timestamp>2026-03-12T20:30:47Z</timestamp>
+      <contributor>
+        <username>en&gt;Hike395</username>
+        <id>0</id>
+      </contributor>
+      <comment>remove "deprecated" from list of parameters to this module</comment>
+      <origin>3408217</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2572" sha1="6pg33nakw78ry3o0fys41ny599i0hwk" xml:space="preserve">-- This module may be used to compare the arguments passed to the parent
+-- with a list of arguments, returning a specified result if an argument is
+-- on the list
+local p = {}
+
+local function isnotempty(s)
+	return s and mw.text.trim(s) ~= ''
+end
+
+local function scanValues(values,results,args,replaceTable)
+    for k, v in pairs(values) do
+		local c = args.category:gsub('_VALUE_', v)
+		table.insert(results, c)
+		if v == '' then
+			-- Fix odd bug for | = which gets stripped to the empty string
+			-- and breaks category links
+			v = ' '
+		end
+        local replaceString = '"'..v..'". '
+        local replaceValue = replaceTable and replaceTable[v]
+        replaceString = replaceString..(replaceValue and 'Replace with "'..replaceValue..'".' or 'It should be removed.')
+		local p = args.preview:gsub('_VALUE_',replaceString)
+		table.insert(results, p )
+	end
+end
+
+function p.check (frame)
+	-- create the table of deprecated values and their matching new value
+	return p._check(frame.args, frame:getParent().args, frame:getParent():getTitle())
+end
+
+local moduleParams = {ignoreblank=true, preview=true, _category=true, _remove=true}
+
+function p._check(args, pargs, caller)
+	local dep_values = {}
+	for k, v in pairs(args) do
+        if not moduleParams[k] then
+			dep_values[k] = v
+		end
+	end
+
+	-- Parse params to remove
+	local removes = {}
+	if args['_remove'] then
+		for r in args['_remove']:gmatch("([^;]+)") do
+            removes[mw.text.trim(r)] = 1
+		end
+	end
+	
+	-- loop over the parent args and see if any are deprecated
+	local values = {}
+	local remove_values = {}
+	local ignoreblank = isnotempty(args['ignoreblank'])
+	for k, v in pairs(pargs) do
+        if not ignoreblank or isnotempty(v) then
+			if dep_values[k] then
+				table.insert(values, k)
+			elseif removes[k] then
+				table.insert(remove_values, k)
+			end
+		end
+	end
+
+    -- find out about calling context
+    local title = mw.title.getCurrentTitle()
+
+    -- create local defaulted arguments
+    local category = args["_category"] or title.namespace == 0 and "[[Category:Pages with deprecated parameters]]" or ""
+	local preview = args['preview'] or 'Page using [['..caller..']] with deprecated parameter _VALUE_'
+	if isnotempty(preview) then
+		preview = require('Module:If preview')._warning({preview})
+	end
+    local localArgs = {category=category,preview=preview}
+	
+    -- scan through values and remove_values and create output results
+	local results = {}
+    scanValues(values,results,localArgs,dep_values)
+    scanValues(remove_values,results,localArgs)
+	return table.concat(results)
+end
+
+return p</text>
+      <sha1>6pg33nakw78ry3o0fys41ny599i0hwk</sha1>
+    </revision>
+    <revision>
+      <id>3408218</id>
+      <parentid>3408217</parentid>
+      <timestamp>2026-03-12T20:30:47Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3408217</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2572" sha1="6pg33nakw78ry3o0fys41ny599i0hwk" xml:space="preserve">-- This module may be used to compare the arguments passed to the parent
+-- with a list of arguments, returning a specified result if an argument is
+-- on the list
+local p = {}
+
+local function isnotempty(s)
+	return s and mw.text.trim(s) ~= ''
+end
+
+local function scanValues(values,results,args,replaceTable)
+    for k, v in pairs(values) do
+		local c = args.category:gsub('_VALUE_', v)
+		table.insert(results, c)
+		if v == '' then
+			-- Fix odd bug for | = which gets stripped to the empty string
+			-- and breaks category links
+			v = ' '
+		end
+        local replaceString = '"'..v..'". '
+        local replaceValue = replaceTable and replaceTable[v]
+        replaceString = replaceString..(replaceValue and 'Replace with "'..replaceValue..'".' or 'It should be removed.')
+		local p = args.preview:gsub('_VALUE_',replaceString)
+		table.insert(results, p )
+	end
+end
+
+function p.check (frame)
+	-- create the table of deprecated values and their matching new value
+	return p._check(frame.args, frame:getParent().args, frame:getParent():getTitle())
+end
+
+local moduleParams = {ignoreblank=true, preview=true, _category=true, _remove=true}
+
+function p._check(args, pargs, caller)
+	local dep_values = {}
+	for k, v in pairs(args) do
+        if not moduleParams[k] then
+			dep_values[k] = v
+		end
+	end
+
+	-- Parse params to remove
+	local removes = {}
+	if args['_remove'] then
+		for r in args['_remove']:gmatch("([^;]+)") do
+            removes[mw.text.trim(r)] = 1
+		end
+	end
+	
+	-- loop over the parent args and see if any are deprecated
+	local values = {}
+	local remove_values = {}
+	local ignoreblank = isnotempty(args['ignoreblank'])
+	for k, v in pairs(pargs) do
+        if not ignoreblank or isnotempty(v) then
+			if dep_values[k] then
+				table.insert(values, k)
+			elseif removes[k] then
+				table.insert(remove_values, k)
+			end
+		end
+	end
+
+    -- find out about calling context
+    local title = mw.title.getCurrentTitle()
+
+    -- create local defaulted arguments
+    local category = args["_category"] or title.namespace == 0 and "[[Category:Pages with deprecated parameters]]" or ""
+	local preview = args['preview'] or 'Page using [['..caller..']] with deprecated parameter _VALUE_'
+	if isnotempty(preview) then
+		preview = require('Module:If preview')._warning({preview})
+	end
+    local localArgs = {category=category,preview=preview}
+	
+    -- scan through values and remove_values and create output results
+	local results = {}
+    scanValues(values,results,localArgs,dep_values)
+    scanValues(remove_values,results,localArgs)
+	return table.concat(results)
+end
+
+return p</text>
+      <sha1>6pg33nakw78ry3o0fys41ny599i0hwk</sha1>
+    </revision>
+  </page>
+</mediawiki>

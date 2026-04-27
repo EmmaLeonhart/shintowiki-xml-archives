@@ -1,0 +1,437 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Template:Wikidata check/doc</title>
+    <ns>10</ns>
+    <id>151428</id>
+    <revision>
+      <id>3412328</id>
+      <timestamp>2026-03-13T00:16:25Z</timestamp>
+      <contributor>
+        <username>en&gt;MSGJ</username>
+        <id>0</id>
+      </contributor>
+      <comment>update</comment>
+      <origin>3412328</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="3675" sha1="g97fe0lawsreyxtni67tcqptscf2bfh" xml:space="preserve">{{documentation subpage}}
+{{High-use}}
+
+{{#ifeq:{{NAMESPACE}}|Module
+| {{Module rating |protected}}{{Ombox|text=The following is the documentation for [[Template:WikidataCheck]].}}
+| {{Lua|Module:WikidataCheck}}
+}}
+
+[[Template:WikidataCheck]] compares a template parameter to a Wikidata property and adds pages using the template to one of three categories: not in, same as, or different from Wikidata. It is powered by the Lua module [[Module:WikidataCheck]].
+
+== Usage ==
+To add only [[Wikipedia:What is an article?#Namespace|articles]] to the categories: 
+
+&lt;code&gt;&lt;nowiki&gt;{{Wikidata check|property=P###|value={{{value|}}}|category=Category prefix}}&lt;/nowiki&gt;&lt;/code&gt;
+
+To add pages in other [[Wikipedia:Namespace|namespaces]] to the categories: 
+
+&lt;code&gt;&lt;nowiki&gt;{{Wikidata check|property=P###|value={{{value|}}}|category=Category prefix|namespaces=0,14}}&lt;/nowiki&gt;&lt;/code&gt;
+
+To prevent adding pages to a "same as" category:
+
+&lt;code&gt;&lt;nowiki&gt;{{Wikidata check|property=P###|value={{{value|}}}|category=Category prefix|nocatsame=1}}&lt;/nowiki&gt;&lt;/code&gt;
+
+To make comparison [[case insensitive]] for "different from" category:
+
+&lt;code&gt;&lt;nowiki&gt;{{Wikidata check|property=P###|value={{{value|}}}|category=Category prefix|ignorecase=1}}&lt;/nowiki&gt;&lt;/code&gt;
+
+== Parameters ==
+; Required
+* {{para|property}} is the P### of the property. The "P" must be uppercase.
+* {{para|value}} is the value to use from the template. This would be something like &lt;code&gt;&lt;nowiki&gt;{{{id|}}}&lt;/nowiki&gt;&lt;/code&gt; or &lt;code&gt;&lt;nowiki&gt;{{{id|{{{1|}}}}}}&lt;/nowiki&gt;&lt;/code&gt;
+* {{para|category}} is the prefix to use in front of the category names. The categories created are "[prefix] not in Wikidata", "[prefix] same as Wikidata", and "[prefix] different from Wikidata".
+** It is recommended you create these categories with {{tlx|hiddencat}} before applying this template.
+; Optional
+* {{para|namespaces}} is a comma separated list of the numerical namespaces to apply the template. The default is 0, which is just article space.
+* {{para|nocatsame}} if set to any value will prevent adding pages to a "same as" category. The "not in" and "different from" categories are still added, where applicable.
+* {{para|ignorecase}} if set to any value will ignore upper/lower case differences between value in template and value in Wikidata when adding pages to a "different from" category.
+* {{para|qid}} if specified will check a a different Wikidata item than the current article.
+* {{para|onlysourced}} if set to "yes" will ignore unsourced Wikidata properties, equivalent to [[Module:WikidataIB]]'s {{para|onlysourced|yes}}.
+
+== Example ==
+For {{tlx|MusicBrainz artist}}, which checks {{property|P434}}, the following code would be added:
+
+&lt;code&gt;&lt;nowiki&gt;{{Wikidata check|property=P434|value={{{mbid|{{{id|{{{1|}}}}}}}}}|category=MusicBrainz artist}}&lt;/nowiki&gt;&lt;/code&gt;
+
+Articles using that template with an ID would be placed in one of the following categories:
+* [[:Category:MusicBrainz artist not in Wikidata]]
+* [[:Category:MusicBrainz artist same as Wikidata]]
+* [[:Category:MusicBrainz artist different from Wikidata]]
+
+== See also ==
+* {{tl|Tracks Wikidata}} for use in template documentation
+* {{tl|Wikidata alignment}} - similar template with slightly different functionality
+* {{tl|Wikidata tracking category}} for use in hidden tracking categories
+* {{cl|Wikipedia categories tracking data not in Wikidata}}
+* {{cl|Wikipedia categories tracking data same as Wikidata}}
+* {{cl|Wikipedia categories tracking Wikidata differences}}
+
+&lt;includeonly&gt;{{Sandbox other||{{#switch:{{NAMESPACENUMBER}}
+|10=
+[[Category:Wikidata templates]]
+|#default=
+[[Category:Wikidata modules]][[Category:Modules using data from Wikidata]]
+}}}}&lt;/includeonly&gt;</text>
+      <sha1>g97fe0lawsreyxtni67tcqptscf2bfh</sha1>
+    </revision>
+    <revision>
+      <id>3412329</id>
+      <parentid>3412328</parentid>
+      <timestamp>2026-03-13T00:16:25Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: importing</comment>
+      <origin>3412328</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="3675" sha1="g97fe0lawsreyxtni67tcqptscf2bfh" xml:space="preserve">{{documentation subpage}}
+{{High-use}}
+
+{{#ifeq:{{NAMESPACE}}|Module
+| {{Module rating |protected}}{{Ombox|text=The following is the documentation for [[Template:WikidataCheck]].}}
+| {{Lua|Module:WikidataCheck}}
+}}
+
+[[Template:WikidataCheck]] compares a template parameter to a Wikidata property and adds pages using the template to one of three categories: not in, same as, or different from Wikidata. It is powered by the Lua module [[Module:WikidataCheck]].
+
+== Usage ==
+To add only [[Wikipedia:What is an article?#Namespace|articles]] to the categories: 
+
+&lt;code&gt;&lt;nowiki&gt;{{Wikidata check|property=P###|value={{{value|}}}|category=Category prefix}}&lt;/nowiki&gt;&lt;/code&gt;
+
+To add pages in other [[Wikipedia:Namespace|namespaces]] to the categories: 
+
+&lt;code&gt;&lt;nowiki&gt;{{Wikidata check|property=P###|value={{{value|}}}|category=Category prefix|namespaces=0,14}}&lt;/nowiki&gt;&lt;/code&gt;
+
+To prevent adding pages to a "same as" category:
+
+&lt;code&gt;&lt;nowiki&gt;{{Wikidata check|property=P###|value={{{value|}}}|category=Category prefix|nocatsame=1}}&lt;/nowiki&gt;&lt;/code&gt;
+
+To make comparison [[case insensitive]] for "different from" category:
+
+&lt;code&gt;&lt;nowiki&gt;{{Wikidata check|property=P###|value={{{value|}}}|category=Category prefix|ignorecase=1}}&lt;/nowiki&gt;&lt;/code&gt;
+
+== Parameters ==
+; Required
+* {{para|property}} is the P### of the property. The "P" must be uppercase.
+* {{para|value}} is the value to use from the template. This would be something like &lt;code&gt;&lt;nowiki&gt;{{{id|}}}&lt;/nowiki&gt;&lt;/code&gt; or &lt;code&gt;&lt;nowiki&gt;{{{id|{{{1|}}}}}}&lt;/nowiki&gt;&lt;/code&gt;
+* {{para|category}} is the prefix to use in front of the category names. The categories created are "[prefix] not in Wikidata", "[prefix] same as Wikidata", and "[prefix] different from Wikidata".
+** It is recommended you create these categories with {{tlx|hiddencat}} before applying this template.
+; Optional
+* {{para|namespaces}} is a comma separated list of the numerical namespaces to apply the template. The default is 0, which is just article space.
+* {{para|nocatsame}} if set to any value will prevent adding pages to a "same as" category. The "not in" and "different from" categories are still added, where applicable.
+* {{para|ignorecase}} if set to any value will ignore upper/lower case differences between value in template and value in Wikidata when adding pages to a "different from" category.
+* {{para|qid}} if specified will check a a different Wikidata item than the current article.
+* {{para|onlysourced}} if set to "yes" will ignore unsourced Wikidata properties, equivalent to [[Module:WikidataIB]]'s {{para|onlysourced|yes}}.
+
+== Example ==
+For {{tlx|MusicBrainz artist}}, which checks {{property|P434}}, the following code would be added:
+
+&lt;code&gt;&lt;nowiki&gt;{{Wikidata check|property=P434|value={{{mbid|{{{id|{{{1|}}}}}}}}}|category=MusicBrainz artist}}&lt;/nowiki&gt;&lt;/code&gt;
+
+Articles using that template with an ID would be placed in one of the following categories:
+* [[:Category:MusicBrainz artist not in Wikidata]]
+* [[:Category:MusicBrainz artist same as Wikidata]]
+* [[:Category:MusicBrainz artist different from Wikidata]]
+
+== See also ==
+* {{tl|Tracks Wikidata}} for use in template documentation
+* {{tl|Wikidata alignment}} - similar template with slightly different functionality
+* {{tl|Wikidata tracking category}} for use in hidden tracking categories
+* {{cl|Wikipedia categories tracking data not in Wikidata}}
+* {{cl|Wikipedia categories tracking data same as Wikidata}}
+* {{cl|Wikipedia categories tracking Wikidata differences}}
+
+&lt;includeonly&gt;{{Sandbox other||{{#switch:{{NAMESPACENUMBER}}
+|10=
+[[Category:Wikidata templates]]
+|#default=
+[[Category:Wikidata modules]][[Category:Modules using data from Wikidata]]
+}}}}&lt;/includeonly&gt;</text>
+      <sha1>g97fe0lawsreyxtni67tcqptscf2bfh</sha1>
+    </revision>
+    <revision>
+      <id>3412697</id>
+      <parentid>3412329</parentid>
+      <timestamp>2026-03-13T00:17:28Z</timestamp>
+      <contributor>
+        <username>en&gt;MSGJ</username>
+        <id>0</id>
+      </contributor>
+      <comment>update</comment>
+      <origin>3412328</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="3675" sha1="g97fe0lawsreyxtni67tcqptscf2bfh" xml:space="preserve">{{documentation subpage}}
+{{High-use}}
+
+{{#ifeq:{{NAMESPACE}}|Module
+| {{Module rating |protected}}{{Ombox|text=The following is the documentation for [[Template:WikidataCheck]].}}
+| {{Lua|Module:WikidataCheck}}
+}}
+
+[[Template:WikidataCheck]] compares a template parameter to a Wikidata property and adds pages using the template to one of three categories: not in, same as, or different from Wikidata. It is powered by the Lua module [[Module:WikidataCheck]].
+
+== Usage ==
+To add only [[Wikipedia:What is an article?#Namespace|articles]] to the categories: 
+
+&lt;code&gt;&lt;nowiki&gt;{{Wikidata check|property=P###|value={{{value|}}}|category=Category prefix}}&lt;/nowiki&gt;&lt;/code&gt;
+
+To add pages in other [[Wikipedia:Namespace|namespaces]] to the categories: 
+
+&lt;code&gt;&lt;nowiki&gt;{{Wikidata check|property=P###|value={{{value|}}}|category=Category prefix|namespaces=0,14}}&lt;/nowiki&gt;&lt;/code&gt;
+
+To prevent adding pages to a "same as" category:
+
+&lt;code&gt;&lt;nowiki&gt;{{Wikidata check|property=P###|value={{{value|}}}|category=Category prefix|nocatsame=1}}&lt;/nowiki&gt;&lt;/code&gt;
+
+To make comparison [[case insensitive]] for "different from" category:
+
+&lt;code&gt;&lt;nowiki&gt;{{Wikidata check|property=P###|value={{{value|}}}|category=Category prefix|ignorecase=1}}&lt;/nowiki&gt;&lt;/code&gt;
+
+== Parameters ==
+; Required
+* {{para|property}} is the P### of the property. The "P" must be uppercase.
+* {{para|value}} is the value to use from the template. This would be something like &lt;code&gt;&lt;nowiki&gt;{{{id|}}}&lt;/nowiki&gt;&lt;/code&gt; or &lt;code&gt;&lt;nowiki&gt;{{{id|{{{1|}}}}}}&lt;/nowiki&gt;&lt;/code&gt;
+* {{para|category}} is the prefix to use in front of the category names. The categories created are "[prefix] not in Wikidata", "[prefix] same as Wikidata", and "[prefix] different from Wikidata".
+** It is recommended you create these categories with {{tlx|hiddencat}} before applying this template.
+; Optional
+* {{para|namespaces}} is a comma separated list of the numerical namespaces to apply the template. The default is 0, which is just article space.
+* {{para|nocatsame}} if set to any value will prevent adding pages to a "same as" category. The "not in" and "different from" categories are still added, where applicable.
+* {{para|ignorecase}} if set to any value will ignore upper/lower case differences between value in template and value in Wikidata when adding pages to a "different from" category.
+* {{para|qid}} if specified will check a a different Wikidata item than the current article.
+* {{para|onlysourced}} if set to "yes" will ignore unsourced Wikidata properties, equivalent to [[Module:WikidataIB]]'s {{para|onlysourced|yes}}.
+
+== Example ==
+For {{tlx|MusicBrainz artist}}, which checks {{property|P434}}, the following code would be added:
+
+&lt;code&gt;&lt;nowiki&gt;{{Wikidata check|property=P434|value={{{mbid|{{{id|{{{1|}}}}}}}}}|category=MusicBrainz artist}}&lt;/nowiki&gt;&lt;/code&gt;
+
+Articles using that template with an ID would be placed in one of the following categories:
+* [[:Category:MusicBrainz artist not in Wikidata]]
+* [[:Category:MusicBrainz artist same as Wikidata]]
+* [[:Category:MusicBrainz artist different from Wikidata]]
+
+== See also ==
+* {{tl|Tracks Wikidata}} for use in template documentation
+* {{tl|Wikidata alignment}} - similar template with slightly different functionality
+* {{tl|Wikidata tracking category}} for use in hidden tracking categories
+* {{cl|Wikipedia categories tracking data not in Wikidata}}
+* {{cl|Wikipedia categories tracking data same as Wikidata}}
+* {{cl|Wikipedia categories tracking Wikidata differences}}
+
+&lt;includeonly&gt;{{Sandbox other||{{#switch:{{NAMESPACENUMBER}}
+|10=
+[[Category:Wikidata templates]]
+|#default=
+[[Category:Wikidata modules]][[Category:Modules using data from Wikidata]]
+}}}}&lt;/includeonly&gt;</text>
+      <sha1>g97fe0lawsreyxtni67tcqptscf2bfh</sha1>
+    </revision>
+    <revision>
+      <id>3412698</id>
+      <parentid>3412697</parentid>
+      <timestamp>2026-03-13T00:17:28Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3412328</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="3675" sha1="g97fe0lawsreyxtni67tcqptscf2bfh" xml:space="preserve">{{documentation subpage}}
+{{High-use}}
+
+{{#ifeq:{{NAMESPACE}}|Module
+| {{Module rating |protected}}{{Ombox|text=The following is the documentation for [[Template:WikidataCheck]].}}
+| {{Lua|Module:WikidataCheck}}
+}}
+
+[[Template:WikidataCheck]] compares a template parameter to a Wikidata property and adds pages using the template to one of three categories: not in, same as, or different from Wikidata. It is powered by the Lua module [[Module:WikidataCheck]].
+
+== Usage ==
+To add only [[Wikipedia:What is an article?#Namespace|articles]] to the categories: 
+
+&lt;code&gt;&lt;nowiki&gt;{{Wikidata check|property=P###|value={{{value|}}}|category=Category prefix}}&lt;/nowiki&gt;&lt;/code&gt;
+
+To add pages in other [[Wikipedia:Namespace|namespaces]] to the categories: 
+
+&lt;code&gt;&lt;nowiki&gt;{{Wikidata check|property=P###|value={{{value|}}}|category=Category prefix|namespaces=0,14}}&lt;/nowiki&gt;&lt;/code&gt;
+
+To prevent adding pages to a "same as" category:
+
+&lt;code&gt;&lt;nowiki&gt;{{Wikidata check|property=P###|value={{{value|}}}|category=Category prefix|nocatsame=1}}&lt;/nowiki&gt;&lt;/code&gt;
+
+To make comparison [[case insensitive]] for "different from" category:
+
+&lt;code&gt;&lt;nowiki&gt;{{Wikidata check|property=P###|value={{{value|}}}|category=Category prefix|ignorecase=1}}&lt;/nowiki&gt;&lt;/code&gt;
+
+== Parameters ==
+; Required
+* {{para|property}} is the P### of the property. The "P" must be uppercase.
+* {{para|value}} is the value to use from the template. This would be something like &lt;code&gt;&lt;nowiki&gt;{{{id|}}}&lt;/nowiki&gt;&lt;/code&gt; or &lt;code&gt;&lt;nowiki&gt;{{{id|{{{1|}}}}}}&lt;/nowiki&gt;&lt;/code&gt;
+* {{para|category}} is the prefix to use in front of the category names. The categories created are "[prefix] not in Wikidata", "[prefix] same as Wikidata", and "[prefix] different from Wikidata".
+** It is recommended you create these categories with {{tlx|hiddencat}} before applying this template.
+; Optional
+* {{para|namespaces}} is a comma separated list of the numerical namespaces to apply the template. The default is 0, which is just article space.
+* {{para|nocatsame}} if set to any value will prevent adding pages to a "same as" category. The "not in" and "different from" categories are still added, where applicable.
+* {{para|ignorecase}} if set to any value will ignore upper/lower case differences between value in template and value in Wikidata when adding pages to a "different from" category.
+* {{para|qid}} if specified will check a a different Wikidata item than the current article.
+* {{para|onlysourced}} if set to "yes" will ignore unsourced Wikidata properties, equivalent to [[Module:WikidataIB]]'s {{para|onlysourced|yes}}.
+
+== Example ==
+For {{tlx|MusicBrainz artist}}, which checks {{property|P434}}, the following code would be added:
+
+&lt;code&gt;&lt;nowiki&gt;{{Wikidata check|property=P434|value={{{mbid|{{{id|{{{1|}}}}}}}}}|category=MusicBrainz artist}}&lt;/nowiki&gt;&lt;/code&gt;
+
+Articles using that template with an ID would be placed in one of the following categories:
+* [[:Category:MusicBrainz artist not in Wikidata]]
+* [[:Category:MusicBrainz artist same as Wikidata]]
+* [[:Category:MusicBrainz artist different from Wikidata]]
+
+== See also ==
+* {{tl|Tracks Wikidata}} for use in template documentation
+* {{tl|Wikidata alignment}} - similar template with slightly different functionality
+* {{tl|Wikidata tracking category}} for use in hidden tracking categories
+* {{cl|Wikipedia categories tracking data not in Wikidata}}
+* {{cl|Wikipedia categories tracking data same as Wikidata}}
+* {{cl|Wikipedia categories tracking Wikidata differences}}
+
+&lt;includeonly&gt;{{Sandbox other||{{#switch:{{NAMESPACENUMBER}}
+|10=
+[[Category:Wikidata templates]]
+|#default=
+[[Category:Wikidata modules]][[Category:Modules using data from Wikidata]]
+}}}}&lt;/includeonly&gt;</text>
+      <sha1>g97fe0lawsreyxtni67tcqptscf2bfh</sha1>
+    </revision>
+    <revision>
+      <id>3576027</id>
+      <parentid>3412698</parentid>
+      <timestamp>2026-03-28T21:21:47Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <comment>Bot: wrap 3 stray tag(s) in noinclude [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23693191906|commit triggered pipeline]]</comment>
+      <origin>3576027</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="3745" sha1="3qhwpkk2jldk4hrbe5vgf4ny1wn0yzo" xml:space="preserve">{{documentation subpage}}
+{{High-use}}
+
+{{#ifeq:{{NAMESPACE}}|Module
+| {{Module rating |protected}}{{Ombox|text=The following is the documentation for [[Template:WikidataCheck]].}}
+| {{Lua|Module:WikidataCheck}}
+}}
+
+[[Template:WikidataCheck]] compares a template parameter to a Wikidata property and adds pages using the template to one of three categories: not in, same as, or different from Wikidata. It is powered by the Lua module [[Module:WikidataCheck]].
+
+== Usage ==
+To add only [[Wikipedia:What is an article?#Namespace|articles]] to the categories: 
+
+&lt;code&gt;&lt;nowiki&gt;{{Wikidata check|property=P###|value={{{value|}}}|category=Category prefix}}&lt;/nowiki&gt;&lt;/code&gt;
+
+To add pages in other [[Wikipedia:Namespace|namespaces]] to the categories: 
+
+&lt;code&gt;&lt;nowiki&gt;{{Wikidata check|property=P###|value={{{value|}}}|category=Category prefix|namespaces=0,14}}&lt;/nowiki&gt;&lt;/code&gt;
+
+To prevent adding pages to a "same as" category:
+
+&lt;code&gt;&lt;nowiki&gt;{{Wikidata check|property=P###|value={{{value|}}}|category=Category prefix|nocatsame=1}}&lt;/nowiki&gt;&lt;/code&gt;
+
+To make comparison [[case insensitive]] for "different from" category:
+
+&lt;code&gt;&lt;nowiki&gt;{{Wikidata check|property=P###|value={{{value|}}}|category=Category prefix|ignorecase=1}}&lt;/nowiki&gt;&lt;/code&gt;
+
+== Parameters ==
+; Required
+* {{para|property}} is the P### of the property. The "P" must be uppercase.
+* {{para|value}} is the value to use from the template. This would be something like &lt;code&gt;&lt;nowiki&gt;{{{id|}}}&lt;/nowiki&gt;&lt;/code&gt; or &lt;code&gt;&lt;nowiki&gt;{{{id|{{{1|}}}}}}&lt;/nowiki&gt;&lt;/code&gt;
+* {{para|category}} is the prefix to use in front of the category names. The categories created are "[prefix] not in Wikidata", "[prefix] same as Wikidata", and "[prefix] different from Wikidata".
+** It is recommended you create these categories with {{tlx|hiddencat}} before applying this template.
+; Optional
+* {{para|namespaces}} is a comma separated list of the numerical namespaces to apply the template. The default is 0, which is just article space.
+* {{para|nocatsame}} if set to any value will prevent adding pages to a "same as" category. The "not in" and "different from" categories are still added, where applicable.
+* {{para|ignorecase}} if set to any value will ignore upper/lower case differences between value in template and value in Wikidata when adding pages to a "different from" category.
+* {{para|qid}} if specified will check a a different Wikidata item than the current article.
+* {{para|onlysourced}} if set to "yes" will ignore unsourced Wikidata properties, equivalent to [[Module:WikidataIB]]'s {{para|onlysourced|yes}}.
+
+== Example ==
+For {{tlx|MusicBrainz artist}}, which checks {{property|P434}}, the following code would be added:
+
+&lt;code&gt;&lt;nowiki&gt;{{Wikidata check|property=P434|value={{{mbid|{{{id|{{{1|}}}}}}}}}|category=MusicBrainz artist}}&lt;/nowiki&gt;&lt;/code&gt;
+
+Articles using that template with an ID would be placed in one of the following categories:
+* [[:Category:MusicBrainz artist not in Wikidata]]
+* [[:Category:MusicBrainz artist same as Wikidata]]
+* [[:Category:MusicBrainz artist different from Wikidata]]
+
+== See also ==
+* {{tl|Tracks Wikidata}} for use in template documentation
+* {{tl|Wikidata alignment}} - similar template with slightly different functionality
+* {{tl|Wikidata tracking category}} for use in hidden tracking categories
+* {{cl|Wikipedia categories tracking data not in Wikidata}}
+* {{cl|Wikipedia categories tracking data same as Wikidata}}
+* {{cl|Wikipedia categories tracking Wikidata differences}}
+
+&lt;includeonly&gt;{{Sandbox other||{{#switch:{{NAMESPACENUMBER}}
+|10=
+|#default=
+}}}}&lt;/includeonly&gt;
+&lt;noinclude&gt;
+[[Category:Wikidata templates]]
+[[Category:Wikidata modules]]
+[[Category:Modules using data from Wikidata]]
+[[Category:Templates fixed with noinclude]]
+&lt;/noinclude&gt;</text>
+      <sha1>3qhwpkk2jldk4hrbe5vgf4ny1wn0yzo</sha1>
+    </revision>
+  </page>
+</mediawiki>

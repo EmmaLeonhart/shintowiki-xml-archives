@@ -1,0 +1,1828 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Citation/CS1/Utilities/sandbox</title>
+    <ns>828</ns>
+    <id>5903</id>
+    <revision>
+      <id>832284</id>
+      <timestamp>2024-11-16T12:12:33Z</timestamp>
+      <contributor>
+        <username>en&gt;Trappist the monk</username>
+        <id>0</id>
+      </contributor>
+      <origin>832284</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="25102" sha1="lexorj3vjgvtyhy6kq05uypmm04teu9" xml:space="preserve">--[[
+History of changes since last sync: 2022-01-22
+
+2024-11-15: reworked hyphen_to_dash(); see Help_talk:Citation_Style_1#MOS:RANGE_violation
+
+]]
+
+local z = {
+	error_cats_t = {};															-- for categorizing citations that contain errors
+	error_ids_t = {};															-- list of error identifiers; used to prevent duplication of certain errors; local to this module
+	error_msgs_t = {};															-- sequence table of error messages
+	maint_cats_t = {};															-- for categorizing citations that aren't erroneous per se, but could use a little work
+	prop_cats_t = {};															-- for categorizing citations based on certain properties, language of source for instance
+	prop_keys_t = {};															-- for adding classes to the citation's &lt;cite&gt; tag
+};
+
+
+--[[--------------------------&lt; F O R W A R D   D E C L A R A T I O N S &gt;--------------------------------------
+]]
+
+local cfg;																		-- table of tables imported from selected Module:Citation/CS1/Configuration
+
+
+--[[--------------------------&lt; I S _ S E T &gt;------------------------------------------------------------------
+
+Returns true if argument is set; false otherwise. Argument is 'set' when it exists (not nil) or when it is not an empty string.
+
+]]
+
+local function is_set (var)
+	return not (var == nil or var == '');
+end
+
+
+--[[--------------------------&lt; I N _ A R R A Y &gt;--------------------------------------------------------------
+
+Whether needle is in haystack
+
+]]
+
+local function in_array (needle, haystack)
+	if needle == nil then
+		return false;
+	end
+	for n, v in ipairs (haystack) do
+		if v == needle then
+			return n;
+		end
+	end
+	return false;
+end
+
+
+--[[--------------------------&lt; H A S _ A C C E P T _ A S _ W R I T T E N &gt;------------------------------------
+
+When &lt;str&gt; is wholly wrapped in accept-as-written markup, return &lt;str&gt; without markup and true; return &lt;str&gt; and false else
+
+with allow_empty = false, &lt;str&gt; must have at least one character inside the markup
+with allow_empty = true, &lt;str&gt; the markup frame can be empty like (()) to distinguish an empty template parameter from the specific condition "has no applicable value" in citation-context.
+
+After further evaluation the two cases might be merged at a later stage, but should be kept separated for now.
+
+]]
+
+local function has_accept_as_written (str, allow_empty)
+	if not is_set (str) then
+		return str, false;
+	end
+
+	local count;
+
+	if true == allow_empty then
+		str, count = str:gsub ('^%(%((.*)%)%)$', '%1'); 						-- allows (()) to be an empty set
+	else
+		str, count = str:gsub ('^%(%((.+)%)%)$', '%1');
+	end
+	return str, 0 ~= count;
+end
+
+
+--[[--------------------------&lt; S U B S T I T U T E &gt;----------------------------------------------------------
+
+Populates numbered arguments in a message string using an argument table. &lt;args&gt; may be a single string or a
+sequence table of multiple strings.
+
+]]
+
+local function substitute (msg, args)
+	return args and mw.message.newRawMessage (msg, args):plain() or msg;
+end
+
+
+--[[--------------------------&lt; E R R O R _ C O M M E N T &gt;----------------------------------------------------
+
+Wraps error messages with CSS markup according to the state of hidden. &lt;content&gt; may be a single string or a
+sequence table of multiple strings.
+
+]]
+
+local function error_comment (content, hidden)
+	return substitute (hidden and cfg.presentation['hidden-error'] or cfg.presentation['visible-error'], content);
+end
+
+
+--[[--------------------------&lt; H Y P H E N _ T O _ D A S H &gt;--------------------------------------------------
+
+Converts a hyphen, endash, emdash to endash under certain conditions.  The hyphen/en/em must separate
+like items; unlike items are returned unmodified.  These forms are modified:
+	letter - letter (A-B)
+	digit - digit (4-5)
+	digit separator digit - digit separator digit (4.1-4.5 or 4-1-4-5)
+	letterdigit - letterdigit (A1-A5) (an optional separator between letter and
+		digit is supported – a.1-a.5 or a-1-a-5)
+	digitletter - digitletter (5a-5d) (an optional separator between letter and
+		digit is supported – 5.a-5.d or 5-a-5-d)
+
+any other forms are returned unmodified.
+
+str may be a comma- or semicolon-separated list of page ranges with/without single pages
+
+]]
+
+local function hyphen_to_dash (str)
+	if not is_set (str) then
+		return str;
+	end
+
+	str = str:gsub ("(%(%(.-%)%))", function(m) return m:gsub(",", "，"):gsub(";", "；") end) -- replace commas and semicolons in accept-as-written markup with similar unicode characters so they'll be ignored during the split	
+	str = str:gsub ('&amp;[nm]dash;', {['&amp;ndash;'] = '–', ['&amp;mdash;'] = '—'});		-- replace &amp;mdash; and &amp;ndash; entities with their characters; semicolon mucks up the text.split
+	str = str:gsub ('&amp;#45;', '-');												-- replace HTML numeric entity with hyphen character
+	str = str:gsub ('&amp;nbsp;', ' ');												-- replace &amp;nbsp; entity with generic keyboard space character
+	
+	local out = {};
+	local list = mw.text.split (str, '%s*[,;]%s*');								-- split str at comma or semicolon separators if there are any
+
+	local accept;																-- boolean
+
+	for _, item in ipairs (list) do												-- for each item in the list
+		item, accept = has_accept_as_written (item);							-- remove accept-this-as-written markup when it wraps all of item
+		if not accept and mw.ustring.match (item, '^%w*[%.%-]?%w+%s*[—–-]%s*%w*[%.%-]?%w+$') then	-- if a hyphenated range or has endash or emdash separators
+			if mw.ustring.match (item, '^%a+[%.%-]?%d+%s*[—–-]%s*%a+[%.%-]?%d+$') or		-- letterdigit hyphen letterdigit (optional separator between letter and digit)
+				mw.ustring.match (item, '^%d+[%.%-]?%a+%s*[—–-]%s*%d+[%.%-]?%a+$') or		-- digitletter hyphen digitletter (optional separator between digit and letter)
+				mw.ustring.match (item, '^%d+[%.%-]%d+%s*[—–-]%s*%d+[%.%-]%d+$') then		-- digit separator digit hyphen digit separator digit
+					item = mw.ustring.gsub (item, '(%w*[%.%-]?%w+)%s*[—–-]%s*(%w*[%.%-]?%w+)', '&lt;span class="nowrap"&gt;%1 –&lt;/span&gt; &lt;span class="nowrap"&gt;%2&lt;/span&gt;');	-- replace hyphen/dash, with spaced endash
+
+			elseif mw.ustring.match (item, '^%d+%s*[—–-]%s*%d+$') or			-- digit hyphen digit
+				mw.ustring.match (item, '^%a+%s*[—–-]%s*%a+$') then				-- letter hyphen letter
+					item = mw.ustring.gsub (item, '(%w+)%s*[—–-]%s*(%w+)', '&lt;span class="nowrap"&gt;%1–&lt;/span&gt;%2');	-- replace hyphen/emdash with endash, remove extraneous space characters
+
+			else
+--				item = mw.ustring.gsub (item, '%s*[—–-]%s*', '–');				-- disabled; here when 'unlike' items so return &lt;item&gt; as is
+			end
+		end
+		table.insert (out, item);												-- add the (possibly modified) item to the output table
+	end
+
+	local temp_str = '';														-- concatenate the output table into a comma separated string
+	temp_str, accept = has_accept_as_written (table.concat (out, ', '));		-- remove accept-this-as-written markup when it wraps all of concatenated out
+	if accept then
+		temp_str = has_accept_as_written (str);									-- when global markup removed, return original str; do it this way to suppress boolean second return value
+		return temp_str:gsub("，", ","):gsub("；", ";");
+	else
+		return temp_str:gsub("，", ","):gsub("；", ";");						-- else, return assembled temp_str
+	end
+end
+
+
+--[=[-------------------------&lt; M A K E _ W I K I L I N K &gt;----------------------------------------------------
+
+Makes a wikilink; when both link and display text is provided, returns a wikilink in the form [[L|D]]; if only
+link is provided (or link and display are the same), returns a wikilink in the form [[L]]; if neither are
+provided or link is omitted, returns an empty string.
+
+]=]
+
+local function make_wikilink (link, display)
+	if not is_set (link) then return '' end
+
+	if is_set (display) and link ~= display then			
+		return table.concat ({'[[', link, '|', display, ']]'});			
+	else
+		return table.concat ({'[[', link, ']]'});
+	end
+end
+
+
+--[[--------------------------&lt; S E T _ M E S S A G E &gt;----------------------------------------------------------
+
+Sets an error message using the ~/Configuration error_conditions{} table along with arguments supplied in the function
+call, inserts the resulting message in z.error_msgs_t{} sequence table, and returns the error message.
+
+&lt;error_id&gt; – key value for appropriate error handler in ~/Configuration error_conditions{} table 
+&lt;arguments&gt; – may be a single string or a sequence table of multiple strings to be subsititued into error_conditions[error_id].message
+&lt;raw&gt; – boolean
+	true –	causes this function to return the error message not wrapped in visible-error, hidden-error span tag;
+			returns error_conditions[error_id].hidden as a second return value
+			does not add message to z.error_msgs_t sequence table
+	false, nil – adds message wrapped in visible-error, hidden-error span tag to z.error_msgs_t
+			returns the error message wrapped in visible-error, hidden-error span tag; there is no second return value
+&lt;prefix&gt; – string to be prepended to &lt;message&gt;									-- TODO: remove support for these unused(?) arguments?
+&lt;suffix&gt; – string to be appended to &lt;message&gt;
+
+TODO: change z.error_cats_t and z.maint_cats_t to have the form cat_name = true?  this to avoid dups without having to have an extra table
+
+]]
+
+local added_maint_cats = {}														-- list of maintenance categories that have been added to z.maint_cats_t; TODO: figure out how to delete this table
+
+local function set_message (error_id, arguments, raw, prefix, suffix)
+	local error_state = cfg.error_conditions[error_id];
+	
+	prefix = prefix or '';
+	suffix = suffix or '';
+	
+	if error_state == nil then
+		error (cfg.messages['undefined_error'] .. ': ' .. error_id);			-- because missing error handler in Module:Citation/CS1/Configuration
+
+	elseif is_set (error_state.category) then
+		if error_state.message then												-- when error_state.message defined, this is an error message
+			table.insert (z.error_cats_t, error_state.category);
+		else
+			if not added_maint_cats[error_id] then
+				added_maint_cats[error_id] = true;								-- note that we've added this category
+				table.insert (z.maint_cats_t, substitute (error_state.category, arguments));	-- make cat name then add to table
+			end
+			return;																-- because no message, nothing more to do
+		end
+	end
+
+	local message = substitute (error_state.message, arguments);
+
+	message = table.concat (
+		{
+		message,
+		' (',
+		make_wikilink (
+			table.concat (
+				{
+				cfg.messages['help page link'],
+				'#',
+				error_state.anchor
+				}),
+			cfg.messages['help page label']),
+		')'
+		});
+
+	z.error_ids_t[error_id] = true;
+	if z.error_ids_t['err_citation_missing_title'] and							-- if missing-title error already noted
+		in_array (error_id, {'err_bare_url_missing_title', 'err_trans_missing_title'}) then		-- and this error is one of these
+			return '', false;													-- don't bother because one flavor of missing title is sufficient
+	end
+	
+	message = table.concat ({prefix, message, suffix});
+
+	if true == raw then
+		return message, error_state.hidden;										-- return message not wrapped in visible-error, hidden-error span tag
+	end		
+
+	message = error_comment (message, error_state.hidden);						-- wrap message in visible-error, hidden-error span tag
+	table.insert (z.error_msgs_t, message);										-- add it to the messages sequence table
+	return message;																-- and done; return value generally not used but is used as a flag in various functions of ~/Identifiers
+end
+
+
+--[[-------------------------&lt; I S _ A L I A S _ U S E D &gt;-----------------------------------------------------
+
+This function is used by select_one() to determine if one of a list of alias parameters is in the argument list
+provided by the template.
+
+Input:
+	args – pointer to the arguments table from calling template
+	alias – one of the list of possible aliases in the aliases lists from Module:Citation/CS1/Configuration
+	index – for enumerated parameters, identifies which one
+	enumerated – true/false flag used to choose how enumerated aliases are examined
+	value – value associated with an alias that has previously been selected; nil if not yet selected
+	selected – the alias that has previously been selected; nil if not yet selected
+	error_list – list of aliases that are duplicates of the alias already selected
+
+Returns:
+	value – value associated with alias we selected or that was previously selected or nil if an alias not yet selected
+	selected – the alias we selected or the alias that was previously selected or nil if an alias not yet selected
+
+]]
+
+local function is_alias_used (args, alias, index, enumerated, value, selected, error_list)
+	if enumerated then															-- is this a test for an enumerated parameters?
+		alias = alias:gsub ('#', index);										-- replace '#' with the value in index
+	else
+		alias = alias:gsub ('#', '');											-- remove '#' if it exists
+	end
+
+	if is_set (args[alias]) then												-- alias is in the template's argument list
+		if value ~= nil and selected ~= alias then								-- if we have already selected one of the aliases
+			local skip;
+			for _, v in ipairs (error_list) do									-- spin through the error list to see if we've added this alias
+				if v == alias then
+					skip = true;
+					break;														-- has been added so stop looking 
+				end
+			end
+			if not skip then													-- has not been added so
+				table.insert (error_list, alias);								-- add error alias to the error list
+			end
+		else
+			value = args[alias];												-- not yet selected an alias, so select this one
+			selected = alias;
+		end
+	end
+	return value, selected;														-- return newly selected alias, or previously selected alias
+end
+
+
+--[[--------------------------&lt; A D D _ M A I N T _ C A T &gt;------------------------------------------------------
+
+Adds a category to z.maint_cats_t using names from the configuration file with additional text if any.
+To prevent duplication, the added_maint_cats table lists the categories by key that have been added to z.maint_cats_t.
+
+]]
+
+local function add_maint_cat (key, arguments)
+	if not added_maint_cats [key] then
+		added_maint_cats [key] = true;											-- note that we've added this category
+		table.insert (z.maint_cats_t, substitute (cfg.maint_cats [key], arguments));	-- make name then add to table
+	end
+end
+
+
+--[[--------------------------&lt; A D D _ P R O P _ C A T &gt;--------------------------------------------------------
+
+Adds a category to z.prop_cats_t using names from the configuration file with additional text if any.
+
+foreign_lang_source and foreign_lang_source_2 keys have a language code appended to them so that multiple languages
+may be categorized but multiples of the same language are not categorized.
+
+added_prop_cats is a table declared in page scope variables above
+
+]]
+
+local added_prop_cats = {};														-- list of property categories that have been added to z.prop_cats_t
+
+local function add_prop_cat (key, arguments, key_modifier)
+	local key_modified = key .. ((key_modifier and key_modifier) or '');		-- modify &lt;key&gt; with &lt;key_modifier&gt; if present and not nil
+	
+	if not added_prop_cats [key_modified] then
+		added_prop_cats [key_modified] = true;									-- note that we've added this category
+		table.insert (z.prop_cats_t, substitute (cfg.prop_cats [key], arguments));	-- make name then add to table
+		table.insert (z.prop_keys_t, 'cs1-prop-' .. key);						-- convert key to class for use in the citation's &lt;cite&gt; tag
+	end
+end
+
+
+--[[--------------------------&lt; S A F E _ F O R _ I T A L I C S &gt;----------------------------------------------
+
+Protects a string that will be wrapped in wiki italic markup '' ... ''
+
+Note: We cannot use &lt;i&gt; for italics, as the expected behavior for italics specified by ''...'' in the title is that
+they will be inverted (i.e. unitalicized) in the resulting references.  In addition, &lt;i&gt; and '' tend to interact
+poorly under Mediawiki's HTML tidy.
+
+]]
+
+local function safe_for_italics (str)
+	if not is_set (str) then return str end
+
+	if str:sub (1, 1) == "'" then str = "&lt;span&gt;&lt;/span&gt;" .. str; end
+	if str:sub (-1, -1) == "'" then str = str .. "&lt;span&gt;&lt;/span&gt;"; end
+	
+	return str:gsub ('\n', ' ');												-- Remove newlines as they break italics.
+end
+
+
+--[[--------------------------&lt; W R A P _ S T Y L E &gt;----------------------------------------------------------
+
+Applies styling to various parameters.  Supplied string is wrapped using a message_list configuration taking one
+argument; protects italic styled parameters.  Additional text taken from citation_config.presentation - the reason
+this function is similar to but separate from wrap_msg().
+
+]]
+
+local function wrap_style (key, str)
+	if not is_set (str) then
+		return "";
+	elseif in_array (key, {'italic-title', 'trans-italic-title'}) then
+		str = safe_for_italics (str);
+	end
+
+	return substitute (cfg.presentation[key], {str});
+end
+
+
+--[[--------------------------&lt; M A K E _ S E P _ L I S T &gt;------------------------------------------------------------
+
+make a separated list of items using provided separators.
+	&lt;sep_list&gt; - typically '&lt;comma&gt;&lt;space&gt;'
+	&lt;sep_list_pair&gt; - typically '&lt;space&gt;and&lt;space&gt;'
+	&lt;sep_list_end&gt; - typically '&lt;comma&gt;&lt;space&gt;and&lt;space&gt;' or '&lt;comma&gt;&lt;space&gt;&amp;&lt;space&gt;'
+
+defaults to cfg.presentation['sep_list'], cfg.presentation['sep_list_pair'], and cfg.presentation['sep_list_end']
+if &lt;sep_list_end&gt; is specified, &lt;sep_list&gt; and &lt;sep_list_pair&gt; must also be supplied
+
+]]
+
+local function make_sep_list (count, list_seq, sep_list, sep_list_pair, sep_list_end)
+	local list = '';
+
+	if not sep_list then														-- set the defaults
+		sep_list = cfg.presentation['sep_list'];
+		sep_list_pair = cfg.presentation['sep_list_pair'];
+		sep_list_end = cfg.presentation['sep_list_end'];
+	end
+	
+	if 2 &gt;= count then
+		list = table.concat (list_seq, sep_list_pair);							-- insert separator between two items; returns list_seq[1] then only one item
+	elseif 2 &lt; count then
+		list = table.concat (list_seq, sep_list, 1, count - 1);					-- concatenate all but last item with plain list separator
+		list = table.concat ({list, list_seq[count]}, sep_list_end);			-- concatenate last item onto end of &lt;list&gt; with final separator
+	end
+	
+	return list;
+end
+
+
+--[[--------------------------&lt; S E L E C T _ O N E &gt;----------------------------------------------------------
+
+Chooses one matching parameter from a list of parameters to consider.  The list of parameters to consider is just
+names.  For parameters that may be enumerated, the position of the numerator in the parameter name is identified
+by the '#' so |author-last1= and |author1-last= are represented as 'author-last#' and 'author#-last'.
+
+Because enumerated parameter |&lt;param&gt;1= is an alias of |&lt;param&gt;= we must test for both possibilities.
+
+
+Generates an error if more than one match is present.
+
+]]
+
+local function select_one (args, aliases_list, error_condition, index)
+	local value = nil;															-- the value assigned to the selected parameter
+	local selected = '';														-- the name of the parameter we have chosen
+	local error_list = {};
+
+	if index ~= nil then index = tostring(index); end
+
+	for _, alias in ipairs (aliases_list) do									-- for each alias in the aliases list
+		if alias:match ('#') then												-- if this alias can be enumerated
+			if '1' == index then												-- when index is 1 test for enumerated and non-enumerated aliases
+				value, selected = is_alias_used (args, alias, index, false, value, selected, error_list);	-- first test for non-enumerated alias
+			end
+			value, selected = is_alias_used (args, alias, index, true, value, selected, error_list);	-- test for enumerated alias
+		else
+			value, selected = is_alias_used (args, alias, index, false, value, selected, error_list);	-- test for non-enumerated alias
+		end
+	end
+
+	if #error_list &gt; 0 and 'none' ~= error_condition then						-- for cases where this code is used outside of extract_names()
+		for i, v in ipairs (error_list) do
+			error_list[i] = wrap_style ('parameter', v);
+		end
+		table.insert (error_list, wrap_style ('parameter', selected));
+		set_message (error_condition, {make_sep_list (#error_list, error_list)});
+	end
+	
+	return value, selected;
+end
+
+
+--[=[-------------------------&lt; R E M O V E _ W I K I _ L I N K &gt;----------------------------------------------
+
+Gets the display text from a wikilink like [[A|B]] or [[B]] gives B
+
+The str:gsub() returns either A|B froma [[A|B]] or B from [[B]] or B from B (no wikilink markup).
+
+In l(), l:gsub() removes the link and pipe (if they exist); the second :gsub() trims whitespace from the label
+if str was wrapped in wikilink markup.  Presumably, this is because without wikimarkup in str, there is no match
+in the initial gsub, the replacement function l() doesn't get called.
+
+]=]
+
+local function remove_wiki_link (str)
+	return (str:gsub ("%[%[([^%[%]]*)%]%]", function(l)
+		return l:gsub ("^[^|]*|(.*)$", "%1" ):gsub ("^%s*(.-)%s*$", "%1");
+	end));
+end
+
+
+--[=[-------------------------&lt; I S _ W I K I L I N K &gt;--------------------------------------------------------
+
+Determines if str is a wikilink, extracts, and returns the wikilink type, link text, and display text parts.
+If str is a complex wikilink ([[L|D]]):
+	returns wl_type 2 and D and L from [[L|D]];
+if str is a simple wikilink ([[D]])
+	returns wl_type 1 and D from [[D]] and L as empty string;
+if not a wikilink:
+	returns wl_type 0, str as D, and L as empty string.
+
+trims leading and trailing whitespace and pipes from L and D ([[L|]] and [[|D]] are accepted by MediaWiki and
+treated like [[D]]; while [[|D|]] is not accepted by MediaWiki, here, we accept it and return D without the pipes).
+
+]=]
+
+local function is_wikilink (str)
+	local D, L
+	local wl_type = 2;															-- assume that str is a complex wikilink [[L|D]]
+
+	if not str:match ('^%[%[[^%]]+%]%]$') then									-- is str some sort of a wikilink (must have some sort of content)
+		return 0, str, '';														-- not a wikilink; return wl_type as 0, str as D, and empty string as L
+	end
+	
+	L, D = str:match ('^%[%[([^|]+)|([^%]]+)%]%]$');							-- get L and D from [[L|D]] 
+
+	if not is_set (D) then														-- if no separate display
+		D = str:match ('^%[%[([^%]]*)|*%]%]$');									-- get D from [[D]] or [[D|]]
+		wl_type = 1; 
+	end
+	
+	D = mw.text.trim (D, '%s|');												-- trim white space and pipe characters 
+	return wl_type, D, L or '';
+end
+
+
+--[[--------------------------&lt; S T R I P _ A P O S T R O P H E _ M A R K U P &gt;--------------------------------
+
+Strip wiki italic and bold markup from argument so that it doesn't contaminate COinS metadata.
+This function strips common patterns of apostrophe markup.  We presume that editors who have taken the time to
+markup a title have, as a result, provided valid markup. When they don't, some single apostrophes are left behind.
+
+Returns the argument without wiki markup and a number; the number is more-or-less meaningless except as a flag
+to indicate that markup was replaced; do not rely on it as an indicator of how many of any kind of markup was
+removed; returns the argument and nil when no markup removed
+
+]]
+
+local function strip_apostrophe_markup (argument)
+	if not is_set (argument) then
+		return argument, nil;													-- no argument, nothing to do
+	end
+
+	if nil == argument:find ( "''", 1, true ) then								-- Is there at least one double apostrophe?  If not, exit.
+		return argument, nil;
+	end
+
+	local flag;
+	while true do
+		if argument:find ("'''''", 1, true) then								-- bold italic (5)
+			argument, flag = argument:gsub ("%'%'%'%'%'", "");					-- remove all instances of it
+		elseif argument:find ("''''", 1, true) then								-- italic start and end without content (4)
+			argument, flag=argument:gsub ("%'%'%'%'", "");
+		elseif argument:find ("'''", 1, true) then								-- bold (3)
+			argument, flag=argument:gsub ("%'%'%'", "");
+		elseif argument:find ("''", 1, true) then								-- italic (2)
+			argument, flag = argument:gsub ("%'%'", "");
+		else
+			break;
+		end
+	end
+
+	return argument, flag;														-- done
+end
+
+
+--[[--------------------------&lt; S E T _ S E L E C T E D _ M O D U L E S &gt;--------------------------------------
+
+Sets local cfg table to same (live or sandbox) as that used by the other modules.
+
+]]
+
+local function set_selected_modules (cfg_table_ptr)
+	cfg = cfg_table_ptr;
+	
+end
+
+
+--[[--------------------------&lt; E X P O R T S &gt;----------------------------------------------------------------
+]]
+
+return {
+	add_maint_cat = add_maint_cat,												-- exported functions
+	add_prop_cat = add_prop_cat,
+	error_comment = error_comment,
+	has_accept_as_written = has_accept_as_written,
+	hyphen_to_dash = hyphen_to_dash,
+	in_array = in_array,
+	is_set = is_set,
+	is_wikilink = is_wikilink,
+	make_sep_list = make_sep_list,
+	make_wikilink = make_wikilink,
+	remove_wiki_link = remove_wiki_link,
+	safe_for_italics = safe_for_italics,
+	select_one = select_one,
+	set_message = set_message,
+	set_selected_modules = set_selected_modules,
+	strip_apostrophe_markup = strip_apostrophe_markup,
+	substitute = substitute,
+	wrap_style = wrap_style,
+
+	z = z,																		-- exported table
+	}</text>
+      <sha1>lexorj3vjgvtyhy6kq05uypmm04teu9</sha1>
+    </revision>
+    <revision>
+      <id>832285</id>
+      <parentid>832284</parentid>
+      <timestamp>2024-12-31T06:40:58Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Mass importing wikipedia categories, not taking histories because these are unused ones and it is kind of obvious where they came from</comment>
+      <origin>832284</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="25102" sha1="lexorj3vjgvtyhy6kq05uypmm04teu9" xml:space="preserve">--[[
+History of changes since last sync: 2022-01-22
+
+2024-11-15: reworked hyphen_to_dash(); see Help_talk:Citation_Style_1#MOS:RANGE_violation
+
+]]
+
+local z = {
+	error_cats_t = {};															-- for categorizing citations that contain errors
+	error_ids_t = {};															-- list of error identifiers; used to prevent duplication of certain errors; local to this module
+	error_msgs_t = {};															-- sequence table of error messages
+	maint_cats_t = {};															-- for categorizing citations that aren't erroneous per se, but could use a little work
+	prop_cats_t = {};															-- for categorizing citations based on certain properties, language of source for instance
+	prop_keys_t = {};															-- for adding classes to the citation's &lt;cite&gt; tag
+};
+
+
+--[[--------------------------&lt; F O R W A R D   D E C L A R A T I O N S &gt;--------------------------------------
+]]
+
+local cfg;																		-- table of tables imported from selected Module:Citation/CS1/Configuration
+
+
+--[[--------------------------&lt; I S _ S E T &gt;------------------------------------------------------------------
+
+Returns true if argument is set; false otherwise. Argument is 'set' when it exists (not nil) or when it is not an empty string.
+
+]]
+
+local function is_set (var)
+	return not (var == nil or var == '');
+end
+
+
+--[[--------------------------&lt; I N _ A R R A Y &gt;--------------------------------------------------------------
+
+Whether needle is in haystack
+
+]]
+
+local function in_array (needle, haystack)
+	if needle == nil then
+		return false;
+	end
+	for n, v in ipairs (haystack) do
+		if v == needle then
+			return n;
+		end
+	end
+	return false;
+end
+
+
+--[[--------------------------&lt; H A S _ A C C E P T _ A S _ W R I T T E N &gt;------------------------------------
+
+When &lt;str&gt; is wholly wrapped in accept-as-written markup, return &lt;str&gt; without markup and true; return &lt;str&gt; and false else
+
+with allow_empty = false, &lt;str&gt; must have at least one character inside the markup
+with allow_empty = true, &lt;str&gt; the markup frame can be empty like (()) to distinguish an empty template parameter from the specific condition "has no applicable value" in citation-context.
+
+After further evaluation the two cases might be merged at a later stage, but should be kept separated for now.
+
+]]
+
+local function has_accept_as_written (str, allow_empty)
+	if not is_set (str) then
+		return str, false;
+	end
+
+	local count;
+
+	if true == allow_empty then
+		str, count = str:gsub ('^%(%((.*)%)%)$', '%1'); 						-- allows (()) to be an empty set
+	else
+		str, count = str:gsub ('^%(%((.+)%)%)$', '%1');
+	end
+	return str, 0 ~= count;
+end
+
+
+--[[--------------------------&lt; S U B S T I T U T E &gt;----------------------------------------------------------
+
+Populates numbered arguments in a message string using an argument table. &lt;args&gt; may be a single string or a
+sequence table of multiple strings.
+
+]]
+
+local function substitute (msg, args)
+	return args and mw.message.newRawMessage (msg, args):plain() or msg;
+end
+
+
+--[[--------------------------&lt; E R R O R _ C O M M E N T &gt;----------------------------------------------------
+
+Wraps error messages with CSS markup according to the state of hidden. &lt;content&gt; may be a single string or a
+sequence table of multiple strings.
+
+]]
+
+local function error_comment (content, hidden)
+	return substitute (hidden and cfg.presentation['hidden-error'] or cfg.presentation['visible-error'], content);
+end
+
+
+--[[--------------------------&lt; H Y P H E N _ T O _ D A S H &gt;--------------------------------------------------
+
+Converts a hyphen, endash, emdash to endash under certain conditions.  The hyphen/en/em must separate
+like items; unlike items are returned unmodified.  These forms are modified:
+	letter - letter (A-B)
+	digit - digit (4-5)
+	digit separator digit - digit separator digit (4.1-4.5 or 4-1-4-5)
+	letterdigit - letterdigit (A1-A5) (an optional separator between letter and
+		digit is supported – a.1-a.5 or a-1-a-5)
+	digitletter - digitletter (5a-5d) (an optional separator between letter and
+		digit is supported – 5.a-5.d or 5-a-5-d)
+
+any other forms are returned unmodified.
+
+str may be a comma- or semicolon-separated list of page ranges with/without single pages
+
+]]
+
+local function hyphen_to_dash (str)
+	if not is_set (str) then
+		return str;
+	end
+
+	str = str:gsub ("(%(%(.-%)%))", function(m) return m:gsub(",", "，"):gsub(";", "；") end) -- replace commas and semicolons in accept-as-written markup with similar unicode characters so they'll be ignored during the split	
+	str = str:gsub ('&amp;[nm]dash;', {['&amp;ndash;'] = '–', ['&amp;mdash;'] = '—'});		-- replace &amp;mdash; and &amp;ndash; entities with their characters; semicolon mucks up the text.split
+	str = str:gsub ('&amp;#45;', '-');												-- replace HTML numeric entity with hyphen character
+	str = str:gsub ('&amp;nbsp;', ' ');												-- replace &amp;nbsp; entity with generic keyboard space character
+	
+	local out = {};
+	local list = mw.text.split (str, '%s*[,;]%s*');								-- split str at comma or semicolon separators if there are any
+
+	local accept;																-- boolean
+
+	for _, item in ipairs (list) do												-- for each item in the list
+		item, accept = has_accept_as_written (item);							-- remove accept-this-as-written markup when it wraps all of item
+		if not accept and mw.ustring.match (item, '^%w*[%.%-]?%w+%s*[—–-]%s*%w*[%.%-]?%w+$') then	-- if a hyphenated range or has endash or emdash separators
+			if mw.ustring.match (item, '^%a+[%.%-]?%d+%s*[—–-]%s*%a+[%.%-]?%d+$') or		-- letterdigit hyphen letterdigit (optional separator between letter and digit)
+				mw.ustring.match (item, '^%d+[%.%-]?%a+%s*[—–-]%s*%d+[%.%-]?%a+$') or		-- digitletter hyphen digitletter (optional separator between digit and letter)
+				mw.ustring.match (item, '^%d+[%.%-]%d+%s*[—–-]%s*%d+[%.%-]%d+$') then		-- digit separator digit hyphen digit separator digit
+					item = mw.ustring.gsub (item, '(%w*[%.%-]?%w+)%s*[—–-]%s*(%w*[%.%-]?%w+)', '&lt;span class="nowrap"&gt;%1 –&lt;/span&gt; &lt;span class="nowrap"&gt;%2&lt;/span&gt;');	-- replace hyphen/dash, with spaced endash
+
+			elseif mw.ustring.match (item, '^%d+%s*[—–-]%s*%d+$') or			-- digit hyphen digit
+				mw.ustring.match (item, '^%a+%s*[—–-]%s*%a+$') then				-- letter hyphen letter
+					item = mw.ustring.gsub (item, '(%w+)%s*[—–-]%s*(%w+)', '&lt;span class="nowrap"&gt;%1–&lt;/span&gt;%2');	-- replace hyphen/emdash with endash, remove extraneous space characters
+
+			else
+--				item = mw.ustring.gsub (item, '%s*[—–-]%s*', '–');				-- disabled; here when 'unlike' items so return &lt;item&gt; as is
+			end
+		end
+		table.insert (out, item);												-- add the (possibly modified) item to the output table
+	end
+
+	local temp_str = '';														-- concatenate the output table into a comma separated string
+	temp_str, accept = has_accept_as_written (table.concat (out, ', '));		-- remove accept-this-as-written markup when it wraps all of concatenated out
+	if accept then
+		temp_str = has_accept_as_written (str);									-- when global markup removed, return original str; do it this way to suppress boolean second return value
+		return temp_str:gsub("，", ","):gsub("；", ";");
+	else
+		return temp_str:gsub("，", ","):gsub("；", ";");						-- else, return assembled temp_str
+	end
+end
+
+
+--[=[-------------------------&lt; M A K E _ W I K I L I N K &gt;----------------------------------------------------
+
+Makes a wikilink; when both link and display text is provided, returns a wikilink in the form [[L|D]]; if only
+link is provided (or link and display are the same), returns a wikilink in the form [[L]]; if neither are
+provided or link is omitted, returns an empty string.
+
+]=]
+
+local function make_wikilink (link, display)
+	if not is_set (link) then return '' end
+
+	if is_set (display) and link ~= display then			
+		return table.concat ({'[[', link, '|', display, ']]'});			
+	else
+		return table.concat ({'[[', link, ']]'});
+	end
+end
+
+
+--[[--------------------------&lt; S E T _ M E S S A G E &gt;----------------------------------------------------------
+
+Sets an error message using the ~/Configuration error_conditions{} table along with arguments supplied in the function
+call, inserts the resulting message in z.error_msgs_t{} sequence table, and returns the error message.
+
+&lt;error_id&gt; – key value for appropriate error handler in ~/Configuration error_conditions{} table 
+&lt;arguments&gt; – may be a single string or a sequence table of multiple strings to be subsititued into error_conditions[error_id].message
+&lt;raw&gt; – boolean
+	true –	causes this function to return the error message not wrapped in visible-error, hidden-error span tag;
+			returns error_conditions[error_id].hidden as a second return value
+			does not add message to z.error_msgs_t sequence table
+	false, nil – adds message wrapped in visible-error, hidden-error span tag to z.error_msgs_t
+			returns the error message wrapped in visible-error, hidden-error span tag; there is no second return value
+&lt;prefix&gt; – string to be prepended to &lt;message&gt;									-- TODO: remove support for these unused(?) arguments?
+&lt;suffix&gt; – string to be appended to &lt;message&gt;
+
+TODO: change z.error_cats_t and z.maint_cats_t to have the form cat_name = true?  this to avoid dups without having to have an extra table
+
+]]
+
+local added_maint_cats = {}														-- list of maintenance categories that have been added to z.maint_cats_t; TODO: figure out how to delete this table
+
+local function set_message (error_id, arguments, raw, prefix, suffix)
+	local error_state = cfg.error_conditions[error_id];
+	
+	prefix = prefix or '';
+	suffix = suffix or '';
+	
+	if error_state == nil then
+		error (cfg.messages['undefined_error'] .. ': ' .. error_id);			-- because missing error handler in Module:Citation/CS1/Configuration
+
+	elseif is_set (error_state.category) then
+		if error_state.message then												-- when error_state.message defined, this is an error message
+			table.insert (z.error_cats_t, error_state.category);
+		else
+			if not added_maint_cats[error_id] then
+				added_maint_cats[error_id] = true;								-- note that we've added this category
+				table.insert (z.maint_cats_t, substitute (error_state.category, arguments));	-- make cat name then add to table
+			end
+			return;																-- because no message, nothing more to do
+		end
+	end
+
+	local message = substitute (error_state.message, arguments);
+
+	message = table.concat (
+		{
+		message,
+		' (',
+		make_wikilink (
+			table.concat (
+				{
+				cfg.messages['help page link'],
+				'#',
+				error_state.anchor
+				}),
+			cfg.messages['help page label']),
+		')'
+		});
+
+	z.error_ids_t[error_id] = true;
+	if z.error_ids_t['err_citation_missing_title'] and							-- if missing-title error already noted
+		in_array (error_id, {'err_bare_url_missing_title', 'err_trans_missing_title'}) then		-- and this error is one of these
+			return '', false;													-- don't bother because one flavor of missing title is sufficient
+	end
+	
+	message = table.concat ({prefix, message, suffix});
+
+	if true == raw then
+		return message, error_state.hidden;										-- return message not wrapped in visible-error, hidden-error span tag
+	end		
+
+	message = error_comment (message, error_state.hidden);						-- wrap message in visible-error, hidden-error span tag
+	table.insert (z.error_msgs_t, message);										-- add it to the messages sequence table
+	return message;																-- and done; return value generally not used but is used as a flag in various functions of ~/Identifiers
+end
+
+
+--[[-------------------------&lt; I S _ A L I A S _ U S E D &gt;-----------------------------------------------------
+
+This function is used by select_one() to determine if one of a list of alias parameters is in the argument list
+provided by the template.
+
+Input:
+	args – pointer to the arguments table from calling template
+	alias – one of the list of possible aliases in the aliases lists from Module:Citation/CS1/Configuration
+	index – for enumerated parameters, identifies which one
+	enumerated – true/false flag used to choose how enumerated aliases are examined
+	value – value associated with an alias that has previously been selected; nil if not yet selected
+	selected – the alias that has previously been selected; nil if not yet selected
+	error_list – list of aliases that are duplicates of the alias already selected
+
+Returns:
+	value – value associated with alias we selected or that was previously selected or nil if an alias not yet selected
+	selected – the alias we selected or the alias that was previously selected or nil if an alias not yet selected
+
+]]
+
+local function is_alias_used (args, alias, index, enumerated, value, selected, error_list)
+	if enumerated then															-- is this a test for an enumerated parameters?
+		alias = alias:gsub ('#', index);										-- replace '#' with the value in index
+	else
+		alias = alias:gsub ('#', '');											-- remove '#' if it exists
+	end
+
+	if is_set (args[alias]) then												-- alias is in the template's argument list
+		if value ~= nil and selected ~= alias then								-- if we have already selected one of the aliases
+			local skip;
+			for _, v in ipairs (error_list) do									-- spin through the error list to see if we've added this alias
+				if v == alias then
+					skip = true;
+					break;														-- has been added so stop looking 
+				end
+			end
+			if not skip then													-- has not been added so
+				table.insert (error_list, alias);								-- add error alias to the error list
+			end
+		else
+			value = args[alias];												-- not yet selected an alias, so select this one
+			selected = alias;
+		end
+	end
+	return value, selected;														-- return newly selected alias, or previously selected alias
+end
+
+
+--[[--------------------------&lt; A D D _ M A I N T _ C A T &gt;------------------------------------------------------
+
+Adds a category to z.maint_cats_t using names from the configuration file with additional text if any.
+To prevent duplication, the added_maint_cats table lists the categories by key that have been added to z.maint_cats_t.
+
+]]
+
+local function add_maint_cat (key, arguments)
+	if not added_maint_cats [key] then
+		added_maint_cats [key] = true;											-- note that we've added this category
+		table.insert (z.maint_cats_t, substitute (cfg.maint_cats [key], arguments));	-- make name then add to table
+	end
+end
+
+
+--[[--------------------------&lt; A D D _ P R O P _ C A T &gt;--------------------------------------------------------
+
+Adds a category to z.prop_cats_t using names from the configuration file with additional text if any.
+
+foreign_lang_source and foreign_lang_source_2 keys have a language code appended to them so that multiple languages
+may be categorized but multiples of the same language are not categorized.
+
+added_prop_cats is a table declared in page scope variables above
+
+]]
+
+local added_prop_cats = {};														-- list of property categories that have been added to z.prop_cats_t
+
+local function add_prop_cat (key, arguments, key_modifier)
+	local key_modified = key .. ((key_modifier and key_modifier) or '');		-- modify &lt;key&gt; with &lt;key_modifier&gt; if present and not nil
+	
+	if not added_prop_cats [key_modified] then
+		added_prop_cats [key_modified] = true;									-- note that we've added this category
+		table.insert (z.prop_cats_t, substitute (cfg.prop_cats [key], arguments));	-- make name then add to table
+		table.insert (z.prop_keys_t, 'cs1-prop-' .. key);						-- convert key to class for use in the citation's &lt;cite&gt; tag
+	end
+end
+
+
+--[[--------------------------&lt; S A F E _ F O R _ I T A L I C S &gt;----------------------------------------------
+
+Protects a string that will be wrapped in wiki italic markup '' ... ''
+
+Note: We cannot use &lt;i&gt; for italics, as the expected behavior for italics specified by ''...'' in the title is that
+they will be inverted (i.e. unitalicized) in the resulting references.  In addition, &lt;i&gt; and '' tend to interact
+poorly under Mediawiki's HTML tidy.
+
+]]
+
+local function safe_for_italics (str)
+	if not is_set (str) then return str end
+
+	if str:sub (1, 1) == "'" then str = "&lt;span&gt;&lt;/span&gt;" .. str; end
+	if str:sub (-1, -1) == "'" then str = str .. "&lt;span&gt;&lt;/span&gt;"; end
+	
+	return str:gsub ('\n', ' ');												-- Remove newlines as they break italics.
+end
+
+
+--[[--------------------------&lt; W R A P _ S T Y L E &gt;----------------------------------------------------------
+
+Applies styling to various parameters.  Supplied string is wrapped using a message_list configuration taking one
+argument; protects italic styled parameters.  Additional text taken from citation_config.presentation - the reason
+this function is similar to but separate from wrap_msg().
+
+]]
+
+local function wrap_style (key, str)
+	if not is_set (str) then
+		return "";
+	elseif in_array (key, {'italic-title', 'trans-italic-title'}) then
+		str = safe_for_italics (str);
+	end
+
+	return substitute (cfg.presentation[key], {str});
+end
+
+
+--[[--------------------------&lt; M A K E _ S E P _ L I S T &gt;------------------------------------------------------------
+
+make a separated list of items using provided separators.
+	&lt;sep_list&gt; - typically '&lt;comma&gt;&lt;space&gt;'
+	&lt;sep_list_pair&gt; - typically '&lt;space&gt;and&lt;space&gt;'
+	&lt;sep_list_end&gt; - typically '&lt;comma&gt;&lt;space&gt;and&lt;space&gt;' or '&lt;comma&gt;&lt;space&gt;&amp;&lt;space&gt;'
+
+defaults to cfg.presentation['sep_list'], cfg.presentation['sep_list_pair'], and cfg.presentation['sep_list_end']
+if &lt;sep_list_end&gt; is specified, &lt;sep_list&gt; and &lt;sep_list_pair&gt; must also be supplied
+
+]]
+
+local function make_sep_list (count, list_seq, sep_list, sep_list_pair, sep_list_end)
+	local list = '';
+
+	if not sep_list then														-- set the defaults
+		sep_list = cfg.presentation['sep_list'];
+		sep_list_pair = cfg.presentation['sep_list_pair'];
+		sep_list_end = cfg.presentation['sep_list_end'];
+	end
+	
+	if 2 &gt;= count then
+		list = table.concat (list_seq, sep_list_pair);							-- insert separator between two items; returns list_seq[1] then only one item
+	elseif 2 &lt; count then
+		list = table.concat (list_seq, sep_list, 1, count - 1);					-- concatenate all but last item with plain list separator
+		list = table.concat ({list, list_seq[count]}, sep_list_end);			-- concatenate last item onto end of &lt;list&gt; with final separator
+	end
+	
+	return list;
+end
+
+
+--[[--------------------------&lt; S E L E C T _ O N E &gt;----------------------------------------------------------
+
+Chooses one matching parameter from a list of parameters to consider.  The list of parameters to consider is just
+names.  For parameters that may be enumerated, the position of the numerator in the parameter name is identified
+by the '#' so |author-last1= and |author1-last= are represented as 'author-last#' and 'author#-last'.
+
+Because enumerated parameter |&lt;param&gt;1= is an alias of |&lt;param&gt;= we must test for both possibilities.
+
+
+Generates an error if more than one match is present.
+
+]]
+
+local function select_one (args, aliases_list, error_condition, index)
+	local value = nil;															-- the value assigned to the selected parameter
+	local selected = '';														-- the name of the parameter we have chosen
+	local error_list = {};
+
+	if index ~= nil then index = tostring(index); end
+
+	for _, alias in ipairs (aliases_list) do									-- for each alias in the aliases list
+		if alias:match ('#') then												-- if this alias can be enumerated
+			if '1' == index then												-- when index is 1 test for enumerated and non-enumerated aliases
+				value, selected = is_alias_used (args, alias, index, false, value, selected, error_list);	-- first test for non-enumerated alias
+			end
+			value, selected = is_alias_used (args, alias, index, true, value, selected, error_list);	-- test for enumerated alias
+		else
+			value, selected = is_alias_used (args, alias, index, false, value, selected, error_list);	-- test for non-enumerated alias
+		end
+	end
+
+	if #error_list &gt; 0 and 'none' ~= error_condition then						-- for cases where this code is used outside of extract_names()
+		for i, v in ipairs (error_list) do
+			error_list[i] = wrap_style ('parameter', v);
+		end
+		table.insert (error_list, wrap_style ('parameter', selected));
+		set_message (error_condition, {make_sep_list (#error_list, error_list)});
+	end
+	
+	return value, selected;
+end
+
+
+--[=[-------------------------&lt; R E M O V E _ W I K I _ L I N K &gt;----------------------------------------------
+
+Gets the display text from a wikilink like [[A|B]] or [[B]] gives B
+
+The str:gsub() returns either A|B froma [[A|B]] or B from [[B]] or B from B (no wikilink markup).
+
+In l(), l:gsub() removes the link and pipe (if they exist); the second :gsub() trims whitespace from the label
+if str was wrapped in wikilink markup.  Presumably, this is because without wikimarkup in str, there is no match
+in the initial gsub, the replacement function l() doesn't get called.
+
+]=]
+
+local function remove_wiki_link (str)
+	return (str:gsub ("%[%[([^%[%]]*)%]%]", function(l)
+		return l:gsub ("^[^|]*|(.*)$", "%1" ):gsub ("^%s*(.-)%s*$", "%1");
+	end));
+end
+
+
+--[=[-------------------------&lt; I S _ W I K I L I N K &gt;--------------------------------------------------------
+
+Determines if str is a wikilink, extracts, and returns the wikilink type, link text, and display text parts.
+If str is a complex wikilink ([[L|D]]):
+	returns wl_type 2 and D and L from [[L|D]];
+if str is a simple wikilink ([[D]])
+	returns wl_type 1 and D from [[D]] and L as empty string;
+if not a wikilink:
+	returns wl_type 0, str as D, and L as empty string.
+
+trims leading and trailing whitespace and pipes from L and D ([[L|]] and [[|D]] are accepted by MediaWiki and
+treated like [[D]]; while [[|D|]] is not accepted by MediaWiki, here, we accept it and return D without the pipes).
+
+]=]
+
+local function is_wikilink (str)
+	local D, L
+	local wl_type = 2;															-- assume that str is a complex wikilink [[L|D]]
+
+	if not str:match ('^%[%[[^%]]+%]%]$') then									-- is str some sort of a wikilink (must have some sort of content)
+		return 0, str, '';														-- not a wikilink; return wl_type as 0, str as D, and empty string as L
+	end
+	
+	L, D = str:match ('^%[%[([^|]+)|([^%]]+)%]%]$');							-- get L and D from [[L|D]] 
+
+	if not is_set (D) then														-- if no separate display
+		D = str:match ('^%[%[([^%]]*)|*%]%]$');									-- get D from [[D]] or [[D|]]
+		wl_type = 1; 
+	end
+	
+	D = mw.text.trim (D, '%s|');												-- trim white space and pipe characters 
+	return wl_type, D, L or '';
+end
+
+
+--[[--------------------------&lt; S T R I P _ A P O S T R O P H E _ M A R K U P &gt;--------------------------------
+
+Strip wiki italic and bold markup from argument so that it doesn't contaminate COinS metadata.
+This function strips common patterns of apostrophe markup.  We presume that editors who have taken the time to
+markup a title have, as a result, provided valid markup. When they don't, some single apostrophes are left behind.
+
+Returns the argument without wiki markup and a number; the number is more-or-less meaningless except as a flag
+to indicate that markup was replaced; do not rely on it as an indicator of how many of any kind of markup was
+removed; returns the argument and nil when no markup removed
+
+]]
+
+local function strip_apostrophe_markup (argument)
+	if not is_set (argument) then
+		return argument, nil;													-- no argument, nothing to do
+	end
+
+	if nil == argument:find ( "''", 1, true ) then								-- Is there at least one double apostrophe?  If not, exit.
+		return argument, nil;
+	end
+
+	local flag;
+	while true do
+		if argument:find ("'''''", 1, true) then								-- bold italic (5)
+			argument, flag = argument:gsub ("%'%'%'%'%'", "");					-- remove all instances of it
+		elseif argument:find ("''''", 1, true) then								-- italic start and end without content (4)
+			argument, flag=argument:gsub ("%'%'%'%'", "");
+		elseif argument:find ("'''", 1, true) then								-- bold (3)
+			argument, flag=argument:gsub ("%'%'%'", "");
+		elseif argument:find ("''", 1, true) then								-- italic (2)
+			argument, flag = argument:gsub ("%'%'", "");
+		else
+			break;
+		end
+	end
+
+	return argument, flag;														-- done
+end
+
+
+--[[--------------------------&lt; S E T _ S E L E C T E D _ M O D U L E S &gt;--------------------------------------
+
+Sets local cfg table to same (live or sandbox) as that used by the other modules.
+
+]]
+
+local function set_selected_modules (cfg_table_ptr)
+	cfg = cfg_table_ptr;
+	
+end
+
+
+--[[--------------------------&lt; E X P O R T S &gt;----------------------------------------------------------------
+]]
+
+return {
+	add_maint_cat = add_maint_cat,												-- exported functions
+	add_prop_cat = add_prop_cat,
+	error_comment = error_comment,
+	has_accept_as_written = has_accept_as_written,
+	hyphen_to_dash = hyphen_to_dash,
+	in_array = in_array,
+	is_set = is_set,
+	is_wikilink = is_wikilink,
+	make_sep_list = make_sep_list,
+	make_wikilink = make_wikilink,
+	remove_wiki_link = remove_wiki_link,
+	safe_for_italics = safe_for_italics,
+	select_one = select_one,
+	set_message = set_message,
+	set_selected_modules = set_selected_modules,
+	strip_apostrophe_markup = strip_apostrophe_markup,
+	substitute = substitute,
+	wrap_style = wrap_style,
+
+	z = z,																		-- exported table
+	}</text>
+      <sha1>lexorj3vjgvtyhy6kq05uypmm04teu9</sha1>
+    </revision>
+    <revision>
+      <id>5904</id>
+      <timestamp>2025-11-22T14:38:00Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Text replacement - "↵↵↵" to "
+"</comment>
+      <origin>5904</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="25058" sha1="0bukcpsxn9ldkp1u0c3akm8i2kgzlw1" xml:space="preserve">--[[
+History of changes since last sync: 2022-01-22
+
+2024-11-15: reworked hyphen_to_dash(); see Help_talk:Citation_Style_1#MOS:RANGE_violation
+
+]]
+
+local z = {
+	error_cats_t = {};															-- for categorizing citations that contain errors
+	error_ids_t = {};															-- list of error identifiers; used to prevent duplication of certain errors; local to this module
+	error_msgs_t = {};															-- sequence table of error messages
+	maint_cats_t = {};															-- for categorizing citations that aren't erroneous per se, but could use a little work
+	prop_cats_t = {};															-- for categorizing citations based on certain properties, language of source for instance
+	prop_keys_t = {};															-- for adding classes to the citation's &lt;cite&gt; tag
+};
+--[[--------------------------&lt; F O R W A R D   D E C L A R A T I O N S &gt;--------------------------------------
+]]
+
+local cfg;																		-- table of tables imported from selected Module:Citation/CS1/Configuration
+--[[--------------------------&lt; I S _ S E T &gt;------------------------------------------------------------------
+
+Returns true if argument is set; false otherwise. Argument is 'set' when it exists (not nil) or when it is not an empty string.
+
+]]
+
+local function is_set (var)
+	return not (var == nil or var == '');
+end
+--[[--------------------------&lt; I N _ A R R A Y &gt;--------------------------------------------------------------
+
+Whether needle is in haystack
+
+]]
+
+local function in_array (needle, haystack)
+	if needle == nil then
+		return false;
+	end
+	for n, v in ipairs (haystack) do
+		if v == needle then
+			return n;
+		end
+	end
+	return false;
+end
+--[[--------------------------&lt; H A S _ A C C E P T _ A S _ W R I T T E N &gt;------------------------------------
+
+When &lt;str&gt; is wholly wrapped in accept-as-written markup, return &lt;str&gt; without markup and true; return &lt;str&gt; and false else
+
+with allow_empty = false, &lt;str&gt; must have at least one character inside the markup
+with allow_empty = true, &lt;str&gt; the markup frame can be empty like (()) to distinguish an empty template parameter from the specific condition "has no applicable value" in citation-context.
+
+After further evaluation the two cases might be merged at a later stage, but should be kept separated for now.
+
+]]
+
+local function has_accept_as_written (str, allow_empty)
+	if not is_set (str) then
+		return str, false;
+	end
+
+	local count;
+
+	if true == allow_empty then
+		str, count = str:gsub ('^%(%((.*)%)%)$', '%1'); 						-- allows (()) to be an empty set
+	else
+		str, count = str:gsub ('^%(%((.+)%)%)$', '%1');
+	end
+	return str, 0 ~= count;
+end
+--[[--------------------------&lt; S U B S T I T U T E &gt;----------------------------------------------------------
+
+Populates numbered arguments in a message string using an argument table. &lt;args&gt; may be a single string or a
+sequence table of multiple strings.
+
+]]
+
+local function substitute (msg, args)
+	return args and mw.message.newRawMessage (msg, args):plain() or msg;
+end
+--[[--------------------------&lt; E R R O R _ C O M M E N T &gt;----------------------------------------------------
+
+Wraps error messages with CSS markup according to the state of hidden. &lt;content&gt; may be a single string or a
+sequence table of multiple strings.
+
+]]
+
+local function error_comment (content, hidden)
+	return substitute (hidden and cfg.presentation['hidden-error'] or cfg.presentation['visible-error'], content);
+end
+--[[--------------------------&lt; H Y P H E N _ T O _ D A S H &gt;--------------------------------------------------
+
+Converts a hyphen, endash, emdash to endash under certain conditions.  The hyphen/en/em must separate
+like items; unlike items are returned unmodified.  These forms are modified:
+	letter - letter (A-B)
+	digit - digit (4-5)
+	digit separator digit - digit separator digit (4.1-4.5 or 4-1-4-5)
+	letterdigit - letterdigit (A1-A5) (an optional separator between letter and
+		digit is supported – a.1-a.5 or a-1-a-5)
+	digitletter - digitletter (5a-5d) (an optional separator between letter and
+		digit is supported – 5.a-5.d or 5-a-5-d)
+
+any other forms are returned unmodified.
+
+str may be a comma- or semicolon-separated list of page ranges with/without single pages
+
+]]
+
+local function hyphen_to_dash (str)
+	if not is_set (str) then
+		return str;
+	end
+
+	str = str:gsub ("(%(%(.-%)%))", function(m) return m:gsub(",", "，"):gsub(";", "；") end) -- replace commas and semicolons in accept-as-written markup with similar unicode characters so they'll be ignored during the split	
+	str = str:gsub ('&amp;[nm]dash;', {['&amp;ndash;'] = '–', ['&amp;mdash;'] = '—'});		-- replace &amp;mdash; and &amp;ndash; entities with their characters; semicolon mucks up the text.split
+	str = str:gsub ('&amp;#45;', '-');												-- replace HTML numeric entity with hyphen character
+	str = str:gsub ('&amp;nbsp;', ' ');												-- replace &amp;nbsp; entity with generic keyboard space character
+	
+	local out = {};
+	local list = mw.text.split (str, '%s*[,;]%s*');								-- split str at comma or semicolon separators if there are any
+
+	local accept;																-- boolean
+
+	for _, item in ipairs (list) do												-- for each item in the list
+		item, accept = has_accept_as_written (item);							-- remove accept-this-as-written markup when it wraps all of item
+		if not accept and mw.ustring.match (item, '^%w*[%.%-]?%w+%s*[—–-]%s*%w*[%.%-]?%w+$') then	-- if a hyphenated range or has endash or emdash separators
+			if mw.ustring.match (item, '^%a+[%.%-]?%d+%s*[—–-]%s*%a+[%.%-]?%d+$') or		-- letterdigit hyphen letterdigit (optional separator between letter and digit)
+				mw.ustring.match (item, '^%d+[%.%-]?%a+%s*[—–-]%s*%d+[%.%-]?%a+$') or		-- digitletter hyphen digitletter (optional separator between digit and letter)
+				mw.ustring.match (item, '^%d+[%.%-]%d+%s*[—–-]%s*%d+[%.%-]%d+$') then		-- digit separator digit hyphen digit separator digit
+					item = mw.ustring.gsub (item, '(%w*[%.%-]?%w+)%s*[—–-]%s*(%w*[%.%-]?%w+)', '&lt;span class="nowrap"&gt;%1 –&lt;/span&gt; &lt;span class="nowrap"&gt;%2&lt;/span&gt;');	-- replace hyphen/dash, with spaced endash
+
+			elseif mw.ustring.match (item, '^%d+%s*[—–-]%s*%d+$') or			-- digit hyphen digit
+				mw.ustring.match (item, '^%a+%s*[—–-]%s*%a+$') then				-- letter hyphen letter
+					item = mw.ustring.gsub (item, '(%w+)%s*[—–-]%s*(%w+)', '&lt;span class="nowrap"&gt;%1–&lt;/span&gt;%2');	-- replace hyphen/emdash with endash, remove extraneous space characters
+
+			else
+--				item = mw.ustring.gsub (item, '%s*[—–-]%s*', '–');				-- disabled; here when 'unlike' items so return &lt;item&gt; as is
+			end
+		end
+		table.insert (out, item);												-- add the (possibly modified) item to the output table
+	end
+
+	local temp_str = '';														-- concatenate the output table into a comma separated string
+	temp_str, accept = has_accept_as_written (table.concat (out, ', '));		-- remove accept-this-as-written markup when it wraps all of concatenated out
+	if accept then
+		temp_str = has_accept_as_written (str);									-- when global markup removed, return original str; do it this way to suppress boolean second return value
+		return temp_str:gsub("，", ","):gsub("；", ";");
+	else
+		return temp_str:gsub("，", ","):gsub("；", ";");						-- else, return assembled temp_str
+	end
+end
+--[=[-------------------------&lt; M A K E _ W I K I L I N K &gt;----------------------------------------------------
+
+Makes a wikilink; when both link and display text is provided, returns a wikilink in the form [[L|D]]; if only
+link is provided (or link and display are the same), returns a wikilink in the form [[L]]; if neither are
+provided or link is omitted, returns an empty string.
+
+]=]
+
+local function make_wikilink (link, display)
+	if not is_set (link) then return '' end
+
+	if is_set (display) and link ~= display then			
+		return table.concat ({'[[', link, '|', display, ']]'});			
+	else
+		return table.concat ({'[[', link, ']]'});
+	end
+end
+--[[--------------------------&lt; S E T _ M E S S A G E &gt;----------------------------------------------------------
+
+Sets an error message using the ~/Configuration error_conditions{} table along with arguments supplied in the function
+call, inserts the resulting message in z.error_msgs_t{} sequence table, and returns the error message.
+
+&lt;error_id&gt; – key value for appropriate error handler in ~/Configuration error_conditions{} table 
+&lt;arguments&gt; – may be a single string or a sequence table of multiple strings to be subsititued into error_conditions[error_id].message
+&lt;raw&gt; – boolean
+	true –	causes this function to return the error message not wrapped in visible-error, hidden-error span tag;
+			returns error_conditions[error_id].hidden as a second return value
+			does not add message to z.error_msgs_t sequence table
+	false, nil – adds message wrapped in visible-error, hidden-error span tag to z.error_msgs_t
+			returns the error message wrapped in visible-error, hidden-error span tag; there is no second return value
+&lt;prefix&gt; – string to be prepended to &lt;message&gt;									-- TODO: remove support for these unused(?) arguments?
+&lt;suffix&gt; – string to be appended to &lt;message&gt;
+
+TODO: change z.error_cats_t and z.maint_cats_t to have the form cat_name = true?  this to avoid dups without having to have an extra table
+
+]]
+
+local added_maint_cats = {}														-- list of maintenance categories that have been added to z.maint_cats_t; TODO: figure out how to delete this table
+
+local function set_message (error_id, arguments, raw, prefix, suffix)
+	local error_state = cfg.error_conditions[error_id];
+	
+	prefix = prefix or '';
+	suffix = suffix or '';
+	
+	if error_state == nil then
+		error (cfg.messages['undefined_error'] .. ': ' .. error_id);			-- because missing error handler in Module:Citation/CS1/Configuration
+
+	elseif is_set (error_state.category) then
+		if error_state.message then												-- when error_state.message defined, this is an error message
+			table.insert (z.error_cats_t, error_state.category);
+		else
+			if not added_maint_cats[error_id] then
+				added_maint_cats[error_id] = true;								-- note that we've added this category
+				table.insert (z.maint_cats_t, substitute (error_state.category, arguments));	-- make cat name then add to table
+			end
+			return;																-- because no message, nothing more to do
+		end
+	end
+
+	local message = substitute (error_state.message, arguments);
+
+	message = table.concat (
+		{
+		message,
+		' (',
+		make_wikilink (
+			table.concat (
+				{
+				cfg.messages['help page link'],
+				'#',
+				error_state.anchor
+				}),
+			cfg.messages['help page label']),
+		')'
+		});
+
+	z.error_ids_t[error_id] = true;
+	if z.error_ids_t['err_citation_missing_title'] and							-- if missing-title error already noted
+		in_array (error_id, {'err_bare_url_missing_title', 'err_trans_missing_title'}) then		-- and this error is one of these
+			return '', false;													-- don't bother because one flavor of missing title is sufficient
+	end
+	
+	message = table.concat ({prefix, message, suffix});
+
+	if true == raw then
+		return message, error_state.hidden;										-- return message not wrapped in visible-error, hidden-error span tag
+	end		
+
+	message = error_comment (message, error_state.hidden);						-- wrap message in visible-error, hidden-error span tag
+	table.insert (z.error_msgs_t, message);										-- add it to the messages sequence table
+	return message;																-- and done; return value generally not used but is used as a flag in various functions of ~/Identifiers
+end
+--[[-------------------------&lt; I S _ A L I A S _ U S E D &gt;-----------------------------------------------------
+
+This function is used by select_one() to determine if one of a list of alias parameters is in the argument list
+provided by the template.
+
+Input:
+	args – pointer to the arguments table from calling template
+	alias – one of the list of possible aliases in the aliases lists from Module:Citation/CS1/Configuration
+	index – for enumerated parameters, identifies which one
+	enumerated – true/false flag used to choose how enumerated aliases are examined
+	value – value associated with an alias that has previously been selected; nil if not yet selected
+	selected – the alias that has previously been selected; nil if not yet selected
+	error_list – list of aliases that are duplicates of the alias already selected
+
+Returns:
+	value – value associated with alias we selected or that was previously selected or nil if an alias not yet selected
+	selected – the alias we selected or the alias that was previously selected or nil if an alias not yet selected
+
+]]
+
+local function is_alias_used (args, alias, index, enumerated, value, selected, error_list)
+	if enumerated then															-- is this a test for an enumerated parameters?
+		alias = alias:gsub ('#', index);										-- replace '#' with the value in index
+	else
+		alias = alias:gsub ('#', '');											-- remove '#' if it exists
+	end
+
+	if is_set (args[alias]) then												-- alias is in the template's argument list
+		if value ~= nil and selected ~= alias then								-- if we have already selected one of the aliases
+			local skip;
+			for _, v in ipairs (error_list) do									-- spin through the error list to see if we've added this alias
+				if v == alias then
+					skip = true;
+					break;														-- has been added so stop looking 
+				end
+			end
+			if not skip then													-- has not been added so
+				table.insert (error_list, alias);								-- add error alias to the error list
+			end
+		else
+			value = args[alias];												-- not yet selected an alias, so select this one
+			selected = alias;
+		end
+	end
+	return value, selected;														-- return newly selected alias, or previously selected alias
+end
+--[[--------------------------&lt; A D D _ M A I N T _ C A T &gt;------------------------------------------------------
+
+Adds a category to z.maint_cats_t using names from the configuration file with additional text if any.
+To prevent duplication, the added_maint_cats table lists the categories by key that have been added to z.maint_cats_t.
+
+]]
+
+local function add_maint_cat (key, arguments)
+	if not added_maint_cats [key] then
+		added_maint_cats [key] = true;											-- note that we've added this category
+		table.insert (z.maint_cats_t, substitute (cfg.maint_cats [key], arguments));	-- make name then add to table
+	end
+end
+--[[--------------------------&lt; A D D _ P R O P _ C A T &gt;--------------------------------------------------------
+
+Adds a category to z.prop_cats_t using names from the configuration file with additional text if any.
+
+foreign_lang_source and foreign_lang_source_2 keys have a language code appended to them so that multiple languages
+may be categorized but multiples of the same language are not categorized.
+
+added_prop_cats is a table declared in page scope variables above
+
+]]
+
+local added_prop_cats = {};														-- list of property categories that have been added to z.prop_cats_t
+
+local function add_prop_cat (key, arguments, key_modifier)
+	local key_modified = key .. ((key_modifier and key_modifier) or '');		-- modify &lt;key&gt; with &lt;key_modifier&gt; if present and not nil
+	
+	if not added_prop_cats [key_modified] then
+		added_prop_cats [key_modified] = true;									-- note that we've added this category
+		table.insert (z.prop_cats_t, substitute (cfg.prop_cats [key], arguments));	-- make name then add to table
+		table.insert (z.prop_keys_t, 'cs1-prop-' .. key);						-- convert key to class for use in the citation's &lt;cite&gt; tag
+	end
+end
+--[[--------------------------&lt; S A F E _ F O R _ I T A L I C S &gt;----------------------------------------------
+
+Protects a string that will be wrapped in wiki italic markup '' ... ''
+
+Note: We cannot use &lt;i&gt; for italics, as the expected behavior for italics specified by ''...'' in the title is that
+they will be inverted (i.e. unitalicized) in the resulting references.  In addition, &lt;i&gt; and '' tend to interact
+poorly under Mediawiki's HTML tidy.
+
+]]
+
+local function safe_for_italics (str)
+	if not is_set (str) then return str end
+
+	if str:sub (1, 1) == "'" then str = "&lt;span&gt;&lt;/span&gt;" .. str; end
+	if str:sub (-1, -1) == "'" then str = str .. "&lt;span&gt;&lt;/span&gt;"; end
+	
+	return str:gsub ('\n', ' ');												-- Remove newlines as they break italics.
+end
+--[[--------------------------&lt; W R A P _ S T Y L E &gt;----------------------------------------------------------
+
+Applies styling to various parameters.  Supplied string is wrapped using a message_list configuration taking one
+argument; protects italic styled parameters.  Additional text taken from citation_config.presentation - the reason
+this function is similar to but separate from wrap_msg().
+
+]]
+
+local function wrap_style (key, str)
+	if not is_set (str) then
+		return "";
+	elseif in_array (key, {'italic-title', 'trans-italic-title'}) then
+		str = safe_for_italics (str);
+	end
+
+	return substitute (cfg.presentation[key], {str});
+end
+--[[--------------------------&lt; M A K E _ S E P _ L I S T &gt;------------------------------------------------------------
+
+make a separated list of items using provided separators.
+	&lt;sep_list&gt; - typically '&lt;comma&gt;&lt;space&gt;'
+	&lt;sep_list_pair&gt; - typically '&lt;space&gt;and&lt;space&gt;'
+	&lt;sep_list_end&gt; - typically '&lt;comma&gt;&lt;space&gt;and&lt;space&gt;' or '&lt;comma&gt;&lt;space&gt;&amp;&lt;space&gt;'
+
+defaults to cfg.presentation['sep_list'], cfg.presentation['sep_list_pair'], and cfg.presentation['sep_list_end']
+if &lt;sep_list_end&gt; is specified, &lt;sep_list&gt; and &lt;sep_list_pair&gt; must also be supplied
+
+]]
+
+local function make_sep_list (count, list_seq, sep_list, sep_list_pair, sep_list_end)
+	local list = '';
+
+	if not sep_list then														-- set the defaults
+		sep_list = cfg.presentation['sep_list'];
+		sep_list_pair = cfg.presentation['sep_list_pair'];
+		sep_list_end = cfg.presentation['sep_list_end'];
+	end
+	
+	if 2 &gt;= count then
+		list = table.concat (list_seq, sep_list_pair);							-- insert separator between two items; returns list_seq[1] then only one item
+	elseif 2 &lt; count then
+		list = table.concat (list_seq, sep_list, 1, count - 1);					-- concatenate all but last item with plain list separator
+		list = table.concat ({list, list_seq[count]}, sep_list_end);			-- concatenate last item onto end of &lt;list&gt; with final separator
+	end
+	
+	return list;
+end
+--[[--------------------------&lt; S E L E C T _ O N E &gt;----------------------------------------------------------
+
+Chooses one matching parameter from a list of parameters to consider.  The list of parameters to consider is just
+names.  For parameters that may be enumerated, the position of the numerator in the parameter name is identified
+by the '#' so |author-last1= and |author1-last= are represented as 'author-last#' and 'author#-last'.
+
+Because enumerated parameter |&lt;param&gt;1= is an alias of |&lt;param&gt;= we must test for both possibilities.
+Generates an error if more than one match is present.
+
+]]
+
+local function select_one (args, aliases_list, error_condition, index)
+	local value = nil;															-- the value assigned to the selected parameter
+	local selected = '';														-- the name of the parameter we have chosen
+	local error_list = {};
+
+	if index ~= nil then index = tostring(index); end
+
+	for _, alias in ipairs (aliases_list) do									-- for each alias in the aliases list
+		if alias:match ('#') then												-- if this alias can be enumerated
+			if '1' == index then												-- when index is 1 test for enumerated and non-enumerated aliases
+				value, selected = is_alias_used (args, alias, index, false, value, selected, error_list);	-- first test for non-enumerated alias
+			end
+			value, selected = is_alias_used (args, alias, index, true, value, selected, error_list);	-- test for enumerated alias
+		else
+			value, selected = is_alias_used (args, alias, index, false, value, selected, error_list);	-- test for non-enumerated alias
+		end
+	end
+
+	if #error_list &gt; 0 and 'none' ~= error_condition then						-- for cases where this code is used outside of extract_names()
+		for i, v in ipairs (error_list) do
+			error_list[i] = wrap_style ('parameter', v);
+		end
+		table.insert (error_list, wrap_style ('parameter', selected));
+		set_message (error_condition, {make_sep_list (#error_list, error_list)});
+	end
+	
+	return value, selected;
+end
+--[=[-------------------------&lt; R E M O V E _ W I K I _ L I N K &gt;----------------------------------------------
+
+Gets the display text from a wikilink like [[A|B]] or [[B]] gives B
+
+The str:gsub() returns either A|B froma [[A|B]] or B from [[B]] or B from B (no wikilink markup).
+
+In l(), l:gsub() removes the link and pipe (if they exist); the second :gsub() trims whitespace from the label
+if str was wrapped in wikilink markup.  Presumably, this is because without wikimarkup in str, there is no match
+in the initial gsub, the replacement function l() doesn't get called.
+
+]=]
+
+local function remove_wiki_link (str)
+	return (str:gsub ("%[%[([^%[%]]*)%]%]", function(l)
+		return l:gsub ("^[^|]*|(.*)$", "%1" ):gsub ("^%s*(.-)%s*$", "%1");
+	end));
+end
+--[=[-------------------------&lt; I S _ W I K I L I N K &gt;--------------------------------------------------------
+
+Determines if str is a wikilink, extracts, and returns the wikilink type, link text, and display text parts.
+If str is a complex wikilink ([[L|D]]):
+	returns wl_type 2 and D and L from [[L|D]];
+if str is a simple wikilink ([[D]])
+	returns wl_type 1 and D from [[D]] and L as empty string;
+if not a wikilink:
+	returns wl_type 0, str as D, and L as empty string.
+
+trims leading and trailing whitespace and pipes from L and D ([[L|]] and [[|D]] are accepted by MediaWiki and
+treated like [[D]]; while [[|D|]] is not accepted by MediaWiki, here, we accept it and return D without the pipes).
+
+]=]
+
+local function is_wikilink (str)
+	local D, L
+	local wl_type = 2;															-- assume that str is a complex wikilink [[L|D]]
+
+	if not str:match ('^%[%[[^%]]+%]%]$') then									-- is str some sort of a wikilink (must have some sort of content)
+		return 0, str, '';														-- not a wikilink; return wl_type as 0, str as D, and empty string as L
+	end
+	
+	L, D = str:match ('^%[%[([^|]+)|([^%]]+)%]%]$');							-- get L and D from [[L|D]] 
+
+	if not is_set (D) then														-- if no separate display
+		D = str:match ('^%[%[([^%]]*)|*%]%]$');									-- get D from [[D]] or [[D|]]
+		wl_type = 1; 
+	end
+	
+	D = mw.text.trim (D, '%s|');												-- trim white space and pipe characters 
+	return wl_type, D, L or '';
+end
+--[[--------------------------&lt; S T R I P _ A P O S T R O P H E _ M A R K U P &gt;--------------------------------
+
+Strip wiki italic and bold markup from argument so that it doesn't contaminate COinS metadata.
+This function strips common patterns of apostrophe markup.  We presume that editors who have taken the time to
+markup a title have, as a result, provided valid markup. When they don't, some single apostrophes are left behind.
+
+Returns the argument without wiki markup and a number; the number is more-or-less meaningless except as a flag
+to indicate that markup was replaced; do not rely on it as an indicator of how many of any kind of markup was
+removed; returns the argument and nil when no markup removed
+
+]]
+
+local function strip_apostrophe_markup (argument)
+	if not is_set (argument) then
+		return argument, nil;													-- no argument, nothing to do
+	end
+
+	if nil == argument:find ( "''", 1, true ) then								-- Is there at least one double apostrophe?  If not, exit.
+		return argument, nil;
+	end
+
+	local flag;
+	while true do
+		if argument:find ("'''''", 1, true) then								-- bold italic (5)
+			argument, flag = argument:gsub ("%'%'%'%'%'", "");					-- remove all instances of it
+		elseif argument:find ("''''", 1, true) then								-- italic start and end without content (4)
+			argument, flag=argument:gsub ("%'%'%'%'", "");
+		elseif argument:find ("'''", 1, true) then								-- bold (3)
+			argument, flag=argument:gsub ("%'%'%'", "");
+		elseif argument:find ("''", 1, true) then								-- italic (2)
+			argument, flag = argument:gsub ("%'%'", "");
+		else
+			break;
+		end
+	end
+
+	return argument, flag;														-- done
+end
+--[[--------------------------&lt; S E T _ S E L E C T E D _ M O D U L E S &gt;--------------------------------------
+
+Sets local cfg table to same (live or sandbox) as that used by the other modules.
+
+]]
+
+local function set_selected_modules (cfg_table_ptr)
+	cfg = cfg_table_ptr;
+	
+end
+--[[--------------------------&lt; E X P O R T S &gt;----------------------------------------------------------------
+]]
+
+return {
+	add_maint_cat = add_maint_cat,												-- exported functions
+	add_prop_cat = add_prop_cat,
+	error_comment = error_comment,
+	has_accept_as_written = has_accept_as_written,
+	hyphen_to_dash = hyphen_to_dash,
+	in_array = in_array,
+	is_set = is_set,
+	is_wikilink = is_wikilink,
+	make_sep_list = make_sep_list,
+	make_wikilink = make_wikilink,
+	remove_wiki_link = remove_wiki_link,
+	safe_for_italics = safe_for_italics,
+	select_one = select_one,
+	set_message = set_message,
+	set_selected_modules = set_selected_modules,
+	strip_apostrophe_markup = strip_apostrophe_markup,
+	substitute = substitute,
+	wrap_style = wrap_style,
+
+	z = z,																		-- exported table
+	}</text>
+      <sha1>0bukcpsxn9ldkp1u0c3akm8i2kgzlw1</sha1>
+    </revision>
+  </page>
+</mediawiki>

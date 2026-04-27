@@ -1,0 +1,1792 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Citation/CS1/testcases/anchor</title>
+    <ns>828</ns>
+    <id>5908</id>
+    <revision>
+      <id>832302</id>
+      <timestamp>2021-04-27T03:07:20Z</timestamp>
+      <contributor>
+        <username>en&gt;Izno</username>
+        <id>0</id>
+      </contributor>
+      <comment>remove bad tests</comment>
+      <origin>832302</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="8418" sha1="9rxh67qbpu6gfdzut9dyh52jplmymqm" xml:space="preserve">-- we never call cs1 directly because it doesn't have a nice implementation
+-- as a module, so comment out below line
+-- local myModule = require('Module:Citation/CS1') -- the module to be tested
+local ScribuntoUnit = require('Module:ScribuntoUnit')
+local suite = ScribuntoUnit:new()
+
+-- merge keys and values into one table
+local function merge(t1, t2)
+	local t3 = {}
+	for k, v in pairs(t1) do
+		t3[k] = v
+	end
+	for k, v in pairs(t2) do
+		t3[k] = v
+	end
+	return t3
+end
+
+-- Finds the citeref in an expanded CS1/2 template. Takes a test_parameters
+-- table and a specific template invoke's args. The test_parameters table has
+-- the following fields:
+-- * base_args, a table representing the template args common to the test case.
+-- * pattern, a string to find in the expanded template
+-- * frame, usually from mw.getCurrentFrame()
+-- * template, a string which is the name of the template to test.
+-- targs is a table of the template arguments unique to the specific assertion.
+local function citeref(test_parameters, targs)
+	
+	local merged_args = merge(test_parameters.base_args, targs)
+	local expansion = test_parameters.frame:expandTemplate{
+		title = test_parameters.template, args = merged_args
+	}
+	
+	local _, _, citeref_value = mw.ustring.find(expansion, test_parameters.pattern)
+	if not citeref_value then
+		citeref_value = ''
+	end
+	return citeref_value
+end
+
+-- Tests to ensure author masks don't corrupt the CITEREF
+function suite:testAuthorMask()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', year = '2020' }
+	}
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {['author-mask'] = 'A1'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {['author-mask1'] = '2'}))
+end
+
+-- Tests what happens with various counts of contributors, authors, and editors
+function suite:testCounts()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', year = '2020' }
+	}
+	self:assertEquals( '', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_'}))
+	self:assertEquals( '', citeref(env, {contributor = 'C1'}))
+	self:assertEquals( '', citeref(env, {contributor = 'C1', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_E1_2020', citeref(env, {editor = '_E1_'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_', contributor = '_C1_'}))
+	self:assertEquals( 'CITEREF_C1_2020', citeref(env, {author = '_A1_', contributor = '_C1_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_', editor = '_E1_'}))
+	self:assertEquals( 'CITEREF_E1_2020', citeref(env, {editor = '_E1_', contributor = '_C1_'}))
+	self:assertEquals( 'CITEREF_E1_2020', citeref(env, {editor = '_E1_', contributor = '_C1_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_', contributor = '_C1_', editor = '_E1_'}))
+	self:assertEquals( 'CITEREF_C1_2020', citeref(env, {author = '_A1_', contributor = '_C1_', editor = '_E1_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_A1_A2_A3_A4_2020', citeref(env, {author = '_A1_', author2 = 'A2_', author3 = 'A3_', author4 = 'A4_'}))
+	self:assertEquals( 'CITEREF_A1_A2_A3_A4_2020', citeref(env, {author = '_A1_', author2 = 'A2_', author3 = 'A3_', author4 = 'A4_', author5 = 'A5_'}))
+	self:assertEquals( 'CITEREF_C1_C2_C3_2020', citeref(env, {author = '_A1_', contributor = '_C1_', contributor2 = 'C2_', contributor3 = 'C3_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_E1_E2_2020', citeref(env, {editor = '_E1_', editor2 = 'E2_'}))
+end
+
+-- Tests date resolution code, including anchor years.
+function suite:testDates()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {year='2020'}))
+	self:assertEquals( 'CITEREF_A1_c\._2020', citeref(env, {date='c. 2020'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {date='1 January 2020'}))
+	self:assertEquals( 'CITEREF_A1_2020a', citeref(env, {date='1 January 2020a'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {date='1 January 2020', year='2020'}))
+	self:assertEquals( 'CITEREF_A1_2020a', citeref(env, {date='1 January 2020', year='2020a'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {date='2020-01-01', year='2020'}))
+	self:assertEquals( 'CITEREF_A1_2020a', citeref(env, {date='2020-01-01', year='2020a'}))
+end
+
+function suite:testDatesMaint()
+	local frame = mw.getCurrentFrame()
+	local base_args = {title = 'T', author = '_A1_', year = '2020'}
+	local template = 'cite book/new'
+	local maint = 'CS1 maint: date and year'
+	
+	self:assertStringContains(maint, frame:expandTemplate{
+		title = template, args = merge(base_args, { date = '1 January 2020'})
+	})
+	self:assertStringContains(maint, frame:expandTemplate{
+		title = template, args = merge(base_args, { date = '2020-01-01'})
+	})
+end
+
+-- should fail: extra unexpected nd in the anchor, plus trailingauthordash below
+-- TODO: Should that change? I've seen workarounds in the wild.
+function suite:testDatesExtraNd()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	
+	self:assertEquals( 'CITEREF_A1_', citeref(env, {date='nd'}))
+end
+
+-- should fail: extra unexpected n.d. in the anchor
+-- TODO: Should that change? I've seen workarounds in the wild.
+function suite:testDatesExtraNdPunct()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	self:assertEquals( 'CITEREF_A1_', citeref(env, {date='n.d.'}))
+end
+
+-- Tests to ensure display name settings don't corrupt the CITEREF
+function suite:testDisplayNames()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', author2 = 'A2_', date = '2020' }
+	}
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {['display-authors'] = '0'}))
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {['display-authors'] = '1'}))
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {['display-authors'] = 'etal'}))
+end
+
+-- Tests what happens for certain values of ref
+function suite:testRef()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = '(id=\"CITEREF%S-\")',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', year = '2020' }
+	}
+	-- TODO test citation for equivalent value
+	self:assertEquals( 'id=\"CITEREF_A1_2020\"', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( '', citeref(env, {ref = 'none'}))
+	self:assertEquals( 'id=\"CITEREF_A1_2020\"', citeref(env, {ref = 'CITEREF_A1_2020'}))
+
+end
+
+-- slightly different setup; we want to test that the input ID is the output ID
+function suite:testRefREF()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = '(id=\"REF\")',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', year = '2020' }
+	}
+	self:assertEquals( 'id=\"REF\"', citeref(env, {ref = 'REF'}))
+end
+
+-- tests for expected presence of maintenance messages in ref
+function suite:testRefMaint()
+	local frame = mw.getCurrentFrame()
+	local base_args = {title = 'T', author = '_A1_', date = '2020'}
+	
+	self:assertStringContains('CS1 maint: ref duplicates default', frame:expandTemplate{
+		title = 'cite book/new', args = merge(base_args, { ref = 'CITEREF_A1_2020'})
+	})
+	self:assertStringContains('Invalid &lt;code class=\"cs1%-code\"&gt;&amp;#124;ref=harv&lt;/code&gt;', frame:expandTemplate{
+		title = 'cite book/new', args = merge(base_args, { ref = 'harv'})
+	})
+end
+
+-- should fail: missing trailing underscore in anchor; not sure if that's desirable
+-- or if that can change
+-- TODO: Ask someone.
+function suite:testTrailingAuthorDash()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	self:assertEquals( 'CITEREF_A1_', citeref(env, {chapter='CH'}))
+end
+
+return suite</text>
+      <sha1>9rxh67qbpu6gfdzut9dyh52jplmymqm</sha1>
+    </revision>
+    <revision>
+      <id>832303</id>
+      <parentid>832302</parentid>
+      <timestamp>2024-12-31T06:41:01Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Mass importing wikipedia categories, not taking histories because these are unused ones and it is kind of obvious where they came from</comment>
+      <origin>832302</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="8418" sha1="9rxh67qbpu6gfdzut9dyh52jplmymqm" xml:space="preserve">-- we never call cs1 directly because it doesn't have a nice implementation
+-- as a module, so comment out below line
+-- local myModule = require('Module:Citation/CS1') -- the module to be tested
+local ScribuntoUnit = require('Module:ScribuntoUnit')
+local suite = ScribuntoUnit:new()
+
+-- merge keys and values into one table
+local function merge(t1, t2)
+	local t3 = {}
+	for k, v in pairs(t1) do
+		t3[k] = v
+	end
+	for k, v in pairs(t2) do
+		t3[k] = v
+	end
+	return t3
+end
+
+-- Finds the citeref in an expanded CS1/2 template. Takes a test_parameters
+-- table and a specific template invoke's args. The test_parameters table has
+-- the following fields:
+-- * base_args, a table representing the template args common to the test case.
+-- * pattern, a string to find in the expanded template
+-- * frame, usually from mw.getCurrentFrame()
+-- * template, a string which is the name of the template to test.
+-- targs is a table of the template arguments unique to the specific assertion.
+local function citeref(test_parameters, targs)
+	
+	local merged_args = merge(test_parameters.base_args, targs)
+	local expansion = test_parameters.frame:expandTemplate{
+		title = test_parameters.template, args = merged_args
+	}
+	
+	local _, _, citeref_value = mw.ustring.find(expansion, test_parameters.pattern)
+	if not citeref_value then
+		citeref_value = ''
+	end
+	return citeref_value
+end
+
+-- Tests to ensure author masks don't corrupt the CITEREF
+function suite:testAuthorMask()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', year = '2020' }
+	}
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {['author-mask'] = 'A1'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {['author-mask1'] = '2'}))
+end
+
+-- Tests what happens with various counts of contributors, authors, and editors
+function suite:testCounts()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', year = '2020' }
+	}
+	self:assertEquals( '', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_'}))
+	self:assertEquals( '', citeref(env, {contributor = 'C1'}))
+	self:assertEquals( '', citeref(env, {contributor = 'C1', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_E1_2020', citeref(env, {editor = '_E1_'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_', contributor = '_C1_'}))
+	self:assertEquals( 'CITEREF_C1_2020', citeref(env, {author = '_A1_', contributor = '_C1_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_', editor = '_E1_'}))
+	self:assertEquals( 'CITEREF_E1_2020', citeref(env, {editor = '_E1_', contributor = '_C1_'}))
+	self:assertEquals( 'CITEREF_E1_2020', citeref(env, {editor = '_E1_', contributor = '_C1_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_', contributor = '_C1_', editor = '_E1_'}))
+	self:assertEquals( 'CITEREF_C1_2020', citeref(env, {author = '_A1_', contributor = '_C1_', editor = '_E1_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_A1_A2_A3_A4_2020', citeref(env, {author = '_A1_', author2 = 'A2_', author3 = 'A3_', author4 = 'A4_'}))
+	self:assertEquals( 'CITEREF_A1_A2_A3_A4_2020', citeref(env, {author = '_A1_', author2 = 'A2_', author3 = 'A3_', author4 = 'A4_', author5 = 'A5_'}))
+	self:assertEquals( 'CITEREF_C1_C2_C3_2020', citeref(env, {author = '_A1_', contributor = '_C1_', contributor2 = 'C2_', contributor3 = 'C3_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_E1_E2_2020', citeref(env, {editor = '_E1_', editor2 = 'E2_'}))
+end
+
+-- Tests date resolution code, including anchor years.
+function suite:testDates()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {year='2020'}))
+	self:assertEquals( 'CITEREF_A1_c\._2020', citeref(env, {date='c. 2020'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {date='1 January 2020'}))
+	self:assertEquals( 'CITEREF_A1_2020a', citeref(env, {date='1 January 2020a'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {date='1 January 2020', year='2020'}))
+	self:assertEquals( 'CITEREF_A1_2020a', citeref(env, {date='1 January 2020', year='2020a'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {date='2020-01-01', year='2020'}))
+	self:assertEquals( 'CITEREF_A1_2020a', citeref(env, {date='2020-01-01', year='2020a'}))
+end
+
+function suite:testDatesMaint()
+	local frame = mw.getCurrentFrame()
+	local base_args = {title = 'T', author = '_A1_', year = '2020'}
+	local template = 'cite book/new'
+	local maint = 'CS1 maint: date and year'
+	
+	self:assertStringContains(maint, frame:expandTemplate{
+		title = template, args = merge(base_args, { date = '1 January 2020'})
+	})
+	self:assertStringContains(maint, frame:expandTemplate{
+		title = template, args = merge(base_args, { date = '2020-01-01'})
+	})
+end
+
+-- should fail: extra unexpected nd in the anchor, plus trailingauthordash below
+-- TODO: Should that change? I've seen workarounds in the wild.
+function suite:testDatesExtraNd()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	
+	self:assertEquals( 'CITEREF_A1_', citeref(env, {date='nd'}))
+end
+
+-- should fail: extra unexpected n.d. in the anchor
+-- TODO: Should that change? I've seen workarounds in the wild.
+function suite:testDatesExtraNdPunct()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	self:assertEquals( 'CITEREF_A1_', citeref(env, {date='n.d.'}))
+end
+
+-- Tests to ensure display name settings don't corrupt the CITEREF
+function suite:testDisplayNames()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', author2 = 'A2_', date = '2020' }
+	}
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {['display-authors'] = '0'}))
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {['display-authors'] = '1'}))
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {['display-authors'] = 'etal'}))
+end
+
+-- Tests what happens for certain values of ref
+function suite:testRef()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = '(id=\"CITEREF%S-\")',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', year = '2020' }
+	}
+	-- TODO test citation for equivalent value
+	self:assertEquals( 'id=\"CITEREF_A1_2020\"', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( '', citeref(env, {ref = 'none'}))
+	self:assertEquals( 'id=\"CITEREF_A1_2020\"', citeref(env, {ref = 'CITEREF_A1_2020'}))
+
+end
+
+-- slightly different setup; we want to test that the input ID is the output ID
+function suite:testRefREF()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = '(id=\"REF\")',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', year = '2020' }
+	}
+	self:assertEquals( 'id=\"REF\"', citeref(env, {ref = 'REF'}))
+end
+
+-- tests for expected presence of maintenance messages in ref
+function suite:testRefMaint()
+	local frame = mw.getCurrentFrame()
+	local base_args = {title = 'T', author = '_A1_', date = '2020'}
+	
+	self:assertStringContains('CS1 maint: ref duplicates default', frame:expandTemplate{
+		title = 'cite book/new', args = merge(base_args, { ref = 'CITEREF_A1_2020'})
+	})
+	self:assertStringContains('Invalid &lt;code class=\"cs1%-code\"&gt;&amp;#124;ref=harv&lt;/code&gt;', frame:expandTemplate{
+		title = 'cite book/new', args = merge(base_args, { ref = 'harv'})
+	})
+end
+
+-- should fail: missing trailing underscore in anchor; not sure if that's desirable
+-- or if that can change
+-- TODO: Ask someone.
+function suite:testTrailingAuthorDash()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	self:assertEquals( 'CITEREF_A1_', citeref(env, {chapter='CH'}))
+end
+
+return suite</text>
+      <sha1>9rxh67qbpu6gfdzut9dyh52jplmymqm</sha1>
+    </revision>
+    <revision>
+      <id>832304</id>
+      <parentid>832303</parentid>
+      <timestamp>2025-01-28T01:15:56Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Adding [[Category:second attempt at refreshing on January 27 2024]][[Category:{{subst:FULLPAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]] on using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>832304</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="8575" sha1="ov7kqkblgimge6tikttb8ung7hjt5vf" xml:space="preserve">-- we never call cs1 directly because it doesn't have a nice implementation
+-- as a module, so comment out below line
+-- local myModule = require('Module:Citation/CS1') -- the module to be tested
+local ScribuntoUnit = require('Module:ScribuntoUnit')
+local suite = ScribuntoUnit:new()
+
+-- merge keys and values into one table
+local function merge(t1, t2)
+	local t3 = {}
+	for k, v in pairs(t1) do
+		t3[k] = v
+	end
+	for k, v in pairs(t2) do
+		t3[k] = v
+	end
+	return t3
+end
+
+-- Finds the citeref in an expanded CS1/2 template. Takes a test_parameters
+-- table and a specific template invoke's args. The test_parameters table has
+-- the following fields:
+-- * base_args, a table representing the template args common to the test case.
+-- * pattern, a string to find in the expanded template
+-- * frame, usually from mw.getCurrentFrame()
+-- * template, a string which is the name of the template to test.
+-- targs is a table of the template arguments unique to the specific assertion.
+local function citeref(test_parameters, targs)
+	
+	local merged_args = merge(test_parameters.base_args, targs)
+	local expansion = test_parameters.frame:expandTemplate{
+		title = test_parameters.template, args = merged_args
+	}
+	
+	local _, _, citeref_value = mw.ustring.find(expansion, test_parameters.pattern)
+	if not citeref_value then
+		citeref_value = ''
+	end
+	return citeref_value
+end
+
+-- Tests to ensure author masks don't corrupt the CITEREF
+function suite:testAuthorMask()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', year = '2020' }
+	}
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {['author-mask'] = 'A1'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {['author-mask1'] = '2'}))
+end
+
+-- Tests what happens with various counts of contributors, authors, and editors
+function suite:testCounts()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', year = '2020' }
+	}
+	self:assertEquals( '', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_'}))
+	self:assertEquals( '', citeref(env, {contributor = 'C1'}))
+	self:assertEquals( '', citeref(env, {contributor = 'C1', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_E1_2020', citeref(env, {editor = '_E1_'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_', contributor = '_C1_'}))
+	self:assertEquals( 'CITEREF_C1_2020', citeref(env, {author = '_A1_', contributor = '_C1_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_', editor = '_E1_'}))
+	self:assertEquals( 'CITEREF_E1_2020', citeref(env, {editor = '_E1_', contributor = '_C1_'}))
+	self:assertEquals( 'CITEREF_E1_2020', citeref(env, {editor = '_E1_', contributor = '_C1_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_', contributor = '_C1_', editor = '_E1_'}))
+	self:assertEquals( 'CITEREF_C1_2020', citeref(env, {author = '_A1_', contributor = '_C1_', editor = '_E1_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_A1_A2_A3_A4_2020', citeref(env, {author = '_A1_', author2 = 'A2_', author3 = 'A3_', author4 = 'A4_'}))
+	self:assertEquals( 'CITEREF_A1_A2_A3_A4_2020', citeref(env, {author = '_A1_', author2 = 'A2_', author3 = 'A3_', author4 = 'A4_', author5 = 'A5_'}))
+	self:assertEquals( 'CITEREF_C1_C2_C3_2020', citeref(env, {author = '_A1_', contributor = '_C1_', contributor2 = 'C2_', contributor3 = 'C3_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_E1_E2_2020', citeref(env, {editor = '_E1_', editor2 = 'E2_'}))
+end
+
+-- Tests date resolution code, including anchor years.
+function suite:testDates()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {year='2020'}))
+	self:assertEquals( 'CITEREF_A1_c\._2020', citeref(env, {date='c. 2020'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {date='1 January 2020'}))
+	self:assertEquals( 'CITEREF_A1_2020a', citeref(env, {date='1 January 2020a'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {date='1 January 2020', year='2020'}))
+	self:assertEquals( 'CITEREF_A1_2020a', citeref(env, {date='1 January 2020', year='2020a'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {date='2020-01-01', year='2020'}))
+	self:assertEquals( 'CITEREF_A1_2020a', citeref(env, {date='2020-01-01', year='2020a'}))
+end
+
+function suite:testDatesMaint()
+	local frame = mw.getCurrentFrame()
+	local base_args = {title = 'T', author = '_A1_', year = '2020'}
+	local template = 'cite book/new'
+	local maint = 'CS1 maint: date and year'
+	
+	self:assertStringContains(maint, frame:expandTemplate{
+		title = template, args = merge(base_args, { date = '1 January 2020'})
+	})
+	self:assertStringContains(maint, frame:expandTemplate{
+		title = template, args = merge(base_args, { date = '2020-01-01'})
+	})
+end
+
+-- should fail: extra unexpected nd in the anchor, plus trailingauthordash below
+-- TODO: Should that change? I've seen workarounds in the wild.
+function suite:testDatesExtraNd()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	
+	self:assertEquals( 'CITEREF_A1_', citeref(env, {date='nd'}))
+end
+
+-- should fail: extra unexpected n.d. in the anchor
+-- TODO: Should that change? I've seen workarounds in the wild.
+function suite:testDatesExtraNdPunct()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	self:assertEquals( 'CITEREF_A1_', citeref(env, {date='n.d.'}))
+end
+
+-- Tests to ensure display name settings don't corrupt the CITEREF
+function suite:testDisplayNames()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', author2 = 'A2_', date = '2020' }
+	}
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {['display-authors'] = '0'}))
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {['display-authors'] = '1'}))
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {['display-authors'] = 'etal'}))
+end
+
+-- Tests what happens for certain values of ref
+function suite:testRef()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = '(id=\"CITEREF%S-\")',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', year = '2020' }
+	}
+	-- TODO test citation for equivalent value
+	self:assertEquals( 'id=\"CITEREF_A1_2020\"', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( '', citeref(env, {ref = 'none'}))
+	self:assertEquals( 'id=\"CITEREF_A1_2020\"', citeref(env, {ref = 'CITEREF_A1_2020'}))
+
+end
+
+-- slightly different setup; we want to test that the input ID is the output ID
+function suite:testRefREF()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = '(id=\"REF\")',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', year = '2020' }
+	}
+	self:assertEquals( 'id=\"REF\"', citeref(env, {ref = 'REF'}))
+end
+
+-- tests for expected presence of maintenance messages in ref
+function suite:testRefMaint()
+	local frame = mw.getCurrentFrame()
+	local base_args = {title = 'T', author = '_A1_', date = '2020'}
+	
+	self:assertStringContains('CS1 maint: ref duplicates default', frame:expandTemplate{
+		title = 'cite book/new', args = merge(base_args, { ref = 'CITEREF_A1_2020'})
+	})
+	self:assertStringContains('Invalid &lt;code class=\"cs1%-code\"&gt;&amp;#124;ref=harv&lt;/code&gt;', frame:expandTemplate{
+		title = 'cite book/new', args = merge(base_args, { ref = 'harv'})
+	})
+end
+
+-- should fail: missing trailing underscore in anchor; not sure if that's desirable
+-- or if that can change
+-- TODO: Ask someone.
+function suite:testTrailingAuthorDash()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	self:assertEquals( 'CITEREF_A1_', citeref(env, {chapter='CH'}))
+end
+
+return suite
+
+[[Category:second attempt at refreshing on January 27 2024]][[Category:{{subst:FULLPAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]]</text>
+      <sha1>ov7kqkblgimge6tikttb8ung7hjt5vf</sha1>
+    </revision>
+    <revision>
+      <id>832305</id>
+      <parentid>832304</parentid>
+      <timestamp>2025-03-13T21:23:18Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "Category:{" to "Category:"</comment>
+      <origin>832305</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="8574" sha1="ta1odp141k861p5s8b98whbj4e3k8q6" xml:space="preserve">-- we never call cs1 directly because it doesn't have a nice implementation
+-- as a module, so comment out below line
+-- local myModule = require('Module:Citation/CS1') -- the module to be tested
+local ScribuntoUnit = require('Module:ScribuntoUnit')
+local suite = ScribuntoUnit:new()
+
+-- merge keys and values into one table
+local function merge(t1, t2)
+	local t3 = {}
+	for k, v in pairs(t1) do
+		t3[k] = v
+	end
+	for k, v in pairs(t2) do
+		t3[k] = v
+	end
+	return t3
+end
+
+-- Finds the citeref in an expanded CS1/2 template. Takes a test_parameters
+-- table and a specific template invoke's args. The test_parameters table has
+-- the following fields:
+-- * base_args, a table representing the template args common to the test case.
+-- * pattern, a string to find in the expanded template
+-- * frame, usually from mw.getCurrentFrame()
+-- * template, a string which is the name of the template to test.
+-- targs is a table of the template arguments unique to the specific assertion.
+local function citeref(test_parameters, targs)
+	
+	local merged_args = merge(test_parameters.base_args, targs)
+	local expansion = test_parameters.frame:expandTemplate{
+		title = test_parameters.template, args = merged_args
+	}
+	
+	local _, _, citeref_value = mw.ustring.find(expansion, test_parameters.pattern)
+	if not citeref_value then
+		citeref_value = ''
+	end
+	return citeref_value
+end
+
+-- Tests to ensure author masks don't corrupt the CITEREF
+function suite:testAuthorMask()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', year = '2020' }
+	}
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {['author-mask'] = 'A1'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {['author-mask1'] = '2'}))
+end
+
+-- Tests what happens with various counts of contributors, authors, and editors
+function suite:testCounts()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', year = '2020' }
+	}
+	self:assertEquals( '', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_'}))
+	self:assertEquals( '', citeref(env, {contributor = 'C1'}))
+	self:assertEquals( '', citeref(env, {contributor = 'C1', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_E1_2020', citeref(env, {editor = '_E1_'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_', contributor = '_C1_'}))
+	self:assertEquals( 'CITEREF_C1_2020', citeref(env, {author = '_A1_', contributor = '_C1_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_', editor = '_E1_'}))
+	self:assertEquals( 'CITEREF_E1_2020', citeref(env, {editor = '_E1_', contributor = '_C1_'}))
+	self:assertEquals( 'CITEREF_E1_2020', citeref(env, {editor = '_E1_', contributor = '_C1_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_', contributor = '_C1_', editor = '_E1_'}))
+	self:assertEquals( 'CITEREF_C1_2020', citeref(env, {author = '_A1_', contributor = '_C1_', editor = '_E1_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_A1_A2_A3_A4_2020', citeref(env, {author = '_A1_', author2 = 'A2_', author3 = 'A3_', author4 = 'A4_'}))
+	self:assertEquals( 'CITEREF_A1_A2_A3_A4_2020', citeref(env, {author = '_A1_', author2 = 'A2_', author3 = 'A3_', author4 = 'A4_', author5 = 'A5_'}))
+	self:assertEquals( 'CITEREF_C1_C2_C3_2020', citeref(env, {author = '_A1_', contributor = '_C1_', contributor2 = 'C2_', contributor3 = 'C3_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_E1_E2_2020', citeref(env, {editor = '_E1_', editor2 = 'E2_'}))
+end
+
+-- Tests date resolution code, including anchor years.
+function suite:testDates()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {year='2020'}))
+	self:assertEquals( 'CITEREF_A1_c\._2020', citeref(env, {date='c. 2020'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {date='1 January 2020'}))
+	self:assertEquals( 'CITEREF_A1_2020a', citeref(env, {date='1 January 2020a'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {date='1 January 2020', year='2020'}))
+	self:assertEquals( 'CITEREF_A1_2020a', citeref(env, {date='1 January 2020', year='2020a'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {date='2020-01-01', year='2020'}))
+	self:assertEquals( 'CITEREF_A1_2020a', citeref(env, {date='2020-01-01', year='2020a'}))
+end
+
+function suite:testDatesMaint()
+	local frame = mw.getCurrentFrame()
+	local base_args = {title = 'T', author = '_A1_', year = '2020'}
+	local template = 'cite book/new'
+	local maint = 'CS1 maint: date and year'
+	
+	self:assertStringContains(maint, frame:expandTemplate{
+		title = template, args = merge(base_args, { date = '1 January 2020'})
+	})
+	self:assertStringContains(maint, frame:expandTemplate{
+		title = template, args = merge(base_args, { date = '2020-01-01'})
+	})
+end
+
+-- should fail: extra unexpected nd in the anchor, plus trailingauthordash below
+-- TODO: Should that change? I've seen workarounds in the wild.
+function suite:testDatesExtraNd()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	
+	self:assertEquals( 'CITEREF_A1_', citeref(env, {date='nd'}))
+end
+
+-- should fail: extra unexpected n.d. in the anchor
+-- TODO: Should that change? I've seen workarounds in the wild.
+function suite:testDatesExtraNdPunct()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	self:assertEquals( 'CITEREF_A1_', citeref(env, {date='n.d.'}))
+end
+
+-- Tests to ensure display name settings don't corrupt the CITEREF
+function suite:testDisplayNames()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', author2 = 'A2_', date = '2020' }
+	}
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {['display-authors'] = '0'}))
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {['display-authors'] = '1'}))
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {['display-authors'] = 'etal'}))
+end
+
+-- Tests what happens for certain values of ref
+function suite:testRef()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = '(id=\"CITEREF%S-\")',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', year = '2020' }
+	}
+	-- TODO test citation for equivalent value
+	self:assertEquals( 'id=\"CITEREF_A1_2020\"', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( '', citeref(env, {ref = 'none'}))
+	self:assertEquals( 'id=\"CITEREF_A1_2020\"', citeref(env, {ref = 'CITEREF_A1_2020'}))
+
+end
+
+-- slightly different setup; we want to test that the input ID is the output ID
+function suite:testRefREF()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = '(id=\"REF\")',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', year = '2020' }
+	}
+	self:assertEquals( 'id=\"REF\"', citeref(env, {ref = 'REF'}))
+end
+
+-- tests for expected presence of maintenance messages in ref
+function suite:testRefMaint()
+	local frame = mw.getCurrentFrame()
+	local base_args = {title = 'T', author = '_A1_', date = '2020'}
+	
+	self:assertStringContains('CS1 maint: ref duplicates default', frame:expandTemplate{
+		title = 'cite book/new', args = merge(base_args, { ref = 'CITEREF_A1_2020'})
+	})
+	self:assertStringContains('Invalid &lt;code class=\"cs1%-code\"&gt;&amp;#124;ref=harv&lt;/code&gt;', frame:expandTemplate{
+		title = 'cite book/new', args = merge(base_args, { ref = 'harv'})
+	})
+end
+
+-- should fail: missing trailing underscore in anchor; not sure if that's desirable
+-- or if that can change
+-- TODO: Ask someone.
+function suite:testTrailingAuthorDash()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	self:assertEquals( 'CITEREF_A1_', citeref(env, {chapter='CH'}))
+end
+
+return suite
+
+[[Category:second attempt at refreshing on January 27 2024]][[Category:{subst:FULLPAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]]</text>
+      <sha1>ta1odp141k861p5s8b98whbj4e3k8q6</sha1>
+    </revision>
+    <revision>
+      <id>832306</id>
+      <parentid>832305</parentid>
+      <timestamp>2025-03-13T21:23:49Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "Category:{" to "Category:"</comment>
+      <origin>832306</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="8573" sha1="jrifi6wyfapaki44bluyleia0we814i" xml:space="preserve">-- we never call cs1 directly because it doesn't have a nice implementation
+-- as a module, so comment out below line
+-- local myModule = require('Module:Citation/CS1') -- the module to be tested
+local ScribuntoUnit = require('Module:ScribuntoUnit')
+local suite = ScribuntoUnit:new()
+
+-- merge keys and values into one table
+local function merge(t1, t2)
+	local t3 = {}
+	for k, v in pairs(t1) do
+		t3[k] = v
+	end
+	for k, v in pairs(t2) do
+		t3[k] = v
+	end
+	return t3
+end
+
+-- Finds the citeref in an expanded CS1/2 template. Takes a test_parameters
+-- table and a specific template invoke's args. The test_parameters table has
+-- the following fields:
+-- * base_args, a table representing the template args common to the test case.
+-- * pattern, a string to find in the expanded template
+-- * frame, usually from mw.getCurrentFrame()
+-- * template, a string which is the name of the template to test.
+-- targs is a table of the template arguments unique to the specific assertion.
+local function citeref(test_parameters, targs)
+	
+	local merged_args = merge(test_parameters.base_args, targs)
+	local expansion = test_parameters.frame:expandTemplate{
+		title = test_parameters.template, args = merged_args
+	}
+	
+	local _, _, citeref_value = mw.ustring.find(expansion, test_parameters.pattern)
+	if not citeref_value then
+		citeref_value = ''
+	end
+	return citeref_value
+end
+
+-- Tests to ensure author masks don't corrupt the CITEREF
+function suite:testAuthorMask()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', year = '2020' }
+	}
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {['author-mask'] = 'A1'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {['author-mask1'] = '2'}))
+end
+
+-- Tests what happens with various counts of contributors, authors, and editors
+function suite:testCounts()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', year = '2020' }
+	}
+	self:assertEquals( '', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_'}))
+	self:assertEquals( '', citeref(env, {contributor = 'C1'}))
+	self:assertEquals( '', citeref(env, {contributor = 'C1', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_E1_2020', citeref(env, {editor = '_E1_'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_', contributor = '_C1_'}))
+	self:assertEquals( 'CITEREF_C1_2020', citeref(env, {author = '_A1_', contributor = '_C1_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_', editor = '_E1_'}))
+	self:assertEquals( 'CITEREF_E1_2020', citeref(env, {editor = '_E1_', contributor = '_C1_'}))
+	self:assertEquals( 'CITEREF_E1_2020', citeref(env, {editor = '_E1_', contributor = '_C1_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_', contributor = '_C1_', editor = '_E1_'}))
+	self:assertEquals( 'CITEREF_C1_2020', citeref(env, {author = '_A1_', contributor = '_C1_', editor = '_E1_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_A1_A2_A3_A4_2020', citeref(env, {author = '_A1_', author2 = 'A2_', author3 = 'A3_', author4 = 'A4_'}))
+	self:assertEquals( 'CITEREF_A1_A2_A3_A4_2020', citeref(env, {author = '_A1_', author2 = 'A2_', author3 = 'A3_', author4 = 'A4_', author5 = 'A5_'}))
+	self:assertEquals( 'CITEREF_C1_C2_C3_2020', citeref(env, {author = '_A1_', contributor = '_C1_', contributor2 = 'C2_', contributor3 = 'C3_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_E1_E2_2020', citeref(env, {editor = '_E1_', editor2 = 'E2_'}))
+end
+
+-- Tests date resolution code, including anchor years.
+function suite:testDates()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {year='2020'}))
+	self:assertEquals( 'CITEREF_A1_c\._2020', citeref(env, {date='c. 2020'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {date='1 January 2020'}))
+	self:assertEquals( 'CITEREF_A1_2020a', citeref(env, {date='1 January 2020a'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {date='1 January 2020', year='2020'}))
+	self:assertEquals( 'CITEREF_A1_2020a', citeref(env, {date='1 January 2020', year='2020a'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {date='2020-01-01', year='2020'}))
+	self:assertEquals( 'CITEREF_A1_2020a', citeref(env, {date='2020-01-01', year='2020a'}))
+end
+
+function suite:testDatesMaint()
+	local frame = mw.getCurrentFrame()
+	local base_args = {title = 'T', author = '_A1_', year = '2020'}
+	local template = 'cite book/new'
+	local maint = 'CS1 maint: date and year'
+	
+	self:assertStringContains(maint, frame:expandTemplate{
+		title = template, args = merge(base_args, { date = '1 January 2020'})
+	})
+	self:assertStringContains(maint, frame:expandTemplate{
+		title = template, args = merge(base_args, { date = '2020-01-01'})
+	})
+end
+
+-- should fail: extra unexpected nd in the anchor, plus trailingauthordash below
+-- TODO: Should that change? I've seen workarounds in the wild.
+function suite:testDatesExtraNd()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	
+	self:assertEquals( 'CITEREF_A1_', citeref(env, {date='nd'}))
+end
+
+-- should fail: extra unexpected n.d. in the anchor
+-- TODO: Should that change? I've seen workarounds in the wild.
+function suite:testDatesExtraNdPunct()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	self:assertEquals( 'CITEREF_A1_', citeref(env, {date='n.d.'}))
+end
+
+-- Tests to ensure display name settings don't corrupt the CITEREF
+function suite:testDisplayNames()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', author2 = 'A2_', date = '2020' }
+	}
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {['display-authors'] = '0'}))
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {['display-authors'] = '1'}))
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {['display-authors'] = 'etal'}))
+end
+
+-- Tests what happens for certain values of ref
+function suite:testRef()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = '(id=\"CITEREF%S-\")',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', year = '2020' }
+	}
+	-- TODO test citation for equivalent value
+	self:assertEquals( 'id=\"CITEREF_A1_2020\"', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( '', citeref(env, {ref = 'none'}))
+	self:assertEquals( 'id=\"CITEREF_A1_2020\"', citeref(env, {ref = 'CITEREF_A1_2020'}))
+
+end
+
+-- slightly different setup; we want to test that the input ID is the output ID
+function suite:testRefREF()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = '(id=\"REF\")',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', year = '2020' }
+	}
+	self:assertEquals( 'id=\"REF\"', citeref(env, {ref = 'REF'}))
+end
+
+-- tests for expected presence of maintenance messages in ref
+function suite:testRefMaint()
+	local frame = mw.getCurrentFrame()
+	local base_args = {title = 'T', author = '_A1_', date = '2020'}
+	
+	self:assertStringContains('CS1 maint: ref duplicates default', frame:expandTemplate{
+		title = 'cite book/new', args = merge(base_args, { ref = 'CITEREF_A1_2020'})
+	})
+	self:assertStringContains('Invalid &lt;code class=\"cs1%-code\"&gt;&amp;#124;ref=harv&lt;/code&gt;', frame:expandTemplate{
+		title = 'cite book/new', args = merge(base_args, { ref = 'harv'})
+	})
+end
+
+-- should fail: missing trailing underscore in anchor; not sure if that's desirable
+-- or if that can change
+-- TODO: Ask someone.
+function suite:testTrailingAuthorDash()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	self:assertEquals( 'CITEREF_A1_', citeref(env, {chapter='CH'}))
+end
+
+return suite
+
+[[Category:second attempt at refreshing on January 27 2024]][[Category:subst:FULLPAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]]</text>
+      <sha1>jrifi6wyfapaki44bluyleia0we814i</sha1>
+    </revision>
+    <revision>
+      <id>832307</id>
+      <parentid>832306</parentid>
+      <timestamp>2025-04-06T02:27:28Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "[[Category:subst:FULLPAGENAME}}]]" to ""</comment>
+      <origin>832307</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="8540" sha1="i2hi8dgsgb2wyw12qf7gffqxtfn5qwt" xml:space="preserve">-- we never call cs1 directly because it doesn't have a nice implementation
+-- as a module, so comment out below line
+-- local myModule = require('Module:Citation/CS1') -- the module to be tested
+local ScribuntoUnit = require('Module:ScribuntoUnit')
+local suite = ScribuntoUnit:new()
+
+-- merge keys and values into one table
+local function merge(t1, t2)
+	local t3 = {}
+	for k, v in pairs(t1) do
+		t3[k] = v
+	end
+	for k, v in pairs(t2) do
+		t3[k] = v
+	end
+	return t3
+end
+
+-- Finds the citeref in an expanded CS1/2 template. Takes a test_parameters
+-- table and a specific template invoke's args. The test_parameters table has
+-- the following fields:
+-- * base_args, a table representing the template args common to the test case.
+-- * pattern, a string to find in the expanded template
+-- * frame, usually from mw.getCurrentFrame()
+-- * template, a string which is the name of the template to test.
+-- targs is a table of the template arguments unique to the specific assertion.
+local function citeref(test_parameters, targs)
+	
+	local merged_args = merge(test_parameters.base_args, targs)
+	local expansion = test_parameters.frame:expandTemplate{
+		title = test_parameters.template, args = merged_args
+	}
+	
+	local _, _, citeref_value = mw.ustring.find(expansion, test_parameters.pattern)
+	if not citeref_value then
+		citeref_value = ''
+	end
+	return citeref_value
+end
+
+-- Tests to ensure author masks don't corrupt the CITEREF
+function suite:testAuthorMask()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', year = '2020' }
+	}
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {['author-mask'] = 'A1'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {['author-mask1'] = '2'}))
+end
+
+-- Tests what happens with various counts of contributors, authors, and editors
+function suite:testCounts()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', year = '2020' }
+	}
+	self:assertEquals( '', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_'}))
+	self:assertEquals( '', citeref(env, {contributor = 'C1'}))
+	self:assertEquals( '', citeref(env, {contributor = 'C1', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_E1_2020', citeref(env, {editor = '_E1_'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_', contributor = '_C1_'}))
+	self:assertEquals( 'CITEREF_C1_2020', citeref(env, {author = '_A1_', contributor = '_C1_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_', editor = '_E1_'}))
+	self:assertEquals( 'CITEREF_E1_2020', citeref(env, {editor = '_E1_', contributor = '_C1_'}))
+	self:assertEquals( 'CITEREF_E1_2020', citeref(env, {editor = '_E1_', contributor = '_C1_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_', contributor = '_C1_', editor = '_E1_'}))
+	self:assertEquals( 'CITEREF_C1_2020', citeref(env, {author = '_A1_', contributor = '_C1_', editor = '_E1_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_A1_A2_A3_A4_2020', citeref(env, {author = '_A1_', author2 = 'A2_', author3 = 'A3_', author4 = 'A4_'}))
+	self:assertEquals( 'CITEREF_A1_A2_A3_A4_2020', citeref(env, {author = '_A1_', author2 = 'A2_', author3 = 'A3_', author4 = 'A4_', author5 = 'A5_'}))
+	self:assertEquals( 'CITEREF_C1_C2_C3_2020', citeref(env, {author = '_A1_', contributor = '_C1_', contributor2 = 'C2_', contributor3 = 'C3_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_E1_E2_2020', citeref(env, {editor = '_E1_', editor2 = 'E2_'}))
+end
+
+-- Tests date resolution code, including anchor years.
+function suite:testDates()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {year='2020'}))
+	self:assertEquals( 'CITEREF_A1_c\._2020', citeref(env, {date='c. 2020'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {date='1 January 2020'}))
+	self:assertEquals( 'CITEREF_A1_2020a', citeref(env, {date='1 January 2020a'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {date='1 January 2020', year='2020'}))
+	self:assertEquals( 'CITEREF_A1_2020a', citeref(env, {date='1 January 2020', year='2020a'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {date='2020-01-01', year='2020'}))
+	self:assertEquals( 'CITEREF_A1_2020a', citeref(env, {date='2020-01-01', year='2020a'}))
+end
+
+function suite:testDatesMaint()
+	local frame = mw.getCurrentFrame()
+	local base_args = {title = 'T', author = '_A1_', year = '2020'}
+	local template = 'cite book/new'
+	local maint = 'CS1 maint: date and year'
+	
+	self:assertStringContains(maint, frame:expandTemplate{
+		title = template, args = merge(base_args, { date = '1 January 2020'})
+	})
+	self:assertStringContains(maint, frame:expandTemplate{
+		title = template, args = merge(base_args, { date = '2020-01-01'})
+	})
+end
+
+-- should fail: extra unexpected nd in the anchor, plus trailingauthordash below
+-- TODO: Should that change? I've seen workarounds in the wild.
+function suite:testDatesExtraNd()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	
+	self:assertEquals( 'CITEREF_A1_', citeref(env, {date='nd'}))
+end
+
+-- should fail: extra unexpected n.d. in the anchor
+-- TODO: Should that change? I've seen workarounds in the wild.
+function suite:testDatesExtraNdPunct()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	self:assertEquals( 'CITEREF_A1_', citeref(env, {date='n.d.'}))
+end
+
+-- Tests to ensure display name settings don't corrupt the CITEREF
+function suite:testDisplayNames()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', author2 = 'A2_', date = '2020' }
+	}
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {['display-authors'] = '0'}))
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {['display-authors'] = '1'}))
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {['display-authors'] = 'etal'}))
+end
+
+-- Tests what happens for certain values of ref
+function suite:testRef()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = '(id=\"CITEREF%S-\")',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', year = '2020' }
+	}
+	-- TODO test citation for equivalent value
+	self:assertEquals( 'id=\"CITEREF_A1_2020\"', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( '', citeref(env, {ref = 'none'}))
+	self:assertEquals( 'id=\"CITEREF_A1_2020\"', citeref(env, {ref = 'CITEREF_A1_2020'}))
+
+end
+
+-- slightly different setup; we want to test that the input ID is the output ID
+function suite:testRefREF()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = '(id=\"REF\")',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', year = '2020' }
+	}
+	self:assertEquals( 'id=\"REF\"', citeref(env, {ref = 'REF'}))
+end
+
+-- tests for expected presence of maintenance messages in ref
+function suite:testRefMaint()
+	local frame = mw.getCurrentFrame()
+	local base_args = {title = 'T', author = '_A1_', date = '2020'}
+	
+	self:assertStringContains('CS1 maint: ref duplicates default', frame:expandTemplate{
+		title = 'cite book/new', args = merge(base_args, { ref = 'CITEREF_A1_2020'})
+	})
+	self:assertStringContains('Invalid &lt;code class=\"cs1%-code\"&gt;&amp;#124;ref=harv&lt;/code&gt;', frame:expandTemplate{
+		title = 'cite book/new', args = merge(base_args, { ref = 'harv'})
+	})
+end
+
+-- should fail: missing trailing underscore in anchor; not sure if that's desirable
+-- or if that can change
+-- TODO: Ask someone.
+function suite:testTrailingAuthorDash()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	self:assertEquals( 'CITEREF_A1_', citeref(env, {chapter='CH'}))
+end
+
+return suite
+
+[[Category:second attempt at refreshing on January 27 2024]][[Category:second attempt at refreshing on January 27 2024]]</text>
+      <sha1>i2hi8dgsgb2wyw12qf7gffqxtfn5qwt</sha1>
+    </revision>
+    <revision>
+      <id>832308</id>
+      <parentid>832307</parentid>
+      <timestamp>2025-04-24T05:35:40Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "second attempt at refreshing on January 27 2024" to "qq"</comment>
+      <origin>832308</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="8450" sha1="belz7lgxk5glin50qhfcv0ah46ch0bi" xml:space="preserve">-- we never call cs1 directly because it doesn't have a nice implementation
+-- as a module, so comment out below line
+-- local myModule = require('Module:Citation/CS1') -- the module to be tested
+local ScribuntoUnit = require('Module:ScribuntoUnit')
+local suite = ScribuntoUnit:new()
+
+-- merge keys and values into one table
+local function merge(t1, t2)
+	local t3 = {}
+	for k, v in pairs(t1) do
+		t3[k] = v
+	end
+	for k, v in pairs(t2) do
+		t3[k] = v
+	end
+	return t3
+end
+
+-- Finds the citeref in an expanded CS1/2 template. Takes a test_parameters
+-- table and a specific template invoke's args. The test_parameters table has
+-- the following fields:
+-- * base_args, a table representing the template args common to the test case.
+-- * pattern, a string to find in the expanded template
+-- * frame, usually from mw.getCurrentFrame()
+-- * template, a string which is the name of the template to test.
+-- targs is a table of the template arguments unique to the specific assertion.
+local function citeref(test_parameters, targs)
+	
+	local merged_args = merge(test_parameters.base_args, targs)
+	local expansion = test_parameters.frame:expandTemplate{
+		title = test_parameters.template, args = merged_args
+	}
+	
+	local _, _, citeref_value = mw.ustring.find(expansion, test_parameters.pattern)
+	if not citeref_value then
+		citeref_value = ''
+	end
+	return citeref_value
+end
+
+-- Tests to ensure author masks don't corrupt the CITEREF
+function suite:testAuthorMask()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', year = '2020' }
+	}
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {['author-mask'] = 'A1'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {['author-mask1'] = '2'}))
+end
+
+-- Tests what happens with various counts of contributors, authors, and editors
+function suite:testCounts()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', year = '2020' }
+	}
+	self:assertEquals( '', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_'}))
+	self:assertEquals( '', citeref(env, {contributor = 'C1'}))
+	self:assertEquals( '', citeref(env, {contributor = 'C1', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_E1_2020', citeref(env, {editor = '_E1_'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_', contributor = '_C1_'}))
+	self:assertEquals( 'CITEREF_C1_2020', citeref(env, {author = '_A1_', contributor = '_C1_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_', editor = '_E1_'}))
+	self:assertEquals( 'CITEREF_E1_2020', citeref(env, {editor = '_E1_', contributor = '_C1_'}))
+	self:assertEquals( 'CITEREF_E1_2020', citeref(env, {editor = '_E1_', contributor = '_C1_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_', contributor = '_C1_', editor = '_E1_'}))
+	self:assertEquals( 'CITEREF_C1_2020', citeref(env, {author = '_A1_', contributor = '_C1_', editor = '_E1_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_A1_A2_A3_A4_2020', citeref(env, {author = '_A1_', author2 = 'A2_', author3 = 'A3_', author4 = 'A4_'}))
+	self:assertEquals( 'CITEREF_A1_A2_A3_A4_2020', citeref(env, {author = '_A1_', author2 = 'A2_', author3 = 'A3_', author4 = 'A4_', author5 = 'A5_'}))
+	self:assertEquals( 'CITEREF_C1_C2_C3_2020', citeref(env, {author = '_A1_', contributor = '_C1_', contributor2 = 'C2_', contributor3 = 'C3_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_E1_E2_2020', citeref(env, {editor = '_E1_', editor2 = 'E2_'}))
+end
+
+-- Tests date resolution code, including anchor years.
+function suite:testDates()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {year='2020'}))
+	self:assertEquals( 'CITEREF_A1_c\._2020', citeref(env, {date='c. 2020'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {date='1 January 2020'}))
+	self:assertEquals( 'CITEREF_A1_2020a', citeref(env, {date='1 January 2020a'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {date='1 January 2020', year='2020'}))
+	self:assertEquals( 'CITEREF_A1_2020a', citeref(env, {date='1 January 2020', year='2020a'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {date='2020-01-01', year='2020'}))
+	self:assertEquals( 'CITEREF_A1_2020a', citeref(env, {date='2020-01-01', year='2020a'}))
+end
+
+function suite:testDatesMaint()
+	local frame = mw.getCurrentFrame()
+	local base_args = {title = 'T', author = '_A1_', year = '2020'}
+	local template = 'cite book/new'
+	local maint = 'CS1 maint: date and year'
+	
+	self:assertStringContains(maint, frame:expandTemplate{
+		title = template, args = merge(base_args, { date = '1 January 2020'})
+	})
+	self:assertStringContains(maint, frame:expandTemplate{
+		title = template, args = merge(base_args, { date = '2020-01-01'})
+	})
+end
+
+-- should fail: extra unexpected nd in the anchor, plus trailingauthordash below
+-- TODO: Should that change? I've seen workarounds in the wild.
+function suite:testDatesExtraNd()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	
+	self:assertEquals( 'CITEREF_A1_', citeref(env, {date='nd'}))
+end
+
+-- should fail: extra unexpected n.d. in the anchor
+-- TODO: Should that change? I've seen workarounds in the wild.
+function suite:testDatesExtraNdPunct()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	self:assertEquals( 'CITEREF_A1_', citeref(env, {date='n.d.'}))
+end
+
+-- Tests to ensure display name settings don't corrupt the CITEREF
+function suite:testDisplayNames()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', author2 = 'A2_', date = '2020' }
+	}
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {['display-authors'] = '0'}))
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {['display-authors'] = '1'}))
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {['display-authors'] = 'etal'}))
+end
+
+-- Tests what happens for certain values of ref
+function suite:testRef()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = '(id=\"CITEREF%S-\")',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', year = '2020' }
+	}
+	-- TODO test citation for equivalent value
+	self:assertEquals( 'id=\"CITEREF_A1_2020\"', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( '', citeref(env, {ref = 'none'}))
+	self:assertEquals( 'id=\"CITEREF_A1_2020\"', citeref(env, {ref = 'CITEREF_A1_2020'}))
+
+end
+
+-- slightly different setup; we want to test that the input ID is the output ID
+function suite:testRefREF()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = '(id=\"REF\")',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', year = '2020' }
+	}
+	self:assertEquals( 'id=\"REF\"', citeref(env, {ref = 'REF'}))
+end
+
+-- tests for expected presence of maintenance messages in ref
+function suite:testRefMaint()
+	local frame = mw.getCurrentFrame()
+	local base_args = {title = 'T', author = '_A1_', date = '2020'}
+	
+	self:assertStringContains('CS1 maint: ref duplicates default', frame:expandTemplate{
+		title = 'cite book/new', args = merge(base_args, { ref = 'CITEREF_A1_2020'})
+	})
+	self:assertStringContains('Invalid &lt;code class=\"cs1%-code\"&gt;&amp;#124;ref=harv&lt;/code&gt;', frame:expandTemplate{
+		title = 'cite book/new', args = merge(base_args, { ref = 'harv'})
+	})
+end
+
+-- should fail: missing trailing underscore in anchor; not sure if that's desirable
+-- or if that can change
+-- TODO: Ask someone.
+function suite:testTrailingAuthorDash()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	self:assertEquals( 'CITEREF_A1_', citeref(env, {chapter='CH'}))
+end
+
+return suite
+
+[[Category:qq]][[Category:qq]]</text>
+      <sha1>belz7lgxk5glin50qhfcv0ah46ch0bi</sha1>
+    </revision>
+    <revision>
+      <id>5909</id>
+      <timestamp>2025-04-29T10:47:14Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Text replacement - "[[Category:qq]]" to ""</comment>
+      <origin>5909</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="8418" sha1="9rxh67qbpu6gfdzut9dyh52jplmymqm" xml:space="preserve">-- we never call cs1 directly because it doesn't have a nice implementation
+-- as a module, so comment out below line
+-- local myModule = require('Module:Citation/CS1') -- the module to be tested
+local ScribuntoUnit = require('Module:ScribuntoUnit')
+local suite = ScribuntoUnit:new()
+
+-- merge keys and values into one table
+local function merge(t1, t2)
+	local t3 = {}
+	for k, v in pairs(t1) do
+		t3[k] = v
+	end
+	for k, v in pairs(t2) do
+		t3[k] = v
+	end
+	return t3
+end
+
+-- Finds the citeref in an expanded CS1/2 template. Takes a test_parameters
+-- table and a specific template invoke's args. The test_parameters table has
+-- the following fields:
+-- * base_args, a table representing the template args common to the test case.
+-- * pattern, a string to find in the expanded template
+-- * frame, usually from mw.getCurrentFrame()
+-- * template, a string which is the name of the template to test.
+-- targs is a table of the template arguments unique to the specific assertion.
+local function citeref(test_parameters, targs)
+	
+	local merged_args = merge(test_parameters.base_args, targs)
+	local expansion = test_parameters.frame:expandTemplate{
+		title = test_parameters.template, args = merged_args
+	}
+	
+	local _, _, citeref_value = mw.ustring.find(expansion, test_parameters.pattern)
+	if not citeref_value then
+		citeref_value = ''
+	end
+	return citeref_value
+end
+
+-- Tests to ensure author masks don't corrupt the CITEREF
+function suite:testAuthorMask()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', year = '2020' }
+	}
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {['author-mask'] = 'A1'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {['author-mask1'] = '2'}))
+end
+
+-- Tests what happens with various counts of contributors, authors, and editors
+function suite:testCounts()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', year = '2020' }
+	}
+	self:assertEquals( '', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_'}))
+	self:assertEquals( '', citeref(env, {contributor = 'C1'}))
+	self:assertEquals( '', citeref(env, {contributor = 'C1', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_E1_2020', citeref(env, {editor = '_E1_'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_', contributor = '_C1_'}))
+	self:assertEquals( 'CITEREF_C1_2020', citeref(env, {author = '_A1_', contributor = '_C1_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_', editor = '_E1_'}))
+	self:assertEquals( 'CITEREF_E1_2020', citeref(env, {editor = '_E1_', contributor = '_C1_'}))
+	self:assertEquals( 'CITEREF_E1_2020', citeref(env, {editor = '_E1_', contributor = '_C1_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {author = '_A1_', contributor = '_C1_', editor = '_E1_'}))
+	self:assertEquals( 'CITEREF_C1_2020', citeref(env, {author = '_A1_', contributor = '_C1_', editor = '_E1_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_A1_A2_A3_A4_2020', citeref(env, {author = '_A1_', author2 = 'A2_', author3 = 'A3_', author4 = 'A4_'}))
+	self:assertEquals( 'CITEREF_A1_A2_A3_A4_2020', citeref(env, {author = '_A1_', author2 = 'A2_', author3 = 'A3_', author4 = 'A4_', author5 = 'A5_'}))
+	self:assertEquals( 'CITEREF_C1_C2_C3_2020', citeref(env, {author = '_A1_', contributor = '_C1_', contributor2 = 'C2_', contributor3 = 'C3_', contribution = 'CON'}))
+	self:assertEquals( 'CITEREF_E1_E2_2020', citeref(env, {editor = '_E1_', editor2 = 'E2_'}))
+end
+
+-- Tests date resolution code, including anchor years.
+function suite:testDates()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {year='2020'}))
+	self:assertEquals( 'CITEREF_A1_c\._2020', citeref(env, {date='c. 2020'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {date='1 January 2020'}))
+	self:assertEquals( 'CITEREF_A1_2020a', citeref(env, {date='1 January 2020a'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {date='1 January 2020', year='2020'}))
+	self:assertEquals( 'CITEREF_A1_2020a', citeref(env, {date='1 January 2020', year='2020a'}))
+	self:assertEquals( 'CITEREF_A1_2020', citeref(env, {date='2020-01-01', year='2020'}))
+	self:assertEquals( 'CITEREF_A1_2020a', citeref(env, {date='2020-01-01', year='2020a'}))
+end
+
+function suite:testDatesMaint()
+	local frame = mw.getCurrentFrame()
+	local base_args = {title = 'T', author = '_A1_', year = '2020'}
+	local template = 'cite book/new'
+	local maint = 'CS1 maint: date and year'
+	
+	self:assertStringContains(maint, frame:expandTemplate{
+		title = template, args = merge(base_args, { date = '1 January 2020'})
+	})
+	self:assertStringContains(maint, frame:expandTemplate{
+		title = template, args = merge(base_args, { date = '2020-01-01'})
+	})
+end
+
+-- should fail: extra unexpected nd in the anchor, plus trailingauthordash below
+-- TODO: Should that change? I've seen workarounds in the wild.
+function suite:testDatesExtraNd()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	
+	self:assertEquals( 'CITEREF_A1_', citeref(env, {date='nd'}))
+end
+
+-- should fail: extra unexpected n.d. in the anchor
+-- TODO: Should that change? I've seen workarounds in the wild.
+function suite:testDatesExtraNdPunct()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	self:assertEquals( 'CITEREF_A1_', citeref(env, {date='n.d.'}))
+end
+
+-- Tests to ensure display name settings don't corrupt the CITEREF
+function suite:testDisplayNames()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', author2 = 'A2_', date = '2020' }
+	}
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {['display-authors'] = '0'}))
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {['display-authors'] = '1'}))
+	self:assertEquals( 'CITEREF_A1_A2_2020', citeref(env, {['display-authors'] = 'etal'}))
+end
+
+-- Tests what happens for certain values of ref
+function suite:testRef()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = '(id=\"CITEREF%S-\")',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', year = '2020' }
+	}
+	-- TODO test citation for equivalent value
+	self:assertEquals( 'id=\"CITEREF_A1_2020\"', citeref(env, {chapter = 'CH'}))
+	self:assertEquals( '', citeref(env, {ref = 'none'}))
+	self:assertEquals( 'id=\"CITEREF_A1_2020\"', citeref(env, {ref = 'CITEREF_A1_2020'}))
+
+end
+
+-- slightly different setup; we want to test that the input ID is the output ID
+function suite:testRefREF()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = '(id=\"REF\")',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_', year = '2020' }
+	}
+	self:assertEquals( 'id=\"REF\"', citeref(env, {ref = 'REF'}))
+end
+
+-- tests for expected presence of maintenance messages in ref
+function suite:testRefMaint()
+	local frame = mw.getCurrentFrame()
+	local base_args = {title = 'T', author = '_A1_', date = '2020'}
+	
+	self:assertStringContains('CS1 maint: ref duplicates default', frame:expandTemplate{
+		title = 'cite book/new', args = merge(base_args, { ref = 'CITEREF_A1_2020'})
+	})
+	self:assertStringContains('Invalid &lt;code class=\"cs1%-code\"&gt;&amp;#124;ref=harv&lt;/code&gt;', frame:expandTemplate{
+		title = 'cite book/new', args = merge(base_args, { ref = 'harv'})
+	})
+end
+
+-- should fail: missing trailing underscore in anchor; not sure if that's desirable
+-- or if that can change
+-- TODO: Ask someone.
+function suite:testTrailingAuthorDash()
+	local env = {
+		frame = mw.getCurrentFrame(),
+		pattern = 'id=\"(CITEREF%S-)\"',
+		template = 'cite book/new',
+		base_args = { title = 'T', author = '_A1_' }
+	}
+	self:assertEquals( 'CITEREF_A1_', citeref(env, {chapter='CH'}))
+end
+
+return suite</text>
+      <sha1>9rxh67qbpu6gfdzut9dyh52jplmymqm</sha1>
+    </revision>
+  </page>
+</mediawiki>

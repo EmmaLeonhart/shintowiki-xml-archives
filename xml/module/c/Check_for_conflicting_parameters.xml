@@ -1,0 +1,5187 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Check for conflicting parameters</title>
+    <ns>828</ns>
+    <id>151206</id>
+    <revision>
+      <id>3407360</id>
+      <timestamp>2025-12-28T03:34:01Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3407361</id>
+      <parentid>3407360</parentid>
+      <timestamp>2026-03-12T20:21:26Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3408260</id>
+      <parentid>3407361</parentid>
+      <timestamp>2026-03-12T20:30:50Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3408261</id>
+      <parentid>3408260</parentid>
+      <timestamp>2026-03-12T20:30:50Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3439418</id>
+      <parentid>3408261</parentid>
+      <timestamp>2026-03-13T15:59:14Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3439419</id>
+      <parentid>3439418</parentid>
+      <timestamp>2026-03-13T15:59:14Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Bot: reimport from enwiki to fix erroneous transclusions [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23052491609|manual triggered pipeline]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3439496</id>
+      <parentid>3439419</parentid>
+      <timestamp>2026-03-13T15:59:42Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3439497</id>
+      <parentid>3439496</parentid>
+      <timestamp>2026-03-13T15:59:42Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Bot: reimport from enwiki to fix erroneous transclusions [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23052491609|manual triggered pipeline]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3439574</id>
+      <parentid>3439497</parentid>
+      <timestamp>2026-03-13T16:00:40Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3439575</id>
+      <parentid>3439574</parentid>
+      <timestamp>2026-03-13T16:00:40Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Bot: reimport from enwiki to fix erroneous transclusions [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23052491609|manual triggered pipeline]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3449713</id>
+      <parentid>3439575</parentid>
+      <timestamp>2026-03-13T19:47:57Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3449714</id>
+      <parentid>3449713</parentid>
+      <timestamp>2026-03-13T19:47:57Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Bot: reimport from enwiki to fix erroneous transclusions [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23053570201|commit triggered pipeline]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3449791</id>
+      <parentid>3449714</parentid>
+      <timestamp>2026-03-13T19:48:28Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3449792</id>
+      <parentid>3449791</parentid>
+      <timestamp>2026-03-13T19:48:28Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Bot: reimport from enwiki to fix erroneous transclusions [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23053570201|commit triggered pipeline]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3449869</id>
+      <parentid>3449792</parentid>
+      <timestamp>2026-03-13T19:49:29Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3449870</id>
+      <parentid>3449869</parentid>
+      <timestamp>2026-03-13T19:49:29Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Bot: reimport from enwiki to fix erroneous transclusions [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23053570201|commit triggered pipeline]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3449947</id>
+      <parentid>3449870</parentid>
+      <timestamp>2026-03-13T19:50:59Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3449948</id>
+      <parentid>3449947</parentid>
+      <timestamp>2026-03-13T19:50:59Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Bot: reimport from enwiki to fix erroneous transclusions [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23053570201|commit triggered pipeline]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3450025</id>
+      <parentid>3449948</parentid>
+      <timestamp>2026-03-13T19:52:57Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3450026</id>
+      <parentid>3450025</parentid>
+      <timestamp>2026-03-13T19:52:57Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Bot: reimport from enwiki to fix erroneous transclusions [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23053570201|commit triggered pipeline]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3554143</id>
+      <parentid>3450026</parentid>
+      <timestamp>2026-03-20T18:20:17Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3554144</id>
+      <parentid>3554143</parentid>
+      <timestamp>2026-03-20T18:20:17Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3554357</id>
+      <parentid>3554144</parentid>
+      <timestamp>2026-03-20T18:21:12Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3554358</id>
+      <parentid>3554357</parentid>
+      <timestamp>2026-03-20T18:21:12Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3554571</id>
+      <parentid>3554358</parentid>
+      <timestamp>2026-03-20T18:22:39Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3554572</id>
+      <parentid>3554571</parentid>
+      <timestamp>2026-03-20T18:22:39Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3554785</id>
+      <parentid>3554572</parentid>
+      <timestamp>2026-03-20T18:24:40Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3554786</id>
+      <parentid>3554785</parentid>
+      <timestamp>2026-03-20T18:24:40Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3554999</id>
+      <parentid>3554786</parentid>
+      <timestamp>2026-03-20T18:27:09Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3555000</id>
+      <parentid>3554999</parentid>
+      <timestamp>2026-03-20T18:27:09Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3555213</id>
+      <parentid>3555000</parentid>
+      <timestamp>2026-03-20T18:30:13Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3555214</id>
+      <parentid>3555213</parentid>
+      <timestamp>2026-03-20T18:30:13Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3555427</id>
+      <parentid>3555214</parentid>
+      <timestamp>2026-03-20T18:33:42Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3555428</id>
+      <parentid>3555427</parentid>
+      <timestamp>2026-03-20T18:33:43Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3555641</id>
+      <parentid>3555428</parentid>
+      <timestamp>2026-03-20T18:37:48Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3555642</id>
+      <parentid>3555641</parentid>
+      <timestamp>2026-03-20T18:37:48Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3555855</id>
+      <parentid>3555642</parentid>
+      <timestamp>2026-03-20T18:42:17Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3555856</id>
+      <parentid>3555855</parentid>
+      <timestamp>2026-03-20T18:42:17Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3556069</id>
+      <parentid>3555856</parentid>
+      <timestamp>2026-03-20T18:47:20Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3556070</id>
+      <parentid>3556069</parentid>
+      <timestamp>2026-03-20T18:47:20Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3556283</id>
+      <parentid>3556070</parentid>
+      <timestamp>2026-03-20T18:52:48Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3556284</id>
+      <parentid>3556283</parentid>
+      <timestamp>2026-03-20T18:52:48Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3556497</id>
+      <parentid>3556284</parentid>
+      <timestamp>2026-03-20T18:58:54Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3556498</id>
+      <parentid>3556497</parentid>
+      <timestamp>2026-03-20T18:58:54Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3556711</id>
+      <parentid>3556498</parentid>
+      <timestamp>2026-03-20T19:05:24Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3556712</id>
+      <parentid>3556711</parentid>
+      <timestamp>2026-03-20T19:05:24Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3556925</id>
+      <parentid>3556712</parentid>
+      <timestamp>2026-03-20T19:12:26Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3556926</id>
+      <parentid>3556925</parentid>
+      <timestamp>2026-03-20T19:12:26Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3557192</id>
+      <parentid>3556926</parentid>
+      <timestamp>2026-03-20T19:38:06Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3557193</id>
+      <parentid>3557192</parentid>
+      <timestamp>2026-03-20T19:38:06Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3557515</id>
+      <parentid>3557193</parentid>
+      <timestamp>2026-03-20T19:42:05Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3557516</id>
+      <parentid>3557515</parentid>
+      <timestamp>2026-03-20T19:42:05Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3558029</id>
+      <parentid>3557516</parentid>
+      <timestamp>2026-03-20T19:46:37Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3558030</id>
+      <parentid>3558029</parentid>
+      <timestamp>2026-03-20T19:46:37Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3558893</id>
+      <parentid>3558030</parentid>
+      <timestamp>2026-03-20T19:55:39Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3558894</id>
+      <parentid>3558893</parentid>
+      <timestamp>2026-03-20T19:55:39Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3561049</id>
+      <parentid>3558894</parentid>
+      <timestamp>2026-03-21T20:11:16Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3561050</id>
+      <parentid>3561049</parentid>
+      <timestamp>2026-03-21T20:11:16Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3646914</id>
+      <parentid>3561050</parentid>
+      <timestamp>2026-04-24T16:33:50Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3646915</id>
+      <parentid>3646914</parentid>
+      <timestamp>2026-04-24T16:33:50Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Template:Infobox saint </comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3647081</id>
+      <parentid>3646915</parentid>
+      <timestamp>2026-04-24T16:34:24Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Zackmann08 moved page [[Module:Check for clobbered parameters]] to [[Module:Check for conflicting parameters]]: renaming module per [[special:Permalink/1329078454#Rename|discussion]]</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+    <revision>
+      <id>3647082</id>
+      <parentid>3647081</parentid>
+      <timestamp>2026-04-24T16:34:24Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: en</comment>
+      <origin>3407360</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1541" sha1="59n770hna40q9pw4oa0dsp86euaks0u" xml:space="preserve">local p = {}
+
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+local function isnotempty(s)
+	return s and s:match('%S')
+end
+
+function p.check(frame)
+	local args = frame.args
+	local pargs = frame:getParent().args
+	local checknested = isnotempty(args['nested'])
+	local delimiter = isnotempty(args['delimiter']) and args['delimiter'] or ';'
+	local argpairs = {}
+	
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			local plist = mw.text.split(v, delimiter)
+			local pfound = {}
+			local count = 0
+			for ii, vv in ipairs(plist) do
+				vv = trim(vv)
+				if checknested and pargs[vv] or isnotempty(pargs[vv]) then
+					count = count + 1
+					table.insert(pfound, vv)
+				end
+			end
+			if count &gt; 1 then
+				table.insert(argpairs, pfound)
+			end
+		end
+	end
+	
+	local warnmsg = {}
+	local res = ''
+	local cat = ''
+	if args['cat'] and mw.ustring.match(args['cat'],'^[Cc][Aa][Tt][Ee][Gg][Oo][Rr][Yy]:') then
+		cat = args['cat']
+	end
+	local template = args['template'] and ' in ' .. args['template']  or ''
+	if #argpairs &gt; 0 then
+		for i, v in ipairs( argpairs ) do
+			table.insert(
+				warnmsg,
+				mw.ustring.format(
+					'Using more than one of the following parameters%s: &lt;code&gt;%s&lt;/code&gt;.',
+					template,
+					table.concat(v, '&lt;/code&gt;, &lt;code&gt;')
+				)
+			)
+			if cat ~= '' then
+				res = res .. '[[' .. cat .. '|' .. (v[1] == '' and ' ' or '') .. v[1] .. ']]'
+			end	
+		end
+	end
+	
+	if #warnmsg &gt; 0 then
+		res = require('Module:If preview')._warning({
+			table.concat(warnmsg, '&lt;br&gt;')
+		}) .. res
+	end
+	
+	return res
+end
+
+return p</text>
+      <sha1>59n770hna40q9pw4oa0dsp86euaks0u</sha1>
+    </revision>
+  </page>
+</mediawiki>

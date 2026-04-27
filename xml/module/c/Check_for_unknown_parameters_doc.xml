@@ -1,0 +1,434 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Check for unknown parameters/doc</title>
+    <ns>828</ns>
+    <id>7542</id>
+    <revision>
+      <id>884884</id>
+      <timestamp>2024-12-21T14:55:00Z</timestamp>
+      <contributor>
+        <username>en&gt;Gonnym</username>
+        <id>0</id>
+      </contributor>
+      <comment>Undid revision [[Special:Diff/1264223588|1264223588]] by [[Special:Contributions/188.236.228.176|188.236.228.176]] ([[User talk:188.236.228.176|talk]])</comment>
+      <origin>884884</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="4891" sha1="cr4536208m8j07ei1ti8bufmgy39qc6" xml:space="preserve">{{Used in system}}
+{{Module rating|p}}
+{{cascade-protected template|page=module}}
+{{Lua|Module:If preview|noprotcat=yes}}
+
+'''Module:Check for unknown parameters''' is used to check for uses of unknown parameters in a template or module. It may be appended to a template at the end or called directly from a module.
+
+== Usage ==
+=== From a template ===
+To sort entries into a tracking category by parameter, use:
+* {{mlx|Check for unknown parameters|check|unknown{{=}}&lt;nowiki&gt;[&lt;/nowiki&gt;[Category:Some tracking category|_VALUE_]]|arg1|arg2|arg3|argN}}
+
+To sort the entries into a tracking category by parameter with a preview error message, use:
+* {{mlx|Check for unknown parameters|check|unknown{{=}}&lt;nowiki&gt;[&lt;/nowiki&gt;[Category:Some tracking category|_VALUE_]]|preview{{=}}unknown parameter "_VALUE_"|arg1|arg2|...|argN}}
+
+For an explicit red error message, use:
+* {{mlx|Check for unknown parameters|check|unknown{{=}}&amp;lt;span class{{=}}"error"&gt;Sorry, I don't recognize _VALUE_&amp;lt;/span&gt;|arg1|arg2|...|argN}}
+
+To use Lua patterns, use:
+* {{mlx|Check for unknown parameters|check|unknown{{=}}&lt;nowiki&gt;[&lt;/nowiki&gt;[Category:Some tracking category|_VALUE_]]|preview{{=}}unknown parameter "_VALUE_"|arg1|arg2|...|argN|regexp1{{=}}header[%d]+|regexp2{{=}}date[1-9]}}
+
+===From a module===
+To call from a module, use:
+&lt;syntaxhighlight lang="lua"&gt;
+local checkForUnknownParameters = require("Module:Check for unknown parameters")
+local result = checkForUnknownParameters._check(validArgs, args)
+&lt;/syntaxhighlight&gt;
+
+Where the first set of args are the module args below and the second set of args are the parameters that are checked.
+
+== Parameters ==
+* &lt;code&gt;arg1&lt;/code&gt;, &lt;code&gt;arg2&lt;/code&gt;, ..., &lt;code&gt;argN&lt;/code&gt;, are the known parameters.
+* Unnamed (positional) parameters can be added too: &lt;code&gt;|1|2|arg1|arg2|...&lt;/code&gt;.
+* [[:mw:Extension:Scribunto/Lua reference manual#Patterns|Lua patterns]] (similar to [[regular expression]]s) usage with parameters is also supported (such as: {{para|regexp1|header[%d]+}}, {{para|regexp2|date[1-9]}}, {{para|regexp3|data[%d]+[abc]?}}). This is useful when there are many known parameters which use a systematic pattern.
+* {{para|unknown}} – what happens when an unknown parameter is used. Typically use either a tracking category to place pages that use unknown parameters, or an error.
+* {{para|preview}} – the text to be displayed when in preview mode and an unknown parameter is used.
+* The &lt;code&gt;_VALUE_&lt;/code&gt; keyword, if used, will be changed to the name of the parameter. This is useful for either sorting the entries in a tracking category, or for provide more explicit information.
+* {{para|ignoreblank|1}} – by default, the module makes no distinction between a defined-but-blank parameter and a non-blank parameter. That is, both unlisted {{Para|foo|x}} and {{Para|foo}} are reported. To only track non-blank parameters use {{para|ignoreblank|1}}.
+* {{para|showblankpositional|1}} – by default, the module ignores blank positional parameters. That is, an unlisted {{para|2}} is ignored. To {{em|include}} blank positional parameters in the tracking use {{para|showblankpositional|1}}.
+
+== Example ==
+&lt;syntaxhighlight lang="wikitext"&gt;
+{{Infobox
+| above = {{{name|}}}
+
+| label1 = Height
+| data1 = {{{height|}}}
+
+| label2 = Weight
+| data2 = {{{weight|}}}
+
+| label3 = Website
+| data3 = {{{website|}}}
+}}&lt;!-- 
+  end infobox, start tracking
+--&gt;{{#invoke:Check for unknown parameters|check
+| unknown = {{Main other|[[Category:Some tracking category|_VALUE_]]}}
+| preview = unknown parameter "_VALUE_" | height | name | website | weight 
+}}
+&lt;/syntaxhighlight&gt;
+
+==Call from within Lua code==
+See the end of [[Module:Rugby box]] for a simple example or [[Module:Infobox3cols]] or [[Module:Flag]] for more complicated examples. 
+
+==See also==
+* {{Clc|Unknown parameters}} (category page can have header {{tl|Unknown parameters category}})
+* [[Module:Params]] – for complex operations involving parameters
+* [[Template:Checks for unknown parameters]] – adds documentation to templates using this module
+* [[Module:Check for deprecated parameters]] – similar module that checks for deprecated parameters
+* [[Module:Check for clobbered parameters]] – module that checks for conflicting parameters
+* [[Module:TemplatePar]] – similar function (originally from dewiki)
+* [[Template:Parameters]] and [[Module:Parameters]] – generates a list of parameter names for a given template
+* [[Project:TemplateData]] based template parameter validation
+* [[Module:Parameter validation]] checks a lot more
+* [[User:Bamyers99/TemplateParametersTool]] - A tool for checking usage of template parameters
+
+&lt;includeonly&gt;{{Sandbox other||
+&lt;!-- Categories go here and interwikis go in Wikidata. --&gt;
+[[Category:Modules that add a tracking category]]
+[[Category:Template metamodules]]
+}}&lt;/includeonly&gt;
+&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>cr4536208m8j07ei1ti8bufmgy39qc6</sha1>
+    </revision>
+    <revision>
+      <id>884885</id>
+      <parentid>884884</parentid>
+      <timestamp>2025-01-07T10:27:28Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: importing modules</comment>
+      <origin>884884</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="4891" sha1="cr4536208m8j07ei1ti8bufmgy39qc6" xml:space="preserve">{{Used in system}}
+{{Module rating|p}}
+{{cascade-protected template|page=module}}
+{{Lua|Module:If preview|noprotcat=yes}}
+
+'''Module:Check for unknown parameters''' is used to check for uses of unknown parameters in a template or module. It may be appended to a template at the end or called directly from a module.
+
+== Usage ==
+=== From a template ===
+To sort entries into a tracking category by parameter, use:
+* {{mlx|Check for unknown parameters|check|unknown{{=}}&lt;nowiki&gt;[&lt;/nowiki&gt;[Category:Some tracking category|_VALUE_]]|arg1|arg2|arg3|argN}}
+
+To sort the entries into a tracking category by parameter with a preview error message, use:
+* {{mlx|Check for unknown parameters|check|unknown{{=}}&lt;nowiki&gt;[&lt;/nowiki&gt;[Category:Some tracking category|_VALUE_]]|preview{{=}}unknown parameter "_VALUE_"|arg1|arg2|...|argN}}
+
+For an explicit red error message, use:
+* {{mlx|Check for unknown parameters|check|unknown{{=}}&amp;lt;span class{{=}}"error"&gt;Sorry, I don't recognize _VALUE_&amp;lt;/span&gt;|arg1|arg2|...|argN}}
+
+To use Lua patterns, use:
+* {{mlx|Check for unknown parameters|check|unknown{{=}}&lt;nowiki&gt;[&lt;/nowiki&gt;[Category:Some tracking category|_VALUE_]]|preview{{=}}unknown parameter "_VALUE_"|arg1|arg2|...|argN|regexp1{{=}}header[%d]+|regexp2{{=}}date[1-9]}}
+
+===From a module===
+To call from a module, use:
+&lt;syntaxhighlight lang="lua"&gt;
+local checkForUnknownParameters = require("Module:Check for unknown parameters")
+local result = checkForUnknownParameters._check(validArgs, args)
+&lt;/syntaxhighlight&gt;
+
+Where the first set of args are the module args below and the second set of args are the parameters that are checked.
+
+== Parameters ==
+* &lt;code&gt;arg1&lt;/code&gt;, &lt;code&gt;arg2&lt;/code&gt;, ..., &lt;code&gt;argN&lt;/code&gt;, are the known parameters.
+* Unnamed (positional) parameters can be added too: &lt;code&gt;|1|2|arg1|arg2|...&lt;/code&gt;.
+* [[:mw:Extension:Scribunto/Lua reference manual#Patterns|Lua patterns]] (similar to [[regular expression]]s) usage with parameters is also supported (such as: {{para|regexp1|header[%d]+}}, {{para|regexp2|date[1-9]}}, {{para|regexp3|data[%d]+[abc]?}}). This is useful when there are many known parameters which use a systematic pattern.
+* {{para|unknown}} – what happens when an unknown parameter is used. Typically use either a tracking category to place pages that use unknown parameters, or an error.
+* {{para|preview}} – the text to be displayed when in preview mode and an unknown parameter is used.
+* The &lt;code&gt;_VALUE_&lt;/code&gt; keyword, if used, will be changed to the name of the parameter. This is useful for either sorting the entries in a tracking category, or for provide more explicit information.
+* {{para|ignoreblank|1}} – by default, the module makes no distinction between a defined-but-blank parameter and a non-blank parameter. That is, both unlisted {{Para|foo|x}} and {{Para|foo}} are reported. To only track non-blank parameters use {{para|ignoreblank|1}}.
+* {{para|showblankpositional|1}} – by default, the module ignores blank positional parameters. That is, an unlisted {{para|2}} is ignored. To {{em|include}} blank positional parameters in the tracking use {{para|showblankpositional|1}}.
+
+== Example ==
+&lt;syntaxhighlight lang="wikitext"&gt;
+{{Infobox
+| above = {{{name|}}}
+
+| label1 = Height
+| data1 = {{{height|}}}
+
+| label2 = Weight
+| data2 = {{{weight|}}}
+
+| label3 = Website
+| data3 = {{{website|}}}
+}}&lt;!-- 
+  end infobox, start tracking
+--&gt;{{#invoke:Check for unknown parameters|check
+| unknown = {{Main other|[[Category:Some tracking category|_VALUE_]]}}
+| preview = unknown parameter "_VALUE_" | height | name | website | weight 
+}}
+&lt;/syntaxhighlight&gt;
+
+==Call from within Lua code==
+See the end of [[Module:Rugby box]] for a simple example or [[Module:Infobox3cols]] or [[Module:Flag]] for more complicated examples. 
+
+==See also==
+* {{Clc|Unknown parameters}} (category page can have header {{tl|Unknown parameters category}})
+* [[Module:Params]] – for complex operations involving parameters
+* [[Template:Checks for unknown parameters]] – adds documentation to templates using this module
+* [[Module:Check for deprecated parameters]] – similar module that checks for deprecated parameters
+* [[Module:Check for clobbered parameters]] – module that checks for conflicting parameters
+* [[Module:TemplatePar]] – similar function (originally from dewiki)
+* [[Template:Parameters]] and [[Module:Parameters]] – generates a list of parameter names for a given template
+* [[Project:TemplateData]] based template parameter validation
+* [[Module:Parameter validation]] checks a lot more
+* [[User:Bamyers99/TemplateParametersTool]] - A tool for checking usage of template parameters
+
+&lt;includeonly&gt;{{Sandbox other||
+&lt;!-- Categories go here and interwikis go in Wikidata. --&gt;
+[[Category:Modules that add a tracking category]]
+[[Category:Template metamodules]]
+}}&lt;/includeonly&gt;
+&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>cr4536208m8j07ei1ti8bufmgy39qc6</sha1>
+    </revision>
+    <revision>
+      <id>884886</id>
+      <parentid>884885</parentid>
+      <timestamp>2025-03-11T22:24:33Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "Category:Template" to "Category:"</comment>
+      <origin>884886</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="4883" sha1="5h5vzrvfmy6zzdo5y3qs2qtswszqebg" xml:space="preserve">{{Used in system}}
+{{Module rating|p}}
+{{cascade-protected template|page=module}}
+{{Lua|Module:If preview|noprotcat=yes}}
+
+'''Module:Check for unknown parameters''' is used to check for uses of unknown parameters in a template or module. It may be appended to a template at the end or called directly from a module.
+
+== Usage ==
+=== From a template ===
+To sort entries into a tracking category by parameter, use:
+* {{mlx|Check for unknown parameters|check|unknown{{=}}&lt;nowiki&gt;[&lt;/nowiki&gt;[Category:Some tracking category|_VALUE_]]|arg1|arg2|arg3|argN}}
+
+To sort the entries into a tracking category by parameter with a preview error message, use:
+* {{mlx|Check for unknown parameters|check|unknown{{=}}&lt;nowiki&gt;[&lt;/nowiki&gt;[Category:Some tracking category|_VALUE_]]|preview{{=}}unknown parameter "_VALUE_"|arg1|arg2|...|argN}}
+
+For an explicit red error message, use:
+* {{mlx|Check for unknown parameters|check|unknown{{=}}&amp;lt;span class{{=}}"error"&gt;Sorry, I don't recognize _VALUE_&amp;lt;/span&gt;|arg1|arg2|...|argN}}
+
+To use Lua patterns, use:
+* {{mlx|Check for unknown parameters|check|unknown{{=}}&lt;nowiki&gt;[&lt;/nowiki&gt;[Category:Some tracking category|_VALUE_]]|preview{{=}}unknown parameter "_VALUE_"|arg1|arg2|...|argN|regexp1{{=}}header[%d]+|regexp2{{=}}date[1-9]}}
+
+===From a module===
+To call from a module, use:
+&lt;syntaxhighlight lang="lua"&gt;
+local checkForUnknownParameters = require("Module:Check for unknown parameters")
+local result = checkForUnknownParameters._check(validArgs, args)
+&lt;/syntaxhighlight&gt;
+
+Where the first set of args are the module args below and the second set of args are the parameters that are checked.
+
+== Parameters ==
+* &lt;code&gt;arg1&lt;/code&gt;, &lt;code&gt;arg2&lt;/code&gt;, ..., &lt;code&gt;argN&lt;/code&gt;, are the known parameters.
+* Unnamed (positional) parameters can be added too: &lt;code&gt;|1|2|arg1|arg2|...&lt;/code&gt;.
+* [[:mw:Extension:Scribunto/Lua reference manual#Patterns|Lua patterns]] (similar to [[regular expression]]s) usage with parameters is also supported (such as: {{para|regexp1|header[%d]+}}, {{para|regexp2|date[1-9]}}, {{para|regexp3|data[%d]+[abc]?}}). This is useful when there are many known parameters which use a systematic pattern.
+* {{para|unknown}} – what happens when an unknown parameter is used. Typically use either a tracking category to place pages that use unknown parameters, or an error.
+* {{para|preview}} – the text to be displayed when in preview mode and an unknown parameter is used.
+* The &lt;code&gt;_VALUE_&lt;/code&gt; keyword, if used, will be changed to the name of the parameter. This is useful for either sorting the entries in a tracking category, or for provide more explicit information.
+* {{para|ignoreblank|1}} – by default, the module makes no distinction between a defined-but-blank parameter and a non-blank parameter. That is, both unlisted {{Para|foo|x}} and {{Para|foo}} are reported. To only track non-blank parameters use {{para|ignoreblank|1}}.
+* {{para|showblankpositional|1}} – by default, the module ignores blank positional parameters. That is, an unlisted {{para|2}} is ignored. To {{em|include}} blank positional parameters in the tracking use {{para|showblankpositional|1}}.
+
+== Example ==
+&lt;syntaxhighlight lang="wikitext"&gt;
+{{Infobox
+| above = {{{name|}}}
+
+| label1 = Height
+| data1 = {{{height|}}}
+
+| label2 = Weight
+| data2 = {{{weight|}}}
+
+| label3 = Website
+| data3 = {{{website|}}}
+}}&lt;!-- 
+  end infobox, start tracking
+--&gt;{{#invoke:Check for unknown parameters|check
+| unknown = {{Main other|[[Category:Some tracking category|_VALUE_]]}}
+| preview = unknown parameter "_VALUE_" | height | name | website | weight 
+}}
+&lt;/syntaxhighlight&gt;
+
+==Call from within Lua code==
+See the end of [[Module:Rugby box]] for a simple example or [[Module:Infobox3cols]] or [[Module:Flag]] for more complicated examples. 
+
+==See also==
+* {{Clc|Unknown parameters}} (category page can have header {{tl|Unknown parameters category}})
+* [[Module:Params]] – for complex operations involving parameters
+* [[Template:Checks for unknown parameters]] – adds documentation to templates using this module
+* [[Module:Check for deprecated parameters]] – similar module that checks for deprecated parameters
+* [[Module:Check for clobbered parameters]] – module that checks for conflicting parameters
+* [[Module:TemplatePar]] – similar function (originally from dewiki)
+* [[Template:Parameters]] and [[Module:Parameters]] – generates a list of parameter names for a given template
+* [[Project:TemplateData]] based template parameter validation
+* [[Module:Parameter validation]] checks a lot more
+* [[User:Bamyers99/TemplateParametersTool]] - A tool for checking usage of template parameters
+
+&lt;includeonly&gt;{{Sandbox other||
+&lt;!-- Categories go here and interwikis go in Wikidata. --&gt;
+[[Category:Modules that add a tracking category]]
+[[Category: metamodules]]
+}}&lt;/includeonly&gt;
+&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>5h5vzrvfmy6zzdo5y3qs2qtswszqebg</sha1>
+    </revision>
+    <revision>
+      <id>7543</id>
+      <timestamp>2025-05-24T19:29:25Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Bot: convert local link → enwiki interwiki</comment>
+      <origin>7543</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="4906" sha1="mygwzptae6mx18rps7uiyf1gvc38ied" xml:space="preserve">{{Used in system}}
+{{Module rating|p}}
+{{cascade-protected template|page=module}}
+{{Lua|Module:If preview|noprotcat=yes}}
+
+'''Module:Check for unknown parameters''' is used to check for uses of unknown parameters in a template or module. It may be appended to a template at the end or called directly from a module.
+
+== Usage ==
+=== From a template ===
+To sort entries into a tracking category by parameter, use:
+* {{mlx|Check for unknown parameters|check|unknown{{=}}&lt;nowiki&gt;[&lt;/nowiki&gt;[Category:Some tracking category|_VALUE_]]|arg1|arg2|arg3|argN}}
+
+To sort the entries into a tracking category by parameter with a preview error message, use:
+* {{mlx|Check for unknown parameters|check|unknown{{=}}&lt;nowiki&gt;[&lt;/nowiki&gt;[Category:Some tracking category|_VALUE_]]|preview{{=}}unknown parameter "_VALUE_"|arg1|arg2|...|argN}}
+
+For an explicit red error message, use:
+* {{mlx|Check for unknown parameters|check|unknown{{=}}&amp;lt;span class{{=}}"error"&gt;Sorry, I don't recognize _VALUE_&amp;lt;/span&gt;|arg1|arg2|...|argN}}
+
+To use Lua patterns, use:
+* {{mlx|Check for unknown parameters|check|unknown{{=}}&lt;nowiki&gt;[&lt;/nowiki&gt;[Category:Some tracking category|_VALUE_]]|preview{{=}}unknown parameter "_VALUE_"|arg1|arg2|...|argN|regexp1{{=}}header[%d]+|regexp2{{=}}date[1-9]}}
+
+===From a module===
+To call from a module, use:
+&lt;syntaxhighlight lang="lua"&gt;
+local checkForUnknownParameters = require("Module:Check for unknown parameters")
+local result = checkForUnknownParameters._check(validArgs, args)
+&lt;/syntaxhighlight&gt;
+
+Where the first set of args are the module args below and the second set of args are the parameters that are checked.
+
+== Parameters ==
+* &lt;code&gt;arg1&lt;/code&gt;, &lt;code&gt;arg2&lt;/code&gt;, ..., &lt;code&gt;argN&lt;/code&gt;, are the known parameters.
+* Unnamed (positional) parameters can be added too: &lt;code&gt;|1|2|arg1|arg2|...&lt;/code&gt;.
+* [[:mw:Extension:Scribunto/Lua reference manual#Patterns|Lua patterns]] (similar to [[:en:Regular expression|Regular expression]]s) usage with parameters is also supported (such as: {{para|regexp1|header[%d]+}}, {{para|regexp2|date[1-9]}}, {{para|regexp3|data[%d]+[abc]?}}). This is useful when there are many known parameters which use a systematic pattern.
+* {{para|unknown}} – what happens when an unknown parameter is used. Typically use either a tracking category to place pages that use unknown parameters, or an error.
+* {{para|preview}} – the text to be displayed when in preview mode and an unknown parameter is used.
+* The &lt;code&gt;_VALUE_&lt;/code&gt; keyword, if used, will be changed to the name of the parameter. This is useful for either sorting the entries in a tracking category, or for provide more explicit information.
+* {{para|ignoreblank|1}} – by default, the module makes no distinction between a defined-but-blank parameter and a non-blank parameter. That is, both unlisted {{Para|foo|x}} and {{Para|foo}} are reported. To only track non-blank parameters use {{para|ignoreblank|1}}.
+* {{para|showblankpositional|1}} – by default, the module ignores blank positional parameters. That is, an unlisted {{para|2}} is ignored. To {{em|include}} blank positional parameters in the tracking use {{para|showblankpositional|1}}.
+
+== Example ==
+&lt;syntaxhighlight lang="wikitext"&gt;
+{{Infobox
+| above = {{{name|}}}
+
+| label1 = Height
+| data1 = {{{height|}}}
+
+| label2 = Weight
+| data2 = {{{weight|}}}
+
+| label3 = Website
+| data3 = {{{website|}}}
+}}&lt;!-- 
+  end infobox, start tracking
+--&gt;{{#invoke:Check for unknown parameters|check
+| unknown = {{Main other|[[Category:Some tracking category|_VALUE_]]}}
+| preview = unknown parameter "_VALUE_" | height | name | website | weight 
+}}
+&lt;/syntaxhighlight&gt;
+
+==Call from within Lua code==
+See the end of [[Module:Rugby box]] for a simple example or [[Module:Infobox3cols]] or [[Module:Flag]] for more complicated examples. 
+
+==See also==
+* {{Clc|Unknown parameters}} (category page can have header {{tl|Unknown parameters category}})
+* [[Module:Params]] – for complex operations involving parameters
+* [[Template:Checks for unknown parameters]] – adds documentation to templates using this module
+* [[Module:Check for deprecated parameters]] – similar module that checks for deprecated parameters
+* [[Module:Check for clobbered parameters]] – module that checks for conflicting parameters
+* [[Module:TemplatePar]] – similar function (originally from dewiki)
+* [[Template:Parameters]] and [[Module:Parameters]] – generates a list of parameter names for a given template
+* [[Project:TemplateData]] based template parameter validation
+* [[Module:Parameter validation]] checks a lot more
+* [[User:Bamyers99/TemplateParametersTool]] - A tool for checking usage of template parameters
+
+&lt;includeonly&gt;{{Sandbox other||
+&lt;!-- Categories go here and interwikis go in Wikidata. --&gt;
+[[Category:Modules that add a tracking category]]
+[[Category: metamodules]]
+}}&lt;/includeonly&gt;
+&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>mygwzptae6mx18rps7uiyf1gvc38ied</sha1>
+    </revision>
+  </page>
+</mediawiki>

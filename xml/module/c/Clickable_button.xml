@@ -1,0 +1,1615 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Clickable button</title>
+    <ns>828</ns>
+    <id>12834</id>
+    <revision>
+      <id>1096791</id>
+      <timestamp>2024-07-26T22:19:50Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;HouseBlaster</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>HouseBlaster moved page [[Module:Clickable button 2]] to [[Module:Clickable button]]: match with [[tm:Clickable button]]</comment>
+      <origin>1096791</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4976" sha1="2y4zqg2drz0jqpm59tyakc7koi33ehg" xml:space="preserve">-- This module implements {{clickable button 2}}.
+
+local yesno = require('Module:Yesno')
+local delink = require('Module:Delink')._delink
+
+local p = {}
+
+function p.main(frame)
+	local getArgs = require('Module:Arguments').getArgs
+	local args = getArgs(frame)
+	return p._main(args)
+end
+
+function p._main(args)
+	-- If first arg or a url is not provided,
+	-- but we have a second arg, make a button.
+	-- Otherwise, return nothing.
+	args.originalInput = args[1]
+	args[1] = delink({args[1]})
+	if args[1] == "" then
+		args[1] = nil
+	end
+
+	if not args[1] and not args.url then
+		if args[2] then
+			p.nolink = true
+		else
+			return ''
+		end
+	end
+
+	local data = p.makeLinkData(args)
+	local link = p.renderLink(args.originalInput, data)
+	local trackingCategories = p.renderTrackingCategories(args)
+	return link .. trackingCategories
+end
+
+function p.makeLinkData(args)
+	local data = {}
+
+	-- Get the link and display values,
+	-- and find whether we are outputting
+	-- a wikilink or a URL.
+	if args.url then
+		data.isUrl = true
+		data.link = args.url
+		if args[1] then
+			data.display = args[1]
+		elseif args[2] then
+			data.display = args[2]
+		else
+			data.display = args.url
+			p.urlisdisplay = true
+		end
+	else
+		data.isUrl = false
+		p.urlisdisplay = false
+		data.link = args[1]
+		if args[2] then
+			data.display = args[2]
+		else
+			data.display = args[1]
+		end
+		if args[1] and args[1]:find('http') then
+			data.isUrl = true
+		end
+	end
+	
+	if yesno(args.link) == false then
+		p.nolink = true
+	end
+
+	-- Colours
+	-- For the merge with {{clickable button}}
+	local colour = args.color and args.color:lower()
+
+	-- Classes
+	local class = args.class and args.class:lower()
+	data.classes = {}
+	if class == 'ui-button-green'
+		or class == 'ui-button-blue'
+		or class == 'ui-button-red'
+	then
+		table.insert(
+			data.classes,
+			'submit ui-button ui-widget ui-state-default ui-corner-all'
+				.. ' ui-button-text-only ui-button-text'
+		)
+	else
+		table.insert(data.classes, 'mw-ui-button')
+	end
+	
+	--If class is unset,
+	--then let color determine class
+	if not class then
+		if colour == 'blue' then
+			class = 'mw-ui-progressive'
+		elseif colour == 'red' then
+			class = 'mw-ui-destructive'
+		elseif colour == 'green' then
+			class = 'mw-ui-constructive'
+		end
+	end
+	
+	if class then
+		table.insert(data.classes, class)
+	end
+
+	-- Styles
+	do
+		--[[
+		-- Check whether we are on the same page as we have specified in
+		-- args[1], but not if we are using a URL link, as then args[1] is only
+		-- a display value. If we are currently on the page specified in
+		-- args[1] make the button colour darker so that it stands out from
+		-- other buttons on the page.
+		--]]
+		local success, linkTitle, currentTitle
+		if not data.isUrl then
+			currentTitle = mw.title.getCurrentTitle()
+			success, linkTitle = pcall(mw.title.new, args[1])
+		elseif p.urlisdisplay then
+			currentTitle = mw.title.getCurrentTitle()
+		end
+		if success
+			and linkTitle
+			and mw.title.equals(currentTitle, linkTitle)
+			and not p.urlisdisplay
+		then
+			if class == 'ui-button-blue'
+				or class == 'mw-ui-progressive'
+				or class == 'mw-ui-constructive'
+			then
+				data.backgroundColor = '#2962CB'
+				data.color = '#fff'
+			elseif class == 'ui-button-green' then
+				data.backgroundColor = '#008B6D'
+			elseif class == 'ui-button-red' or class == 'mw-ui-destructive' then
+				data.backgroundColor = '#A6170F'
+			else
+				data.backgroundColor = '#CCC'
+				data.color = '#666'
+			end
+		elseif p.urlisdisplay then
+			data.dummyLink = tostring(currentTitle)
+		end
+		-- Add user-specified styles.
+		data.style = args.style
+	end
+	return data
+end
+
+function p.renderLink(originalInput, data)
+	-- Render the display span tag.
+	local display
+	do
+		local displaySpan = mw.html.create('span')
+		for i, class in ipairs(data.classes or {}) do
+			displaySpan:addClass(class)
+		end
+
+		displaySpan
+			:css{
+				['background-color'] = data.backgroundColor,
+				color = data.color
+			}
+		if data.style then
+			displaySpan:cssText(data.style)
+		end
+		displaySpan:wikitext(data.display)
+		display = tostring(displaySpan)
+	end
+
+	-- Render the link
+	local link
+	if originalInput and originalInput:find('|') then
+		link = string.format('[[%s|%s]]', delink({originalInput, wikilinks = 'target'}), display)
+	elseif p.nolink then
+		if p.urlisdisplay then
+			link = string.format('[[%s|%s]]', data.dummyLink, display)
+		else
+			link = string.format('%s', display)
+		end
+	else
+		if data.isUrl then
+			link = string.format('[%s %s]', data.link, display)
+		else
+			link = string.format('[[%s |%s]]', data.link, display)
+		end
+	end
+
+	return string.format('&lt;span class="plainlinks clickbutton"&gt;%s&lt;/span&gt;', link)
+end
+
+function p.renderTrackingCategories(args)
+	if yesno(args.category) == false then
+		return ''
+	end
+	local class = args.class and args.class:lower()
+	if class == 'ui-button-green'
+		or class == 'ui-button-blue'
+		or class == 'ui-button-red'
+	then
+		return '[[Category:Pages using old style ui-button-color]]'
+	else
+		return ''
+	end
+end
+
+return p</text>
+      <sha1>2y4zqg2drz0jqpm59tyakc7koi33ehg</sha1>
+    </revision>
+    <revision>
+      <id>1096792</id>
+      <parentid>1096791</parentid>
+      <timestamp>2025-03-25T05:27:36Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:Clickable_button]]</comment>
+      <origin>1096791</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4976" sha1="2y4zqg2drz0jqpm59tyakc7koi33ehg" xml:space="preserve">-- This module implements {{clickable button 2}}.
+
+local yesno = require('Module:Yesno')
+local delink = require('Module:Delink')._delink
+
+local p = {}
+
+function p.main(frame)
+	local getArgs = require('Module:Arguments').getArgs
+	local args = getArgs(frame)
+	return p._main(args)
+end
+
+function p._main(args)
+	-- If first arg or a url is not provided,
+	-- but we have a second arg, make a button.
+	-- Otherwise, return nothing.
+	args.originalInput = args[1]
+	args[1] = delink({args[1]})
+	if args[1] == "" then
+		args[1] = nil
+	end
+
+	if not args[1] and not args.url then
+		if args[2] then
+			p.nolink = true
+		else
+			return ''
+		end
+	end
+
+	local data = p.makeLinkData(args)
+	local link = p.renderLink(args.originalInput, data)
+	local trackingCategories = p.renderTrackingCategories(args)
+	return link .. trackingCategories
+end
+
+function p.makeLinkData(args)
+	local data = {}
+
+	-- Get the link and display values,
+	-- and find whether we are outputting
+	-- a wikilink or a URL.
+	if args.url then
+		data.isUrl = true
+		data.link = args.url
+		if args[1] then
+			data.display = args[1]
+		elseif args[2] then
+			data.display = args[2]
+		else
+			data.display = args.url
+			p.urlisdisplay = true
+		end
+	else
+		data.isUrl = false
+		p.urlisdisplay = false
+		data.link = args[1]
+		if args[2] then
+			data.display = args[2]
+		else
+			data.display = args[1]
+		end
+		if args[1] and args[1]:find('http') then
+			data.isUrl = true
+		end
+	end
+	
+	if yesno(args.link) == false then
+		p.nolink = true
+	end
+
+	-- Colours
+	-- For the merge with {{clickable button}}
+	local colour = args.color and args.color:lower()
+
+	-- Classes
+	local class = args.class and args.class:lower()
+	data.classes = {}
+	if class == 'ui-button-green'
+		or class == 'ui-button-blue'
+		or class == 'ui-button-red'
+	then
+		table.insert(
+			data.classes,
+			'submit ui-button ui-widget ui-state-default ui-corner-all'
+				.. ' ui-button-text-only ui-button-text'
+		)
+	else
+		table.insert(data.classes, 'mw-ui-button')
+	end
+	
+	--If class is unset,
+	--then let color determine class
+	if not class then
+		if colour == 'blue' then
+			class = 'mw-ui-progressive'
+		elseif colour == 'red' then
+			class = 'mw-ui-destructive'
+		elseif colour == 'green' then
+			class = 'mw-ui-constructive'
+		end
+	end
+	
+	if class then
+		table.insert(data.classes, class)
+	end
+
+	-- Styles
+	do
+		--[[
+		-- Check whether we are on the same page as we have specified in
+		-- args[1], but not if we are using a URL link, as then args[1] is only
+		-- a display value. If we are currently on the page specified in
+		-- args[1] make the button colour darker so that it stands out from
+		-- other buttons on the page.
+		--]]
+		local success, linkTitle, currentTitle
+		if not data.isUrl then
+			currentTitle = mw.title.getCurrentTitle()
+			success, linkTitle = pcall(mw.title.new, args[1])
+		elseif p.urlisdisplay then
+			currentTitle = mw.title.getCurrentTitle()
+		end
+		if success
+			and linkTitle
+			and mw.title.equals(currentTitle, linkTitle)
+			and not p.urlisdisplay
+		then
+			if class == 'ui-button-blue'
+				or class == 'mw-ui-progressive'
+				or class == 'mw-ui-constructive'
+			then
+				data.backgroundColor = '#2962CB'
+				data.color = '#fff'
+			elseif class == 'ui-button-green' then
+				data.backgroundColor = '#008B6D'
+			elseif class == 'ui-button-red' or class == 'mw-ui-destructive' then
+				data.backgroundColor = '#A6170F'
+			else
+				data.backgroundColor = '#CCC'
+				data.color = '#666'
+			end
+		elseif p.urlisdisplay then
+			data.dummyLink = tostring(currentTitle)
+		end
+		-- Add user-specified styles.
+		data.style = args.style
+	end
+	return data
+end
+
+function p.renderLink(originalInput, data)
+	-- Render the display span tag.
+	local display
+	do
+		local displaySpan = mw.html.create('span')
+		for i, class in ipairs(data.classes or {}) do
+			displaySpan:addClass(class)
+		end
+
+		displaySpan
+			:css{
+				['background-color'] = data.backgroundColor,
+				color = data.color
+			}
+		if data.style then
+			displaySpan:cssText(data.style)
+		end
+		displaySpan:wikitext(data.display)
+		display = tostring(displaySpan)
+	end
+
+	-- Render the link
+	local link
+	if originalInput and originalInput:find('|') then
+		link = string.format('[[%s|%s]]', delink({originalInput, wikilinks = 'target'}), display)
+	elseif p.nolink then
+		if p.urlisdisplay then
+			link = string.format('[[%s|%s]]', data.dummyLink, display)
+		else
+			link = string.format('%s', display)
+		end
+	else
+		if data.isUrl then
+			link = string.format('[%s %s]', data.link, display)
+		else
+			link = string.format('[[%s |%s]]', data.link, display)
+		end
+	end
+
+	return string.format('&lt;span class="plainlinks clickbutton"&gt;%s&lt;/span&gt;', link)
+end
+
+function p.renderTrackingCategories(args)
+	if yesno(args.category) == false then
+		return ''
+	end
+	local class = args.class and args.class:lower()
+	if class == 'ui-button-green'
+		or class == 'ui-button-blue'
+		or class == 'ui-button-red'
+	then
+		return '[[Category:Pages using old style ui-button-color]]'
+	else
+		return ''
+	end
+end
+
+return p</text>
+      <sha1>2y4zqg2drz0jqpm59tyakc7koi33ehg</sha1>
+    </revision>
+    <revision>
+      <id>1096793</id>
+      <parentid>1096792</parentid>
+      <timestamp>2025-04-28T07:14:13Z</timestamp>
+      <contributor>
+        <username>en&gt;HouseBlaster</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>HouseBlaster moved page [[Module:Clickable button 2]] to [[Module:Clickable button]]: match with [[tm:Clickable button]]</comment>
+      <origin>1096791</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4976" sha1="2y4zqg2drz0jqpm59tyakc7koi33ehg" xml:space="preserve">-- This module implements {{clickable button 2}}.
+
+local yesno = require('Module:Yesno')
+local delink = require('Module:Delink')._delink
+
+local p = {}
+
+function p.main(frame)
+	local getArgs = require('Module:Arguments').getArgs
+	local args = getArgs(frame)
+	return p._main(args)
+end
+
+function p._main(args)
+	-- If first arg or a url is not provided,
+	-- but we have a second arg, make a button.
+	-- Otherwise, return nothing.
+	args.originalInput = args[1]
+	args[1] = delink({args[1]})
+	if args[1] == "" then
+		args[1] = nil
+	end
+
+	if not args[1] and not args.url then
+		if args[2] then
+			p.nolink = true
+		else
+			return ''
+		end
+	end
+
+	local data = p.makeLinkData(args)
+	local link = p.renderLink(args.originalInput, data)
+	local trackingCategories = p.renderTrackingCategories(args)
+	return link .. trackingCategories
+end
+
+function p.makeLinkData(args)
+	local data = {}
+
+	-- Get the link and display values,
+	-- and find whether we are outputting
+	-- a wikilink or a URL.
+	if args.url then
+		data.isUrl = true
+		data.link = args.url
+		if args[1] then
+			data.display = args[1]
+		elseif args[2] then
+			data.display = args[2]
+		else
+			data.display = args.url
+			p.urlisdisplay = true
+		end
+	else
+		data.isUrl = false
+		p.urlisdisplay = false
+		data.link = args[1]
+		if args[2] then
+			data.display = args[2]
+		else
+			data.display = args[1]
+		end
+		if args[1] and args[1]:find('http') then
+			data.isUrl = true
+		end
+	end
+	
+	if yesno(args.link) == false then
+		p.nolink = true
+	end
+
+	-- Colours
+	-- For the merge with {{clickable button}}
+	local colour = args.color and args.color:lower()
+
+	-- Classes
+	local class = args.class and args.class:lower()
+	data.classes = {}
+	if class == 'ui-button-green'
+		or class == 'ui-button-blue'
+		or class == 'ui-button-red'
+	then
+		table.insert(
+			data.classes,
+			'submit ui-button ui-widget ui-state-default ui-corner-all'
+				.. ' ui-button-text-only ui-button-text'
+		)
+	else
+		table.insert(data.classes, 'mw-ui-button')
+	end
+	
+	--If class is unset,
+	--then let color determine class
+	if not class then
+		if colour == 'blue' then
+			class = 'mw-ui-progressive'
+		elseif colour == 'red' then
+			class = 'mw-ui-destructive'
+		elseif colour == 'green' then
+			class = 'mw-ui-constructive'
+		end
+	end
+	
+	if class then
+		table.insert(data.classes, class)
+	end
+
+	-- Styles
+	do
+		--[[
+		-- Check whether we are on the same page as we have specified in
+		-- args[1], but not if we are using a URL link, as then args[1] is only
+		-- a display value. If we are currently on the page specified in
+		-- args[1] make the button colour darker so that it stands out from
+		-- other buttons on the page.
+		--]]
+		local success, linkTitle, currentTitle
+		if not data.isUrl then
+			currentTitle = mw.title.getCurrentTitle()
+			success, linkTitle = pcall(mw.title.new, args[1])
+		elseif p.urlisdisplay then
+			currentTitle = mw.title.getCurrentTitle()
+		end
+		if success
+			and linkTitle
+			and mw.title.equals(currentTitle, linkTitle)
+			and not p.urlisdisplay
+		then
+			if class == 'ui-button-blue'
+				or class == 'mw-ui-progressive'
+				or class == 'mw-ui-constructive'
+			then
+				data.backgroundColor = '#2962CB'
+				data.color = '#fff'
+			elseif class == 'ui-button-green' then
+				data.backgroundColor = '#008B6D'
+			elseif class == 'ui-button-red' or class == 'mw-ui-destructive' then
+				data.backgroundColor = '#A6170F'
+			else
+				data.backgroundColor = '#CCC'
+				data.color = '#666'
+			end
+		elseif p.urlisdisplay then
+			data.dummyLink = tostring(currentTitle)
+		end
+		-- Add user-specified styles.
+		data.style = args.style
+	end
+	return data
+end
+
+function p.renderLink(originalInput, data)
+	-- Render the display span tag.
+	local display
+	do
+		local displaySpan = mw.html.create('span')
+		for i, class in ipairs(data.classes or {}) do
+			displaySpan:addClass(class)
+		end
+
+		displaySpan
+			:css{
+				['background-color'] = data.backgroundColor,
+				color = data.color
+			}
+		if data.style then
+			displaySpan:cssText(data.style)
+		end
+		displaySpan:wikitext(data.display)
+		display = tostring(displaySpan)
+	end
+
+	-- Render the link
+	local link
+	if originalInput and originalInput:find('|') then
+		link = string.format('[[%s|%s]]', delink({originalInput, wikilinks = 'target'}), display)
+	elseif p.nolink then
+		if p.urlisdisplay then
+			link = string.format('[[%s|%s]]', data.dummyLink, display)
+		else
+			link = string.format('%s', display)
+		end
+	else
+		if data.isUrl then
+			link = string.format('[%s %s]', data.link, display)
+		else
+			link = string.format('[[%s |%s]]', data.link, display)
+		end
+	end
+
+	return string.format('&lt;span class="plainlinks clickbutton"&gt;%s&lt;/span&gt;', link)
+end
+
+function p.renderTrackingCategories(args)
+	if yesno(args.category) == false then
+		return ''
+	end
+	local class = args.class and args.class:lower()
+	if class == 'ui-button-green'
+		or class == 'ui-button-blue'
+		or class == 'ui-button-red'
+	then
+		return '[[Category:Pages using old style ui-button-color]]'
+	else
+		return ''
+	end
+end
+
+return p</text>
+      <sha1>2y4zqg2drz0jqpm59tyakc7koi33ehg</sha1>
+    </revision>
+    <revision>
+      <id>1096794</id>
+      <parentid>1096793</parentid>
+      <timestamp>2025-05-04T18:34:35Z</timestamp>
+      <contributor>
+        <username>en&gt;HouseBlaster</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>HouseBlaster moved page [[Module:Clickable button 2]] to [[Module:Clickable button]]: match with [[tm:Clickable button]]</comment>
+      <origin>1096791</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4976" sha1="2y4zqg2drz0jqpm59tyakc7koi33ehg" xml:space="preserve">-- This module implements {{clickable button 2}}.
+
+local yesno = require('Module:Yesno')
+local delink = require('Module:Delink')._delink
+
+local p = {}
+
+function p.main(frame)
+	local getArgs = require('Module:Arguments').getArgs
+	local args = getArgs(frame)
+	return p._main(args)
+end
+
+function p._main(args)
+	-- If first arg or a url is not provided,
+	-- but we have a second arg, make a button.
+	-- Otherwise, return nothing.
+	args.originalInput = args[1]
+	args[1] = delink({args[1]})
+	if args[1] == "" then
+		args[1] = nil
+	end
+
+	if not args[1] and not args.url then
+		if args[2] then
+			p.nolink = true
+		else
+			return ''
+		end
+	end
+
+	local data = p.makeLinkData(args)
+	local link = p.renderLink(args.originalInput, data)
+	local trackingCategories = p.renderTrackingCategories(args)
+	return link .. trackingCategories
+end
+
+function p.makeLinkData(args)
+	local data = {}
+
+	-- Get the link and display values,
+	-- and find whether we are outputting
+	-- a wikilink or a URL.
+	if args.url then
+		data.isUrl = true
+		data.link = args.url
+		if args[1] then
+			data.display = args[1]
+		elseif args[2] then
+			data.display = args[2]
+		else
+			data.display = args.url
+			p.urlisdisplay = true
+		end
+	else
+		data.isUrl = false
+		p.urlisdisplay = false
+		data.link = args[1]
+		if args[2] then
+			data.display = args[2]
+		else
+			data.display = args[1]
+		end
+		if args[1] and args[1]:find('http') then
+			data.isUrl = true
+		end
+	end
+	
+	if yesno(args.link) == false then
+		p.nolink = true
+	end
+
+	-- Colours
+	-- For the merge with {{clickable button}}
+	local colour = args.color and args.color:lower()
+
+	-- Classes
+	local class = args.class and args.class:lower()
+	data.classes = {}
+	if class == 'ui-button-green'
+		or class == 'ui-button-blue'
+		or class == 'ui-button-red'
+	then
+		table.insert(
+			data.classes,
+			'submit ui-button ui-widget ui-state-default ui-corner-all'
+				.. ' ui-button-text-only ui-button-text'
+		)
+	else
+		table.insert(data.classes, 'mw-ui-button')
+	end
+	
+	--If class is unset,
+	--then let color determine class
+	if not class then
+		if colour == 'blue' then
+			class = 'mw-ui-progressive'
+		elseif colour == 'red' then
+			class = 'mw-ui-destructive'
+		elseif colour == 'green' then
+			class = 'mw-ui-constructive'
+		end
+	end
+	
+	if class then
+		table.insert(data.classes, class)
+	end
+
+	-- Styles
+	do
+		--[[
+		-- Check whether we are on the same page as we have specified in
+		-- args[1], but not if we are using a URL link, as then args[1] is only
+		-- a display value. If we are currently on the page specified in
+		-- args[1] make the button colour darker so that it stands out from
+		-- other buttons on the page.
+		--]]
+		local success, linkTitle, currentTitle
+		if not data.isUrl then
+			currentTitle = mw.title.getCurrentTitle()
+			success, linkTitle = pcall(mw.title.new, args[1])
+		elseif p.urlisdisplay then
+			currentTitle = mw.title.getCurrentTitle()
+		end
+		if success
+			and linkTitle
+			and mw.title.equals(currentTitle, linkTitle)
+			and not p.urlisdisplay
+		then
+			if class == 'ui-button-blue'
+				or class == 'mw-ui-progressive'
+				or class == 'mw-ui-constructive'
+			then
+				data.backgroundColor = '#2962CB'
+				data.color = '#fff'
+			elseif class == 'ui-button-green' then
+				data.backgroundColor = '#008B6D'
+			elseif class == 'ui-button-red' or class == 'mw-ui-destructive' then
+				data.backgroundColor = '#A6170F'
+			else
+				data.backgroundColor = '#CCC'
+				data.color = '#666'
+			end
+		elseif p.urlisdisplay then
+			data.dummyLink = tostring(currentTitle)
+		end
+		-- Add user-specified styles.
+		data.style = args.style
+	end
+	return data
+end
+
+function p.renderLink(originalInput, data)
+	-- Render the display span tag.
+	local display
+	do
+		local displaySpan = mw.html.create('span')
+		for i, class in ipairs(data.classes or {}) do
+			displaySpan:addClass(class)
+		end
+
+		displaySpan
+			:css{
+				['background-color'] = data.backgroundColor,
+				color = data.color
+			}
+		if data.style then
+			displaySpan:cssText(data.style)
+		end
+		displaySpan:wikitext(data.display)
+		display = tostring(displaySpan)
+	end
+
+	-- Render the link
+	local link
+	if originalInput and originalInput:find('|') then
+		link = string.format('[[%s|%s]]', delink({originalInput, wikilinks = 'target'}), display)
+	elseif p.nolink then
+		if p.urlisdisplay then
+			link = string.format('[[%s|%s]]', data.dummyLink, display)
+		else
+			link = string.format('%s', display)
+		end
+	else
+		if data.isUrl then
+			link = string.format('[%s %s]', data.link, display)
+		else
+			link = string.format('[[%s |%s]]', data.link, display)
+		end
+	end
+
+	return string.format('&lt;span class="plainlinks clickbutton"&gt;%s&lt;/span&gt;', link)
+end
+
+function p.renderTrackingCategories(args)
+	if yesno(args.category) == false then
+		return ''
+	end
+	local class = args.class and args.class:lower()
+	if class == 'ui-button-green'
+		or class == 'ui-button-blue'
+		or class == 'ui-button-red'
+	then
+		return '[[Category:Pages using old style ui-button-color]]'
+	else
+		return ''
+	end
+end
+
+return p</text>
+      <sha1>2y4zqg2drz0jqpm59tyakc7koi33ehg</sha1>
+    </revision>
+    <revision>
+      <id>12835</id>
+      <timestamp>2025-05-04T18:34:36Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported</comment>
+      <origin>12835</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4976" sha1="2y4zqg2drz0jqpm59tyakc7koi33ehg" xml:space="preserve">-- This module implements {{clickable button 2}}.
+
+local yesno = require('Module:Yesno')
+local delink = require('Module:Delink')._delink
+
+local p = {}
+
+function p.main(frame)
+	local getArgs = require('Module:Arguments').getArgs
+	local args = getArgs(frame)
+	return p._main(args)
+end
+
+function p._main(args)
+	-- If first arg or a url is not provided,
+	-- but we have a second arg, make a button.
+	-- Otherwise, return nothing.
+	args.originalInput = args[1]
+	args[1] = delink({args[1]})
+	if args[1] == "" then
+		args[1] = nil
+	end
+
+	if not args[1] and not args.url then
+		if args[2] then
+			p.nolink = true
+		else
+			return ''
+		end
+	end
+
+	local data = p.makeLinkData(args)
+	local link = p.renderLink(args.originalInput, data)
+	local trackingCategories = p.renderTrackingCategories(args)
+	return link .. trackingCategories
+end
+
+function p.makeLinkData(args)
+	local data = {}
+
+	-- Get the link and display values,
+	-- and find whether we are outputting
+	-- a wikilink or a URL.
+	if args.url then
+		data.isUrl = true
+		data.link = args.url
+		if args[1] then
+			data.display = args[1]
+		elseif args[2] then
+			data.display = args[2]
+		else
+			data.display = args.url
+			p.urlisdisplay = true
+		end
+	else
+		data.isUrl = false
+		p.urlisdisplay = false
+		data.link = args[1]
+		if args[2] then
+			data.display = args[2]
+		else
+			data.display = args[1]
+		end
+		if args[1] and args[1]:find('http') then
+			data.isUrl = true
+		end
+	end
+	
+	if yesno(args.link) == false then
+		p.nolink = true
+	end
+
+	-- Colours
+	-- For the merge with {{clickable button}}
+	local colour = args.color and args.color:lower()
+
+	-- Classes
+	local class = args.class and args.class:lower()
+	data.classes = {}
+	if class == 'ui-button-green'
+		or class == 'ui-button-blue'
+		or class == 'ui-button-red'
+	then
+		table.insert(
+			data.classes,
+			'submit ui-button ui-widget ui-state-default ui-corner-all'
+				.. ' ui-button-text-only ui-button-text'
+		)
+	else
+		table.insert(data.classes, 'mw-ui-button')
+	end
+	
+	--If class is unset,
+	--then let color determine class
+	if not class then
+		if colour == 'blue' then
+			class = 'mw-ui-progressive'
+		elseif colour == 'red' then
+			class = 'mw-ui-destructive'
+		elseif colour == 'green' then
+			class = 'mw-ui-constructive'
+		end
+	end
+	
+	if class then
+		table.insert(data.classes, class)
+	end
+
+	-- Styles
+	do
+		--[[
+		-- Check whether we are on the same page as we have specified in
+		-- args[1], but not if we are using a URL link, as then args[1] is only
+		-- a display value. If we are currently on the page specified in
+		-- args[1] make the button colour darker so that it stands out from
+		-- other buttons on the page.
+		--]]
+		local success, linkTitle, currentTitle
+		if not data.isUrl then
+			currentTitle = mw.title.getCurrentTitle()
+			success, linkTitle = pcall(mw.title.new, args[1])
+		elseif p.urlisdisplay then
+			currentTitle = mw.title.getCurrentTitle()
+		end
+		if success
+			and linkTitle
+			and mw.title.equals(currentTitle, linkTitle)
+			and not p.urlisdisplay
+		then
+			if class == 'ui-button-blue'
+				or class == 'mw-ui-progressive'
+				or class == 'mw-ui-constructive'
+			then
+				data.backgroundColor = '#2962CB'
+				data.color = '#fff'
+			elseif class == 'ui-button-green' then
+				data.backgroundColor = '#008B6D'
+			elseif class == 'ui-button-red' or class == 'mw-ui-destructive' then
+				data.backgroundColor = '#A6170F'
+			else
+				data.backgroundColor = '#CCC'
+				data.color = '#666'
+			end
+		elseif p.urlisdisplay then
+			data.dummyLink = tostring(currentTitle)
+		end
+		-- Add user-specified styles.
+		data.style = args.style
+	end
+	return data
+end
+
+function p.renderLink(originalInput, data)
+	-- Render the display span tag.
+	local display
+	do
+		local displaySpan = mw.html.create('span')
+		for i, class in ipairs(data.classes or {}) do
+			displaySpan:addClass(class)
+		end
+
+		displaySpan
+			:css{
+				['background-color'] = data.backgroundColor,
+				color = data.color
+			}
+		if data.style then
+			displaySpan:cssText(data.style)
+		end
+		displaySpan:wikitext(data.display)
+		display = tostring(displaySpan)
+	end
+
+	-- Render the link
+	local link
+	if originalInput and originalInput:find('|') then
+		link = string.format('[[%s|%s]]', delink({originalInput, wikilinks = 'target'}), display)
+	elseif p.nolink then
+		if p.urlisdisplay then
+			link = string.format('[[%s|%s]]', data.dummyLink, display)
+		else
+			link = string.format('%s', display)
+		end
+	else
+		if data.isUrl then
+			link = string.format('[%s %s]', data.link, display)
+		else
+			link = string.format('[[%s |%s]]', data.link, display)
+		end
+	end
+
+	return string.format('&lt;span class="plainlinks clickbutton"&gt;%s&lt;/span&gt;', link)
+end
+
+function p.renderTrackingCategories(args)
+	if yesno(args.category) == false then
+		return ''
+	end
+	local class = args.class and args.class:lower()
+	if class == 'ui-button-green'
+		or class == 'ui-button-blue'
+		or class == 'ui-button-red'
+	then
+		return '[[Category:Pages using old style ui-button-color]]'
+	else
+		return ''
+	end
+end
+
+return p</text>
+      <sha1>2y4zqg2drz0jqpm59tyakc7koi33ehg</sha1>
+    </revision>
+    <revision>
+      <id>3569119</id>
+      <parentid>12835</parentid>
+      <timestamp>2026-03-24T21:35:41Z</timestamp>
+      <contributor>
+        <username>en&gt;HouseBlaster</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>HouseBlaster moved page [[Module:Clickable button 2]] to [[Module:Clickable button]]: match with [[tm:Clickable button]]</comment>
+      <origin>12835</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4976" sha1="2y4zqg2drz0jqpm59tyakc7koi33ehg" xml:space="preserve">-- This module implements {{clickable button 2}}.
+
+local yesno = require('Module:Yesno')
+local delink = require('Module:Delink')._delink
+
+local p = {}
+
+function p.main(frame)
+	local getArgs = require('Module:Arguments').getArgs
+	local args = getArgs(frame)
+	return p._main(args)
+end
+
+function p._main(args)
+	-- If first arg or a url is not provided,
+	-- but we have a second arg, make a button.
+	-- Otherwise, return nothing.
+	args.originalInput = args[1]
+	args[1] = delink({args[1]})
+	if args[1] == "" then
+		args[1] = nil
+	end
+
+	if not args[1] and not args.url then
+		if args[2] then
+			p.nolink = true
+		else
+			return ''
+		end
+	end
+
+	local data = p.makeLinkData(args)
+	local link = p.renderLink(args.originalInput, data)
+	local trackingCategories = p.renderTrackingCategories(args)
+	return link .. trackingCategories
+end
+
+function p.makeLinkData(args)
+	local data = {}
+
+	-- Get the link and display values,
+	-- and find whether we are outputting
+	-- a wikilink or a URL.
+	if args.url then
+		data.isUrl = true
+		data.link = args.url
+		if args[1] then
+			data.display = args[1]
+		elseif args[2] then
+			data.display = args[2]
+		else
+			data.display = args.url
+			p.urlisdisplay = true
+		end
+	else
+		data.isUrl = false
+		p.urlisdisplay = false
+		data.link = args[1]
+		if args[2] then
+			data.display = args[2]
+		else
+			data.display = args[1]
+		end
+		if args[1] and args[1]:find('http') then
+			data.isUrl = true
+		end
+	end
+	
+	if yesno(args.link) == false then
+		p.nolink = true
+	end
+
+	-- Colours
+	-- For the merge with {{clickable button}}
+	local colour = args.color and args.color:lower()
+
+	-- Classes
+	local class = args.class and args.class:lower()
+	data.classes = {}
+	if class == 'ui-button-green'
+		or class == 'ui-button-blue'
+		or class == 'ui-button-red'
+	then
+		table.insert(
+			data.classes,
+			'submit ui-button ui-widget ui-state-default ui-corner-all'
+				.. ' ui-button-text-only ui-button-text'
+		)
+	else
+		table.insert(data.classes, 'mw-ui-button')
+	end
+	
+	--If class is unset,
+	--then let color determine class
+	if not class then
+		if colour == 'blue' then
+			class = 'mw-ui-progressive'
+		elseif colour == 'red' then
+			class = 'mw-ui-destructive'
+		elseif colour == 'green' then
+			class = 'mw-ui-constructive'
+		end
+	end
+	
+	if class then
+		table.insert(data.classes, class)
+	end
+
+	-- Styles
+	do
+		--[[
+		-- Check whether we are on the same page as we have specified in
+		-- args[1], but not if we are using a URL link, as then args[1] is only
+		-- a display value. If we are currently on the page specified in
+		-- args[1] make the button colour darker so that it stands out from
+		-- other buttons on the page.
+		--]]
+		local success, linkTitle, currentTitle
+		if not data.isUrl then
+			currentTitle = mw.title.getCurrentTitle()
+			success, linkTitle = pcall(mw.title.new, args[1])
+		elseif p.urlisdisplay then
+			currentTitle = mw.title.getCurrentTitle()
+		end
+		if success
+			and linkTitle
+			and mw.title.equals(currentTitle, linkTitle)
+			and not p.urlisdisplay
+		then
+			if class == 'ui-button-blue'
+				or class == 'mw-ui-progressive'
+				or class == 'mw-ui-constructive'
+			then
+				data.backgroundColor = '#2962CB'
+				data.color = '#fff'
+			elseif class == 'ui-button-green' then
+				data.backgroundColor = '#008B6D'
+			elseif class == 'ui-button-red' or class == 'mw-ui-destructive' then
+				data.backgroundColor = '#A6170F'
+			else
+				data.backgroundColor = '#CCC'
+				data.color = '#666'
+			end
+		elseif p.urlisdisplay then
+			data.dummyLink = tostring(currentTitle)
+		end
+		-- Add user-specified styles.
+		data.style = args.style
+	end
+	return data
+end
+
+function p.renderLink(originalInput, data)
+	-- Render the display span tag.
+	local display
+	do
+		local displaySpan = mw.html.create('span')
+		for i, class in ipairs(data.classes or {}) do
+			displaySpan:addClass(class)
+		end
+
+		displaySpan
+			:css{
+				['background-color'] = data.backgroundColor,
+				color = data.color
+			}
+		if data.style then
+			displaySpan:cssText(data.style)
+		end
+		displaySpan:wikitext(data.display)
+		display = tostring(displaySpan)
+	end
+
+	-- Render the link
+	local link
+	if originalInput and originalInput:find('|') then
+		link = string.format('[[%s|%s]]', delink({originalInput, wikilinks = 'target'}), display)
+	elseif p.nolink then
+		if p.urlisdisplay then
+			link = string.format('[[%s|%s]]', data.dummyLink, display)
+		else
+			link = string.format('%s', display)
+		end
+	else
+		if data.isUrl then
+			link = string.format('[%s %s]', data.link, display)
+		else
+			link = string.format('[[%s |%s]]', data.link, display)
+		end
+	end
+
+	return string.format('&lt;span class="plainlinks clickbutton"&gt;%s&lt;/span&gt;', link)
+end
+
+function p.renderTrackingCategories(args)
+	if yesno(args.category) == false then
+		return ''
+	end
+	local class = args.class and args.class:lower()
+	if class == 'ui-button-green'
+		or class == 'ui-button-blue'
+		or class == 'ui-button-red'
+	then
+		return '[[Category:Pages using old style ui-button-color]]'
+	else
+		return ''
+	end
+end
+
+return p</text>
+      <sha1>2y4zqg2drz0jqpm59tyakc7koi33ehg</sha1>
+    </revision>
+    <revision>
+      <id>3569120</id>
+      <parentid>3569119</parentid>
+      <timestamp>2026-03-24T21:35:41Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>12835</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4976" sha1="2y4zqg2drz0jqpm59tyakc7koi33ehg" xml:space="preserve">-- This module implements {{clickable button 2}}.
+
+local yesno = require('Module:Yesno')
+local delink = require('Module:Delink')._delink
+
+local p = {}
+
+function p.main(frame)
+	local getArgs = require('Module:Arguments').getArgs
+	local args = getArgs(frame)
+	return p._main(args)
+end
+
+function p._main(args)
+	-- If first arg or a url is not provided,
+	-- but we have a second arg, make a button.
+	-- Otherwise, return nothing.
+	args.originalInput = args[1]
+	args[1] = delink({args[1]})
+	if args[1] == "" then
+		args[1] = nil
+	end
+
+	if not args[1] and not args.url then
+		if args[2] then
+			p.nolink = true
+		else
+			return ''
+		end
+	end
+
+	local data = p.makeLinkData(args)
+	local link = p.renderLink(args.originalInput, data)
+	local trackingCategories = p.renderTrackingCategories(args)
+	return link .. trackingCategories
+end
+
+function p.makeLinkData(args)
+	local data = {}
+
+	-- Get the link and display values,
+	-- and find whether we are outputting
+	-- a wikilink or a URL.
+	if args.url then
+		data.isUrl = true
+		data.link = args.url
+		if args[1] then
+			data.display = args[1]
+		elseif args[2] then
+			data.display = args[2]
+		else
+			data.display = args.url
+			p.urlisdisplay = true
+		end
+	else
+		data.isUrl = false
+		p.urlisdisplay = false
+		data.link = args[1]
+		if args[2] then
+			data.display = args[2]
+		else
+			data.display = args[1]
+		end
+		if args[1] and args[1]:find('http') then
+			data.isUrl = true
+		end
+	end
+	
+	if yesno(args.link) == false then
+		p.nolink = true
+	end
+
+	-- Colours
+	-- For the merge with {{clickable button}}
+	local colour = args.color and args.color:lower()
+
+	-- Classes
+	local class = args.class and args.class:lower()
+	data.classes = {}
+	if class == 'ui-button-green'
+		or class == 'ui-button-blue'
+		or class == 'ui-button-red'
+	then
+		table.insert(
+			data.classes,
+			'submit ui-button ui-widget ui-state-default ui-corner-all'
+				.. ' ui-button-text-only ui-button-text'
+		)
+	else
+		table.insert(data.classes, 'mw-ui-button')
+	end
+	
+	--If class is unset,
+	--then let color determine class
+	if not class then
+		if colour == 'blue' then
+			class = 'mw-ui-progressive'
+		elseif colour == 'red' then
+			class = 'mw-ui-destructive'
+		elseif colour == 'green' then
+			class = 'mw-ui-constructive'
+		end
+	end
+	
+	if class then
+		table.insert(data.classes, class)
+	end
+
+	-- Styles
+	do
+		--[[
+		-- Check whether we are on the same page as we have specified in
+		-- args[1], but not if we are using a URL link, as then args[1] is only
+		-- a display value. If we are currently on the page specified in
+		-- args[1] make the button colour darker so that it stands out from
+		-- other buttons on the page.
+		--]]
+		local success, linkTitle, currentTitle
+		if not data.isUrl then
+			currentTitle = mw.title.getCurrentTitle()
+			success, linkTitle = pcall(mw.title.new, args[1])
+		elseif p.urlisdisplay then
+			currentTitle = mw.title.getCurrentTitle()
+		end
+		if success
+			and linkTitle
+			and mw.title.equals(currentTitle, linkTitle)
+			and not p.urlisdisplay
+		then
+			if class == 'ui-button-blue'
+				or class == 'mw-ui-progressive'
+				or class == 'mw-ui-constructive'
+			then
+				data.backgroundColor = '#2962CB'
+				data.color = '#fff'
+			elseif class == 'ui-button-green' then
+				data.backgroundColor = '#008B6D'
+			elseif class == 'ui-button-red' or class == 'mw-ui-destructive' then
+				data.backgroundColor = '#A6170F'
+			else
+				data.backgroundColor = '#CCC'
+				data.color = '#666'
+			end
+		elseif p.urlisdisplay then
+			data.dummyLink = tostring(currentTitle)
+		end
+		-- Add user-specified styles.
+		data.style = args.style
+	end
+	return data
+end
+
+function p.renderLink(originalInput, data)
+	-- Render the display span tag.
+	local display
+	do
+		local displaySpan = mw.html.create('span')
+		for i, class in ipairs(data.classes or {}) do
+			displaySpan:addClass(class)
+		end
+
+		displaySpan
+			:css{
+				['background-color'] = data.backgroundColor,
+				color = data.color
+			}
+		if data.style then
+			displaySpan:cssText(data.style)
+		end
+		displaySpan:wikitext(data.display)
+		display = tostring(displaySpan)
+	end
+
+	-- Render the link
+	local link
+	if originalInput and originalInput:find('|') then
+		link = string.format('[[%s|%s]]', delink({originalInput, wikilinks = 'target'}), display)
+	elseif p.nolink then
+		if p.urlisdisplay then
+			link = string.format('[[%s|%s]]', data.dummyLink, display)
+		else
+			link = string.format('%s', display)
+		end
+	else
+		if data.isUrl then
+			link = string.format('[%s %s]', data.link, display)
+		else
+			link = string.format('[[%s |%s]]', data.link, display)
+		end
+	end
+
+	return string.format('&lt;span class="plainlinks clickbutton"&gt;%s&lt;/span&gt;', link)
+end
+
+function p.renderTrackingCategories(args)
+	if yesno(args.category) == false then
+		return ''
+	end
+	local class = args.class and args.class:lower()
+	if class == 'ui-button-green'
+		or class == 'ui-button-blue'
+		or class == 'ui-button-red'
+	then
+		return '[[Category:Pages using old style ui-button-color]]'
+	else
+		return ''
+	end
+end
+
+return p</text>
+      <sha1>2y4zqg2drz0jqpm59tyakc7koi33ehg</sha1>
+    </revision>
+  </page>
+</mediawiki>

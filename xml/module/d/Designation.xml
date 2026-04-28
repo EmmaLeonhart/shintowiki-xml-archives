@@ -1,0 +1,541 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Designation</title>
+    <ns>828</ns>
+    <id>166427</id>
+    <revision>
+      <id>3646662</id>
+      <timestamp>2026-03-26T22:22:00Z</timestamp>
+      <contributor>
+        <username>en&gt;MSGJ</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>default to displaying number in bottom only in infobox</comment>
+      <origin>3646662</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7060" sha1="q2q1vuo6if0moemom2sifd1yfq169dy" xml:space="preserve">require('strict')
+local p = {}
+local sandbox-- = '/sandbox' -- COMMENT OUT this defintion on the live version
+
+local validate = function(args)
+	local former = false
+	if args.delisted=='yes' then
+		former = true
+	end
+	local par
+	if args and args[1] and args[1]~='' then
+		par = args[1]:lower()
+		if par:sub(1, 6)=='former' then
+			former = true
+			par = par:sub(7) -- strip off "former" from start
+		end
+		local list = mw.loadJsonData('Module:Designation/list' .. (sandbox or ''))
+		if list[par] then -- lookup not needed
+			return list[par], former
+		else -- attempt lookup
+			local lookup = mw.loadJsonData('Module:Designation/lookup' .. (sandbox or ''))
+			if lookup[par] then -- successful lookup
+				par = lookup[par]
+				return list[par], former
+			else
+				local category = mw.title.getCurrentTitle().namespace==0 and '[[Category:Articles using Template:Designation with invalid designation]]' or ''
+				return 'Invalid designation' .. category
+			end
+		end
+	else
+		return 'No parameter'
+	end
+end
+
+local get_data = function(frame)
+	local getArgs = require('Module:Arguments').getArgs
+	local args = getArgs(frame, {wrappers = {
+		'Template:Designation',
+		'Template:Designation/text',
+		'Template:Designation/colour',
+		'Template:Designation/colour2',
+		'Template:Designation/divbox',
+		'Template:Designation/abbreviation'
+	}})
+	return validate(args)
+end
+
+local text = function(frame, data, former)
+	local text = data.text
+	if data.lang then
+		text = frame:expandTemplate{title = 'lang', args = {
+			code = data.lang,
+			text = text
+		}}
+	end
+	return text and ((former and 'Former ' or '') .. text)
+end
+
+p.text = function(frame)
+	local data, former = get_data(frame)
+	if type(data)=='string' then
+		return data
+	end
+	return text(frame, data, former)
+end
+
+local colour = function(data, former, index)
+	local color
+	if former then
+		color = 'DDDDDD'
+	elseif data[index] then
+		color = data[index]
+	else
+		color = 'A8EDEF' -- default colour
+	end
+	return color and ('#' .. color)
+end
+
+p.color = function(frame)
+	local data, former = get_data(frame)
+	if type(data)=='string' then
+		return data
+	end
+	return mw.text.nowiki(colour(data, former, 'col'))
+end
+
+p.color2 = function(frame)
+	local data, former = get_data(frame)
+	if type(data)=='string' then
+		return data
+	end
+	return mw.text.nowiki(colour(data, former, 'col2'))
+end
+
+p.abbr = function(frame)
+	local data, former = get_data(frame)
+	if type(data)=='string' then
+		return data
+	end
+	return former and '???' or data.abbr or '???'
+end
+
+local box = function(data, color, text)
+	local div = mw.html.create('div')
+		:css('line-height', '1.5')
+		:css('text-align', 'center')
+	if type(data)=='string' then
+		local invalid = mw.html.create('span')
+			:css('color', 'red')
+			:wikitext('Error: ' .. data)
+		div:node(invalid)
+	else
+		div:css('border-style', 'solid')
+			:css('border-width', '4px')
+			:css('border-color', color)
+			:wikitext(text)
+	end
+	return div
+end
+
+p.divbox = function(frame)
+	local data, former = get_data(frame)
+	local color = colour(data, former, 'col2')
+	local text = text(frame, data, former)
+	return tostring(box(data, color, text))
+end
+
+p.doc_table = function(frame)
+	local scope = frame.args and frame.args.scope
+	local scopes = {}
+	for s in mw.text.gsplit(scope, ",", true) do
+		scopes[mw.text.trim(s:lower())] = true
+	end
+	local lookup = mw.loadJsonData('Module:Designation/lookup' .. (sandbox or ''))
+	local rev_lookup = {}
+	for alias, code in pairs(lookup) do
+		if rev_lookup[code] then
+			table.insert(rev_lookup[code], alias)
+		else
+			rev_lookup[code] = {alias}
+		end
+	end
+	local list = mw.loadJsonData('Module:Designation/list' .. (sandbox or ''))
+	local header = mw.html.create('tr')
+		:tag('th'):wikitext('Code'):done()
+		:tag('th'):wikitext('Designation'):done()
+		:tag('th'):css('width', '250px'):wikitext('Bordered version'):done()
+		:tag('th'):wikitext('Scope'):done()
+		:tag('th'):wikitext('Aliases'):done()
+	local tab = mw.html.create('table')
+		:addClass('wikitable')
+		:addClass('sortable')
+		:node(header)
+	for code, data in pairs(list) do
+		if scopes[data.scope:lower()] then
+			local des = mw.html.create('td')
+				:css('text-align', 'center')
+				:css('background', '#' .. (data.col or 'A8EDEF'))
+				:wikitext(data.text)
+			local border = mw.html.create('td')
+				:node(box(data, '#'..(data.col2 or 'A8EDEF'), data.text))
+			local row = mw.html.create('tr')
+				:tag('th'):wikitext(code):done()
+				:node(des)
+				:node(border)
+				:tag('td'):css('text-align', 'center'):wikitext(data.scope):done()
+				:tag('td'):wikitext(rev_lookup[code] and table.concat(rev_lookup[code], ', ')):done()
+			tab:node(row)
+		end
+	end
+	return tostring(tab)
+end
+
+local check_params = function(args, n)
+	local desp = {root = args['designated_other' .. n]}
+	local suffixes = {'name', 'color', 'textcolor', 'link', 'num_position', 'number', 'abbr'}
+	for _, s in ipairs(suffixes) do
+		desp[s] = args['designated_other' .. n .. '_' .. s]
+	end
+	local data = desp.root and validate{[1]=desp.root}
+	return desp, data
+end
+
+p.header = function(frame)
+	local desp, data = check_params(frame:getParent().args, frame.args[1])
+	local makediv = function(text, bgcolor, num, textcolor)
+		local autolink = require('Module:Link if exists')._main
+		local link = autolink{[1]=text}
+		local span = mw.html.create('span')
+			:css('color', textcolor)
+			:wikitext(link)
+		local div = mw.html.create('div')
+			:css('width', '100%')
+			:css('text-align', 'center')
+			:css('line-height', '1.5')
+			:css('color', 'var(--color-base)')
+			:css('background', bgcolor)
+			:node(span)
+			:wikitext(num)
+		return tostring(div)
+	end
+	local num = ''
+	local position = desp.num_position and desp.num_position:lower()
+	if desp.number and desp.number~='' and (position=='both' or position=='top') then
+		local abbr = frame:expandTemplate{title = 'abbr', args = {[1]='No.', [2]='Number'}}
+		num = '&amp;nbsp;' .. abbr .. '&amp;nbsp;' .. desp.number
+	end
+	if data and type(data)=='table' then
+		return makediv(data.text, '#' .. (data.col or 'A8EDEF'), num)
+	elseif desp.name then
+		return makediv(desp.name, desp.color or 'FFFFFF', num, desp.textcolor)
+	end
+end
+
+p.label = function(frame)
+	local desp, data = check_params(frame:getParent().args, frame.args[1])
+	local abbr = (data and data.abbr) or desp.abbr or '???'
+	local category = abbr=='???' and mw.title.getCurrentTitle().namespace==0 and '[[Category:Articles using Template:Designation with undefined abbreviation]]' or ''
+	return frame.args[2] .. ' ' .. abbr .. category
+end
+
+p.number = function(frame)
+	local desp, data = check_params(frame:getParent().args, frame.args[1])
+	local out = ''
+	local position = desp.num_position and desp.num_position:lower()
+	if position~='top' then
+		local noabbr = frame:expandTemplate{title = 'abbr', args = {[1]='No.', [2]='Number'}}
+		local abbr = data and data.abbr or desp.abbr or '???'
+		local category = abbr=='???' and mw.title.getCurrentTitle().namespace==0 and '[[Category:Articles using Template:Designation with undefined abbreviation]]' or ''
+		out = abbr .. '&amp;nbsp;' .. noabbr .. category
+	end
+	return out
+end
+
+return p</text>
+      <sha1>q2q1vuo6if0moemom2sifd1yfq169dy</sha1>
+    </revision>
+    <revision>
+      <id>3646663</id>
+      <parentid>3646662</parentid>
+      <timestamp>2026-04-24T16:32:01Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: en</comment>
+      <origin>3646662</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7060" sha1="q2q1vuo6if0moemom2sifd1yfq169dy" xml:space="preserve">require('strict')
+local p = {}
+local sandbox-- = '/sandbox' -- COMMENT OUT this defintion on the live version
+
+local validate = function(args)
+	local former = false
+	if args.delisted=='yes' then
+		former = true
+	end
+	local par
+	if args and args[1] and args[1]~='' then
+		par = args[1]:lower()
+		if par:sub(1, 6)=='former' then
+			former = true
+			par = par:sub(7) -- strip off "former" from start
+		end
+		local list = mw.loadJsonData('Module:Designation/list' .. (sandbox or ''))
+		if list[par] then -- lookup not needed
+			return list[par], former
+		else -- attempt lookup
+			local lookup = mw.loadJsonData('Module:Designation/lookup' .. (sandbox or ''))
+			if lookup[par] then -- successful lookup
+				par = lookup[par]
+				return list[par], former
+			else
+				local category = mw.title.getCurrentTitle().namespace==0 and '[[Category:Articles using Template:Designation with invalid designation]]' or ''
+				return 'Invalid designation' .. category
+			end
+		end
+	else
+		return 'No parameter'
+	end
+end
+
+local get_data = function(frame)
+	local getArgs = require('Module:Arguments').getArgs
+	local args = getArgs(frame, {wrappers = {
+		'Template:Designation',
+		'Template:Designation/text',
+		'Template:Designation/colour',
+		'Template:Designation/colour2',
+		'Template:Designation/divbox',
+		'Template:Designation/abbreviation'
+	}})
+	return validate(args)
+end
+
+local text = function(frame, data, former)
+	local text = data.text
+	if data.lang then
+		text = frame:expandTemplate{title = 'lang', args = {
+			code = data.lang,
+			text = text
+		}}
+	end
+	return text and ((former and 'Former ' or '') .. text)
+end
+
+p.text = function(frame)
+	local data, former = get_data(frame)
+	if type(data)=='string' then
+		return data
+	end
+	return text(frame, data, former)
+end
+
+local colour = function(data, former, index)
+	local color
+	if former then
+		color = 'DDDDDD'
+	elseif data[index] then
+		color = data[index]
+	else
+		color = 'A8EDEF' -- default colour
+	end
+	return color and ('#' .. color)
+end
+
+p.color = function(frame)
+	local data, former = get_data(frame)
+	if type(data)=='string' then
+		return data
+	end
+	return mw.text.nowiki(colour(data, former, 'col'))
+end
+
+p.color2 = function(frame)
+	local data, former = get_data(frame)
+	if type(data)=='string' then
+		return data
+	end
+	return mw.text.nowiki(colour(data, former, 'col2'))
+end
+
+p.abbr = function(frame)
+	local data, former = get_data(frame)
+	if type(data)=='string' then
+		return data
+	end
+	return former and '???' or data.abbr or '???'
+end
+
+local box = function(data, color, text)
+	local div = mw.html.create('div')
+		:css('line-height', '1.5')
+		:css('text-align', 'center')
+	if type(data)=='string' then
+		local invalid = mw.html.create('span')
+			:css('color', 'red')
+			:wikitext('Error: ' .. data)
+		div:node(invalid)
+	else
+		div:css('border-style', 'solid')
+			:css('border-width', '4px')
+			:css('border-color', color)
+			:wikitext(text)
+	end
+	return div
+end
+
+p.divbox = function(frame)
+	local data, former = get_data(frame)
+	local color = colour(data, former, 'col2')
+	local text = text(frame, data, former)
+	return tostring(box(data, color, text))
+end
+
+p.doc_table = function(frame)
+	local scope = frame.args and frame.args.scope
+	local scopes = {}
+	for s in mw.text.gsplit(scope, ",", true) do
+		scopes[mw.text.trim(s:lower())] = true
+	end
+	local lookup = mw.loadJsonData('Module:Designation/lookup' .. (sandbox or ''))
+	local rev_lookup = {}
+	for alias, code in pairs(lookup) do
+		if rev_lookup[code] then
+			table.insert(rev_lookup[code], alias)
+		else
+			rev_lookup[code] = {alias}
+		end
+	end
+	local list = mw.loadJsonData('Module:Designation/list' .. (sandbox or ''))
+	local header = mw.html.create('tr')
+		:tag('th'):wikitext('Code'):done()
+		:tag('th'):wikitext('Designation'):done()
+		:tag('th'):css('width', '250px'):wikitext('Bordered version'):done()
+		:tag('th'):wikitext('Scope'):done()
+		:tag('th'):wikitext('Aliases'):done()
+	local tab = mw.html.create('table')
+		:addClass('wikitable')
+		:addClass('sortable')
+		:node(header)
+	for code, data in pairs(list) do
+		if scopes[data.scope:lower()] then
+			local des = mw.html.create('td')
+				:css('text-align', 'center')
+				:css('background', '#' .. (data.col or 'A8EDEF'))
+				:wikitext(data.text)
+			local border = mw.html.create('td')
+				:node(box(data, '#'..(data.col2 or 'A8EDEF'), data.text))
+			local row = mw.html.create('tr')
+				:tag('th'):wikitext(code):done()
+				:node(des)
+				:node(border)
+				:tag('td'):css('text-align', 'center'):wikitext(data.scope):done()
+				:tag('td'):wikitext(rev_lookup[code] and table.concat(rev_lookup[code], ', ')):done()
+			tab:node(row)
+		end
+	end
+	return tostring(tab)
+end
+
+local check_params = function(args, n)
+	local desp = {root = args['designated_other' .. n]}
+	local suffixes = {'name', 'color', 'textcolor', 'link', 'num_position', 'number', 'abbr'}
+	for _, s in ipairs(suffixes) do
+		desp[s] = args['designated_other' .. n .. '_' .. s]
+	end
+	local data = desp.root and validate{[1]=desp.root}
+	return desp, data
+end
+
+p.header = function(frame)
+	local desp, data = check_params(frame:getParent().args, frame.args[1])
+	local makediv = function(text, bgcolor, num, textcolor)
+		local autolink = require('Module:Link if exists')._main
+		local link = autolink{[1]=text}
+		local span = mw.html.create('span')
+			:css('color', textcolor)
+			:wikitext(link)
+		local div = mw.html.create('div')
+			:css('width', '100%')
+			:css('text-align', 'center')
+			:css('line-height', '1.5')
+			:css('color', 'var(--color-base)')
+			:css('background', bgcolor)
+			:node(span)
+			:wikitext(num)
+		return tostring(div)
+	end
+	local num = ''
+	local position = desp.num_position and desp.num_position:lower()
+	if desp.number and desp.number~='' and (position=='both' or position=='top') then
+		local abbr = frame:expandTemplate{title = 'abbr', args = {[1]='No.', [2]='Number'}}
+		num = '&amp;nbsp;' .. abbr .. '&amp;nbsp;' .. desp.number
+	end
+	if data and type(data)=='table' then
+		return makediv(data.text, '#' .. (data.col or 'A8EDEF'), num)
+	elseif desp.name then
+		return makediv(desp.name, desp.color or 'FFFFFF', num, desp.textcolor)
+	end
+end
+
+p.label = function(frame)
+	local desp, data = check_params(frame:getParent().args, frame.args[1])
+	local abbr = (data and data.abbr) or desp.abbr or '???'
+	local category = abbr=='???' and mw.title.getCurrentTitle().namespace==0 and '[[Category:Articles using Template:Designation with undefined abbreviation]]' or ''
+	return frame.args[2] .. ' ' .. abbr .. category
+end
+
+p.number = function(frame)
+	local desp, data = check_params(frame:getParent().args, frame.args[1])
+	local out = ''
+	local position = desp.num_position and desp.num_position:lower()
+	if position~='top' then
+		local noabbr = frame:expandTemplate{title = 'abbr', args = {[1]='No.', [2]='Number'}}
+		local abbr = data and data.abbr or desp.abbr or '???'
+		local category = abbr=='???' and mw.title.getCurrentTitle().namespace==0 and '[[Category:Articles using Template:Designation with undefined abbreviation]]' or ''
+		out = abbr .. '&amp;nbsp;' .. noabbr .. category
+	end
+	return out
+end
+
+return p</text>
+      <sha1>q2q1vuo6if0moemom2sifd1yfq169dy</sha1>
+    </revision>
+  </page>
+</mediawiki>

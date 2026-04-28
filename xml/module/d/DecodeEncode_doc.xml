@@ -1,0 +1,457 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:DecodeEncode/doc</title>
+    <ns>828</ns>
+    <id>7558</id>
+    <revision>
+      <id>884913</id>
+      <timestamp>2024-08-29T21:06:47Z</timestamp>
+      <contributor>
+        <username>en&gt;Nickps</username>
+        <id>0</id>
+      </contributor>
+      <comment>Added the page to [[:Category:Module documentation pages]]</comment>
+      <origin>884913</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="5262" sha1="ni39dwzafc0j6lbx91pccnj9xv5audi" xml:space="preserve">{{Module rating |general}} 
+&lt;!-- Please place categories where indicated at the bottom of this page and interwikis at Wikidata (see [[Wikipedia:Wikidata]]) --&gt;
+{{High-use}}
+
+Implements Lua functions [[:mw:Extension:Scribunto/Lua_reference_manual#mw.text.decode|mw.text.decode]], [[:mw:Extension:Scribunto/Lua_reference_manual#mw.text.encode|mw.text.encode]] in a module.
+:&lt;code&gt;&lt;nowiki&gt;{{#invoke:decodeEncode|decode|s=Source&amp;amp;nbsp;text&amp;amp;copy;}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; &lt;code&gt;&lt;nowiki&gt;Source&amp;nbsp;text&amp;copy;&lt;/nowiki&gt;&lt;/code&gt;
+
+See [[List of XML and HTML character entity references]].
+
+== Decode ({{mono|1=&amp;amp;copy;}} &amp;rarr; ©) &lt;span class="anchor" id="Decode"&gt;&lt;/span&gt;==
+{{hatnote|See {{slink||Known issues}} for possible THIN SPACE, epsilon issues}}
+:Decodes [[List of XML and HTML character entity references|Named Entities]] ''from'' entity name ''into'' a regular (unicode) character:
+:&lt;code&gt;&amp;amp;copy;&lt;/code&gt; &amp;rarr; &lt;code&gt;&amp;copy;&lt;/code&gt;
+:&lt;code&gt;&amp;amp;gt;&lt;/code&gt; &amp;rarr; &lt;code&gt;&gt;&lt;/code&gt;
+
+All well-defined named entities are decoded ([https://html.spec.whatwg.org/multipage/named-characters.html#named-character-references HTML Named character references], formally: as defined in the [https://www.php.net/get_html_translation_table PHP table]).
+
+:A regular, rendered sentence:
+::"At 100 °F, &amp; with a "burning" sun above, we , we ⁄walked⁄."
+
+:In code:
+::"&lt;code&gt;At 100&amp;amp;nbsp;&amp;amp;deg;F, &amp;amp; with a &amp;amp;quot;burning&amp;amp;quot; sun above, we &amp;amp;frasl;walked&amp;amp;frasl;.&lt;/code&gt;" -- wikitext
+
+:Processing:
+:&lt;code&gt;&lt;nowiki&gt;{{#invoke:decodeEncode|decode|s=At 100&amp;nbsp;&amp;deg;F, &amp;amp; with a &amp;quot;burning&amp;quot; sun above, we &amp;frasl;walked&amp;frasl;.}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr;
+::&lt;code&gt;{{#invoke:decodeEncode|decode|s=At 100&amp;nbsp;&amp;deg;F, &amp;amp; with a &amp;quot;burning&amp;quot; sun above, we &amp;frasl;walked&amp;frasl;.}}&lt;/code&gt; -- In code: straight characters, no named entities.
+
+:Renders, again:
+::"At 100 °F, &amp; with a "burning" sun above, we ⁄walked⁄."
+
+===Decode a reduced set only===
+By setting {{para|subset_only|true}}, only these five entity names are decoded: '&amp;amp;lt;', '&amp;amp;gt;', '&amp;amp;amp;', '&amp;amp;quot;', '&amp;amp;nbsp;' (that is, into '&amp;lt;', '&amp;gt;', '&amp;amp;', '&amp;quot;', '&amp;nbsp;').
+
+:'''Note''': There is a difference with the relevant Lua parameter. (This only concerns your task if you also work directly with the Lua mw.text.decode function). Lua documentation defines parameter {{para|decodeNamedEntities}}, having this effect: when ''omitted or false'', only the reduced set of entities is recognized and decoded. This use of 'false' is ''inverted'' in using {{para|subset_only}}: {{para|decodeNamedEntities|false}} =  {{para|subset_only|true}}.
+
+:Also, this module ignores the "omitted" logic: {{para|subset_only}} should be set explicitly to 'true' to be effective.
+
+== Encode (© &amp;rarr; {{mono|1=&amp;amp;copy;}}) &lt;span class="anchor" id="Encode"&gt;&lt;/span&gt;==
+:Function &lt;code&gt;encode&lt;/code&gt; encodes some entity-named characters into that name (for example: &lt;code&gt;&amp;&lt;/code&gt; &amp;rarr; &lt;code&gt;&amp;amp;amp;&lt;/code&gt;).
+
+Regular sentence:
+:"At &gt;100 °F, &amp; with a "burning" sun above, we walked. ©"
+
+In code:
+:"&lt;code&gt;&lt;nowiki&gt;At &gt;100 °F, &amp; with a "burning" sun above, we walked. ©&lt;/nowiki&gt;&lt;/code&gt;"
+
+Encode:
+:&lt;code&gt;&lt;nowiki&gt;{{#invoke:decodeEncode|encode|s=At &gt;100 °F, &amp; with a "burning" sun above, we walked. ©|charset=&amp;&lt;&gt;{{!}}°"'&amp;©}}&lt;/nowiki&gt;&lt;/code&gt;
+
+:&amp;rarr;
+
+:&lt;code&gt;&lt;nowiki&gt;At &amp;amp;gt;100 &amp;amp;#176;F, &amp;amp;amp; with a &amp;amp;quot;burning&amp;amp;quot; sun above, we walked. &amp;amp;#169;&lt;/nowiki&gt;&lt;/code&gt;&lt;!-- used Special:ExpandTemplate --&gt;
+
+:Renders as:
+
+:"At &amp;gt;100 &amp;#176;F, &amp;amp; with a &amp;quot;burning&amp;quot; sun above, we walked. &amp;#169;"
+===character set to encode===
+
+Per Lua documentation, only a small set of characters is processed. The characterset can be set (expanded) by using {{para|charset}}.
+
+:Example: {{para|charset|&lt;nowiki&gt;&lt;&gt;" \'&amp;&lt;/nowiki&gt;}} (the default), {{para|charset|&lt;nowiki&gt;&lt;&gt;°"'&amp;©{{!}}&lt;/nowiki&gt;}}; characters not in the default will be replaced by their decimal entity: &lt;code&gt;©&lt;/code&gt; &amp;rarr; &lt;code&gt;&amp;amp;#169;&lt;/code&gt; &lt;small&gt;(hexadecimal number, not decimal nor named &amp;amp;copy;)&lt;/small&gt;
+
+==Known issues &lt;span class="anchor" id="Template"&gt;&lt;/span&gt;==
+* 13 Sep 2021: NOTE: The encode function with user-supplied charset is now used productively  in {{tl|R/superscript}} and {{tl|R/ref}}. Before implementing breaking changes here, these templates need to be adjusted accordingly!
+
+* 26 Sep 2021: {{unichar|2009|THIN SPACE|html=}} 
+:Note: Possible bug: Decoding &lt;code&gt;&amp;amp;ThinSpace;&lt;/code&gt; works, but &lt;code&gt;&amp;amp;thinsp;&lt;/code&gt; doesn't.
+:Resolved in code.
+
+*  4 Feb 2023: {{unichar|03B5|GREEK SMALL LETTER EPSILON|html=}}
+{{tracked|T328840}}
+:See {{slink|Module_talk:DecodeEncode|Bug_report:_bad_decoding_of_U+03B5_ε_(epsilon)}}
+:Resolved in code.
+
+==See also==
+
+* [[:mw:Extension:Scribunto/Lua_reference_manual#mw.text.decode|mw.text.decode]]
+* [[:mw:Extension:Scribunto/Lua_reference_manual#mw.text.encode|mw.text.encode]]
+* [[:Module:Urldecode]]
+
+{{Navbox wikitext-handling templates}}
+
+&lt;includeonly&gt;{{sandbox other||
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:Wikitext processing templates]]
+[[Category:Modules that manipulate strings]]
+
+}}&lt;/includeonly&gt;&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>ni39dwzafc0j6lbx91pccnj9xv5audi</sha1>
+    </revision>
+    <revision>
+      <id>884914</id>
+      <parentid>884913</parentid>
+      <timestamp>2025-01-07T10:27:34Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: importing modules</comment>
+      <origin>884913</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="5262" sha1="ni39dwzafc0j6lbx91pccnj9xv5audi" xml:space="preserve">{{Module rating |general}} 
+&lt;!-- Please place categories where indicated at the bottom of this page and interwikis at Wikidata (see [[Wikipedia:Wikidata]]) --&gt;
+{{High-use}}
+
+Implements Lua functions [[:mw:Extension:Scribunto/Lua_reference_manual#mw.text.decode|mw.text.decode]], [[:mw:Extension:Scribunto/Lua_reference_manual#mw.text.encode|mw.text.encode]] in a module.
+:&lt;code&gt;&lt;nowiki&gt;{{#invoke:decodeEncode|decode|s=Source&amp;amp;nbsp;text&amp;amp;copy;}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; &lt;code&gt;&lt;nowiki&gt;Source&amp;nbsp;text&amp;copy;&lt;/nowiki&gt;&lt;/code&gt;
+
+See [[List of XML and HTML character entity references]].
+
+== Decode ({{mono|1=&amp;amp;copy;}} &amp;rarr; ©) &lt;span class="anchor" id="Decode"&gt;&lt;/span&gt;==
+{{hatnote|See {{slink||Known issues}} for possible THIN SPACE, epsilon issues}}
+:Decodes [[List of XML and HTML character entity references|Named Entities]] ''from'' entity name ''into'' a regular (unicode) character:
+:&lt;code&gt;&amp;amp;copy;&lt;/code&gt; &amp;rarr; &lt;code&gt;&amp;copy;&lt;/code&gt;
+:&lt;code&gt;&amp;amp;gt;&lt;/code&gt; &amp;rarr; &lt;code&gt;&gt;&lt;/code&gt;
+
+All well-defined named entities are decoded ([https://html.spec.whatwg.org/multipage/named-characters.html#named-character-references HTML Named character references], formally: as defined in the [https://www.php.net/get_html_translation_table PHP table]).
+
+:A regular, rendered sentence:
+::"At 100 °F, &amp; with a "burning" sun above, we , we ⁄walked⁄."
+
+:In code:
+::"&lt;code&gt;At 100&amp;amp;nbsp;&amp;amp;deg;F, &amp;amp; with a &amp;amp;quot;burning&amp;amp;quot; sun above, we &amp;amp;frasl;walked&amp;amp;frasl;.&lt;/code&gt;" -- wikitext
+
+:Processing:
+:&lt;code&gt;&lt;nowiki&gt;{{#invoke:decodeEncode|decode|s=At 100&amp;nbsp;&amp;deg;F, &amp;amp; with a &amp;quot;burning&amp;quot; sun above, we &amp;frasl;walked&amp;frasl;.}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr;
+::&lt;code&gt;{{#invoke:decodeEncode|decode|s=At 100&amp;nbsp;&amp;deg;F, &amp;amp; with a &amp;quot;burning&amp;quot; sun above, we &amp;frasl;walked&amp;frasl;.}}&lt;/code&gt; -- In code: straight characters, no named entities.
+
+:Renders, again:
+::"At 100 °F, &amp; with a "burning" sun above, we ⁄walked⁄."
+
+===Decode a reduced set only===
+By setting {{para|subset_only|true}}, only these five entity names are decoded: '&amp;amp;lt;', '&amp;amp;gt;', '&amp;amp;amp;', '&amp;amp;quot;', '&amp;amp;nbsp;' (that is, into '&amp;lt;', '&amp;gt;', '&amp;amp;', '&amp;quot;', '&amp;nbsp;').
+
+:'''Note''': There is a difference with the relevant Lua parameter. (This only concerns your task if you also work directly with the Lua mw.text.decode function). Lua documentation defines parameter {{para|decodeNamedEntities}}, having this effect: when ''omitted or false'', only the reduced set of entities is recognized and decoded. This use of 'false' is ''inverted'' in using {{para|subset_only}}: {{para|decodeNamedEntities|false}} =  {{para|subset_only|true}}.
+
+:Also, this module ignores the "omitted" logic: {{para|subset_only}} should be set explicitly to 'true' to be effective.
+
+== Encode (© &amp;rarr; {{mono|1=&amp;amp;copy;}}) &lt;span class="anchor" id="Encode"&gt;&lt;/span&gt;==
+:Function &lt;code&gt;encode&lt;/code&gt; encodes some entity-named characters into that name (for example: &lt;code&gt;&amp;&lt;/code&gt; &amp;rarr; &lt;code&gt;&amp;amp;amp;&lt;/code&gt;).
+
+Regular sentence:
+:"At &gt;100 °F, &amp; with a "burning" sun above, we walked. ©"
+
+In code:
+:"&lt;code&gt;&lt;nowiki&gt;At &gt;100 °F, &amp; with a "burning" sun above, we walked. ©&lt;/nowiki&gt;&lt;/code&gt;"
+
+Encode:
+:&lt;code&gt;&lt;nowiki&gt;{{#invoke:decodeEncode|encode|s=At &gt;100 °F, &amp; with a "burning" sun above, we walked. ©|charset=&amp;&lt;&gt;{{!}}°"'&amp;©}}&lt;/nowiki&gt;&lt;/code&gt;
+
+:&amp;rarr;
+
+:&lt;code&gt;&lt;nowiki&gt;At &amp;amp;gt;100 &amp;amp;#176;F, &amp;amp;amp; with a &amp;amp;quot;burning&amp;amp;quot; sun above, we walked. &amp;amp;#169;&lt;/nowiki&gt;&lt;/code&gt;&lt;!-- used Special:ExpandTemplate --&gt;
+
+:Renders as:
+
+:"At &amp;gt;100 &amp;#176;F, &amp;amp; with a &amp;quot;burning&amp;quot; sun above, we walked. &amp;#169;"
+===character set to encode===
+
+Per Lua documentation, only a small set of characters is processed. The characterset can be set (expanded) by using {{para|charset}}.
+
+:Example: {{para|charset|&lt;nowiki&gt;&lt;&gt;" \'&amp;&lt;/nowiki&gt;}} (the default), {{para|charset|&lt;nowiki&gt;&lt;&gt;°"'&amp;©{{!}}&lt;/nowiki&gt;}}; characters not in the default will be replaced by their decimal entity: &lt;code&gt;©&lt;/code&gt; &amp;rarr; &lt;code&gt;&amp;amp;#169;&lt;/code&gt; &lt;small&gt;(hexadecimal number, not decimal nor named &amp;amp;copy;)&lt;/small&gt;
+
+==Known issues &lt;span class="anchor" id="Template"&gt;&lt;/span&gt;==
+* 13 Sep 2021: NOTE: The encode function with user-supplied charset is now used productively  in {{tl|R/superscript}} and {{tl|R/ref}}. Before implementing breaking changes here, these templates need to be adjusted accordingly!
+
+* 26 Sep 2021: {{unichar|2009|THIN SPACE|html=}} 
+:Note: Possible bug: Decoding &lt;code&gt;&amp;amp;ThinSpace;&lt;/code&gt; works, but &lt;code&gt;&amp;amp;thinsp;&lt;/code&gt; doesn't.
+:Resolved in code.
+
+*  4 Feb 2023: {{unichar|03B5|GREEK SMALL LETTER EPSILON|html=}}
+{{tracked|T328840}}
+:See {{slink|Module_talk:DecodeEncode|Bug_report:_bad_decoding_of_U+03B5_ε_(epsilon)}}
+:Resolved in code.
+
+==See also==
+
+* [[:mw:Extension:Scribunto/Lua_reference_manual#mw.text.decode|mw.text.decode]]
+* [[:mw:Extension:Scribunto/Lua_reference_manual#mw.text.encode|mw.text.encode]]
+* [[:Module:Urldecode]]
+
+{{Navbox wikitext-handling templates}}
+
+&lt;includeonly&gt;{{sandbox other||
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:Wikitext processing templates]]
+[[Category:Modules that manipulate strings]]
+
+}}&lt;/includeonly&gt;&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>ni39dwzafc0j6lbx91pccnj9xv5audi</sha1>
+    </revision>
+    <revision>
+      <id>884915</id>
+      <parentid>884914</parentid>
+      <timestamp>2025-05-10T22:11:39Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Imported from wikipedia at 2025-05-10 15:11:40</comment>
+      <origin>884915</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="5295" sha1="fb84jytdmk2gclfvs5rr9wkm6c3nj8y" xml:space="preserve">{{Module rating |general}} 
+&lt;!-- Please place categories where indicated at the bottom of this page and interwikis at Wikidata (see [[Wikipedia:Wikidata]]) --&gt;
+{{High-use}}
+
+Implements Lua functions [[:mw:Extension:Scribunto/Lua_reference_manual#mw.text.decode|mw.text.decode]], [[:mw:Extension:Scribunto/Lua_reference_manual#mw.text.encode|mw.text.encode]] in a module.
+:&lt;code&gt;&lt;nowiki&gt;{{#invoke:decodeEncode|decode|s=Source&amp;amp;nbsp;text&amp;amp;copy;}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; &lt;code&gt;&lt;nowiki&gt;Source&amp;nbsp;text&amp;copy;&lt;/nowiki&gt;&lt;/code&gt;
+
+See [[List of XML and HTML character entity references]].
+
+== Decode ({{mono|1=&amp;amp;copy;}} &amp;rarr; ©) &lt;span class="anchor" id="Decode"&gt;&lt;/span&gt;==
+{{hatnote|See {{slink||Known issues}} for possible THIN SPACE, epsilon issues}}
+:Decodes [[List of XML and HTML character entity references|Named Entities]] ''from'' entity name ''into'' a regular (unicode) character:
+:&lt;code&gt;&amp;amp;copy;&lt;/code&gt; &amp;rarr; &lt;code&gt;&amp;copy;&lt;/code&gt;
+:&lt;code&gt;&amp;amp;gt;&lt;/code&gt; &amp;rarr; &lt;code&gt;&gt;&lt;/code&gt;
+
+All well-defined named entities are decoded ([https://html.spec.whatwg.org/multipage/named-characters.html#named-character-references HTML Named character references], formally: as defined in the [https://www.php.net/get_html_translation_table PHP table]).
+
+:A regular, rendered sentence:
+::"At 100 °F, &amp; with a "burning" sun above, we , we ⁄walked⁄."
+
+:In code:
+::"&lt;code&gt;At 100&amp;amp;nbsp;&amp;amp;deg;F, &amp;amp; with a &amp;amp;quot;burning&amp;amp;quot; sun above, we &amp;amp;frasl;walked&amp;amp;frasl;.&lt;/code&gt;" -- wikitext
+
+:Processing:
+:&lt;code&gt;&lt;nowiki&gt;{{#invoke:decodeEncode|decode|s=At 100&amp;nbsp;&amp;deg;F, &amp;amp; with a &amp;quot;burning&amp;quot; sun above, we &amp;frasl;walked&amp;frasl;.}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr;
+::&lt;code&gt;{{#invoke:decodeEncode|decode|s=At 100&amp;nbsp;&amp;deg;F, &amp;amp; with a &amp;quot;burning&amp;quot; sun above, we &amp;frasl;walked&amp;frasl;.}}&lt;/code&gt; -- In code: straight characters, no named entities.
+
+:Renders, again:
+::"At 100 °F, &amp; with a "burning" sun above, we ⁄walked⁄."
+
+===Decode a reduced set only===
+By setting {{para|subset_only|true}}, only these five entity names are decoded: '&amp;amp;lt;', '&amp;amp;gt;', '&amp;amp;amp;', '&amp;amp;quot;', '&amp;amp;nbsp;' (that is, into '&amp;lt;', '&amp;gt;', '&amp;amp;', '&amp;quot;', '&amp;nbsp;').
+
+:'''Note''': There is a difference with the relevant Lua parameter. (This only concerns your task if you also work directly with the Lua mw.text.decode function). Lua documentation defines parameter {{para|decodeNamedEntities}}, having this effect: when ''omitted or false'', only the reduced set of entities is recognized and decoded. This use of 'false' is ''inverted'' in using {{para|subset_only}}: {{para|decodeNamedEntities|false}} =  {{para|subset_only|true}}.
+
+:Also, this module ignores the "omitted" logic: {{para|subset_only}} should be set explicitly to 'true' to be effective.
+
+== Encode (© &amp;rarr; {{mono|1=&amp;amp;copy;}}) &lt;span class="anchor" id="Encode"&gt;&lt;/span&gt;==
+:Function &lt;code&gt;encode&lt;/code&gt; encodes some entity-named characters into that name (for example: &lt;code&gt;&amp;&lt;/code&gt; &amp;rarr; &lt;code&gt;&amp;amp;amp;&lt;/code&gt;).
+
+Regular sentence:
+:"At &gt;100 °F, &amp; with a "burning" sun above, we walked. ©"
+
+In code:
+:"&lt;code&gt;&lt;nowiki&gt;At &gt;100 °F, &amp; with a "burning" sun above, we walked. ©&lt;/nowiki&gt;&lt;/code&gt;"
+
+Encode:
+:&lt;code&gt;&lt;nowiki&gt;{{#invoke:decodeEncode|encode|s=At &gt;100 °F, &amp; with a "burning" sun above, we walked. ©|charset=&amp;&lt;&gt;{{!}}°"'&amp;©}}&lt;/nowiki&gt;&lt;/code&gt;
+
+:&amp;rarr;
+
+:&lt;code&gt;&lt;nowiki&gt;At &amp;amp;gt;100 &amp;amp;#176;F, &amp;amp;amp; with a &amp;amp;quot;burning&amp;amp;quot; sun above, we walked. &amp;amp;#169;&lt;/nowiki&gt;&lt;/code&gt;&lt;!-- used Special:ExpandTemplate --&gt;
+
+:Renders as:
+
+:"At &amp;gt;100 &amp;#176;F, &amp;amp; with a &amp;quot;burning&amp;quot; sun above, we walked. &amp;#169;"
+===character set to encode===
+
+Per Lua documentation, only a small set of characters is processed. The characterset can be set (expanded) by using {{para|charset}}.
+
+:Example: {{para|charset|&lt;nowiki&gt;&lt;&gt;" \'&amp;&lt;/nowiki&gt;}} (the default), {{para|charset|&lt;nowiki&gt;&lt;&gt;°"'&amp;©{{!}}&lt;/nowiki&gt;}}; characters not in the default will be replaced by their decimal entity: &lt;code&gt;©&lt;/code&gt; &amp;rarr; &lt;code&gt;&amp;amp;#169;&lt;/code&gt; &lt;small&gt;(hexadecimal number, not decimal nor named &amp;amp;copy;)&lt;/small&gt;
+
+==Known issues &lt;span class="anchor" id="Template"&gt;&lt;/span&gt;==
+* 13 Sep 2021: NOTE: The encode function with user-supplied charset is now used productively  in {{tl|R/superscript}} and {{tl|R/ref}}. Before implementing breaking changes here, these templates need to be adjusted accordingly!
+
+* 26 Sep 2021: {{unichar|2009|THIN SPACE|html=}} 
+:Note: Possible bug: Decoding &lt;code&gt;&amp;amp;ThinSpace;&lt;/code&gt; works, but &lt;code&gt;&amp;amp;thinsp;&lt;/code&gt; doesn't.
+:Resolved in code.
+
+*  4 Feb 2023: {{unichar|03B5|GREEK SMALL LETTER EPSILON|html=}}
+{{tracked|T328840}}
+:See {{slink|Module_talk:DecodeEncode|Bug_report:_bad_decoding_of_U+03B5_ε_(epsilon)}}
+:Resolved in code.
+
+==See also==
+
+* [[:mw:Extension:Scribunto/Lua_reference_manual#mw.text.decode|mw.text.decode]]
+* [[:mw:Extension:Scribunto/Lua_reference_manual#mw.text.encode|mw.text.encode]]
+* [[:Module:Urldecode]]
+
+{{Navbox wikitext-handling templates}}
+
+&lt;includeonly&gt;{{sandbox other||
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:Wikitext processing templates]]
+[[Category:Modules that manipulate strings]]
+[[Category:Template metamodules]]
+}}&lt;/includeonly&gt;&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>fb84jytdmk2gclfvs5rr9wkm6c3nj8y</sha1>
+    </revision>
+    <revision>
+      <id>7559</id>
+      <timestamp>2025-05-22T11:05:24Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Bot: convert local/ILL link → enwiki interwiki</comment>
+      <origin>7559</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="5352" sha1="a41jduntmr1h9ivz6xrv0g01n3pfb9r" xml:space="preserve">{{Module rating |general}} 
+&lt;!-- Please place categories where indicated at the bottom of this page and interwikis at Wikidata (see [[Wikipedia:Wikidata]]) --&gt;
+{{High-use}}
+
+Implements Lua functions [[:mw:Extension:Scribunto/Lua_reference_manual#mw.text.decode|mw.text.decode]], [[:mw:Extension:Scribunto/Lua_reference_manual#mw.text.encode|mw.text.encode]] in a module.
+:&lt;code&gt;&lt;nowiki&gt;{{#invoke:decodeEncode|decode|s=Source&amp;amp;nbsp;text&amp;amp;copy;}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; &lt;code&gt;&lt;nowiki&gt;Source&amp;nbsp;text&amp;copy;&lt;/nowiki&gt;&lt;/code&gt;
+
+See [[:en:List of XML and HTML character entity references|List of XML and HTML character entity references]].
+
+== Decode ({{mono|1=&amp;amp;copy;}} &amp;rarr; ©) &lt;span class="anchor" id="Decode"&gt;&lt;/span&gt;==
+{{hatnote|See {{slink||Known issues}} for possible THIN SPACE, epsilon issues}}
+:Decodes [[:en:List of XML and HTML character entity references|Named Entities]] ''from'' entity name ''into'' a regular (unicode) character:
+:&lt;code&gt;&amp;amp;copy;&lt;/code&gt; &amp;rarr; &lt;code&gt;&amp;copy;&lt;/code&gt;
+:&lt;code&gt;&amp;amp;gt;&lt;/code&gt; &amp;rarr; &lt;code&gt;&gt;&lt;/code&gt;
+
+All well-defined named entities are decoded ([https://html.spec.whatwg.org/multipage/named-characters.html#named-character-references HTML Named character references], formally: as defined in the [https://www.php.net/get_html_translation_table PHP table]).
+
+:A regular, rendered sentence:
+::"At 100 °F, &amp; with a "burning" sun above, we , we ⁄walked⁄."
+
+:In code:
+::"&lt;code&gt;At 100&amp;amp;nbsp;&amp;amp;deg;F, &amp;amp; with a &amp;amp;quot;burning&amp;amp;quot; sun above, we &amp;amp;frasl;walked&amp;amp;frasl;.&lt;/code&gt;" -- wikitext
+
+:Processing:
+:&lt;code&gt;&lt;nowiki&gt;{{#invoke:decodeEncode|decode|s=At 100&amp;nbsp;&amp;deg;F, &amp;amp; with a &amp;quot;burning&amp;quot; sun above, we &amp;frasl;walked&amp;frasl;.}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr;
+::&lt;code&gt;{{#invoke:decodeEncode|decode|s=At 100&amp;nbsp;&amp;deg;F, &amp;amp; with a &amp;quot;burning&amp;quot; sun above, we &amp;frasl;walked&amp;frasl;.}}&lt;/code&gt; -- In code: straight characters, no named entities.
+
+:Renders, again:
+::"At 100 °F, &amp; with a "burning" sun above, we ⁄walked⁄."
+
+===Decode a reduced set only===
+By setting {{para|subset_only|true}}, only these five entity names are decoded: '&amp;amp;lt;', '&amp;amp;gt;', '&amp;amp;amp;', '&amp;amp;quot;', '&amp;amp;nbsp;' (that is, into '&amp;lt;', '&amp;gt;', '&amp;amp;', '&amp;quot;', '&amp;nbsp;').
+
+:'''Note''': There is a difference with the relevant Lua parameter. (This only concerns your task if you also work directly with the Lua mw.text.decode function). Lua documentation defines parameter {{para|decodeNamedEntities}}, having this effect: when ''omitted or false'', only the reduced set of entities is recognized and decoded. This use of 'false' is ''inverted'' in using {{para|subset_only}}: {{para|decodeNamedEntities|false}} =  {{para|subset_only|true}}.
+
+:Also, this module ignores the "omitted" logic: {{para|subset_only}} should be set explicitly to 'true' to be effective.
+
+== Encode (© &amp;rarr; {{mono|1=&amp;amp;copy;}}) &lt;span class="anchor" id="Encode"&gt;&lt;/span&gt;==
+:Function &lt;code&gt;encode&lt;/code&gt; encodes some entity-named characters into that name (for example: &lt;code&gt;&amp;&lt;/code&gt; &amp;rarr; &lt;code&gt;&amp;amp;amp;&lt;/code&gt;).
+
+Regular sentence:
+:"At &gt;100 °F, &amp; with a "burning" sun above, we walked. ©"
+
+In code:
+:"&lt;code&gt;&lt;nowiki&gt;At &gt;100 °F, &amp; with a "burning" sun above, we walked. ©&lt;/nowiki&gt;&lt;/code&gt;"
+
+Encode:
+:&lt;code&gt;&lt;nowiki&gt;{{#invoke:decodeEncode|encode|s=At &gt;100 °F, &amp; with a "burning" sun above, we walked. ©|charset=&amp;&lt;&gt;{{!}}°"'&amp;©}}&lt;/nowiki&gt;&lt;/code&gt;
+
+:&amp;rarr;
+
+:&lt;code&gt;&lt;nowiki&gt;At &amp;amp;gt;100 &amp;amp;#176;F, &amp;amp;amp; with a &amp;amp;quot;burning&amp;amp;quot; sun above, we walked. &amp;amp;#169;&lt;/nowiki&gt;&lt;/code&gt;&lt;!-- used Special:ExpandTemplate --&gt;
+
+:Renders as:
+
+:"At &amp;gt;100 &amp;#176;F, &amp;amp; with a &amp;quot;burning&amp;quot; sun above, we walked. &amp;#169;"
+===character set to encode===
+
+Per Lua documentation, only a small set of characters is processed. The characterset can be set (expanded) by using {{para|charset}}.
+
+:Example: {{para|charset|&lt;nowiki&gt;&lt;&gt;" \'&amp;&lt;/nowiki&gt;}} (the default), {{para|charset|&lt;nowiki&gt;&lt;&gt;°"'&amp;©{{!}}&lt;/nowiki&gt;}}; characters not in the default will be replaced by their decimal entity: &lt;code&gt;©&lt;/code&gt; &amp;rarr; &lt;code&gt;&amp;amp;#169;&lt;/code&gt; &lt;small&gt;(hexadecimal number, not decimal nor named &amp;amp;copy;)&lt;/small&gt;
+
+==Known issues &lt;span class="anchor" id="Template"&gt;&lt;/span&gt;==
+* 13 Sep 2021: NOTE: The encode function with user-supplied charset is now used productively  in {{tl|R/superscript}} and {{tl|R/ref}}. Before implementing breaking changes here, these templates need to be adjusted accordingly!
+
+* 26 Sep 2021: {{unichar|2009|THIN SPACE|html=}} 
+:Note: Possible bug: Decoding &lt;code&gt;&amp;amp;ThinSpace;&lt;/code&gt; works, but &lt;code&gt;&amp;amp;thinsp;&lt;/code&gt; doesn't.
+:Resolved in code.
+
+*  4 Feb 2023: {{unichar|03B5|GREEK SMALL LETTER EPSILON|html=}}
+{{tracked|T328840}}
+:See {{slink|Module_talk:DecodeEncode|Bug_report:_bad_decoding_of_U+03B5_ε_(epsilon)}}
+:Resolved in code.
+
+==See also==
+
+* [[:mw:Extension:Scribunto/Lua_reference_manual#mw.text.decode|mw.text.decode]]
+* [[:mw:Extension:Scribunto/Lua_reference_manual#mw.text.encode|mw.text.encode]]
+* [[:Module:Urldecode]]
+
+{{Navbox wikitext-handling templates}}
+
+&lt;includeonly&gt;{{sandbox other||
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:Wikitext processing templates]]
+[[Category:Modules that manipulate strings]]
+[[Category:Template metamodules]]
+}}&lt;/includeonly&gt;&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>a41jduntmr1h9ivz6xrv0g01n3pfb9r</sha1>
+    </revision>
+  </page>
+</mediawiki>

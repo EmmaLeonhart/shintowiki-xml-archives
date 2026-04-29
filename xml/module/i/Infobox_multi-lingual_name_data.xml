@@ -1,0 +1,4426 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Infobox multi-lingual name/data</title>
+    <ns>828</ns>
+    <id>106950</id>
+    <revision>
+      <id>3079310</id>
+      <timestamp>2019-01-09T23:27:55Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Trappist the monk</username>
+        <id>0</id>
+      </contributor>
+      <comment>create;</comment>
+      <origin>3079310</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="13178" sha1="5rmtvtxugix5re37m8mzorkdwzolgg4" xml:space="preserve">--[[--------------------------&lt; L A B E L _ M A P &gt;------------------------------------------------------------
+
+Table to map |showflags= value to the |labeln= parameter value for {{Infobox}}
+
+]]
+ 
+local label_map = {
+	['bp'] = '[[Bbánlám pìngyīm|Bbánlám Pìngyīm]]',
+	['bpmf'] = '[[Bopomofo]]',
+	['gan'] = '[[Gan Chinese|Gan]]',
+	['h'] = '[[Guangdong Romanization#Hakka|Hakka]]',
+	['hsn'] = '[[Xiang Chinese|Xiang]]',
+	['j'] = '[[Cantonese]] [[Jyutping]]',
+	['jy'] = '[[Jyutping]]',													-- for |showflag=[jy | yj ] ???? why different from 'j'?
+	['lmz'] = '[[Shanghainese]]&lt;br /&gt;[[Long-short (romanization)|Romanization]]',
+	['p'] = '[[Hanyu Pinyin]]',
+	['phfs'] = '[[Pha̍k-fa-sṳ]]',
+	['poj'] = '[[Hokkien]] [[Pe̍h-ōe-jī|POJ]]',
+	['psic'] = '[[Sichuanese Mandarin|Sichuanese]] [[Sichuanese Pinyin|Pinyin]]',
+	['tl'] = '[[Taiwanese Romanization System|Tâi-lô]]',
+	['toi'] = '[[Taishanese]] [[Jyutping]]',
+	['w'] = '[[Wade–Giles]]',
+	['wuu'] = '[[Wu Chinese|Wu]]',
+	['xej'] = '[[Xiao\'erjing]]',
+	['y'] = '[[Cantonese]] [[Yale romanization of Cantonese|Yale]]',
+	}
+
+
+--[[--------------------------&lt; T R A N S L _ M A P &gt;----------------------------------------------------------
+
+Table to map |showflags= value to an index into label_map for child infobox |labeln= value and to map |showflags=
+vale to the correct parameter for use in child infobox |datan= paramter
+
+Implementation deatils of |showflag= are in dispute see: Template_talk:Infobox_Chinese#Rfc_on_fixing_the_template_showflag
+
+linked conversation is at: Template_talk:Infobox_Chinese/Archive_4#Showflag broken
+
+]]
+
+local transl_map = {															-- maps |showflag= value to label from label_map table and data from matching parameter name
+	['bp'] = {['label1'] = 'bp', ['data1'] = 'bp'},
+	['bpmf'] = {['label1'] = 'bpmf', ['data1'] = 'bpmf'},
+	['gan'] = {['label1'] = 'gan', ['data1'] = 'gan'},
+	['gdp'] = {['label1'] = 'y', ['data1'] = 'y', ['label2'] = 'p', ['data2'] = 'p'},
+	['h'] = {['label1'] = 'h', ['data1'] = 'h'},
+	['hsn'] = {['label1'] = 'hsn', ['data1'] = 'hsn'},
+	['j'] = {['label1'] = 'j', ['data1'] = 'j'},
+	['jp'] = {['label1'] = 'y', ['data1'] = 'y', ['label2'] = 'p', ['data2'] = 'p'},
+	['jy'] = {
+		['label1'] = 'jy',		-- why is this not the same as 'j'?
+		['data1'] = 'j',
+		['label2'] = 'y',
+		['data2'] = 'y'
+		},
+	['jyp'] = {['label1'] = 'y', ['data1'] = 'y', ['label2'] = 'j', ['data2'] = 'j', ['label3'] = 'p', ['data3'] = 'p'},
+	['lmz'] = {['label1'] = 'lmz', ['data1'] = 'lmz'},
+	['p'] = {['label1'] = 'p', ['data1'] = 'p'},
+	['phfs'] = {['label1'] = 'phfs', ['data1'] = 'phfs'},
+	['phsn'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'hsn', ['data2'] = 'hsn'},
+	['pj'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'j', ['data2'] = 'j'},
+	['poj'] = {['label1'] = 'poj', ['data1'] = 'poj'},
+	['psic'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'sic', ['data2'] = 'sic'},
+	['pwuu'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'wuu', ['data2'] = 'wuu'},
+	['py'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'y', ['data2'] = 'y'},
+	['tl'] = {['label1'] = 'tl', ['data1'] = 'tl'},
+	['toip'] = {['label1'] = 'toi', ['data1'] = 'toi', ['label2'] = 'p', ['data2'] = 'p'},
+	['wp'] = {['label1'] = 'w', ['data1'] = 'w', ['label2'] = 'p', ['data2'] = 'p'},
+	['wuu'] = {['label1'] = 'wuu', ['data1'] = 'wuu'},
+	['y'] = {['label1'] = 'y', ['data1'] = 'y'},
+	['yj'] = {['label1'] = 'y', ['data1'] = 'y', ['label2'] = 'jy', ['data2'] = 'j'},
+	['xej'] = {
+		['label1'] = 'xej',
+		['data1'] = 'xej',				-- ???? what to do about this; template calls {{lang|zh-Arab|{{{xej}}}}} on this value
+		},
+	['xejp'] = {
+		['label1'] = 'xej',
+		['data1'] = 'xej',				-- ???? template does not call {{lang|zh-Arab|{{{xej}}}}} on this value; why?
+		['label2'] = 'p',
+		['data2'] = 'p'
+		},
+	}
+
+
+--[[--------------------------&lt; K E Y S &gt;----------------------------------------------------------------------
+]]
+
+local keys = {																	-- table of xscript table keys calls
+	ar = 'arabic',
+	bo = 'tibetan',
+	hokkien = 'hokkien',
+	ja = 'japanese',
+	ko = 'korean',
+	mn = 'mongolian',
+	ru = 'russian',
+	ug = 'uyghur',
+	}
+
+
+--[[--------------------------&lt; X S C R I P T &gt;----------------------------------------------------------------
+
+table that holds the various transcription headers and labels used by transcriptions()
+
+indexed in this table are lower case versions of the header display text without punctuation (if any)
+
+TODO: add support for transl transliteration standard parameter; akin to {{transl|lang code|standard code|text|italic=??}}
+
+]]
+
+local xscript = {
+	['standard mandarin'] = {													-- lower case version of the header display text
+		['header'] = '[[Standard Chinese|Standard Mandarin]]',					-- text to be displayed if headers are displayed
+		['t'] = {																-- table of labels and their associated data parameter
+			{'[[Hanyu Pinyin]]', 'p'},											-- label is [[Hanyu Pinyin]], data is taken from |p= parameter
+			{'[[Bopomofo]]','bpmf'},
+			{'[[Spelling in Gwoyeu Romatzyh|Gwoyeu Romatzyh]]', 'gr'},
+			{'[[Wade–Giles]]', 'w'},
+			{'[[Tongyong Pinyin]]', 'tp'},
+			{'[[Yale romanization of Mandarin|Yale Romanization]]', 'myr'},
+			{'[[Mandarin Phonetic Symbols II|MPS2]]', 'mps'},
+			{'[[Help:IPA/Mandarin|IPA]]', 'mi'}
+			}
+		},
+	['other mandarin'] = {
+		['header'] = '[[Mandarin Chinese|other Mandarin]]',
+		['t'] = {
+			{'[[Xiao\'erjing]]', 'xej'},
+			{'[[Dungan language|Dungan]]','zh-dungan'},
+			{'[[Sichuanese Mandarin|Sichuanese]] [[Sichuanese Pinyin|Pinyin]]', 'sic'},
+			}
+		},
+	['wu'] = {
+		['header'] = '[[Wu Chinese|Wu]]',
+		['t'] = {
+			{'Romanization', 'wuu'},
+			{'[[Shanghainese]]&lt;br /&gt;Romanization', 'lmz'},
+			{'[[Wenzhounese]]&lt;br /&gt;[[Wenzhounese romanisation|Romanisation]]', 'ouji'},
+			{'[[Suzhounese]]', 'suz'},
+			}
+		},
+	['gan'] = {
+		['header'] = '[[Gan Chinese|Gan]]',
+		['t'] = {
+			{'Romanization', 'gan'},
+			}
+		},
+	['xiang'] = {
+		['header'] = '[[Xiang Chinese|Xiang]]',
+		['t'] = {
+			{'IPA', 'hsn'},
+			}
+		},
+	['hakka'] = {
+		['header'] = '[[Hakka Chinese|Hakka]]',
+		['t'] = {
+			{'[[Guangdong Romanization#Hakka|Romanization]]', 'h'},
+			{'[[Pha̍k-fa-sṳ]]', 'phfs'},
+			}
+		},
+	['yue cantonese'] = {
+		['header'] = '[[Cantonese|Yue: Cantonese]]',
+		['t'] = {
+			{'[[Yale romanization of Cantonese|Yale Romanization]]', 'y'},
+			{'[[Help:IPA/Cantonese|IPA]]', 'ci'},
+			{'[[Jyutping]]', 'j'},
+			{'[[Sidney Lau romanisation|Sidney Lau]]', 'sl'},
+			{'[[Guangdong Romanization|Canton Romanization]]', 'gd'},
+			{'[[Hong Kong Government Cantonese Romanisation|Hong Kong Romanisation]]', 'hk'},
+			{'[[Cantonese#Romanization|Macau Romanization]]', 'mo'},
+			}
+		},
+	['other yue'] = {
+		['header'] = '[[Yue Chinese|other Yue]]',
+		['t'] = {
+			{'[[Taishanese]]', 'toi'},
+			}
+		},
+	['southern min'] = {
+		['header'] = '[[Southern Min]]',
+		['t'] = {
+			{'[[Hokkien]] [[Pe̍h-ōe-jī|POJ]]', 'poj'},
+			{'[[Taiwanese Romanization System|Tâi-lô]]', 'tl'},
+			{'[[Bbánlám pìngyīm|Bbánlám Pìngyīm]]', 'bp'},
+			{'[[Teochew dialect|Teochew]] [[Guangdong Romanization#Teochew|Peng\'im]]', 'teo'},
+			{'[[Hainanese]] Romanization', 'hain'},
+			{'[[Leizhou Min|Leizhou]] Romanization', 'lizu'},
+			}
+		},
+	['eastern min'] = {
+		['header'] = '[[Eastern Min]]',
+		['t'] = {
+			{'[[Fuzhou dialect|Fuzhou]] [[Foochow Romanized|BUC]]', 'buc'},
+			}
+		},
+	['pu-xian min'] = {
+		['header'] = '[[Pu-Xian Min]]',
+		['t'] = {
+			{'[[Pu-Xian Min|Hinghwa]] [[Hinghwa Romanized|BUC]]', 'hhbuc'},
+			}
+		},
+	['northern min'] = {
+		['header'] = '[[Northern Min]]',
+		['t'] = {
+			{'[[Jian\'ou dialect|Jian\'ou]] [[Kienning Colloquial Romanized|Romanized]]', 'mblmc'},
+			}
+		},
+	['old mandarin'] = {
+		['header'] = '[[Old Mandarin]]',
+		['t'] = {
+			{'Romanized \'Phags-pa', 'phagspa-latin'},
+			}
+		},
+	['middle chinese'] = {
+		['header'] = '[[Middle Chinese]]',
+		['t'] = {
+			{'[[Middle Chinese]]', 'mc'},
+			{'[[Middle Chinese#Early Middle Chinese|Early Middle Chinese]]', 'emc'},
+			{'[[Middle Chinese#Late Middle Chinese|Late Middle Chinese]]', 'lmc'},
+			}
+		},
+	['old chinese'] = {
+		['header'] = '[[Old Chinese]]',
+		['t'] = {
+			{'[[Reconstructions_of_Old_Chinese#Baxter (1992)|Baxter (1992)]]', 'oc-b92'},
+			{'[[Reconstructions of Old Chinese#Baxter–Sagart (2014)|Baxter–Sagart (2014)]]', 'oc-bs'},
+			{'[[Reconstructions of Old Chinese#Zhengzhang (1981–1995)|Zhengzhang]]', 'oc-zz'},
+			}
+		},
+
+--------&lt; non-Chinese transcriptions &gt;--------
+
+	['arabic'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Arabic}}; doesn't use header
+		['t'] = {
+			{'[[Arabic chat alphabet|Chat]]', 'chat'},							-- TODO: standardize on lowercase parameter names
+			{'[[Arabic chat alphabet|Chat]]', 'Chat'},
+			{'[[ALA-LC romanization|ALA-LC]]', 'ala-lc'},
+			{'[[ALA-LC romanization|ALA-LC]]', 'ALA-LC'},
+			{'[[ISO 233|ISO]]', 'iso'},
+			{'[[ISO 233|ISO]]', 'ISO'},
+			{'[[DIN 31635|DIN]]', 'din'},
+			{'[[DIN 31635|DIN]]', 'DIN'},
+			}
+		},
+	['hokkien'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Hokkien}}; doesn't use header
+		['t'] = {
+			{'[[Taiwanese Romanization System|Tâi-lô]]', 'tl'},
+			{'[[Bbánlám pìngyīm|Bbánpìng]]', 'bp'},
+			{'[[Help:IPA for Hokkien|IPA]]', 'hokkienipa'},
+			}
+		},
+	['japanese'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Japanese}}; doesn't use header
+		['t'] = {
+			{'[[Romanization of Japanese|Romanization]]', 'romaji'},
+			{'[[Hepburn romanization|Revised Hepburn]]', 'revhep'},
+			{'[[Hepburn romanization|Traditional Hepburn]]', 'tradhep'},
+			{'[[Kunrei-shiki romanization|Kunrei-shiki]]', 'kunrei'},
+			{'[[Nihon-shiki romanization|Nihon-shiki]]', 'nihon'},
+			}
+		},
+	['korean'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Korean}}; doesn't use header
+		['t'] = {
+			{'[[Revised Romanization of Korean|Revised Romanization]]', 'rr'},
+			{'[[McCune–Reischauer]]', 'mr'},
+			{'[[Help:IPA/Korean|IPA]]', 'koreanipa'},
+			}
+		},
+	['mongolian'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Mongolian}}; doesn't use header
+		['t'] = {
+			{'[[SASM/GNC romanization#Mongolian|SASM/GNC]]', 'monr'},
+			}
+		},
+	['russian'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Russian}}; doesn't use header
+		['t'] = {
+			{'[[Scientific transliteration of Cyrillic|Scientific]]', 'scientific'},
+			{'[[Scientific transliteration of Cyrillic|Scientific]]', 'Scientific'},
+			{'[[ISO 9|ISO]]', 'iso'},
+			{'[[ISO 9|ISO]]', 'ISO'},
+			{'[[GOST 16876-71|GOST 71]]', 'gost'},
+			{'[[GOST 16876-71|GOST 71]]', 'GOST'},
+			{'[[BGN/PCGN romanization of Russian|BGN/PCGN]]', 'bgn/pcgn'},
+			{'[[BGN/PCGN romanization of Russian|BGN/PCGN]]', 'BGN/PGCN'},
+			}
+		},
+	['tibetan'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Tibetan}}; doesn't use header
+		['t'] = {
+			{'[[Wylie transliteration|Wylie]]', 'wylie'},
+			{'[[THL Simplified Phonetic Transcription|THL]]', 'thdl'},
+			{'[[Tibetan pinyin|Tibetan Pinyin]]', 'zwpy'},
+			{'[[Standard Tibetan|Lhasa]] [[Help:IPA/Tibetan|IPA]]', 'lhasa'},
+			}
+		},
+	['uyghur'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Uyghur}}; doesn't use header
+		['t'] = {
+			{'[[Uyghur Latin alphabet|Latin Yëziqi]]', 'uly'},
+			{'[[Uyghur New Script|Yengi Yeziⱪ]]', 'uyy'},
+			{'[[SASM/GNC romanization#Uyghur|SASM/GNC]]', 'sgs'},
+			{'[[Uyghur Cyrillic alphabet|Siril Yëziqi]]', 'usy'},
+			{'Uyghur [[Wikipedia: IPA|IPA]]', 'uipa'},
+			}
+		},
+	}
+
+
+--[[--------------------------&lt; I B O X _ Z H Z H _ E N U M _ P A R A M S &gt;------------------------------------
+]]
+
+local ibox_zhzh_enum_params = {													-- 'p', 'hp', 'xej' are special case enum parameters
+	'c', 't', 's', 'l', 'tp', 'w', 'mi', 'myr', 'psp', 'myale', 'gr', 'bpmf', 'mps',
+	'zh-dungan', 'sic', 'y', 'j', 'sl', 'gd', 'hk', 'mo', 'ci', 'toi', 'gan', 'wuu', 'ouji', 'suz',
+	'hsn', 'h', 'phfs', 'poj', 'tl', 'bp', 'buc', 'hhbuc', 'mblmc', 'lmz', 'teo', 'lizu', 'hain',
+	'mc', 'emc', 'lmc', 'oc-bs', 'oc-zz',
+	'oc-b92', 																	-- only supported in the first ibox zhzh; why?
+	'lao', 'khm', 'tet'															-- not supported by ibox zh/zh  why are they here?
+	}
+
+
+--[[--------------------------&lt; Z H _ H D R _ N A M E S &gt;------------------------------------------------------
+
+this table fixes an oddity in the ibox zh/zh header name parameters.  |chinese_header= for the first ibox zh/zh 
+gets filled from |name1= but the second gets its name from |altname= and then the third from |altname3=.
+All of these parameter names should be replaced with |chinese_header= followed by |chinese_header2= ... like all
+of the other enumerated parameters
+
+]]
+
+local zh_hdr_names = {
+	[2] = {'altname', 'Alternative Chinese name'},
+	[3] = {'altname3', 'Second alternative Chinese name'},
+	[4] = {'altname4', 'Third alternative Chinese name'},
+	[5] = {'altname5', 'Fourth alternative Chinese name'},
+	[6] = {'altname6', 'Fifth alternative Chinese name'},
+	};
+
+
+--[[--------------------------&lt; E X P O R T E D   T A B L E S &gt;------------------------------------------------
+]]
+
+return {
+	ibox_zhzh_enum_params = ibox_zhzh_enum_params,
+	keys = keys,
+	label_map = label_map,
+	transl_map = transl_map,
+	xscript = xscript,
+	zh_hdr_names = zh_hdr_names,
+	}</text>
+      <sha1>5rmtvtxugix5re37m8mzorkdwzolgg4</sha1>
+    </revision>
+    <revision>
+      <id>3079311</id>
+      <parentid>3079310</parentid>
+      <timestamp>2019-01-11T00:43:17Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Trappist the monk</username>
+        <id>0</id>
+      </contributor>
+      <origin>3079311</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="13268" sha1="6vs7l468tgygy345zp1imxnl0dseul3" xml:space="preserve">--[[--------------------------&lt; L A B E L _ M A P &gt;------------------------------------------------------------
+
+Table to map |showflags= value to the |labeln= parameter value for {{Infobox}}
+
+TODO: convert showflag to a comma delimited list instead of these peculiar codes?
+
+]]
+ 
+local label_map = {
+	['bp'] = '[[Bbánlám pìngyīm|Bbánlám Pìngyīm]]',
+	['bpmf'] = '[[Bopomofo]]',
+	['gan'] = '[[Gan Chinese|Gan]]',
+	['gd'] = '[[Guangdong Romanization]]',
+	['h'] = '[[Guangdong Romanization#Hakka|Hakka]]',
+	['hsn'] = '[[Xiang Chinese|Xiang]]',
+	['j'] = '[[Jyutping]]',
+	['lmz'] = '[[Shanghainese]]&lt;br /&gt;[[Long-short (romanization)|Romanization]]',
+	['p'] = '[[Hanyu Pinyin]]',
+	['phfs'] = '[[Pha̍k-fa-sṳ]]',
+	['pj'] = '[[Cantonese]] [[Jyutping]]',										-- for |showflag=pj ???? why different from 'j'?
+	['poj'] = '[[Hokkien]] [[Pe̍h-ōe-jī|POJ]]',
+	['psic'] = '[[Sichuanese Mandarin|Sichuanese]] [[Sichuanese Pinyin|Pinyin]]',
+	['tl'] = '[[Taiwanese Romanization System|Tâi-lô]]',
+	['toi'] = '[[Taishanese]]',
+	['w'] = '[[Wade–Giles]]',
+	['wuu'] = '[[Wu Chinese|Wu]]',
+	['xej'] = '[[Xiao\'erjing]]',
+	['y'] = '[[Cantonese]] [[Yale romanization of Cantonese|Yale]]',
+	}
+
+
+--[[--------------------------&lt; T R A N S L _ M A P &gt;----------------------------------------------------------
+
+Table to map |showflags= value to an index into label_map for child infobox |labeln= value and to map |showflags=
+vale to the correct parameter for use in child infobox |datan= paramter
+
+Implementation deatils of |showflag= are in dispute see: Template_talk:Infobox_Chinese#Rfc_on_fixing_the_template_showflag
+
+linked conversation is at: Template_talk:Infobox_Chinese/Archive_4#Showflag broken
+
+]]
+
+local transl_map = {															-- maps |showflag= value to label from label_map table and data from matching parameter name
+	['bp'] = {['label1'] = 'bp', ['data1'] = 'bp'},
+	['bpmf'] = {['label1'] = 'bpmf', ['data1'] = 'bpmf'},
+	['gan'] = {['label1'] = 'gan', ['data1'] = 'gan'},
+	['gdp'] = {['label1'] = 'gd', ['data1'] = 'gd', ['label2'] = 'p', ['data2'] = 'p'},
+	['h'] = {['label1'] = 'h', ['data1'] = 'h'},
+	['hsn'] = {['label1'] = 'hsn', ['data1'] = 'hsn'},
+	['j'] = {['label1'] = 'j', ['data1'] = 'j'},
+	['jp'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'p', ['data2'] = 'p'},
+	['jy'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'y', ['data2'] = 'y'},
+	['jyp'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'y', ['data2'] = 'y', ['label3'] = 'p', ['data3'] = 'p'},
+	['lmz'] = {['label1'] = 'lmz', ['data1'] = 'lmz'},
+	['p'] = {['label1'] = 'p', ['data1'] = 'p'},
+	['phfs'] = {['label1'] = 'phfs', ['data1'] = 'phfs'},
+	['phsn'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'hsn', ['data2'] = 'hsn'},
+	['pj'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'pj', ['data2'] = 'j'},			-- label is pj why different from j?
+	['poj'] = {['label1'] = 'poj', ['data1'] = 'poj'},
+	['psic'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'sic', ['data2'] = 'sic'},
+	['pwuu'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'wuu', ['data2'] = 'wuu'},
+	['py'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'y', ['data2'] = 'y'},
+	['tl'] = {['label1'] = 'tl', ['data1'] = 'tl'},
+	['toip'] = {['label1'] = 'toi', ['data1'] = 'toi', ['label2'] = 'p', ['data2'] = 'p'},
+	['wp'] = {['label1'] = 'w', ['data1'] = 'w', ['label2'] = 'p', ['data2'] = 'p'},
+	['wuu'] = {['label1'] = 'wuu', ['data1'] = 'wuu'},
+	['y'] = {['label1'] = 'y', ['data1'] = 'y'},
+	['yj'] = {['label1'] = 'y', ['data1'] = 'y', ['label2'] = 'j', ['data2'] = 'j'},
+	['xej'] = {
+		['label1'] = 'xej',
+		['data1'] = 'xej',				-- ???? what to do about this; template calls {{lang|zh-Arab|{{{xej}}}}} on this value
+		},
+	['xejp'] = {
+		['label1'] = 'xej',
+		['data1'] = 'xej',				-- ???? template does not call {{lang|zh-Arab|{{{xej}}}}} on this value; why?
+		['label2'] = 'p',
+		['data2'] = 'p'
+		},
+	}
+
+
+--[[--------------------------&lt; K E Y S &gt;----------------------------------------------------------------------
+]]
+
+local keys = {																	-- table of xscript table keys calls
+	ar = 'arabic',
+	bo = 'tibetan',
+	hokkien = 'hokkien',
+	ja = 'japanese',
+	ko = 'korean',
+	mn = 'mongolian',
+	ru = 'russian',
+	ug = 'uyghur',
+	}
+
+
+--[[--------------------------&lt; X S C R I P T &gt;----------------------------------------------------------------
+
+table that holds the various transcription headers and labels used by transcriptions()
+
+indexed in this table are lower case versions of the header display text without punctuation (if any)
+
+TODO: add support for transl transliteration standard parameter; akin to {{transl|lang code|standard code|text|italic=??}}
+
+]]
+
+local xscript = {
+	['standard mandarin'] = {													-- lower case version of the header display text
+		['header'] = '[[Standard Chinese|Standard Mandarin]]',					-- text to be displayed if headers are displayed
+		['t'] = {																-- table of labels and their associated data parameter
+			{'[[Hanyu Pinyin]]', 'p'},											-- label is [[Hanyu Pinyin]], data is taken from |p= parameter
+			{'[[Bopomofo]]','bpmf'},
+			{'[[Spelling in Gwoyeu Romatzyh|Gwoyeu Romatzyh]]', 'gr'},
+			{'[[Wade–Giles]]', 'w'},
+			{'[[Tongyong Pinyin]]', 'tp'},
+			{'[[Yale romanization of Mandarin|Yale Romanization]]', 'myr'},
+			{'[[Mandarin Phonetic Symbols II|MPS2]]', 'mps'},
+			{'[[Help:IPA/Mandarin|IPA]]', 'mi'}
+			}
+		},
+	['other mandarin'] = {
+		['header'] = '[[Mandarin Chinese|other Mandarin]]',
+		['t'] = {
+			{'[[Xiao\'erjing]]', 'xej'},
+			{'[[Dungan language|Dungan]]','zh-dungan'},
+			{'[[Sichuanese Mandarin|Sichuanese]] [[Sichuanese Pinyin|Pinyin]]', 'sic'},
+			}
+		},
+	['wu'] = {
+		['header'] = '[[Wu Chinese|Wu]]',
+		['t'] = {
+			{'Romanization', 'wuu'},
+			{'[[Shanghainese]]&lt;br /&gt;Romanization', 'lmz'},
+			{'[[Wenzhounese]]&lt;br /&gt;[[Wenzhounese romanisation|Romanisation]]', 'ouji'},
+			{'[[Suzhounese]]', 'suz'},
+			}
+		},
+	['gan'] = {
+		['header'] = '[[Gan Chinese|Gan]]',
+		['t'] = {
+			{'Romanization', 'gan'},
+			}
+		},
+	['xiang'] = {
+		['header'] = '[[Xiang Chinese|Xiang]]',
+		['t'] = {
+			{'IPA', 'hsn'},
+			}
+		},
+	['hakka'] = {
+		['header'] = '[[Hakka Chinese|Hakka]]',
+		['t'] = {
+			{'[[Guangdong Romanization#Hakka|Romanization]]', 'h'},
+			{'[[Pha̍k-fa-sṳ]]', 'phfs'},
+			}
+		},
+	['yue cantonese'] = {
+		['header'] = '[[Cantonese|Yue: Cantonese]]',
+		['t'] = {
+			{'[[Yale romanization of Cantonese|Yale Romanization]]', 'y'},
+			{'[[Help:IPA/Cantonese|IPA]]', 'ci'},
+			{'[[Jyutping]]', 'j'},
+			{'[[Sidney Lau romanisation|Sidney Lau]]', 'sl'},
+			{'[[Guangdong Romanization|Canton Romanization]]', 'gd'},
+			{'[[Hong Kong Government Cantonese Romanisation|Hong Kong Romanisation]]', 'hk'},
+			{'[[Cantonese#Romanization|Macau Romanization]]', 'mo'},
+			}
+		},
+	['other yue'] = {
+		['header'] = '[[Yue Chinese|other Yue]]',
+		['t'] = {
+			{'[[Taishanese]]', 'toi'},
+			}
+		},
+	['southern min'] = {
+		['header'] = '[[Southern Min]]',
+		['t'] = {
+			{'[[Hokkien]] [[Pe̍h-ōe-jī|POJ]]', 'poj'},
+			{'[[Taiwanese Romanization System|Tâi-lô]]', 'tl'},
+			{'[[Bbánlám pìngyīm|Bbánlám Pìngyīm]]', 'bp'},
+			{'[[Teochew dialect|Teochew]] [[Guangdong Romanization#Teochew|Peng\'im]]', 'teo'},
+			{'[[Hainanese]] Romanization', 'hain'},
+			{'[[Leizhou Min|Leizhou]] Romanization', 'lizu'},
+			}
+		},
+	['eastern min'] = {
+		['header'] = '[[Eastern Min]]',
+		['t'] = {
+			{'[[Fuzhou dialect|Fuzhou]] [[Foochow Romanized|BUC]]', 'buc'},
+			}
+		},
+	['pu-xian min'] = {
+		['header'] = '[[Pu-Xian Min]]',
+		['t'] = {
+			{'[[Pu-Xian Min|Hinghwa]] [[Hinghwa Romanized|BUC]]', 'hhbuc'},
+			}
+		},
+	['northern min'] = {
+		['header'] = '[[Northern Min]]',
+		['t'] = {
+			{'[[Jian\'ou dialect|Jian\'ou]] [[Kienning Colloquial Romanized|Romanized]]', 'mblmc'},
+			}
+		},
+	['old mandarin'] = {
+		['header'] = '[[Old Mandarin]]',
+		['t'] = {
+			{'Romanized \'Phags-pa', 'phagspa-latin'},
+			}
+		},
+	['middle chinese'] = {
+		['header'] = '[[Middle Chinese]]',
+		['t'] = {
+			{'[[Middle Chinese]]', 'mc'},
+			{'[[Middle Chinese#Early Middle Chinese|Early Middle Chinese]]', 'emc'},
+			{'[[Middle Chinese#Late Middle Chinese|Late Middle Chinese]]', 'lmc'},
+			}
+		},
+	['old chinese'] = {
+		['header'] = '[[Old Chinese]]',
+		['t'] = {
+			{'[[Reconstructions_of_Old_Chinese#Baxter (1992)|Baxter (1992)]]', 'oc-b92'},
+			{'[[Reconstructions of Old Chinese#Baxter–Sagart (2014)|Baxter–Sagart (2014)]]', 'oc-bs'},
+			{'[[Reconstructions of Old Chinese#Zhengzhang (1981–1995)|Zhengzhang]]', 'oc-zz'},
+			}
+		},
+
+--------&lt; non-Chinese transcriptions &gt;--------
+
+	['arabic'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Arabic}}; doesn't use header
+		['t'] = {
+			{'[[Arabic chat alphabet|Chat]]', 'chat'},							-- TODO: standardize on lowercase parameter names
+			{'[[Arabic chat alphabet|Chat]]', 'Chat'},
+			{'[[ALA-LC romanization|ALA-LC]]', 'ala-lc'},
+			{'[[ALA-LC romanization|ALA-LC]]', 'ALA-LC'},
+			{'[[ISO 233|ISO]]', 'iso'},
+			{'[[ISO 233|ISO]]', 'ISO'},
+			{'[[DIN 31635|DIN]]', 'din'},
+			{'[[DIN 31635|DIN]]', 'DIN'},
+			}
+		},
+	['hokkien'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Hokkien}}; doesn't use header
+		['t'] = {
+			{'[[Taiwanese Romanization System|Tâi-lô]]', 'tl'},
+			{'[[Bbánlám pìngyīm|Bbánpìng]]', 'bp'},
+			{'[[Help:IPA for Hokkien|IPA]]', 'hokkienipa'},
+			}
+		},
+	['japanese'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Japanese}}; doesn't use header
+		['t'] = {
+			{'[[Romanization of Japanese|Romanization]]', 'romaji'},
+			{'[[Hepburn romanization|Revised Hepburn]]', 'revhep'},
+			{'[[Hepburn romanization|Traditional Hepburn]]', 'tradhep'},
+			{'[[Kunrei-shiki romanization|Kunrei-shiki]]', 'kunrei'},
+			{'[[Nihon-shiki romanization|Nihon-shiki]]', 'nihon'},
+			}
+		},
+	['korean'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Korean}}; doesn't use header
+		['t'] = {
+			{'[[Revised Romanization of Korean|Revised Romanization]]', 'rr'},
+			{'[[McCune–Reischauer]]', 'mr'},
+			{'[[Help:IPA/Korean|IPA]]', 'koreanipa'},
+			}
+		},
+	['mongolian'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Mongolian}}; doesn't use header
+		['t'] = {
+			{'[[SASM/GNC romanization#Mongolian|SASM/GNC]]', 'monr'},
+			}
+		},
+	['russian'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Russian}}; doesn't use header
+		['t'] = {
+			{'[[Scientific transliteration of Cyrillic|Scientific]]', 'scientific'},
+			{'[[Scientific transliteration of Cyrillic|Scientific]]', 'Scientific'},
+			{'[[ISO 9|ISO]]', 'iso'},
+			{'[[ISO 9|ISO]]', 'ISO'},
+			{'[[GOST 16876-71|GOST 71]]', 'gost'},
+			{'[[GOST 16876-71|GOST 71]]', 'GOST'},
+			{'[[BGN/PCGN romanization of Russian|BGN/PCGN]]', 'bgn/pcgn'},
+			{'[[BGN/PCGN romanization of Russian|BGN/PCGN]]', 'BGN/PGCN'},
+			}
+		},
+	['tibetan'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Tibetan}}; doesn't use header
+		['t'] = {
+			{'[[Wylie transliteration|Wylie]]', 'wylie'},
+			{'[[THL Simplified Phonetic Transcription|THL]]', 'thdl'},
+			{'[[Tibetan pinyin|Tibetan Pinyin]]', 'zwpy'},
+			{'[[Standard Tibetan|Lhasa]] [[Help:IPA/Tibetan|IPA]]', 'lhasa'},
+			}
+		},
+	['uyghur'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Uyghur}}; doesn't use header
+		['t'] = {
+			{'[[Uyghur Latin alphabet|Latin Yëziqi]]', 'uly'},
+			{'[[Uyghur New Script|Yengi Yeziⱪ]]', 'uyy'},
+			{'[[SASM/GNC romanization#Uyghur|SASM/GNC]]', 'sgs'},
+			{'[[Uyghur Cyrillic alphabet|Siril Yëziqi]]', 'usy'},
+			{'Uyghur [[Wikipedia: IPA|IPA]]', 'uipa'},
+			}
+		},
+	}
+
+
+--[[--------------------------&lt; I B O X _ Z H Z H _ E N U M _ P A R A M S &gt;------------------------------------
+]]
+
+local ibox_zhzh_enum_params = {													-- 'p', 'hp', 'xej' are special case enum parameters
+	'c', 't', 's', 'l', 'tp', 'w', 'mi', 'myr', 'psp', 'myale', 'gr', 'bpmf', 'mps',
+	'zh-dungan', 'sic', 'y', 'j', 'sl', 'gd', 'hk', 'mo', 'ci', 'toi', 'gan', 'wuu', 'ouji', 'suz',
+	'hsn', 'h', 'phfs', 'poj', 'tl', 'bp', 'buc', 'hhbuc', 'mblmc', 'lmz', 'teo', 'lizu', 'hain',
+	'mc', 'emc', 'lmc', 'oc-bs', 'oc-zz',
+	'oc-b92', 																	-- only supported in the first ibox zhzh; why?
+	'lao', 'khm', 'tet'															-- not supported by ibox zh/zh  why are they here?
+	}
+
+
+--[[--------------------------&lt; Z H _ H D R _ N A M E S &gt;------------------------------------------------------
+
+this table fixes an oddity in the ibox zh/zh header name parameters.  |chinese_header= for the first ibox zh/zh 
+gets filled from |name1= but the second gets its name from |altname= and then the third from |altname3=.
+All of these parameter names should be replaced with |chinese_header= followed by |chinese_header2= ... like all
+of the other enumerated parameters
+
+]]
+
+local zh_hdr_names = {
+	[2] = {'altname', 'Alternative Chinese name'},
+	[3] = {'altname3', 'Second alternative Chinese name'},
+	[4] = {'altname4', 'Third alternative Chinese name'},
+	[5] = {'altname5', 'Fourth alternative Chinese name'},
+	[6] = {'altname6', 'Fifth alternative Chinese name'},
+	};
+
+
+--[[--------------------------&lt; E X P O R T E D   T A B L E S &gt;------------------------------------------------
+]]
+
+return {
+	ibox_zhzh_enum_params = ibox_zhzh_enum_params,
+	keys = keys,
+	label_map = label_map,
+	transl_map = transl_map,
+	xscript = xscript,
+	zh_hdr_names = zh_hdr_names,
+	}</text>
+      <sha1>6vs7l468tgygy345zp1imxnl0dseul3</sha1>
+    </revision>
+    <revision>
+      <id>3079312</id>
+      <parentid>3079311</parentid>
+      <timestamp>2019-01-12T12:14:12Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Trappist the monk</username>
+        <id>0</id>
+      </contributor>
+      <origin>3079312</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="13130" sha1="1n2l77ajnx2exkorr1qpj2vw87n6gqy" xml:space="preserve">--[[--------------------------&lt; L A B E L _ M A P &gt;------------------------------------------------------------
+
+Table to map |showflags= value to the |labeln= parameter value for {{Infobox}}
+
+TODO: convert showflag to a comma delimited list instead of these peculiar codes?
+
+]]
+ 
+local label_map = {
+	['bp'] = '[[Bbánlám pìngyīm|Bbánlám Pìngyīm]]',
+	['bpmf'] = '[[Bopomofo]]',
+	['gan'] = '[[Gan Chinese|Gan]]',
+	['gd'] = '[[Guangdong Romanization]]',
+	['h'] = '[[Guangdong Romanization#Hakka|Hakka]]',
+	['hsn'] = '[[Xiang Chinese|Xiang]]',
+	['j'] = '[[Jyutping]]',
+	['lmz'] = '[[Shanghainese]]&lt;br /&gt;[[Long-short (romanization)|Romanization]]',
+	['p'] = '[[Hanyu Pinyin]]',
+	['phfs'] = '[[Pha̍k-fa-sṳ]]',
+	['poj'] = '[[Hokkien]] [[Pe̍h-ōe-jī|POJ]]',
+	['psic'] = '[[Sichuanese Mandarin|Sichuanese]] [[Sichuanese Pinyin|Pinyin]]',
+	['tl'] = '[[Taiwanese Romanization System|Tâi-lô]]',
+	['toi'] = '[[Taishanese]]',
+	['w'] = '[[Wade–Giles]]',
+	['wuu'] = '[[Wu Chinese|Wu]]',
+	['xej'] = '[[Xiao\'erjing]]',
+	['y'] = '[[Cantonese]] [[Yale romanization of Cantonese|Yale]]',
+	}
+
+
+--[[--------------------------&lt; T R A N S L _ M A P &gt;----------------------------------------------------------
+
+Table to map |showflags= value to an index into label_map for child infobox |labeln= value and to map |showflags=
+vale to the correct parameter for use in child infobox |datan= paramter
+
+Implementation deatils of |showflag= are in dispute see: Template_talk:Infobox_Chinese#Rfc_on_fixing_the_template_showflag
+
+linked conversation is at: Template_talk:Infobox_Chinese/Archive_4#Showflag broken
+
+]]
+
+local transl_map = {															-- maps |showflag= value to label from label_map table and data from matching parameter name
+	['bp'] = {['label1'] = 'bp', ['data1'] = 'bp'},
+	['bpmf'] = {['label1'] = 'bpmf', ['data1'] = 'bpmf'},
+	['gan'] = {['label1'] = 'gan', ['data1'] = 'gan'},
+	['gdp'] = {['label1'] = 'gd', ['data1'] = 'gd', ['label2'] = 'p', ['data2'] = 'p'},
+	['h'] = {['label1'] = 'h', ['data1'] = 'h'},
+	['hsn'] = {['label1'] = 'hsn', ['data1'] = 'hsn'},
+	['j'] = {['label1'] = 'j', ['data1'] = 'j'},
+	['jp'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'p', ['data2'] = 'p'},
+	['jy'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'y', ['data2'] = 'y'},
+	['jyp'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'y', ['data2'] = 'y', ['label3'] = 'p', ['data3'] = 'p'},
+	['lmz'] = {['label1'] = 'lmz', ['data1'] = 'lmz'},
+	['p'] = {['label1'] = 'p', ['data1'] = 'p'},
+	['phfs'] = {['label1'] = 'phfs', ['data1'] = 'phfs'},
+	['phsn'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'hsn', ['data2'] = 'hsn'},
+	['pj'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'j', ['data2'] = 'j'},
+	['poj'] = {['label1'] = 'poj', ['data1'] = 'poj'},
+	['psic'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'sic', ['data2'] = 'sic'},
+	['pwuu'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'wuu', ['data2'] = 'wuu'},
+	['py'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'y', ['data2'] = 'y'},
+	['tl'] = {['label1'] = 'tl', ['data1'] = 'tl'},
+	['toip'] = {['label1'] = 'toi', ['data1'] = 'toi', ['label2'] = 'p', ['data2'] = 'p'},
+	['wp'] = {['label1'] = 'w', ['data1'] = 'w', ['label2'] = 'p', ['data2'] = 'p'},
+	['wuu'] = {['label1'] = 'wuu', ['data1'] = 'wuu'},
+	['y'] = {['label1'] = 'y', ['data1'] = 'y'},
+	['yj'] = {['label1'] = 'y', ['data1'] = 'y', ['label2'] = 'j', ['data2'] = 'j'},
+	['xej'] = {
+		['label1'] = 'xej',
+		['data1'] = 'xej',				-- ???? what to do about this; template calls {{lang|zh-Arab|{{{xej}}}}} on this value
+		},
+	['xejp'] = {
+		['label1'] = 'xej',
+		['data1'] = 'xej',				-- ???? template does not call {{lang|zh-Arab|{{{xej}}}}} on this value; why?
+		['label2'] = 'p',
+		['data2'] = 'p'
+		},
+	}
+
+
+--[[--------------------------&lt; K E Y S &gt;----------------------------------------------------------------------
+]]
+
+local keys = {																	-- table of xscript table keys calls
+	ar = 'arabic',
+	bo = 'tibetan',
+	hokkien = 'hokkien',
+	ja = 'japanese',
+	ko = 'korean',
+	mn = 'mongolian',
+	ru = 'russian',
+	ug = 'uyghur',
+	}
+
+
+--[[--------------------------&lt; X S C R I P T &gt;----------------------------------------------------------------
+
+table that holds the various transcription headers and labels used by transcriptions()
+
+indexed in this table are lower case versions of the header display text without punctuation (if any)
+
+TODO: add support for transl transliteration standard parameter; akin to {{transl|lang code|standard code|text|italic=??}}
+
+]]
+
+local xscript = {
+	['standard mandarin'] = {													-- lower case version of the header display text
+		['header'] = '[[Standard Chinese|Standard Mandarin]]',					-- text to be displayed if headers are displayed
+		['t'] = {																-- table of labels and their associated data parameter
+			{'[[Hanyu Pinyin]]', 'p'},											-- label is [[Hanyu Pinyin]], data is taken from |p= parameter
+			{'[[Bopomofo]]','bpmf'},
+			{'[[Spelling in Gwoyeu Romatzyh|Gwoyeu Romatzyh]]', 'gr'},
+			{'[[Wade–Giles]]', 'w'},
+			{'[[Tongyong Pinyin]]', 'tp'},
+			{'[[Yale romanization of Mandarin|Yale Romanization]]', 'myr'},
+			{'[[Mandarin Phonetic Symbols II|MPS2]]', 'mps'},
+			{'[[Help:IPA/Mandarin|IPA]]', 'mi'}
+			}
+		},
+	['other mandarin'] = {
+		['header'] = '[[Mandarin Chinese|other Mandarin]]',
+		['t'] = {
+			{'[[Xiao\'erjing]]', 'xej'},
+			{'[[Dungan language|Dungan]]','zh-dungan'},
+			{'[[Sichuanese Mandarin|Sichuanese]] [[Sichuanese Pinyin|Pinyin]]', 'sic'},
+			}
+		},
+	['wu'] = {
+		['header'] = '[[Wu Chinese|Wu]]',
+		['t'] = {
+			{'Romanization', 'wuu'},
+			{'[[Shanghainese]]&lt;br /&gt;Romanization', 'lmz'},
+			{'[[Wenzhounese]]&lt;br /&gt;[[Wenzhounese romanisation|Romanisation]]', 'ouji'},
+			{'[[Suzhounese]]', 'suz'},
+			}
+		},
+	['gan'] = {
+		['header'] = '[[Gan Chinese|Gan]]',
+		['t'] = {
+			{'Romanization', 'gan'},
+			}
+		},
+	['xiang'] = {
+		['header'] = '[[Xiang Chinese|Xiang]]',
+		['t'] = {
+			{'IPA', 'hsn'},
+			}
+		},
+	['hakka'] = {
+		['header'] = '[[Hakka Chinese|Hakka]]',
+		['t'] = {
+			{'[[Guangdong Romanization#Hakka|Romanization]]', 'h'},
+			{'[[Pha̍k-fa-sṳ]]', 'phfs'},
+			}
+		},
+	['yue cantonese'] = {
+		['header'] = '[[Cantonese|Yue: Cantonese]]',
+		['t'] = {
+			{'[[Yale romanization of Cantonese|Yale Romanization]]', 'y'},
+			{'[[Help:IPA/Cantonese|IPA]]', 'ci'},
+			{'[[Jyutping]]', 'j'},
+			{'[[Sidney Lau romanisation|Sidney Lau]]', 'sl'},
+			{'[[Guangdong Romanization|Canton Romanization]]', 'gd'},
+			{'[[Hong Kong Government Cantonese Romanisation|Hong Kong Romanisation]]', 'hk'},
+			{'[[Cantonese#Romanization|Macau Romanization]]', 'mo'},
+			}
+		},
+	['other yue'] = {
+		['header'] = '[[Yue Chinese|other Yue]]',
+		['t'] = {
+			{'[[Taishanese]]', 'toi'},
+			}
+		},
+	['southern min'] = {
+		['header'] = '[[Southern Min]]',
+		['t'] = {
+			{'[[Hokkien]] [[Pe̍h-ōe-jī|POJ]]', 'poj'},
+			{'[[Taiwanese Romanization System|Tâi-lô]]', 'tl'},
+			{'[[Bbánlám pìngyīm|Bbánlám Pìngyīm]]', 'bp'},
+			{'[[Teochew dialect|Teochew]] [[Guangdong Romanization#Teochew|Peng\'im]]', 'teo'},
+			{'[[Hainanese]] Romanization', 'hain'},
+			{'[[Leizhou Min|Leizhou]] Romanization', 'lizu'},
+			}
+		},
+	['eastern min'] = {
+		['header'] = '[[Eastern Min]]',
+		['t'] = {
+			{'[[Fuzhou dialect|Fuzhou]] [[Foochow Romanized|BUC]]', 'buc'},
+			}
+		},
+	['pu-xian min'] = {
+		['header'] = '[[Pu-Xian Min]]',
+		['t'] = {
+			{'[[Pu-Xian Min|Hinghwa]] [[Hinghwa Romanized|BUC]]', 'hhbuc'},
+			}
+		},
+	['northern min'] = {
+		['header'] = '[[Northern Min]]',
+		['t'] = {
+			{'[[Jian\'ou dialect|Jian\'ou]] [[Kienning Colloquial Romanized|Romanized]]', 'mblmc'},
+			}
+		},
+	['old mandarin'] = {
+		['header'] = '[[Old Mandarin]]',
+		['t'] = {
+			{'Romanized \'Phags-pa', 'phagspa-latin'},
+			}
+		},
+	['middle chinese'] = {
+		['header'] = '[[Middle Chinese]]',
+		['t'] = {
+			{'[[Middle Chinese]]', 'mc'},
+			{'[[Middle Chinese#Early Middle Chinese|Early Middle Chinese]]', 'emc'},
+			{'[[Middle Chinese#Late Middle Chinese|Late Middle Chinese]]', 'lmc'},
+			}
+		},
+	['old chinese'] = {
+		['header'] = '[[Old Chinese]]',
+		['t'] = {
+			{'[[Reconstructions_of_Old_Chinese#Baxter (1992)|Baxter (1992)]]', 'oc-b92'},
+			{'[[Reconstructions of Old Chinese#Baxter–Sagart (2014)|Baxter–Sagart (2014)]]', 'oc-bs'},
+			{'[[Reconstructions of Old Chinese#Zhengzhang (1981–1995)|Zhengzhang]]', 'oc-zz'},
+			}
+		},
+
+--------&lt; non-Chinese transcriptions &gt;--------
+
+	['arabic'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Arabic}}; doesn't use header
+		['t'] = {
+			{'[[Arabic chat alphabet|Chat]]', 'chat'},							-- TODO: standardize on lowercase parameter names
+			{'[[Arabic chat alphabet|Chat]]', 'Chat'},
+			{'[[ALA-LC romanization|ALA-LC]]', 'ala-lc'},
+			{'[[ALA-LC romanization|ALA-LC]]', 'ALA-LC'},
+			{'[[ISO 233|ISO]]', 'iso'},
+			{'[[ISO 233|ISO]]', 'ISO'},
+			{'[[DIN 31635|DIN]]', 'din'},
+			{'[[DIN 31635|DIN]]', 'DIN'},
+			}
+		},
+	['hokkien'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Hokkien}}; doesn't use header
+		['t'] = {
+			{'[[Taiwanese Romanization System|Tâi-lô]]', 'tl'},
+			{'[[Bbánlám pìngyīm|Bbánpìng]]', 'bp'},
+			{'[[Help:IPA for Hokkien|IPA]]', 'hokkienipa'},
+			}
+		},
+	['japanese'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Japanese}}; doesn't use header
+		['t'] = {
+			{'[[Romanization of Japanese|Romanization]]', 'romaji'},
+			{'[[Hepburn romanization|Revised Hepburn]]', 'revhep'},
+			{'[[Hepburn romanization|Traditional Hepburn]]', 'tradhep'},
+			{'[[Kunrei-shiki romanization|Kunrei-shiki]]', 'kunrei'},
+			{'[[Nihon-shiki romanization|Nihon-shiki]]', 'nihon'},
+			}
+		},
+	['korean'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Korean}}; doesn't use header
+		['t'] = {
+			{'[[Revised Romanization of Korean|Revised Romanization]]', 'rr'},
+			{'[[McCune–Reischauer]]', 'mr'},
+			{'[[Help:IPA/Korean|IPA]]', 'koreanipa'},
+			}
+		},
+	['mongolian'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Mongolian}}; doesn't use header
+		['t'] = {
+			{'[[SASM/GNC romanization#Mongolian|SASM/GNC]]', 'monr'},
+			}
+		},
+	['russian'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Russian}}; doesn't use header
+		['t'] = {
+			{'[[Scientific transliteration of Cyrillic|Scientific]]', 'scientific'},
+			{'[[Scientific transliteration of Cyrillic|Scientific]]', 'Scientific'},
+			{'[[ISO 9|ISO]]', 'iso'},
+			{'[[ISO 9|ISO]]', 'ISO'},
+			{'[[GOST 16876-71|GOST 71]]', 'gost'},
+			{'[[GOST 16876-71|GOST 71]]', 'GOST'},
+			{'[[BGN/PCGN romanization of Russian|BGN/PCGN]]', 'bgn/pcgn'},
+			{'[[BGN/PCGN romanization of Russian|BGN/PCGN]]', 'BGN/PGCN'},
+			}
+		},
+	['tibetan'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Tibetan}}; doesn't use header
+		['t'] = {
+			{'[[Wylie transliteration|Wylie]]', 'wylie'},
+			{'[[THL Simplified Phonetic Transcription|THL]]', 'thdl'},
+			{'[[Tibetan pinyin|Tibetan Pinyin]]', 'zwpy'},
+			{'[[Standard Tibetan|Lhasa]] [[Help:IPA/Tibetan|IPA]]', 'lhasa'},
+			}
+		},
+	['uyghur'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Uyghur}}; doesn't use header
+		['t'] = {
+			{'[[Uyghur Latin alphabet|Latin Yëziqi]]', 'uly'},
+			{'[[Uyghur New Script|Yengi Yeziⱪ]]', 'uyy'},
+			{'[[SASM/GNC romanization#Uyghur|SASM/GNC]]', 'sgs'},
+			{'[[Uyghur Cyrillic alphabet|Siril Yëziqi]]', 'usy'},
+			{'Uyghur [[Wikipedia: IPA|IPA]]', 'uipa'},
+			}
+		},
+	}
+
+
+--[[--------------------------&lt; I B O X _ Z H Z H _ E N U M _ P A R A M S &gt;------------------------------------
+]]
+
+local ibox_zhzh_enum_params = {													-- 'p', 'hp', 'xej' are special case enum parameters
+	'c', 't', 's', 'l', 'tp', 'w', 'mi', 'myr', 'psp', 'myale', 'gr', 'bpmf', 'mps',
+	'zh-dungan', 'sic', 'y', 'j', 'sl', 'gd', 'hk', 'mo', 'ci', 'toi', 'gan', 'wuu', 'ouji', 'suz',
+	'hsn', 'h', 'phfs', 'poj', 'tl', 'bp', 'buc', 'hhbuc', 'mblmc', 'lmz', 'teo', 'lizu', 'hain',
+	'mc', 'emc', 'lmc', 'oc-bs', 'oc-zz',
+	'oc-b92', 																	-- only supported in the first ibox zhzh; why?
+	'lao', 'khm', 'tet'															-- not supported by ibox zh/zh  why are they here?
+	}
+
+
+--[[--------------------------&lt; Z H _ H D R _ N A M E S &gt;------------------------------------------------------
+
+this table fixes an oddity in the ibox zh/zh header name parameters.  |chinese_header= for the first ibox zh/zh 
+gets filled from |name1= but the second gets its name from |altname= and then the third from |altname3=.
+All of these parameter names should be replaced with |chinese_header= followed by |chinese_header2= ... like all
+of the other enumerated parameters
+
+]]
+
+local zh_hdr_names = {
+	[2] = {'altname', 'Alternative Chinese name'},
+	[3] = {'altname3', 'Second alternative Chinese name'},
+	[4] = {'altname4', 'Third alternative Chinese name'},
+	[5] = {'altname5', 'Fourth alternative Chinese name'},
+	[6] = {'altname6', 'Fifth alternative Chinese name'},
+	};
+
+
+--[[--------------------------&lt; E X P O R T E D   T A B L E S &gt;------------------------------------------------
+]]
+
+return {
+	ibox_zhzh_enum_params = ibox_zhzh_enum_params,
+	keys = keys,
+	label_map = label_map,
+	transl_map = transl_map,
+	xscript = xscript,
+	zh_hdr_names = zh_hdr_names,
+	}</text>
+      <sha1>1n2l77ajnx2exkorr1qpj2vw87n6gqy</sha1>
+    </revision>
+    <revision>
+      <id>3079313</id>
+      <parentid>3079312</parentid>
+      <timestamp>2019-01-12T16:33:59Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Trappist the monk</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Trappist the monk moved page [[Module:Sandbox/trappist the monk/Ibox zh/data]] to [[Module:Infobox multi-lingual name/data]] without leaving a redirect: get it out of the sandbox</comment>
+      <origin>3079312</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="13130" sha1="1n2l77ajnx2exkorr1qpj2vw87n6gqy" xml:space="preserve">--[[--------------------------&lt; L A B E L _ M A P &gt;------------------------------------------------------------
+
+Table to map |showflags= value to the |labeln= parameter value for {{Infobox}}
+
+TODO: convert showflag to a comma delimited list instead of these peculiar codes?
+
+]]
+ 
+local label_map = {
+	['bp'] = '[[Bbánlám pìngyīm|Bbánlám Pìngyīm]]',
+	['bpmf'] = '[[Bopomofo]]',
+	['gan'] = '[[Gan Chinese|Gan]]',
+	['gd'] = '[[Guangdong Romanization]]',
+	['h'] = '[[Guangdong Romanization#Hakka|Hakka]]',
+	['hsn'] = '[[Xiang Chinese|Xiang]]',
+	['j'] = '[[Jyutping]]',
+	['lmz'] = '[[Shanghainese]]&lt;br /&gt;[[Long-short (romanization)|Romanization]]',
+	['p'] = '[[Hanyu Pinyin]]',
+	['phfs'] = '[[Pha̍k-fa-sṳ]]',
+	['poj'] = '[[Hokkien]] [[Pe̍h-ōe-jī|POJ]]',
+	['psic'] = '[[Sichuanese Mandarin|Sichuanese]] [[Sichuanese Pinyin|Pinyin]]',
+	['tl'] = '[[Taiwanese Romanization System|Tâi-lô]]',
+	['toi'] = '[[Taishanese]]',
+	['w'] = '[[Wade–Giles]]',
+	['wuu'] = '[[Wu Chinese|Wu]]',
+	['xej'] = '[[Xiao\'erjing]]',
+	['y'] = '[[Cantonese]] [[Yale romanization of Cantonese|Yale]]',
+	}
+
+
+--[[--------------------------&lt; T R A N S L _ M A P &gt;----------------------------------------------------------
+
+Table to map |showflags= value to an index into label_map for child infobox |labeln= value and to map |showflags=
+vale to the correct parameter for use in child infobox |datan= paramter
+
+Implementation deatils of |showflag= are in dispute see: Template_talk:Infobox_Chinese#Rfc_on_fixing_the_template_showflag
+
+linked conversation is at: Template_talk:Infobox_Chinese/Archive_4#Showflag broken
+
+]]
+
+local transl_map = {															-- maps |showflag= value to label from label_map table and data from matching parameter name
+	['bp'] = {['label1'] = 'bp', ['data1'] = 'bp'},
+	['bpmf'] = {['label1'] = 'bpmf', ['data1'] = 'bpmf'},
+	['gan'] = {['label1'] = 'gan', ['data1'] = 'gan'},
+	['gdp'] = {['label1'] = 'gd', ['data1'] = 'gd', ['label2'] = 'p', ['data2'] = 'p'},
+	['h'] = {['label1'] = 'h', ['data1'] = 'h'},
+	['hsn'] = {['label1'] = 'hsn', ['data1'] = 'hsn'},
+	['j'] = {['label1'] = 'j', ['data1'] = 'j'},
+	['jp'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'p', ['data2'] = 'p'},
+	['jy'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'y', ['data2'] = 'y'},
+	['jyp'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'y', ['data2'] = 'y', ['label3'] = 'p', ['data3'] = 'p'},
+	['lmz'] = {['label1'] = 'lmz', ['data1'] = 'lmz'},
+	['p'] = {['label1'] = 'p', ['data1'] = 'p'},
+	['phfs'] = {['label1'] = 'phfs', ['data1'] = 'phfs'},
+	['phsn'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'hsn', ['data2'] = 'hsn'},
+	['pj'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'j', ['data2'] = 'j'},
+	['poj'] = {['label1'] = 'poj', ['data1'] = 'poj'},
+	['psic'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'sic', ['data2'] = 'sic'},
+	['pwuu'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'wuu', ['data2'] = 'wuu'},
+	['py'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'y', ['data2'] = 'y'},
+	['tl'] = {['label1'] = 'tl', ['data1'] = 'tl'},
+	['toip'] = {['label1'] = 'toi', ['data1'] = 'toi', ['label2'] = 'p', ['data2'] = 'p'},
+	['wp'] = {['label1'] = 'w', ['data1'] = 'w', ['label2'] = 'p', ['data2'] = 'p'},
+	['wuu'] = {['label1'] = 'wuu', ['data1'] = 'wuu'},
+	['y'] = {['label1'] = 'y', ['data1'] = 'y'},
+	['yj'] = {['label1'] = 'y', ['data1'] = 'y', ['label2'] = 'j', ['data2'] = 'j'},
+	['xej'] = {
+		['label1'] = 'xej',
+		['data1'] = 'xej',				-- ???? what to do about this; template calls {{lang|zh-Arab|{{{xej}}}}} on this value
+		},
+	['xejp'] = {
+		['label1'] = 'xej',
+		['data1'] = 'xej',				-- ???? template does not call {{lang|zh-Arab|{{{xej}}}}} on this value; why?
+		['label2'] = 'p',
+		['data2'] = 'p'
+		},
+	}
+
+
+--[[--------------------------&lt; K E Y S &gt;----------------------------------------------------------------------
+]]
+
+local keys = {																	-- table of xscript table keys calls
+	ar = 'arabic',
+	bo = 'tibetan',
+	hokkien = 'hokkien',
+	ja = 'japanese',
+	ko = 'korean',
+	mn = 'mongolian',
+	ru = 'russian',
+	ug = 'uyghur',
+	}
+
+
+--[[--------------------------&lt; X S C R I P T &gt;----------------------------------------------------------------
+
+table that holds the various transcription headers and labels used by transcriptions()
+
+indexed in this table are lower case versions of the header display text without punctuation (if any)
+
+TODO: add support for transl transliteration standard parameter; akin to {{transl|lang code|standard code|text|italic=??}}
+
+]]
+
+local xscript = {
+	['standard mandarin'] = {													-- lower case version of the header display text
+		['header'] = '[[Standard Chinese|Standard Mandarin]]',					-- text to be displayed if headers are displayed
+		['t'] = {																-- table of labels and their associated data parameter
+			{'[[Hanyu Pinyin]]', 'p'},											-- label is [[Hanyu Pinyin]], data is taken from |p= parameter
+			{'[[Bopomofo]]','bpmf'},
+			{'[[Spelling in Gwoyeu Romatzyh|Gwoyeu Romatzyh]]', 'gr'},
+			{'[[Wade–Giles]]', 'w'},
+			{'[[Tongyong Pinyin]]', 'tp'},
+			{'[[Yale romanization of Mandarin|Yale Romanization]]', 'myr'},
+			{'[[Mandarin Phonetic Symbols II|MPS2]]', 'mps'},
+			{'[[Help:IPA/Mandarin|IPA]]', 'mi'}
+			}
+		},
+	['other mandarin'] = {
+		['header'] = '[[Mandarin Chinese|other Mandarin]]',
+		['t'] = {
+			{'[[Xiao\'erjing]]', 'xej'},
+			{'[[Dungan language|Dungan]]','zh-dungan'},
+			{'[[Sichuanese Mandarin|Sichuanese]] [[Sichuanese Pinyin|Pinyin]]', 'sic'},
+			}
+		},
+	['wu'] = {
+		['header'] = '[[Wu Chinese|Wu]]',
+		['t'] = {
+			{'Romanization', 'wuu'},
+			{'[[Shanghainese]]&lt;br /&gt;Romanization', 'lmz'},
+			{'[[Wenzhounese]]&lt;br /&gt;[[Wenzhounese romanisation|Romanisation]]', 'ouji'},
+			{'[[Suzhounese]]', 'suz'},
+			}
+		},
+	['gan'] = {
+		['header'] = '[[Gan Chinese|Gan]]',
+		['t'] = {
+			{'Romanization', 'gan'},
+			}
+		},
+	['xiang'] = {
+		['header'] = '[[Xiang Chinese|Xiang]]',
+		['t'] = {
+			{'IPA', 'hsn'},
+			}
+		},
+	['hakka'] = {
+		['header'] = '[[Hakka Chinese|Hakka]]',
+		['t'] = {
+			{'[[Guangdong Romanization#Hakka|Romanization]]', 'h'},
+			{'[[Pha̍k-fa-sṳ]]', 'phfs'},
+			}
+		},
+	['yue cantonese'] = {
+		['header'] = '[[Cantonese|Yue: Cantonese]]',
+		['t'] = {
+			{'[[Yale romanization of Cantonese|Yale Romanization]]', 'y'},
+			{'[[Help:IPA/Cantonese|IPA]]', 'ci'},
+			{'[[Jyutping]]', 'j'},
+			{'[[Sidney Lau romanisation|Sidney Lau]]', 'sl'},
+			{'[[Guangdong Romanization|Canton Romanization]]', 'gd'},
+			{'[[Hong Kong Government Cantonese Romanisation|Hong Kong Romanisation]]', 'hk'},
+			{'[[Cantonese#Romanization|Macau Romanization]]', 'mo'},
+			}
+		},
+	['other yue'] = {
+		['header'] = '[[Yue Chinese|other Yue]]',
+		['t'] = {
+			{'[[Taishanese]]', 'toi'},
+			}
+		},
+	['southern min'] = {
+		['header'] = '[[Southern Min]]',
+		['t'] = {
+			{'[[Hokkien]] [[Pe̍h-ōe-jī|POJ]]', 'poj'},
+			{'[[Taiwanese Romanization System|Tâi-lô]]', 'tl'},
+			{'[[Bbánlám pìngyīm|Bbánlám Pìngyīm]]', 'bp'},
+			{'[[Teochew dialect|Teochew]] [[Guangdong Romanization#Teochew|Peng\'im]]', 'teo'},
+			{'[[Hainanese]] Romanization', 'hain'},
+			{'[[Leizhou Min|Leizhou]] Romanization', 'lizu'},
+			}
+		},
+	['eastern min'] = {
+		['header'] = '[[Eastern Min]]',
+		['t'] = {
+			{'[[Fuzhou dialect|Fuzhou]] [[Foochow Romanized|BUC]]', 'buc'},
+			}
+		},
+	['pu-xian min'] = {
+		['header'] = '[[Pu-Xian Min]]',
+		['t'] = {
+			{'[[Pu-Xian Min|Hinghwa]] [[Hinghwa Romanized|BUC]]', 'hhbuc'},
+			}
+		},
+	['northern min'] = {
+		['header'] = '[[Northern Min]]',
+		['t'] = {
+			{'[[Jian\'ou dialect|Jian\'ou]] [[Kienning Colloquial Romanized|Romanized]]', 'mblmc'},
+			}
+		},
+	['old mandarin'] = {
+		['header'] = '[[Old Mandarin]]',
+		['t'] = {
+			{'Romanized \'Phags-pa', 'phagspa-latin'},
+			}
+		},
+	['middle chinese'] = {
+		['header'] = '[[Middle Chinese]]',
+		['t'] = {
+			{'[[Middle Chinese]]', 'mc'},
+			{'[[Middle Chinese#Early Middle Chinese|Early Middle Chinese]]', 'emc'},
+			{'[[Middle Chinese#Late Middle Chinese|Late Middle Chinese]]', 'lmc'},
+			}
+		},
+	['old chinese'] = {
+		['header'] = '[[Old Chinese]]',
+		['t'] = {
+			{'[[Reconstructions_of_Old_Chinese#Baxter (1992)|Baxter (1992)]]', 'oc-b92'},
+			{'[[Reconstructions of Old Chinese#Baxter–Sagart (2014)|Baxter–Sagart (2014)]]', 'oc-bs'},
+			{'[[Reconstructions of Old Chinese#Zhengzhang (1981–1995)|Zhengzhang]]', 'oc-zz'},
+			}
+		},
+
+--------&lt; non-Chinese transcriptions &gt;--------
+
+	['arabic'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Arabic}}; doesn't use header
+		['t'] = {
+			{'[[Arabic chat alphabet|Chat]]', 'chat'},							-- TODO: standardize on lowercase parameter names
+			{'[[Arabic chat alphabet|Chat]]', 'Chat'},
+			{'[[ALA-LC romanization|ALA-LC]]', 'ala-lc'},
+			{'[[ALA-LC romanization|ALA-LC]]', 'ALA-LC'},
+			{'[[ISO 233|ISO]]', 'iso'},
+			{'[[ISO 233|ISO]]', 'ISO'},
+			{'[[DIN 31635|DIN]]', 'din'},
+			{'[[DIN 31635|DIN]]', 'DIN'},
+			}
+		},
+	['hokkien'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Hokkien}}; doesn't use header
+		['t'] = {
+			{'[[Taiwanese Romanization System|Tâi-lô]]', 'tl'},
+			{'[[Bbánlám pìngyīm|Bbánpìng]]', 'bp'},
+			{'[[Help:IPA for Hokkien|IPA]]', 'hokkienipa'},
+			}
+		},
+	['japanese'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Japanese}}; doesn't use header
+		['t'] = {
+			{'[[Romanization of Japanese|Romanization]]', 'romaji'},
+			{'[[Hepburn romanization|Revised Hepburn]]', 'revhep'},
+			{'[[Hepburn romanization|Traditional Hepburn]]', 'tradhep'},
+			{'[[Kunrei-shiki romanization|Kunrei-shiki]]', 'kunrei'},
+			{'[[Nihon-shiki romanization|Nihon-shiki]]', 'nihon'},
+			}
+		},
+	['korean'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Korean}}; doesn't use header
+		['t'] = {
+			{'[[Revised Romanization of Korean|Revised Romanization]]', 'rr'},
+			{'[[McCune–Reischauer]]', 'mr'},
+			{'[[Help:IPA/Korean|IPA]]', 'koreanipa'},
+			}
+		},
+	['mongolian'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Mongolian}}; doesn't use header
+		['t'] = {
+			{'[[SASM/GNC romanization#Mongolian|SASM/GNC]]', 'monr'},
+			}
+		},
+	['russian'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Russian}}; doesn't use header
+		['t'] = {
+			{'[[Scientific transliteration of Cyrillic|Scientific]]', 'scientific'},
+			{'[[Scientific transliteration of Cyrillic|Scientific]]', 'Scientific'},
+			{'[[ISO 9|ISO]]', 'iso'},
+			{'[[ISO 9|ISO]]', 'ISO'},
+			{'[[GOST 16876-71|GOST 71]]', 'gost'},
+			{'[[GOST 16876-71|GOST 71]]', 'GOST'},
+			{'[[BGN/PCGN romanization of Russian|BGN/PCGN]]', 'bgn/pcgn'},
+			{'[[BGN/PCGN romanization of Russian|BGN/PCGN]]', 'BGN/PGCN'},
+			}
+		},
+	['tibetan'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Tibetan}}; doesn't use header
+		['t'] = {
+			{'[[Wylie transliteration|Wylie]]', 'wylie'},
+			{'[[THL Simplified Phonetic Transcription|THL]]', 'thdl'},
+			{'[[Tibetan pinyin|Tibetan Pinyin]]', 'zwpy'},
+			{'[[Standard Tibetan|Lhasa]] [[Help:IPA/Tibetan|IPA]]', 'lhasa'},
+			}
+		},
+	['uyghur'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Uyghur}}; doesn't use header
+		['t'] = {
+			{'[[Uyghur Latin alphabet|Latin Yëziqi]]', 'uly'},
+			{'[[Uyghur New Script|Yengi Yeziⱪ]]', 'uyy'},
+			{'[[SASM/GNC romanization#Uyghur|SASM/GNC]]', 'sgs'},
+			{'[[Uyghur Cyrillic alphabet|Siril Yëziqi]]', 'usy'},
+			{'Uyghur [[Wikipedia: IPA|IPA]]', 'uipa'},
+			}
+		},
+	}
+
+
+--[[--------------------------&lt; I B O X _ Z H Z H _ E N U M _ P A R A M S &gt;------------------------------------
+]]
+
+local ibox_zhzh_enum_params = {													-- 'p', 'hp', 'xej' are special case enum parameters
+	'c', 't', 's', 'l', 'tp', 'w', 'mi', 'myr', 'psp', 'myale', 'gr', 'bpmf', 'mps',
+	'zh-dungan', 'sic', 'y', 'j', 'sl', 'gd', 'hk', 'mo', 'ci', 'toi', 'gan', 'wuu', 'ouji', 'suz',
+	'hsn', 'h', 'phfs', 'poj', 'tl', 'bp', 'buc', 'hhbuc', 'mblmc', 'lmz', 'teo', 'lizu', 'hain',
+	'mc', 'emc', 'lmc', 'oc-bs', 'oc-zz',
+	'oc-b92', 																	-- only supported in the first ibox zhzh; why?
+	'lao', 'khm', 'tet'															-- not supported by ibox zh/zh  why are they here?
+	}
+
+
+--[[--------------------------&lt; Z H _ H D R _ N A M E S &gt;------------------------------------------------------
+
+this table fixes an oddity in the ibox zh/zh header name parameters.  |chinese_header= for the first ibox zh/zh 
+gets filled from |name1= but the second gets its name from |altname= and then the third from |altname3=.
+All of these parameter names should be replaced with |chinese_header= followed by |chinese_header2= ... like all
+of the other enumerated parameters
+
+]]
+
+local zh_hdr_names = {
+	[2] = {'altname', 'Alternative Chinese name'},
+	[3] = {'altname3', 'Second alternative Chinese name'},
+	[4] = {'altname4', 'Third alternative Chinese name'},
+	[5] = {'altname5', 'Fourth alternative Chinese name'},
+	[6] = {'altname6', 'Fifth alternative Chinese name'},
+	};
+
+
+--[[--------------------------&lt; E X P O R T E D   T A B L E S &gt;------------------------------------------------
+]]
+
+return {
+	ibox_zhzh_enum_params = ibox_zhzh_enum_params,
+	keys = keys,
+	label_map = label_map,
+	transl_map = transl_map,
+	xscript = xscript,
+	zh_hdr_names = zh_hdr_names,
+	}</text>
+      <sha1>1n2l77ajnx2exkorr1qpj2vw87n6gqy</sha1>
+    </revision>
+    <revision>
+      <id>3079314</id>
+      <parentid>3079313</parentid>
+      <timestamp>2019-01-17T10:13:45Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Trappist the monk</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:Infobox multi-lingual name/data]]": match the template that this module replaces; ([Edit=Require template editor access] (indefinite) [Move=Require template editor access] (indefinite))</comment>
+      <origin>3079312</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="13130" sha1="1n2l77ajnx2exkorr1qpj2vw87n6gqy" xml:space="preserve">--[[--------------------------&lt; L A B E L _ M A P &gt;------------------------------------------------------------
+
+Table to map |showflags= value to the |labeln= parameter value for {{Infobox}}
+
+TODO: convert showflag to a comma delimited list instead of these peculiar codes?
+
+]]
+ 
+local label_map = {
+	['bp'] = '[[Bbánlám pìngyīm|Bbánlám Pìngyīm]]',
+	['bpmf'] = '[[Bopomofo]]',
+	['gan'] = '[[Gan Chinese|Gan]]',
+	['gd'] = '[[Guangdong Romanization]]',
+	['h'] = '[[Guangdong Romanization#Hakka|Hakka]]',
+	['hsn'] = '[[Xiang Chinese|Xiang]]',
+	['j'] = '[[Jyutping]]',
+	['lmz'] = '[[Shanghainese]]&lt;br /&gt;[[Long-short (romanization)|Romanization]]',
+	['p'] = '[[Hanyu Pinyin]]',
+	['phfs'] = '[[Pha̍k-fa-sṳ]]',
+	['poj'] = '[[Hokkien]] [[Pe̍h-ōe-jī|POJ]]',
+	['psic'] = '[[Sichuanese Mandarin|Sichuanese]] [[Sichuanese Pinyin|Pinyin]]',
+	['tl'] = '[[Taiwanese Romanization System|Tâi-lô]]',
+	['toi'] = '[[Taishanese]]',
+	['w'] = '[[Wade–Giles]]',
+	['wuu'] = '[[Wu Chinese|Wu]]',
+	['xej'] = '[[Xiao\'erjing]]',
+	['y'] = '[[Cantonese]] [[Yale romanization of Cantonese|Yale]]',
+	}
+
+
+--[[--------------------------&lt; T R A N S L _ M A P &gt;----------------------------------------------------------
+
+Table to map |showflags= value to an index into label_map for child infobox |labeln= value and to map |showflags=
+vale to the correct parameter for use in child infobox |datan= paramter
+
+Implementation deatils of |showflag= are in dispute see: Template_talk:Infobox_Chinese#Rfc_on_fixing_the_template_showflag
+
+linked conversation is at: Template_talk:Infobox_Chinese/Archive_4#Showflag broken
+
+]]
+
+local transl_map = {															-- maps |showflag= value to label from label_map table and data from matching parameter name
+	['bp'] = {['label1'] = 'bp', ['data1'] = 'bp'},
+	['bpmf'] = {['label1'] = 'bpmf', ['data1'] = 'bpmf'},
+	['gan'] = {['label1'] = 'gan', ['data1'] = 'gan'},
+	['gdp'] = {['label1'] = 'gd', ['data1'] = 'gd', ['label2'] = 'p', ['data2'] = 'p'},
+	['h'] = {['label1'] = 'h', ['data1'] = 'h'},
+	['hsn'] = {['label1'] = 'hsn', ['data1'] = 'hsn'},
+	['j'] = {['label1'] = 'j', ['data1'] = 'j'},
+	['jp'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'p', ['data2'] = 'p'},
+	['jy'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'y', ['data2'] = 'y'},
+	['jyp'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'y', ['data2'] = 'y', ['label3'] = 'p', ['data3'] = 'p'},
+	['lmz'] = {['label1'] = 'lmz', ['data1'] = 'lmz'},
+	['p'] = {['label1'] = 'p', ['data1'] = 'p'},
+	['phfs'] = {['label1'] = 'phfs', ['data1'] = 'phfs'},
+	['phsn'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'hsn', ['data2'] = 'hsn'},
+	['pj'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'j', ['data2'] = 'j'},
+	['poj'] = {['label1'] = 'poj', ['data1'] = 'poj'},
+	['psic'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'sic', ['data2'] = 'sic'},
+	['pwuu'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'wuu', ['data2'] = 'wuu'},
+	['py'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'y', ['data2'] = 'y'},
+	['tl'] = {['label1'] = 'tl', ['data1'] = 'tl'},
+	['toip'] = {['label1'] = 'toi', ['data1'] = 'toi', ['label2'] = 'p', ['data2'] = 'p'},
+	['wp'] = {['label1'] = 'w', ['data1'] = 'w', ['label2'] = 'p', ['data2'] = 'p'},
+	['wuu'] = {['label1'] = 'wuu', ['data1'] = 'wuu'},
+	['y'] = {['label1'] = 'y', ['data1'] = 'y'},
+	['yj'] = {['label1'] = 'y', ['data1'] = 'y', ['label2'] = 'j', ['data2'] = 'j'},
+	['xej'] = {
+		['label1'] = 'xej',
+		['data1'] = 'xej',				-- ???? what to do about this; template calls {{lang|zh-Arab|{{{xej}}}}} on this value
+		},
+	['xejp'] = {
+		['label1'] = 'xej',
+		['data1'] = 'xej',				-- ???? template does not call {{lang|zh-Arab|{{{xej}}}}} on this value; why?
+		['label2'] = 'p',
+		['data2'] = 'p'
+		},
+	}
+
+
+--[[--------------------------&lt; K E Y S &gt;----------------------------------------------------------------------
+]]
+
+local keys = {																	-- table of xscript table keys calls
+	ar = 'arabic',
+	bo = 'tibetan',
+	hokkien = 'hokkien',
+	ja = 'japanese',
+	ko = 'korean',
+	mn = 'mongolian',
+	ru = 'russian',
+	ug = 'uyghur',
+	}
+
+
+--[[--------------------------&lt; X S C R I P T &gt;----------------------------------------------------------------
+
+table that holds the various transcription headers and labels used by transcriptions()
+
+indexed in this table are lower case versions of the header display text without punctuation (if any)
+
+TODO: add support for transl transliteration standard parameter; akin to {{transl|lang code|standard code|text|italic=??}}
+
+]]
+
+local xscript = {
+	['standard mandarin'] = {													-- lower case version of the header display text
+		['header'] = '[[Standard Chinese|Standard Mandarin]]',					-- text to be displayed if headers are displayed
+		['t'] = {																-- table of labels and their associated data parameter
+			{'[[Hanyu Pinyin]]', 'p'},											-- label is [[Hanyu Pinyin]], data is taken from |p= parameter
+			{'[[Bopomofo]]','bpmf'},
+			{'[[Spelling in Gwoyeu Romatzyh|Gwoyeu Romatzyh]]', 'gr'},
+			{'[[Wade–Giles]]', 'w'},
+			{'[[Tongyong Pinyin]]', 'tp'},
+			{'[[Yale romanization of Mandarin|Yale Romanization]]', 'myr'},
+			{'[[Mandarin Phonetic Symbols II|MPS2]]', 'mps'},
+			{'[[Help:IPA/Mandarin|IPA]]', 'mi'}
+			}
+		},
+	['other mandarin'] = {
+		['header'] = '[[Mandarin Chinese|other Mandarin]]',
+		['t'] = {
+			{'[[Xiao\'erjing]]', 'xej'},
+			{'[[Dungan language|Dungan]]','zh-dungan'},
+			{'[[Sichuanese Mandarin|Sichuanese]] [[Sichuanese Pinyin|Pinyin]]', 'sic'},
+			}
+		},
+	['wu'] = {
+		['header'] = '[[Wu Chinese|Wu]]',
+		['t'] = {
+			{'Romanization', 'wuu'},
+			{'[[Shanghainese]]&lt;br /&gt;Romanization', 'lmz'},
+			{'[[Wenzhounese]]&lt;br /&gt;[[Wenzhounese romanisation|Romanisation]]', 'ouji'},
+			{'[[Suzhounese]]', 'suz'},
+			}
+		},
+	['gan'] = {
+		['header'] = '[[Gan Chinese|Gan]]',
+		['t'] = {
+			{'Romanization', 'gan'},
+			}
+		},
+	['xiang'] = {
+		['header'] = '[[Xiang Chinese|Xiang]]',
+		['t'] = {
+			{'IPA', 'hsn'},
+			}
+		},
+	['hakka'] = {
+		['header'] = '[[Hakka Chinese|Hakka]]',
+		['t'] = {
+			{'[[Guangdong Romanization#Hakka|Romanization]]', 'h'},
+			{'[[Pha̍k-fa-sṳ]]', 'phfs'},
+			}
+		},
+	['yue cantonese'] = {
+		['header'] = '[[Cantonese|Yue: Cantonese]]',
+		['t'] = {
+			{'[[Yale romanization of Cantonese|Yale Romanization]]', 'y'},
+			{'[[Help:IPA/Cantonese|IPA]]', 'ci'},
+			{'[[Jyutping]]', 'j'},
+			{'[[Sidney Lau romanisation|Sidney Lau]]', 'sl'},
+			{'[[Guangdong Romanization|Canton Romanization]]', 'gd'},
+			{'[[Hong Kong Government Cantonese Romanisation|Hong Kong Romanisation]]', 'hk'},
+			{'[[Cantonese#Romanization|Macau Romanization]]', 'mo'},
+			}
+		},
+	['other yue'] = {
+		['header'] = '[[Yue Chinese|other Yue]]',
+		['t'] = {
+			{'[[Taishanese]]', 'toi'},
+			}
+		},
+	['southern min'] = {
+		['header'] = '[[Southern Min]]',
+		['t'] = {
+			{'[[Hokkien]] [[Pe̍h-ōe-jī|POJ]]', 'poj'},
+			{'[[Taiwanese Romanization System|Tâi-lô]]', 'tl'},
+			{'[[Bbánlám pìngyīm|Bbánlám Pìngyīm]]', 'bp'},
+			{'[[Teochew dialect|Teochew]] [[Guangdong Romanization#Teochew|Peng\'im]]', 'teo'},
+			{'[[Hainanese]] Romanization', 'hain'},
+			{'[[Leizhou Min|Leizhou]] Romanization', 'lizu'},
+			}
+		},
+	['eastern min'] = {
+		['header'] = '[[Eastern Min]]',
+		['t'] = {
+			{'[[Fuzhou dialect|Fuzhou]] [[Foochow Romanized|BUC]]', 'buc'},
+			}
+		},
+	['pu-xian min'] = {
+		['header'] = '[[Pu-Xian Min]]',
+		['t'] = {
+			{'[[Pu-Xian Min|Hinghwa]] [[Hinghwa Romanized|BUC]]', 'hhbuc'},
+			}
+		},
+	['northern min'] = {
+		['header'] = '[[Northern Min]]',
+		['t'] = {
+			{'[[Jian\'ou dialect|Jian\'ou]] [[Kienning Colloquial Romanized|Romanized]]', 'mblmc'},
+			}
+		},
+	['old mandarin'] = {
+		['header'] = '[[Old Mandarin]]',
+		['t'] = {
+			{'Romanized \'Phags-pa', 'phagspa-latin'},
+			}
+		},
+	['middle chinese'] = {
+		['header'] = '[[Middle Chinese]]',
+		['t'] = {
+			{'[[Middle Chinese]]', 'mc'},
+			{'[[Middle Chinese#Early Middle Chinese|Early Middle Chinese]]', 'emc'},
+			{'[[Middle Chinese#Late Middle Chinese|Late Middle Chinese]]', 'lmc'},
+			}
+		},
+	['old chinese'] = {
+		['header'] = '[[Old Chinese]]',
+		['t'] = {
+			{'[[Reconstructions_of_Old_Chinese#Baxter (1992)|Baxter (1992)]]', 'oc-b92'},
+			{'[[Reconstructions of Old Chinese#Baxter–Sagart (2014)|Baxter–Sagart (2014)]]', 'oc-bs'},
+			{'[[Reconstructions of Old Chinese#Zhengzhang (1981–1995)|Zhengzhang]]', 'oc-zz'},
+			}
+		},
+
+--------&lt; non-Chinese transcriptions &gt;--------
+
+	['arabic'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Arabic}}; doesn't use header
+		['t'] = {
+			{'[[Arabic chat alphabet|Chat]]', 'chat'},							-- TODO: standardize on lowercase parameter names
+			{'[[Arabic chat alphabet|Chat]]', 'Chat'},
+			{'[[ALA-LC romanization|ALA-LC]]', 'ala-lc'},
+			{'[[ALA-LC romanization|ALA-LC]]', 'ALA-LC'},
+			{'[[ISO 233|ISO]]', 'iso'},
+			{'[[ISO 233|ISO]]', 'ISO'},
+			{'[[DIN 31635|DIN]]', 'din'},
+			{'[[DIN 31635|DIN]]', 'DIN'},
+			}
+		},
+	['hokkien'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Hokkien}}; doesn't use header
+		['t'] = {
+			{'[[Taiwanese Romanization System|Tâi-lô]]', 'tl'},
+			{'[[Bbánlám pìngyīm|Bbánpìng]]', 'bp'},
+			{'[[Help:IPA for Hokkien|IPA]]', 'hokkienipa'},
+			}
+		},
+	['japanese'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Japanese}}; doesn't use header
+		['t'] = {
+			{'[[Romanization of Japanese|Romanization]]', 'romaji'},
+			{'[[Hepburn romanization|Revised Hepburn]]', 'revhep'},
+			{'[[Hepburn romanization|Traditional Hepburn]]', 'tradhep'},
+			{'[[Kunrei-shiki romanization|Kunrei-shiki]]', 'kunrei'},
+			{'[[Nihon-shiki romanization|Nihon-shiki]]', 'nihon'},
+			}
+		},
+	['korean'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Korean}}; doesn't use header
+		['t'] = {
+			{'[[Revised Romanization of Korean|Revised Romanization]]', 'rr'},
+			{'[[McCune–Reischauer]]', 'mr'},
+			{'[[Help:IPA/Korean|IPA]]', 'koreanipa'},
+			}
+		},
+	['mongolian'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Mongolian}}; doesn't use header
+		['t'] = {
+			{'[[SASM/GNC romanization#Mongolian|SASM/GNC]]', 'monr'},
+			}
+		},
+	['russian'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Russian}}; doesn't use header
+		['t'] = {
+			{'[[Scientific transliteration of Cyrillic|Scientific]]', 'scientific'},
+			{'[[Scientific transliteration of Cyrillic|Scientific]]', 'Scientific'},
+			{'[[ISO 9|ISO]]', 'iso'},
+			{'[[ISO 9|ISO]]', 'ISO'},
+			{'[[GOST 16876-71|GOST 71]]', 'gost'},
+			{'[[GOST 16876-71|GOST 71]]', 'GOST'},
+			{'[[BGN/PCGN romanization of Russian|BGN/PCGN]]', 'bgn/pcgn'},
+			{'[[BGN/PCGN romanization of Russian|BGN/PCGN]]', 'BGN/PGCN'},
+			}
+		},
+	['tibetan'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Tibetan}}; doesn't use header
+		['t'] = {
+			{'[[Wylie transliteration|Wylie]]', 'wylie'},
+			{'[[THL Simplified Phonetic Transcription|THL]]', 'thdl'},
+			{'[[Tibetan pinyin|Tibetan Pinyin]]', 'zwpy'},
+			{'[[Standard Tibetan|Lhasa]] [[Help:IPA/Tibetan|IPA]]', 'lhasa'},
+			}
+		},
+	['uyghur'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Uyghur}}; doesn't use header
+		['t'] = {
+			{'[[Uyghur Latin alphabet|Latin Yëziqi]]', 'uly'},
+			{'[[Uyghur New Script|Yengi Yeziⱪ]]', 'uyy'},
+			{'[[SASM/GNC romanization#Uyghur|SASM/GNC]]', 'sgs'},
+			{'[[Uyghur Cyrillic alphabet|Siril Yëziqi]]', 'usy'},
+			{'Uyghur [[Wikipedia: IPA|IPA]]', 'uipa'},
+			}
+		},
+	}
+
+
+--[[--------------------------&lt; I B O X _ Z H Z H _ E N U M _ P A R A M S &gt;------------------------------------
+]]
+
+local ibox_zhzh_enum_params = {													-- 'p', 'hp', 'xej' are special case enum parameters
+	'c', 't', 's', 'l', 'tp', 'w', 'mi', 'myr', 'psp', 'myale', 'gr', 'bpmf', 'mps',
+	'zh-dungan', 'sic', 'y', 'j', 'sl', 'gd', 'hk', 'mo', 'ci', 'toi', 'gan', 'wuu', 'ouji', 'suz',
+	'hsn', 'h', 'phfs', 'poj', 'tl', 'bp', 'buc', 'hhbuc', 'mblmc', 'lmz', 'teo', 'lizu', 'hain',
+	'mc', 'emc', 'lmc', 'oc-bs', 'oc-zz',
+	'oc-b92', 																	-- only supported in the first ibox zhzh; why?
+	'lao', 'khm', 'tet'															-- not supported by ibox zh/zh  why are they here?
+	}
+
+
+--[[--------------------------&lt; Z H _ H D R _ N A M E S &gt;------------------------------------------------------
+
+this table fixes an oddity in the ibox zh/zh header name parameters.  |chinese_header= for the first ibox zh/zh 
+gets filled from |name1= but the second gets its name from |altname= and then the third from |altname3=.
+All of these parameter names should be replaced with |chinese_header= followed by |chinese_header2= ... like all
+of the other enumerated parameters
+
+]]
+
+local zh_hdr_names = {
+	[2] = {'altname', 'Alternative Chinese name'},
+	[3] = {'altname3', 'Second alternative Chinese name'},
+	[4] = {'altname4', 'Third alternative Chinese name'},
+	[5] = {'altname5', 'Fourth alternative Chinese name'},
+	[6] = {'altname6', 'Fifth alternative Chinese name'},
+	};
+
+
+--[[--------------------------&lt; E X P O R T E D   T A B L E S &gt;------------------------------------------------
+]]
+
+return {
+	ibox_zhzh_enum_params = ibox_zhzh_enum_params,
+	keys = keys,
+	label_map = label_map,
+	transl_map = transl_map,
+	xscript = xscript,
+	zh_hdr_names = zh_hdr_names,
+	}</text>
+      <sha1>1n2l77ajnx2exkorr1qpj2vw87n6gqy</sha1>
+    </revision>
+    <revision>
+      <id>3079315</id>
+      <parentid>3079314</parentid>
+      <timestamp>2019-10-16T22:56:46Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Trappist the monk</username>
+        <id>0</id>
+      </contributor>
+      <comment>sync from sandbox;</comment>
+      <origin>3079315</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="13212" sha1="8oz4965k8rf12i5d0q7akektbz3zu1e" xml:space="preserve">--[[--------------------------&lt; L A B E L _ M A P &gt;------------------------------------------------------------
+
+Table to map |showflags= value to the |labeln= parameter value for {{Infobox}}
+
+TODO: convert showflag to a comma delimited list instead of these peculiar codes?
+
+]]
+ 
+local label_map = {
+	['bp'] = '[[Bbánlám pìngyīm|Bbánlám Pìngyīm]]',
+	['bpmf'] = '[[Bopomofo]]',
+	['gan'] = '[[Gan Chinese|Gan]]',
+	['gd'] = '[[Guangdong Romanization]]',
+	['h'] = '[[Guangdong Romanization#Hakka|Hakka]]',
+	['hsn'] = '[[Xiang Chinese|Xiang]]',
+	['j'] = '[[Jyutping]]',
+	['lmz'] = '[[Shanghainese]]&lt;br /&gt;[[Long-short (romanization)|Romanization]]',
+	['p'] = '[[Hanyu Pinyin]]',
+	['phfs'] = '[[Pha̍k-fa-sṳ]]',
+	['poj'] = '[[Hokkien]] [[Pe̍h-ōe-jī|POJ]]',
+	['psic'] = '[[Sichuanese Mandarin|Sichuanese]] [[Sichuanese Pinyin|Pinyin]]',
+	['tl'] = '[[Taiwanese Romanization System|Tâi-lô]]',
+	['toi'] = '[[Taishanese]]',
+	['tp'] = '[[Tongyong Pinyin]]',
+	['w'] = '[[Wade–Giles]]',
+	['wuu'] = '[[Wu Chinese|Wu]]',
+	['xej'] = '[[Xiao\'erjing]]',
+	['y'] = '[[Cantonese]] [[Yale romanization of Cantonese|Yale]]',
+	}
+
+
+--[[--------------------------&lt; T R A N S L _ M A P &gt;----------------------------------------------------------
+
+Table to map |showflags= value to an index into label_map for child infobox |labeln= value and to map |showflags=
+vale to the correct parameter for use in child infobox |datan= paramter
+
+Implementation deatils of |showflag= are in dispute see: Template_talk:Infobox_Chinese#Rfc_on_fixing_the_template_showflag
+
+linked conversation is at: Template_talk:Infobox_Chinese/Archive_4#Showflag broken
+
+]]
+
+local transl_map = {															-- maps |showflag= value to label from label_map table and data from matching parameter name
+	['bp'] = {['label1'] = 'bp', ['data1'] = 'bp'},
+	['bpmf'] = {['label1'] = 'bpmf', ['data1'] = 'bpmf'},
+	['gan'] = {['label1'] = 'gan', ['data1'] = 'gan'},
+	['gdp'] = {['label1'] = 'gd', ['data1'] = 'gd', ['label2'] = 'p', ['data2'] = 'p'},
+	['h'] = {['label1'] = 'h', ['data1'] = 'h'},
+	['hsn'] = {['label1'] = 'hsn', ['data1'] = 'hsn'},
+	['j'] = {['label1'] = 'j', ['data1'] = 'j'},
+	['jp'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'p', ['data2'] = 'p'},
+	['jy'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'y', ['data2'] = 'y'},
+	['jyp'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'y', ['data2'] = 'y', ['label3'] = 'p', ['data3'] = 'p'},
+	['lmz'] = {['label1'] = 'lmz', ['data1'] = 'lmz'},
+	['p'] = {['label1'] = 'p', ['data1'] = 'p'},
+	['phfs'] = {['label1'] = 'phfs', ['data1'] = 'phfs'},
+	['phsn'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'hsn', ['data2'] = 'hsn'},
+	['pj'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'j', ['data2'] = 'j'},
+	['poj'] = {['label1'] = 'poj', ['data1'] = 'poj'},
+	['psic'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'sic', ['data2'] = 'sic'},
+	['pwuu'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'wuu', ['data2'] = 'wuu'},
+	['py'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'y', ['data2'] = 'y'},
+	['tl'] = {['label1'] = 'tl', ['data1'] = 'tl'},
+	['toip'] = {['label1'] = 'toi', ['data1'] = 'toi', ['label2'] = 'p', ['data2'] = 'p'},
+	['tp'] = {['label1'] = 'tp', ['data1'] = 'tp'},
+	['wp'] = {['label1'] = 'w', ['data1'] = 'w', ['label2'] = 'p', ['data2'] = 'p'},
+	['wuu'] = {['label1'] = 'wuu', ['data1'] = 'wuu'},
+	['y'] = {['label1'] = 'y', ['data1'] = 'y'},
+	['yj'] = {['label1'] = 'y', ['data1'] = 'y', ['label2'] = 'j', ['data2'] = 'j'},
+	['xej'] = {
+		['label1'] = 'xej',
+		['data1'] = 'xej',				-- ???? what to do about this; template calls {{lang|zh-Arab|{{{xej}}}}} on this value
+		},
+	['xejp'] = {
+		['label1'] = 'xej',
+		['data1'] = 'xej',				-- ???? template does not call {{lang|zh-Arab|{{{xej}}}}} on this value; why?
+		['label2'] = 'p',
+		['data2'] = 'p'
+		},
+	}
+
+
+--[[--------------------------&lt; K E Y S &gt;----------------------------------------------------------------------
+]]
+
+local keys = {																	-- table of xscript table keys calls
+	ar = 'arabic',
+	bo = 'tibetan',
+	hokkien = 'hokkien',
+	ja = 'japanese',
+	ko = 'korean',
+	mn = 'mongolian',
+	ru = 'russian',
+	ug = 'uyghur',
+	}
+
+
+--[[--------------------------&lt; X S C R I P T &gt;----------------------------------------------------------------
+
+table that holds the various transcription headers and labels used by transcriptions()
+
+indexed in this table are lower case versions of the header display text without punctuation (if any)
+
+TODO: add support for transl transliteration standard parameter; akin to {{transl|lang code|standard code|text|italic=??}}
+
+]]
+
+local xscript = {
+	['standard mandarin'] = {													-- lower case version of the header display text
+		['header'] = '[[Standard Chinese|Standard Mandarin]]',					-- text to be displayed if headers are displayed
+		['t'] = {																-- table of labels and their associated data parameter
+			{'[[Hanyu Pinyin]]', 'p'},											-- label is [[Hanyu Pinyin]], data is taken from |p= parameter
+			{'[[Bopomofo]]','bpmf'},
+			{'[[Spelling in Gwoyeu Romatzyh|Gwoyeu Romatzyh]]', 'gr'},
+			{'[[Wade–Giles]]', 'w'},
+			{'[[Tongyong Pinyin]]', 'tp'},
+			{'[[Yale romanization of Mandarin|Yale Romanization]]', 'myr'},
+			{'[[Mandarin Phonetic Symbols II|MPS2]]', 'mps'},
+			{'[[Help:IPA/Mandarin|IPA]]', 'mi'}
+			}
+		},
+	['other mandarin'] = {
+		['header'] = '[[Mandarin Chinese|other Mandarin]]',
+		['t'] = {
+			{'[[Xiao\'erjing]]', 'xej'},
+			{'[[Dungan language|Dungan]]','zh-dungan'},
+			{'[[Sichuanese Mandarin|Sichuanese]] [[Sichuanese Pinyin|Pinyin]]', 'sic'},
+			}
+		},
+	['wu'] = {
+		['header'] = '[[Wu Chinese|Wu]]',
+		['t'] = {
+			{'Romanization', 'wuu'},
+			{'[[Shanghainese]]&lt;br /&gt;Romanization', 'lmz'},
+			{'[[Wenzhounese]]&lt;br /&gt;[[Wenzhounese romanisation|Romanisation]]', 'ouji'},
+			{'[[Suzhounese]]', 'suz'},
+			}
+		},
+	['gan'] = {
+		['header'] = '[[Gan Chinese|Gan]]',
+		['t'] = {
+			{'Romanization', 'gan'},
+			}
+		},
+	['xiang'] = {
+		['header'] = '[[Xiang Chinese|Xiang]]',
+		['t'] = {
+			{'IPA', 'hsn'},
+			}
+		},
+	['hakka'] = {
+		['header'] = '[[Hakka Chinese|Hakka]]',
+		['t'] = {
+			{'[[Guangdong Romanization#Hakka|Romanization]]', 'h'},
+			{'[[Pha̍k-fa-sṳ]]', 'phfs'},
+			}
+		},
+	['yue cantonese'] = {
+		['header'] = '[[Cantonese|Yue: Cantonese]]',
+		['t'] = {
+			{'[[Yale romanization of Cantonese|Yale Romanization]]', 'y'},
+			{'[[Jyutping]]', 'j'},
+			{'[[Sidney Lau romanisation|Sidney Lau]]', 'sl'},
+			{'[[Guangdong Romanization|Canton Romanization]]', 'gd'},
+			{'[[Hong Kong Government Cantonese Romanisation|Hong Kong Romanisation]]', 'hk'},
+			{'[[Cantonese#Romanization|Macau Romanization]]', 'mo'},
+			{'[[Help:IPA/Cantonese|IPA]]', 'ci'},
+			}
+		},
+	['other yue'] = {
+		['header'] = '[[Yue Chinese|other Yue]]',
+		['t'] = {
+			{'[[Taishanese]]', 'toi'},
+			}
+		},
+	['southern min'] = {
+		['header'] = '[[Southern Min]]',
+		['t'] = {
+			{'[[Hokkien]] [[Pe̍h-ōe-jī|POJ]]', 'poj'},
+			{'[[Taiwanese Romanization System|Tâi-lô]]', 'tl'},
+			{'[[Bbánlám pìngyīm|Bbánlám Pìngyīm]]', 'bp'},
+			{'[[Teochew dialect|Teochew]] [[Guangdong Romanization#Teochew|Peng\'im]]', 'teo'},
+			{'[[Hainanese]] Romanization', 'hain'},
+			{'[[Leizhou Min|Leizhou]] Romanization', 'lizu'},
+			}
+		},
+	['eastern min'] = {
+		['header'] = '[[Eastern Min]]',
+		['t'] = {
+			{'[[Fuzhou dialect|Fuzhou]] [[Foochow Romanized|BUC]]', 'buc'},
+			}
+		},
+	['pu-xian min'] = {
+		['header'] = '[[Pu-Xian Min]]',
+		['t'] = {
+			{'[[Pu-Xian Min|Hinghwa]] [[Hinghwa Romanized|BUC]]', 'hhbuc'},
+			}
+		},
+	['northern min'] = {
+		['header'] = '[[Northern Min]]',
+		['t'] = {
+			{'[[Jian\'ou dialect|Jian\'ou]] [[Kienning Colloquial Romanized|Romanized]]', 'mblmc'},
+			}
+		},
+	['old mandarin'] = {
+		['header'] = '[[Old Mandarin]]',
+		['t'] = {
+			{'Romanized \'Phags-pa', 'phagspa-latin'},
+			}
+		},
+	['middle chinese'] = {
+		['header'] = '[[Middle Chinese]]',
+		['t'] = {
+			{'[[Middle Chinese]]', 'mc'},
+			{'[[Middle Chinese#Early Middle Chinese|Early Middle Chinese]]', 'emc'},
+			{'[[Middle Chinese#Late Middle Chinese|Late Middle Chinese]]', 'lmc'},
+			}
+		},
+	['old chinese'] = {
+		['header'] = '[[Old Chinese]]',
+		['t'] = {
+			{'[[Reconstructions_of_Old_Chinese#Baxter (1992)|Baxter (1992)]]', 'oc-b92'},
+			{'[[Reconstructions of Old Chinese#Baxter–Sagart (2014)|Baxter–Sagart (2014)]]', 'oc-bs'},
+			{'[[Reconstructions of Old Chinese#Zhengzhang (1981–1995)|Zhengzhang]]', 'oc-zz'},
+			}
+		},
+
+--------&lt; non-Chinese transcriptions &gt;--------
+
+	['arabic'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Arabic}}; doesn't use header
+		['t'] = {
+			{'[[Arabic chat alphabet|Chat]]', 'chat'},							-- TODO: standardize on lowercase parameter names
+			{'[[Arabic chat alphabet|Chat]]', 'Chat'},
+			{'[[ALA-LC romanization|ALA-LC]]', 'ala-lc'},
+			{'[[ALA-LC romanization|ALA-LC]]', 'ALA-LC'},
+			{'[[ISO 233|ISO]]', 'iso'},
+			{'[[ISO 233|ISO]]', 'ISO'},
+			{'[[DIN 31635|DIN]]', 'din'},
+			{'[[DIN 31635|DIN]]', 'DIN'},
+			}
+		},
+	['hokkien'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Hokkien}}; doesn't use header
+		['t'] = {
+			{'[[Taiwanese Romanization System|Tâi-lô]]', 'tl'},
+			{'[[Bbánlám pìngyīm|Bbánpìng]]', 'bp'},
+			{'[[Help:IPA for Hokkien|IPA]]', 'hokkienipa'},
+			}
+		},
+	['japanese'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Japanese}}; doesn't use header
+		['t'] = {
+			{'[[Romanization of Japanese|Romanization]]', 'romaji'},
+			{'[[Hepburn romanization|Revised Hepburn]]', 'revhep'},
+			{'[[Hepburn romanization|Traditional Hepburn]]', 'tradhep'},
+			{'[[Kunrei-shiki romanization|Kunrei-shiki]]', 'kunrei'},
+			{'[[Nihon-shiki romanization|Nihon-shiki]]', 'nihon'},
+			}
+		},
+	['korean'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Korean}}; doesn't use header
+		['t'] = {
+			{'[[Revised Romanization of Korean|Revised Romanization]]', 'rr'},
+			{'[[McCune–Reischauer]]', 'mr'},
+			{'[[Help:IPA/Korean|IPA]]', 'koreanipa'},
+			}
+		},
+	['mongolian'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Mongolian}}; doesn't use header
+		['t'] = {
+			{'[[SASM/GNC romanization#Mongolian|SASM/GNC]]', 'monr'},
+			}
+		},
+	['russian'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Russian}}; doesn't use header
+		['t'] = {
+			{'[[Scientific transliteration of Cyrillic|Scientific]]', 'scientific'},
+			{'[[Scientific transliteration of Cyrillic|Scientific]]', 'Scientific'},
+			{'[[ISO 9|ISO]]', 'iso'},
+			{'[[ISO 9|ISO]]', 'ISO'},
+			{'[[GOST 16876-71|GOST 71]]', 'gost'},
+			{'[[GOST 16876-71|GOST 71]]', 'GOST'},
+			{'[[BGN/PCGN romanization of Russian|BGN/PCGN]]', 'bgn/pcgn'},
+			{'[[BGN/PCGN romanization of Russian|BGN/PCGN]]', 'BGN/PGCN'},
+			}
+		},
+	['tibetan'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Tibetan}}; doesn't use header
+		['t'] = {
+			{'[[Wylie transliteration|Wylie]]', 'wylie'},
+			{'[[THL Simplified Phonetic Transcription|THL]]', 'thdl'},
+			{'[[Tibetan pinyin|Tibetan Pinyin]]', 'zwpy'},
+			{'[[Standard Tibetan|Lhasa]] [[Help:IPA/Tibetan|IPA]]', 'lhasa'},
+			}
+		},
+	['uyghur'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Uyghur}}; doesn't use header
+		['t'] = {
+			{'[[Uyghur Latin alphabet|Latin Yëziqi]]', 'uly'},
+			{'[[Uyghur New Script|Yengi Yeziⱪ]]', 'uyy'},
+			{'[[SASM/GNC romanization#Uyghur|SASM/GNC]]', 'sgs'},
+			{'[[Uyghur Cyrillic alphabet|Siril Yëziqi]]', 'usy'},
+			{'Uyghur [[Wikipedia: IPA|IPA]]', 'uipa'},
+			}
+		},
+	}
+
+
+--[[--------------------------&lt; I B O X _ Z H Z H _ E N U M _ P A R A M S &gt;------------------------------------
+]]
+
+local ibox_zhzh_enum_params = {													-- 'p', 'hp', 'xej' are special case enum parameters
+	'c', 't', 's', 'l', 'tp', 'w', 'mi', 'myr', 'psp', 'myale', 'gr', 'bpmf', 'mps',
+	'zh-dungan', 'sic', 'y', 'j', 'sl', 'gd', 'hk', 'mo', 'ci', 'toi', 'gan', 'wuu', 'ouji', 'suz',
+	'hsn', 'h', 'phfs', 'poj', 'tl', 'bp', 'buc', 'hhbuc', 'mblmc', 'lmz', 'teo', 'lizu', 'hain',
+	'mc', 'emc', 'lmc', 'oc-bs', 'oc-zz',
+	'oc-b92', 																	-- only supported in the first ibox zhzh; why?
+	'lao', 'khm', 'tet'															-- not supported by ibox zh/zh  why are they here?
+	}
+
+
+--[[--------------------------&lt; Z H _ H D R _ N A M E S &gt;------------------------------------------------------
+
+this table fixes an oddity in the ibox zh/zh header name parameters.  |chinese_header= for the first ibox zh/zh 
+gets filled from |name1= but the second gets its name from |altname= and then the third from |altname3=.
+All of these parameter names should be replaced with |chinese_header= followed by |chinese_header2= ... like all
+of the other enumerated parameters
+
+]]
+
+local zh_hdr_names = {
+	[2] = {'altname', 'Alternative Chinese name'},
+	[3] = {'altname3', 'Second alternative Chinese name'},
+	[4] = {'altname4', 'Third alternative Chinese name'},
+	[5] = {'altname5', 'Fourth alternative Chinese name'},
+	[6] = {'altname6', 'Fifth alternative Chinese name'},
+	};
+
+
+--[[--------------------------&lt; E X P O R T E D   T A B L E S &gt;------------------------------------------------
+]]
+
+return {
+	ibox_zhzh_enum_params = ibox_zhzh_enum_params,
+	keys = keys,
+	label_map = label_map,
+	transl_map = transl_map,
+	xscript = xscript,
+	zh_hdr_names = zh_hdr_names,
+	}</text>
+      <sha1>8oz4965k8rf12i5d0q7akektbz3zu1e</sha1>
+    </revision>
+    <revision>
+      <id>3079316</id>
+      <parentid>3079315</parentid>
+      <timestamp>2021-08-06T11:00:01Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Trappist the monk</username>
+        <id>0</id>
+      </contributor>
+      <origin>3079316</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="13243" sha1="8wk2623lmb40vlfsbyqiq0alpsn90z5" xml:space="preserve">--[[--------------------------&lt; L A B E L _ M A P &gt;------------------------------------------------------------
+
+Table to map |showflags= value to the |labeln= parameter value for {{Infobox}}
+
+TODO: convert showflag to a comma delimited list instead of these peculiar codes?
+
+]]
+ 
+local label_map = {
+	['bp'] = '[[Bbánlám pìngyīm|Bbánlám Pìngyīm]]',
+	['bpmf'] = '[[Bopomofo]]',
+	['gan'] = '[[Gan Chinese|Gan]]',
+	['gd'] = '[[Guangdong Romanization]]',
+	['h'] = '[[Guangdong Romanization#Hakka|Hakka]]',
+	['hsn'] = '[[Xiang Chinese|Xiang]]',
+	['j'] = '[[Jyutping]]',
+	['lmz'] = '[[Shanghainese]]&lt;br /&gt;[[Long-short (romanization)|Romanization]]',
+	['p'] = '[[Hanyu Pinyin]]',
+	['phfs'] = '[[Pha̍k-fa-sṳ]]',
+	['poj'] = '[[Hokkien]] [[Pe̍h-ōe-jī|POJ]]',
+	['psic'] = '[[Sichuanese Mandarin|Sichuanese]] [[Sichuanese Pinyin|Pinyin]]',
+	['tl'] = '[[Taiwanese Romanization System|Tâi-lô]]',
+	['toi'] = '[[Taishanese]]',
+	['tp'] = '[[Tongyong Pinyin]]',
+	['w'] = '[[Wade–Giles]]',
+	['wuu'] = '[[Wu Chinese|Wu]]',
+	['xej'] = '[[Xiao\'erjing]]',
+	['y'] = '[[Cantonese]] [[Yale romanization of Cantonese|Yale]]',
+	}
+
+
+--[[--------------------------&lt; T R A N S L _ M A P &gt;----------------------------------------------------------
+
+Table to map |showflags= value to an index into label_map for child infobox |labeln= value and to map |showflags=
+vale to the correct parameter for use in child infobox |datan= paramter
+
+Implementation deatils of |showflag= are in dispute see: Template_talk:Infobox_Chinese#Rfc_on_fixing_the_template_showflag
+
+linked conversation is at: Template_talk:Infobox_Chinese/Archive_4#Showflag broken
+
+]]
+
+local transl_map = {															-- maps |showflag= value to label from label_map table and data from matching parameter name
+	['bp'] = {['label1'] = 'bp', ['data1'] = 'bp'},
+	['bpmf'] = {['label1'] = 'bpmf', ['data1'] = 'bpmf'},
+	['gan'] = {['label1'] = 'gan', ['data1'] = 'gan'},
+	['gdp'] = {['label1'] = 'gd', ['data1'] = 'gd', ['label2'] = 'p', ['data2'] = 'p'},
+	['h'] = {['label1'] = 'h', ['data1'] = 'h'},
+	['hsn'] = {['label1'] = 'hsn', ['data1'] = 'hsn'},
+	['j'] = {['label1'] = 'j', ['data1'] = 'j'},
+	['jp'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'p', ['data2'] = 'p'},
+	['jy'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'y', ['data2'] = 'y'},
+	['jyp'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'y', ['data2'] = 'y', ['label3'] = 'p', ['data3'] = 'p'},
+	['lmz'] = {['label1'] = 'lmz', ['data1'] = 'lmz'},
+	['p'] = {['label1'] = 'p', ['data1'] = 'p'},
+	['phfs'] = {['label1'] = 'phfs', ['data1'] = 'phfs'},
+	['phsn'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'hsn', ['data2'] = 'hsn'},
+	['pj'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'j', ['data2'] = 'j'},
+	['poj'] = {['label1'] = 'poj', ['data1'] = 'poj'},
+	['psic'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'sic', ['data2'] = 'sic'},
+	['pwuu'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'wuu', ['data2'] = 'wuu'},
+	['py'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'y', ['data2'] = 'y'},
+	['tl'] = {['label1'] = 'tl', ['data1'] = 'tl'},
+	['toip'] = {['label1'] = 'toi', ['data1'] = 'toi', ['label2'] = 'p', ['data2'] = 'p'},
+	['tp'] = {['label1'] = 'tp', ['data1'] = 'tp'},
+	['wp'] = {['label1'] = 'w', ['data1'] = 'w', ['label2'] = 'p', ['data2'] = 'p'},
+	['wuu'] = {['label1'] = 'wuu', ['data1'] = 'wuu'},
+	['y'] = {['label1'] = 'y', ['data1'] = 'y'},
+	['yj'] = {['label1'] = 'y', ['data1'] = 'y', ['label2'] = 'j', ['data2'] = 'j'},
+	['xej'] = {
+		['label1'] = 'xej',
+		['data1'] = 'xej',				-- ???? what to do about this; template calls {{lang|zh-Arab|{{{xej}}}}} on this value
+		},
+	['xejp'] = {
+		['label1'] = 'xej',
+		['data1'] = 'xej',				-- ???? template does not call {{lang|zh-Arab|{{{xej}}}}} on this value; why?
+		['label2'] = 'p',
+		['data2'] = 'p'
+		},
+	}
+
+
+--[[--------------------------&lt; K E Y S &gt;----------------------------------------------------------------------
+]]
+
+local keys = {																	-- table of xscript table keys calls
+	ar = 'arabic',
+	bo = 'tibetan',
+	hokkien = 'hokkien',
+	ja = 'japanese',
+	ko = 'korean',
+	mn = 'mongolian',
+	ru = 'russian',
+	ug = 'uyghur',
+	}
+
+
+--[[--------------------------&lt; X S C R I P T &gt;----------------------------------------------------------------
+
+table that holds the various transcription headers and labels used by transcriptions()
+
+indexed in this table are lower case versions of the header display text without punctuation (if any)
+
+TODO: add support for transl transliteration standard parameter; akin to {{transl|lang code|standard code|text|italic=??}}
+
+]]
+
+local xscript = {
+	['standard mandarin'] = {													-- lower case version of the header display text
+		['header'] = '[[Standard Chinese|Standard Mandarin]]',					-- text to be displayed if headers are displayed
+		['t'] = {																-- table of labels and their associated data parameter
+			{'[[Hanyu Pinyin]]', 'p'},											-- label is [[Hanyu Pinyin]], data is taken from |p= parameter
+			{'[[Bopomofo]]','bpmf'},
+			{'[[Spelling in Gwoyeu Romatzyh|Gwoyeu Romatzyh]]', 'gr'},
+			{'[[Wade–Giles]]', 'w'},
+			{'[[Tongyong Pinyin]]', 'tp'},
+			{'[[Yale romanization of Mandarin|Yale Romanization]]', 'myr'},
+			{'[[Mandarin Phonetic Symbols II|MPS2]]', 'mps'},
+			{'[[Help:IPA/Mandarin|IPA]]', 'mi'}
+			}
+		},
+	['other mandarin'] = {
+		['header'] = '[[Mandarin Chinese|other Mandarin]]',
+		['t'] = {
+			{'[[Xiao\'erjing]]', 'xej'},
+			{'[[Dungan language|Dungan]]','zh-dungan'},
+			{'[[Sichuanese Mandarin|Sichuanese]] [[Sichuanese Pinyin|Pinyin]]', 'sic'},
+			}
+		},
+	['wu'] = {
+		['header'] = '[[Wu Chinese|Wu]]',
+		['t'] = {
+			{'[[Romanization of Wu Chinese|Romanization]]', 'wuu'},
+			{'[[Shanghainese]]&lt;br /&gt;Romanization', 'lmz'},
+			{'[[Wenzhounese]]&lt;br /&gt;[[Wenzhounese romanisation|Romanisation]]', 'ouji'},
+			{'[[Suzhounese]]', 'suz'},
+			}
+		},
+	['gan'] = {
+		['header'] = '[[Gan Chinese|Gan]]',
+		['t'] = {
+			{'Romanization', 'gan'},
+			}
+		},
+	['xiang'] = {
+		['header'] = '[[Xiang Chinese|Xiang]]',
+		['t'] = {
+			{'IPA', 'hsn'},
+			}
+		},
+	['hakka'] = {
+		['header'] = '[[Hakka Chinese|Hakka]]',
+		['t'] = {
+			{'[[Guangdong Romanization#Hakka|Romanization]]', 'h'},
+			{'[[Pha̍k-fa-sṳ]]', 'phfs'},
+			}
+		},
+	['yue cantonese'] = {
+		['header'] = '[[Cantonese|Yue: Cantonese]]',
+		['t'] = {
+			{'[[Yale romanization of Cantonese|Yale Romanization]]', 'y'},
+			{'[[Jyutping]]', 'j'},
+			{'[[Sidney Lau romanisation|Sidney Lau]]', 'sl'},
+			{'[[Guangdong Romanization|Canton Romanization]]', 'gd'},
+			{'[[Hong Kong Government Cantonese Romanisation|Hong Kong Romanisation]]', 'hk'},
+			{'[[Cantonese#Romanization|Macau Romanization]]', 'mo'},
+			{'[[Help:IPA/Cantonese|IPA]]', 'ci'},
+			}
+		},
+	['other yue'] = {
+		['header'] = '[[Yue Chinese|other Yue]]',
+		['t'] = {
+			{'[[Taishanese]]', 'toi'},
+			}
+		},
+	['southern min'] = {
+		['header'] = '[[Southern Min]]',
+		['t'] = {
+			{'[[Hokkien]] [[Pe̍h-ōe-jī|POJ]]', 'poj'},
+			{'[[Taiwanese Romanization System|Tâi-lô]]', 'tl'},
+			{'[[Bbánlám pìngyīm|Bbánlám Pìngyīm]]', 'bp'},
+			{'[[Teochew dialect|Teochew]] [[Guangdong Romanization#Teochew|Peng\'im]]', 'teo'},
+			{'[[Hainanese]] Romanization', 'hain'},
+			{'[[Leizhou Min|Leizhou]] Romanization', 'lizu'},
+			}
+		},
+	['eastern min'] = {
+		['header'] = '[[Eastern Min]]',
+		['t'] = {
+			{'[[Fuzhou dialect|Fuzhou]] [[Foochow Romanized|BUC]]', 'buc'},
+			}
+		},
+	['pu-xian min'] = {
+		['header'] = '[[Pu-Xian Min]]',
+		['t'] = {
+			{'[[Pu-Xian Min|Hinghwa]] [[Hinghwa Romanized|BUC]]', 'hhbuc'},
+			}
+		},
+	['northern min'] = {
+		['header'] = '[[Northern Min]]',
+		['t'] = {
+			{'[[Jian\'ou dialect|Jian\'ou]] [[Kienning Colloquial Romanized|Romanized]]', 'mblmc'},
+			}
+		},
+	['old mandarin'] = {
+		['header'] = '[[Old Mandarin]]',
+		['t'] = {
+			{'Romanized \'Phags-pa', 'phagspa-latin'},
+			}
+		},
+	['middle chinese'] = {
+		['header'] = '[[Middle Chinese]]',
+		['t'] = {
+			{'[[Middle Chinese]]', 'mc'},
+			{'[[Middle Chinese#Early Middle Chinese|Early Middle Chinese]]', 'emc'},
+			{'[[Middle Chinese#Late Middle Chinese|Late Middle Chinese]]', 'lmc'},
+			}
+		},
+	['old chinese'] = {
+		['header'] = '[[Old Chinese]]',
+		['t'] = {
+			{'[[Reconstructions_of_Old_Chinese#Baxter (1992)|Baxter (1992)]]', 'oc-b92'},
+			{'[[Reconstructions of Old Chinese#Baxter–Sagart (2014)|Baxter–Sagart (2014)]]', 'oc-bs'},
+			{'[[Reconstructions of Old Chinese#Zhengzhang (1981–1995)|Zhengzhang]]', 'oc-zz'},
+			}
+		},
+
+--------&lt; non-Chinese transcriptions &gt;--------
+
+	['arabic'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Arabic}}; doesn't use header
+		['t'] = {
+			{'[[Arabic chat alphabet|Chat]]', 'chat'},							-- TODO: standardize on lowercase parameter names
+			{'[[Arabic chat alphabet|Chat]]', 'Chat'},
+			{'[[ALA-LC romanization|ALA-LC]]', 'ala-lc'},
+			{'[[ALA-LC romanization|ALA-LC]]', 'ALA-LC'},
+			{'[[ISO 233|ISO]]', 'iso'},
+			{'[[ISO 233|ISO]]', 'ISO'},
+			{'[[DIN 31635|DIN]]', 'din'},
+			{'[[DIN 31635|DIN]]', 'DIN'},
+			}
+		},
+	['hokkien'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Hokkien}}; doesn't use header
+		['t'] = {
+			{'[[Taiwanese Romanization System|Tâi-lô]]', 'tl'},
+			{'[[Bbánlám pìngyīm|Bbánpìng]]', 'bp'},
+			{'[[Help:IPA for Hokkien|IPA]]', 'hokkienipa'},
+			}
+		},
+	['japanese'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Japanese}}; doesn't use header
+		['t'] = {
+			{'[[Romanization of Japanese|Romanization]]', 'romaji'},
+			{'[[Hepburn romanization|Revised Hepburn]]', 'revhep'},
+			{'[[Hepburn romanization|Traditional Hepburn]]', 'tradhep'},
+			{'[[Kunrei-shiki romanization|Kunrei-shiki]]', 'kunrei'},
+			{'[[Nihon-shiki romanization|Nihon-shiki]]', 'nihon'},
+			}
+		},
+	['korean'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Korean}}; doesn't use header
+		['t'] = {
+			{'[[Revised Romanization of Korean|Revised Romanization]]', 'rr'},
+			{'[[McCune–Reischauer]]', 'mr'},
+			{'[[Help:IPA/Korean|IPA]]', 'koreanipa'},
+			}
+		},
+	['mongolian'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Mongolian}}; doesn't use header
+		['t'] = {
+			{'[[SASM/GNC romanization#Mongolian|SASM/GNC]]', 'monr'},
+			}
+		},
+	['russian'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Russian}}; doesn't use header
+		['t'] = {
+			{'[[Scientific transliteration of Cyrillic|Scientific]]', 'scientific'},
+			{'[[Scientific transliteration of Cyrillic|Scientific]]', 'Scientific'},
+			{'[[ISO 9|ISO]]', 'iso'},
+			{'[[ISO 9|ISO]]', 'ISO'},
+			{'[[GOST 16876-71|GOST 71]]', 'gost'},
+			{'[[GOST 16876-71|GOST 71]]', 'GOST'},
+			{'[[BGN/PCGN romanization of Russian|BGN/PCGN]]', 'bgn/pcgn'},
+			{'[[BGN/PCGN romanization of Russian|BGN/PCGN]]', 'BGN/PGCN'},
+			}
+		},
+	['tibetan'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Tibetan}}; doesn't use header
+		['t'] = {
+			{'[[Wylie transliteration|Wylie]]', 'wylie'},
+			{'[[THL Simplified Phonetic Transcription|THL]]', 'thdl'},
+			{'[[Tibetan pinyin|Tibetan Pinyin]]', 'zwpy'},
+			{'[[Standard Tibetan|Lhasa]] [[Help:IPA/Tibetan|IPA]]', 'lhasa'},
+			}
+		},
+	['uyghur'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Uyghur}}; doesn't use header
+		['t'] = {
+			{'[[Uyghur Latin alphabet|Latin Yëziqi]]', 'uly'},
+			{'[[Uyghur New Script|Yengi Yeziⱪ]]', 'uyy'},
+			{'[[SASM/GNC romanization#Uyghur|SASM/GNC]]', 'sgs'},
+			{'[[Uyghur Cyrillic alphabet|Siril Yëziqi]]', 'usy'},
+			{'Uyghur [[Wikipedia: IPA|IPA]]', 'uipa'},
+			}
+		},
+	}
+
+
+--[[--------------------------&lt; I B O X _ Z H Z H _ E N U M _ P A R A M S &gt;------------------------------------
+]]
+
+local ibox_zhzh_enum_params = {													-- 'p', 'hp', 'xej' are special case enum parameters
+	'c', 't', 's', 'l', 'tp', 'w', 'mi', 'myr', 'psp', 'myale', 'gr', 'bpmf', 'mps',
+	'zh-dungan', 'sic', 'y', 'j', 'sl', 'gd', 'hk', 'mo', 'ci', 'toi', 'gan', 'wuu', 'ouji', 'suz',
+	'hsn', 'h', 'phfs', 'poj', 'tl', 'bp', 'buc', 'hhbuc', 'mblmc', 'lmz', 'teo', 'lizu', 'hain',
+	'mc', 'emc', 'lmc', 'oc-bs', 'oc-zz',
+	'oc-b92', 																	-- only supported in the first ibox zhzh; why?
+	'lao', 'khm', 'tet'															-- not supported by ibox zh/zh  why are they here?
+	}
+
+
+--[[--------------------------&lt; Z H _ H D R _ N A M E S &gt;------------------------------------------------------
+
+this table fixes an oddity in the ibox zh/zh header name parameters.  |chinese_header= for the first ibox zh/zh 
+gets filled from |name1= but the second gets its name from |altname= and then the third from |altname3=.
+All of these parameter names should be replaced with |chinese_header= followed by |chinese_header2= ... like all
+of the other enumerated parameters
+
+]]
+
+local zh_hdr_names = {
+	[2] = {'altname', 'Alternative Chinese name'},
+	[3] = {'altname3', 'Second alternative Chinese name'},
+	[4] = {'altname4', 'Third alternative Chinese name'},
+	[5] = {'altname5', 'Fourth alternative Chinese name'},
+	[6] = {'altname6', 'Fifth alternative Chinese name'},
+	};
+
+
+--[[--------------------------&lt; E X P O R T E D   T A B L E S &gt;------------------------------------------------
+]]
+
+return {
+	ibox_zhzh_enum_params = ibox_zhzh_enum_params,
+	keys = keys,
+	label_map = label_map,
+	transl_map = transl_map,
+	xscript = xscript,
+	zh_hdr_names = zh_hdr_names,
+	}</text>
+      <sha1>8wk2623lmb40vlfsbyqiq0alpsn90z5</sha1>
+    </revision>
+    <revision>
+      <id>3079317</id>
+      <parentid>3079316</parentid>
+      <timestamp>2025-01-29T21:55:46Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <comment>Copy from sandbox per request</comment>
+      <origin>3079317</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="13320" sha1="rg83gpo6qewmwajqi7f18k01pkwr28v" xml:space="preserve">--[[--------------------------&lt; L A B E L _ M A P &gt;------------------------------------------------------------
+
+Table to map |showflags= value to the |labeln= parameter value for {{Infobox}}
+
+TODO: convert showflag to a comma delimited list instead of these peculiar codes?
+
+]]
+ 
+local label_map = {
+	['bp'] = '[[Bbánlám pìngyīm|Bbánlám Pìngyīm]]',
+	['bpmf'] = '[[Bopomofo]]',
+	['gan'] = '[[Gan Chinese|Gan]]',
+	['gd'] = '[[Guangdong Romanization]]',
+	['h'] = '[[Guangdong Romanization#Hakka|Hakka]]',
+	['hsn'] = '[[Xiang Chinese|Xiang]]',
+	['j'] = '[[Jyutping]]',
+	['p'] = '[[Hanyu Pinyin]]',
+	['phfs'] = '[[Pha̍k-fa-sṳ]]',
+	['poj'] = '[[Hokkien]] [[Pe̍h-ōe-jī|POJ]]',
+	['psic'] = '[[Sichuanese Mandarin|Sichuanese]] [[Sichuanese Pinyin|Pinyin]]',
+	['tl'] = '[[Taiwanese Romanization System|Tâi-lô]]',
+	['toi'] = '[[Taishanese]]',
+	['tp'] = '[[Tongyong Pinyin]]',
+	['w'] = '[[Wade–Giles]]',
+	['wgn'] = '[[Romanization of Wu Chinese|Wungiu]]',
+	['wuu'] = '[[Wu Chinese|Wu]]',
+	['xej'] = '[[Xiao\'erjing]]',
+	['y'] = '[[Cantonese]] [[Yale romanization of Cantonese|Yale]]',
+	}
+
+
+--[[--------------------------&lt; T R A N S L _ M A P &gt;----------------------------------------------------------
+
+Table to map |showflags= value to an index into label_map for child infobox |labeln= value and to map |showflags=
+vale to the correct parameter for use in child infobox |datan= paramter
+
+Implementation deatils of |showflag= are in dispute see: Template_talk:Infobox_Chinese#Rfc_on_fixing_the_template_showflag
+
+linked conversation is at: Template_talk:Infobox_Chinese/Archive_4#Showflag broken
+
+]]
+
+local transl_map = {															-- maps |showflag= value to label from label_map table and data from matching parameter name
+	['bp'] = {['label1'] = 'bp', ['data1'] = 'bp'},
+	['bpmf'] = {['label1'] = 'bpmf', ['data1'] = 'bpmf'},
+	['gan'] = {['label1'] = 'gan', ['data1'] = 'gan'},
+	['gdp'] = {['label1'] = 'gd', ['data1'] = 'gd', ['label2'] = 'p', ['data2'] = 'p'},
+	['h'] = {['label1'] = 'h', ['data1'] = 'h'},
+	['hsn'] = {['label1'] = 'hsn', ['data1'] = 'hsn'},
+	['j'] = {['label1'] = 'j', ['data1'] = 'j'},
+	['jp'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'p', ['data2'] = 'p'},
+	['jy'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'y', ['data2'] = 'y'},
+	['jyp'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'y', ['data2'] = 'y', ['label3'] = 'p', ['data3'] = 'p'},
+	['p'] = {['label1'] = 'p', ['data1'] = 'p'},
+	['phfs'] = {['label1'] = 'phfs', ['data1'] = 'phfs'},
+	['phsn'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'hsn', ['data2'] = 'hsn'},
+	['pj'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'j', ['data2'] = 'j'},
+	['poj'] = {['label1'] = 'poj', ['data1'] = 'poj'},
+	['psic'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'sic', ['data2'] = 'sic'},
+	['pwuu'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'wuu', ['data2'] = 'wuu'},
+	['py'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'y', ['data2'] = 'y'},
+	['tl'] = {['label1'] = 'tl', ['data1'] = 'tl'},
+	['toip'] = {['label1'] = 'toi', ['data1'] = 'toi', ['label2'] = 'p', ['data2'] = 'p'},
+	['tp'] = {['label1'] = 'tp', ['data1'] = 'tp'},
+	['wp'] = {['label1'] = 'w', ['data1'] = 'w', ['label2'] = 'p', ['data2'] = 'p'},
+	['wgn'] = {['label1'] = 'wgn', ['data1'] = 'wgn'},
+	['wuu'] = {['label1'] = 'wuu', ['data1'] = 'wuu'},
+	['y'] = {['label1'] = 'y', ['data1'] = 'y'},
+	['yj'] = {['label1'] = 'y', ['data1'] = 'y', ['label2'] = 'j', ['data2'] = 'j'},
+	['xej'] = {
+		['label1'] = 'xej',
+		['data1'] = 'xej',				-- ???? what to do about this; template calls {{lang|zh-Arab|{{{xej}}}}} on this value
+		},
+	['xejp'] = {
+		['label1'] = 'xej',
+		['data1'] = 'xej',				-- ???? template does not call {{lang|zh-Arab|{{{xej}}}}} on this value; why?
+		['label2'] = 'p',
+		['data2'] = 'p'
+		},
+	}
+
+
+--[[--------------------------&lt; K E Y S &gt;----------------------------------------------------------------------
+]]
+
+local keys = {																	-- table of xscript table keys calls
+	ar = 'arabic',
+	bo = 'tibetan',
+	hokkien = 'hokkien',
+	ja = 'japanese',
+	ko = 'korean',
+	mn = 'mongolian',
+	ru = 'russian',
+	ug = 'uyghur',
+	}
+
+
+--[[--------------------------&lt; X S C R I P T &gt;----------------------------------------------------------------
+
+table that holds the various transcription headers and labels used by transcriptions()
+
+indexed in this table are lower case versions of the header display text without punctuation (if any)
+
+TODO: add support for transl transliteration standard parameter; akin to {{transl|lang code|standard code|text|italic=??}}
+
+]]
+
+local xscript = {
+	['standard mandarin'] = {													-- lower case version of the header display text
+		['header'] = '[[Standard Chinese|Standard Mandarin]]',					-- text to be displayed if headers are displayed
+		['t'] = {																-- table of labels and their associated data parameter
+			{'[[Hanyu Pinyin]]', 'p'},											-- label is [[Hanyu Pinyin]], data is taken from |p= parameter
+			{'[[Bopomofo]]','bpmf'},
+			{'[[Spelling in Gwoyeu Romatzyh|Gwoyeu Romatzyh]]', 'gr'},
+			{'[[Wade–Giles]]', 'w'},
+			{'[[Tongyong Pinyin]]', 'tp'},
+			{'[[Yale romanization of Mandarin|Yale Romanization]]', 'myr'},
+			{'[[Mandarin Phonetic Symbols II|MPS2]]', 'mps'},
+			{'[[Help:IPA/Mandarin|IPA]]', 'mi'}
+			}
+		},
+	['other mandarin'] = {
+		['header'] = '[[Mandarin Chinese|other Mandarin]]',
+		['t'] = {
+			{'[[Xiao\'erjing]]', 'xej'},
+			{'[[Dungan language|Dungan]]','zh-dungan'},
+			{'[[Sichuanese Mandarin|Sichuanese]] [[Sichuanese Pinyin|Pinyin]]', 'sic'},
+			}
+		},
+	['wu'] = {
+		['header'] = '[[Wu Chinese|Wu]]',
+		['t'] = {
+			{'[[Romanization of Wu Chinese|Wugniu]]', 'wgn'},
+			{'[[Romanization of Wu Chinese|Romanization]]', 'wuu'},
+			{'[[Wenzhounese]]&lt;br /&gt;[[Wenzhounese romanisation|Romanisation]]', 'ouji'},
+			{'[[Suzhounese]]', 'suz'},
+			{'[Help:IPA/Wu Chinese|IPA]]', 'wi'},
+			}
+		},
+	['gan'] = {
+		['header'] = '[[Gan Chinese|Gan]]',
+		['t'] = {
+			{'Romanization', 'gan'},
+			}
+		},
+	['xiang'] = {
+		['header'] = '[[Xiang Chinese|Xiang]]',
+		['t'] = {
+			{'IPA', 'hsn'},
+			}
+		},
+	['hakka'] = {
+		['header'] = '[[Hakka Chinese|Hakka]]',
+		['t'] = {
+			{'[[Guangdong Romanization#Hakka|Romanization]]', 'h'},
+			{'[[Pha̍k-fa-sṳ]]', 'phfs'},
+			}
+		},
+	['yue cantonese'] = {
+		['header'] = '[[Cantonese|Yue: Cantonese]]',
+		['t'] = {
+			{'[[Yale romanization of Cantonese|Yale Romanization]]', 'y'},
+			{'[[Jyutping]]', 'j'},
+			{'[[Sidney Lau romanisation|Sidney Lau]]', 'sl'},
+			{'[[Guangdong Romanization|Canton Romanization]]', 'gd'},
+			{'[[Hong Kong Government Cantonese Romanisation|Hong Kong Romanisation]]', 'hk'},
+			{'[[Cantonese#Romanization|Macau Romanization]]', 'mo'},
+			{'[[Help:IPA/Cantonese|IPA]]', 'ci'},
+			}
+		},
+	['other yue'] = {
+		['header'] = '[[Yue Chinese|other Yue]]',
+		['t'] = {
+			{'[[Taishanese]]', 'toi'},
+			}
+		},
+	['southern min'] = {
+		['header'] = '[[Southern Min]]',
+		['t'] = {
+			{'[[Hokkien]] [[Pe̍h-ōe-jī|POJ]]', 'poj'},
+			{'[[Taiwanese Romanization System|Tâi-lô]]', 'tl'},
+			{'[[Bbánlám pìngyīm|Bbánlám Pìngyīm]]', 'bp'},
+			{'[[Teochew dialect|Teochew]] [[Guangdong Romanization#Teochew|Peng\'im]]', 'teo'},
+			{'[[Hainanese]] Romanization', 'hain'},
+			{'[[Leizhou Min|Leizhou]] Romanization', 'lizu'},
+			}
+		},
+	['eastern min'] = {
+		['header'] = '[[Eastern Min]]',
+		['t'] = {
+			{'[[Fuzhou dialect|Fuzhou]] [[Foochow Romanized|BUC]]', 'buc'},
+			}
+		},
+	['pu-xian min'] = {
+		['header'] = '[[Pu-Xian Min]]',
+		['t'] = {
+			{'[[Pu-Xian Min|Hinghwa]] [[Hinghwa Romanized|BUC]]', 'hhbuc'},
+			}
+		},
+	['northern min'] = {
+		['header'] = '[[Northern Min]]',
+		['t'] = {
+			{'[[Jian\'ou dialect|Jian\'ou]] [[Kienning Colloquial Romanized|Romanized]]', 'mblmc'},
+			}
+		},
+	['old mandarin'] = {
+		['header'] = '[[Old Mandarin]]',
+		['t'] = {
+			{'Romanized \'Phags-pa', 'phagspa-latin'},
+			}
+		},
+	['middle chinese'] = {
+		['header'] = '[[Middle Chinese]]',
+		['t'] = {
+			{'[[Middle Chinese]]', 'mc'},
+			{'[[Middle Chinese#Early Middle Chinese|Early Middle Chinese]]', 'emc'},
+			{'[[Middle Chinese#Late Middle Chinese|Late Middle Chinese]]', 'lmc'},
+			}
+		},
+	['old chinese'] = {
+		['header'] = '[[Old Chinese]]',
+		['t'] = {
+			{'[[Reconstructions_of_Old_Chinese#Baxter (1992)|Baxter (1992)]]', 'oc-b92'},
+			{'[[Reconstructions of Old Chinese#Baxter–Sagart (2014)|Baxter–Sagart (2014)]]', 'oc-bs'},
+			{'[[Reconstructions of Old Chinese#Zhengzhang (1981–1995)|Zhengzhang]]', 'oc-zz'},
+			}
+		},
+
+--------&lt; non-Chinese transcriptions &gt;--------
+
+	['arabic'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Arabic}}; doesn't use header
+		['t'] = {
+			{'[[Arabic chat alphabet|Chat]]', 'chat'},							-- TODO: standardize on lowercase parameter names
+			{'[[Arabic chat alphabet|Chat]]', 'Chat'},
+			{'[[ALA-LC romanization|ALA-LC]]', 'ala-lc'},
+			{'[[ALA-LC romanization|ALA-LC]]', 'ALA-LC'},
+			{'[[ISO 233|ISO]]', 'iso'},
+			{'[[ISO 233|ISO]]', 'ISO'},
+			{'[[DIN 31635|DIN]]', 'din'},
+			{'[[DIN 31635|DIN]]', 'DIN'},
+			}
+		},
+	['hokkien'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Hokkien}}; doesn't use header
+		['t'] = {
+			{'[[Taiwanese Romanization System|Tâi-lô]]', 'tl'},
+			{'[[Bbánlám pìngyīm|Bbánpìng]]', 'bp'},
+			{'[[Help:IPA for Hokkien|IPA]]', 'hokkienipa'},
+			}
+		},
+	['japanese'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Japanese}}; doesn't use header
+		['t'] = {
+			{'[[Romanization of Japanese|Romanization]]', 'romaji'},
+			{'[[Hepburn romanization|Revised Hepburn]]', 'revhep'},
+			{'[[Hepburn romanization|Traditional Hepburn]]', 'tradhep'},
+			{'[[Kunrei-shiki romanization|Kunrei-shiki]]', 'kunrei'},
+			{'[[Nihon-shiki romanization|Nihon-shiki]]', 'nihon'},
+			}
+		},
+	['korean'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Korean}}; doesn't use header
+		['t'] = {
+			{'[[Revised Romanization of Korean|Revised Romanization]]', 'rr'},
+			{'[[McCune–Reischauer]]', 'mr'},
+			{'[[Yale romanization of Korean|Yale]]', 'kyale'},
+			{'[[Help:IPA/Korean|IPA]]', 'koreanipa'},
+			}
+		},
+	['mongolian'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Mongolian}}; doesn't use header
+		['t'] = {
+			{'[[SASM/GNC romanization#Mongolian|SASM/GNC]]', 'monr'},
+			}
+		},
+	['russian'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Russian}}; doesn't use header
+		['t'] = {
+			{'[[Scientific transliteration of Cyrillic|Scientific]]', 'scientific'},
+			{'[[Scientific transliteration of Cyrillic|Scientific]]', 'Scientific'},
+			{'[[ISO 9|ISO]]', 'iso'},
+			{'[[ISO 9|ISO]]', 'ISO'},
+			{'[[GOST 16876-71|GOST 71]]', 'gost'},
+			{'[[GOST 16876-71|GOST 71]]', 'GOST'},
+			{'[[BGN/PCGN romanization of Russian|BGN/PCGN]]', 'bgn/pcgn'},
+			{'[[BGN/PCGN romanization of Russian|BGN/PCGN]]', 'BGN/PGCN'},
+			}
+		},
+	['tibetan'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Tibetan}}; doesn't use header
+		['t'] = {
+			{'[[Wylie transliteration|Wylie]]', 'wylie'},
+			{'[[THL Simplified Phonetic Transcription|THL]]', 'thdl'},
+			{'[[Tibetan pinyin|Tibetan Pinyin]]', 'zwpy'},
+			{'[[Standard Tibetan|Lhasa]] [[Help:IPA/Tibetan|IPA]]', 'lhasa'},
+			}
+		},
+	['uyghur'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Uyghur}}; doesn't use header
+		['t'] = {
+			{'[[Uyghur Latin alphabet|Latin Yëziqi]]', 'uly'},
+			{'[[Uyghur New Script|Yengi Yeziⱪ]]', 'uyy'},
+			{'[[SASM/GNC romanization#Uyghur|SASM/GNC]]', 'sgs'},
+			{'[[Uyghur Cyrillic alphabet|Siril Yëziqi]]', 'usy'},
+			{'Uyghur [[Wikipedia: IPA|IPA]]', 'uipa'},
+			}
+		},
+	}
+
+
+--[[--------------------------&lt; I B O X _ Z H Z H _ E N U M _ P A R A M S &gt;------------------------------------
+]]
+
+local ibox_zhzh_enum_params = {													-- 'p', 'hp', 'xej' are special case enum parameters
+	'c', 't', 's', 'l', 'tp', 'w', 'mi', 'myr', 'psp', 'myale', 'gr', 'bpmf', 'mps',
+	'zh-dungan', 'sic', 'y', 'j', 'sl', 'gd', 'hk', 'mo', 'ci', 'toi', 'gan', 'wgn', 'wuu', 'ouji', 'suz', 'wi',
+	'hsn', 'h', 'phfs', 'poj', 'tl', 'bp', 'buc', 'hhbuc', 'mblmc', 'teo', 'lizu', 'hain',
+	'mc', 'emc', 'lmc', 'oc-bs', 'oc-zz',
+	'oc-b92', 																	-- only supported in the first ibox zhzh; why?
+	'lao', 'khm', 'tet'															-- not supported by ibox zh/zh  why are they here?
+	}
+
+
+--[[--------------------------&lt; Z H _ H D R _ N A M E S &gt;------------------------------------------------------
+
+this table fixes an oddity in the ibox zh/zh header name parameters.  |chinese_header= for the first ibox zh/zh 
+gets filled from |name1= but the second gets its name from |altname= and then the third from |altname3=.
+All of these parameter names should be replaced with |chinese_header= followed by |chinese_header2= ... like all
+of the other enumerated parameters
+
+]]
+
+local zh_hdr_names = {
+	[2] = {'altname', 'Alternative Chinese name'},
+	[3] = {'altname3', 'Second alternative Chinese name'},
+	[4] = {'altname4', 'Third alternative Chinese name'},
+	[5] = {'altname5', 'Fourth alternative Chinese name'},
+	[6] = {'altname6', 'Fifth alternative Chinese name'},
+	};
+
+
+--[[--------------------------&lt; E X P O R T E D   T A B L E S &gt;------------------------------------------------
+]]
+
+return {
+	ibox_zhzh_enum_params = ibox_zhzh_enum_params,
+	keys = keys,
+	label_map = label_map,
+	transl_map = transl_map,
+	xscript = xscript,
+	zh_hdr_names = zh_hdr_names,
+	}</text>
+      <sha1>rg83gpo6qewmwajqi7f18k01pkwr28v</sha1>
+    </revision>
+    <revision>
+      <id>3079318</id>
+      <parentid>3079317</parentid>
+      <timestamp>2025-05-28T17:24:03Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Trappist the monk</username>
+        <id>0</id>
+      </contributor>
+      <comment>ce;</comment>
+      <origin>3079318</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="13322" sha1="oxpixndbgbfyb5fzjw9nndoyh8thfgz" xml:space="preserve">--[[--------------------------&lt; L A B E L _ M A P &gt;------------------------------------------------------------
+
+Table to map |showflags= value to the |labeln= parameter value for {{Infobox}}
+
+TODO: convert showflag to a comma delimited list instead of these peculiar codes?
+
+]]
+ 
+local label_map = {
+	['bp'] = '[[Bbánlám pìngyīm|Bbánlám Pìngyīm]]',
+	['bpmf'] = '[[Bopomofo]]',
+	['gan'] = '[[Gan Chinese|Gan]]',
+	['gd'] = '[[Guangdong Romanization]]',
+	['h'] = '[[Guangdong Romanization#Hakka|Hakka]]',
+	['hsn'] = '[[Xiang Chinese|Xiang]]',
+	['j'] = '[[Jyutping]]',
+	['p'] = '[[Hanyu Pinyin]]',
+	['phfs'] = '[[Pha̍k-fa-sṳ]]',
+	['poj'] = '[[Hokkien]] [[Pe̍h-ōe-jī|POJ]]',
+	['psic'] = '[[Sichuanese Mandarin|Sichuanese]] [[Sichuanese Pinyin|Pinyin]]',
+	['tl'] = '[[Taiwanese Romanization System|Tâi-lô]]',
+	['toi'] = '[[Taishanese]]',
+	['tp'] = '[[Tongyong Pinyin]]',
+	['w'] = '[[Wade–Giles]]',
+	['wgn'] = '[[Romanization of Wu Chinese|Wungiu]]',
+	['wuu'] = '[[Wu Chinese|Wu]]',
+	['xej'] = '[[Xiao\'erjing]]',
+	['y'] = '[[Cantonese]] [[Yale romanization of Cantonese|Yale]]',
+	}
+
+
+--[[--------------------------&lt; T R A N S L _ M A P &gt;----------------------------------------------------------
+
+Table to map |showflags= value to an index into label_map for child infobox |labeln= value and to map |showflags=
+value to the correct parameter for use in child infobox |datan= parameter
+
+Implementation deatils of |showflag= are in dispute see: Template_talk:Infobox_Chinese#Rfc_on_fixing_the_template_showflag
+
+linked conversation is at: Template_talk:Infobox_Chinese/Archive_4#Showflag broken
+
+]]
+
+local transl_map = {															-- maps |showflag= value to label from label_map table and data from matching parameter name
+	['bp'] = {['label1'] = 'bp', ['data1'] = 'bp'},
+	['bpmf'] = {['label1'] = 'bpmf', ['data1'] = 'bpmf'},
+	['gan'] = {['label1'] = 'gan', ['data1'] = 'gan'},
+	['gdp'] = {['label1'] = 'gd', ['data1'] = 'gd', ['label2'] = 'p', ['data2'] = 'p'},
+	['h'] = {['label1'] = 'h', ['data1'] = 'h'},
+	['hsn'] = {['label1'] = 'hsn', ['data1'] = 'hsn'},
+	['j'] = {['label1'] = 'j', ['data1'] = 'j'},
+	['jp'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'p', ['data2'] = 'p'},
+	['jy'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'y', ['data2'] = 'y'},
+	['jyp'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'y', ['data2'] = 'y', ['label3'] = 'p', ['data3'] = 'p'},
+	['p'] = {['label1'] = 'p', ['data1'] = 'p'},
+	['phfs'] = {['label1'] = 'phfs', ['data1'] = 'phfs'},
+	['phsn'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'hsn', ['data2'] = 'hsn'},
+	['pj'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'j', ['data2'] = 'j'},
+	['poj'] = {['label1'] = 'poj', ['data1'] = 'poj'},
+	['psic'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'sic', ['data2'] = 'sic'},
+	['pwuu'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'wuu', ['data2'] = 'wuu'},
+	['py'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'y', ['data2'] = 'y'},
+	['tl'] = {['label1'] = 'tl', ['data1'] = 'tl'},
+	['toip'] = {['label1'] = 'toi', ['data1'] = 'toi', ['label2'] = 'p', ['data2'] = 'p'},
+	['tp'] = {['label1'] = 'tp', ['data1'] = 'tp'},
+	['wp'] = {['label1'] = 'w', ['data1'] = 'w', ['label2'] = 'p', ['data2'] = 'p'},
+	['wgn'] = {['label1'] = 'wgn', ['data1'] = 'wgn'},
+	['wuu'] = {['label1'] = 'wuu', ['data1'] = 'wuu'},
+	['y'] = {['label1'] = 'y', ['data1'] = 'y'},
+	['yj'] = {['label1'] = 'y', ['data1'] = 'y', ['label2'] = 'j', ['data2'] = 'j'},
+	['xej'] = {
+		['label1'] = 'xej',
+		['data1'] = 'xej',				-- ???? what to do about this; template calls {{lang|zh-Arab|{{{xej}}}}} on this value
+		},
+	['xejp'] = {
+		['label1'] = 'xej',
+		['data1'] = 'xej',				-- ???? template does not call {{lang|zh-Arab|{{{xej}}}}} on this value; why?
+		['label2'] = 'p',
+		['data2'] = 'p'
+		},
+	}
+
+
+--[[--------------------------&lt; K E Y S &gt;----------------------------------------------------------------------
+]]
+
+local keys = {																	-- table of xscript table keys calls
+	ar = 'arabic',
+	bo = 'tibetan',
+	hokkien = 'hokkien',
+	ja = 'japanese',
+	ko = 'korean',
+	mn = 'mongolian',
+	ru = 'russian',
+	ug = 'uyghur',
+	}
+
+
+--[[--------------------------&lt; X S C R I P T &gt;----------------------------------------------------------------
+
+table that holds the various transcription headers and labels used by transcriptions()
+
+indexed in this table are lower case versions of the header display text without punctuation (if any)
+
+TODO: add support for transl transliteration standard parameter; akin to {{transl|lang code|standard code|text|italic=??}}
+
+]]
+
+local xscript = {
+	['standard mandarin'] = {													-- lower case version of the header display text
+		['header'] = '[[Standard Chinese|Standard Mandarin]]',					-- text to be displayed if headers are displayed
+		['t'] = {																-- table of labels and their associated data parameter
+			{'[[Hanyu Pinyin]]', 'p'},											-- label is [[Hanyu Pinyin]], data is taken from |p= parameter
+			{'[[Bopomofo]]','bpmf'},
+			{'[[Spelling in Gwoyeu Romatzyh|Gwoyeu Romatzyh]]', 'gr'},
+			{'[[Wade–Giles]]', 'w'},
+			{'[[Tongyong Pinyin]]', 'tp'},
+			{'[[Yale romanization of Mandarin|Yale Romanization]]', 'myr'},
+			{'[[Mandarin Phonetic Symbols II|MPS2]]', 'mps'},
+			{'[[Help:IPA/Mandarin|IPA]]', 'mi'}
+			}
+		},
+	['other mandarin'] = {
+		['header'] = '[[Mandarin Chinese|other Mandarin]]',
+		['t'] = {
+			{'[[Xiao\'erjing]]', 'xej'},
+			{'[[Dungan language|Dungan]]','zh-dungan'},
+			{'[[Sichuanese Mandarin|Sichuanese]] [[Sichuanese Pinyin|Pinyin]]', 'sic'},
+			}
+		},
+	['wu'] = {
+		['header'] = '[[Wu Chinese|Wu]]',
+		['t'] = {
+			{'[[Romanization of Wu Chinese|Wugniu]]', 'wgn'},
+			{'[[Romanization of Wu Chinese|Romanization]]', 'wuu'},
+			{'[[Wenzhounese]]&lt;br /&gt;[[Wenzhounese romanisation|Romanisation]]', 'ouji'},
+			{'[[Suzhounese]]', 'suz'},
+			{'[Help:IPA/Wu Chinese|IPA]]', 'wi'},
+			}
+		},
+	['gan'] = {
+		['header'] = '[[Gan Chinese|Gan]]',
+		['t'] = {
+			{'Romanization', 'gan'},
+			}
+		},
+	['xiang'] = {
+		['header'] = '[[Xiang Chinese|Xiang]]',
+		['t'] = {
+			{'IPA', 'hsn'},
+			}
+		},
+	['hakka'] = {
+		['header'] = '[[Hakka Chinese|Hakka]]',
+		['t'] = {
+			{'[[Guangdong Romanization#Hakka|Romanization]]', 'h'},
+			{'[[Pha̍k-fa-sṳ]]', 'phfs'},
+			}
+		},
+	['yue cantonese'] = {
+		['header'] = '[[Cantonese|Yue: Cantonese]]',
+		['t'] = {
+			{'[[Yale romanization of Cantonese|Yale Romanization]]', 'y'},
+			{'[[Jyutping]]', 'j'},
+			{'[[Sidney Lau romanisation|Sidney Lau]]', 'sl'},
+			{'[[Guangdong Romanization|Canton Romanization]]', 'gd'},
+			{'[[Hong Kong Government Cantonese Romanisation|Hong Kong Romanisation]]', 'hk'},
+			{'[[Cantonese#Romanization|Macau Romanization]]', 'mo'},
+			{'[[Help:IPA/Cantonese|IPA]]', 'ci'},
+			}
+		},
+	['other yue'] = {
+		['header'] = '[[Yue Chinese|other Yue]]',
+		['t'] = {
+			{'[[Taishanese]]', 'toi'},
+			}
+		},
+	['southern min'] = {
+		['header'] = '[[Southern Min]]',
+		['t'] = {
+			{'[[Hokkien]] [[Pe̍h-ōe-jī|POJ]]', 'poj'},
+			{'[[Taiwanese Romanization System|Tâi-lô]]', 'tl'},
+			{'[[Bbánlám pìngyīm|Bbánlám Pìngyīm]]', 'bp'},
+			{'[[Teochew dialect|Teochew]] [[Guangdong Romanization#Teochew|Peng\'im]]', 'teo'},
+			{'[[Hainanese]] Romanization', 'hain'},
+			{'[[Leizhou Min|Leizhou]] Romanization', 'lizu'},
+			}
+		},
+	['eastern min'] = {
+		['header'] = '[[Eastern Min]]',
+		['t'] = {
+			{'[[Fuzhou dialect|Fuzhou]] [[Foochow Romanized|BUC]]', 'buc'},
+			}
+		},
+	['pu-xian min'] = {
+		['header'] = '[[Pu-Xian Min]]',
+		['t'] = {
+			{'[[Pu-Xian Min|Hinghwa]] [[Hinghwa Romanized|BUC]]', 'hhbuc'},
+			}
+		},
+	['northern min'] = {
+		['header'] = '[[Northern Min]]',
+		['t'] = {
+			{'[[Jian\'ou dialect|Jian\'ou]] [[Kienning Colloquial Romanized|Romanized]]', 'mblmc'},
+			}
+		},
+	['old mandarin'] = {
+		['header'] = '[[Old Mandarin]]',
+		['t'] = {
+			{'Romanized \'Phags-pa', 'phagspa-latin'},
+			}
+		},
+	['middle chinese'] = {
+		['header'] = '[[Middle Chinese]]',
+		['t'] = {
+			{'[[Middle Chinese]]', 'mc'},
+			{'[[Middle Chinese#Early Middle Chinese|Early Middle Chinese]]', 'emc'},
+			{'[[Middle Chinese#Late Middle Chinese|Late Middle Chinese]]', 'lmc'},
+			}
+		},
+	['old chinese'] = {
+		['header'] = '[[Old Chinese]]',
+		['t'] = {
+			{'[[Reconstructions_of_Old_Chinese#Baxter (1992)|Baxter (1992)]]', 'oc-b92'},
+			{'[[Reconstructions of Old Chinese#Baxter–Sagart (2014)|Baxter–Sagart (2014)]]', 'oc-bs'},
+			{'[[Reconstructions of Old Chinese#Zhengzhang (1981–1995)|Zhengzhang]]', 'oc-zz'},
+			}
+		},
+
+--------&lt; non-Chinese transcriptions &gt;--------
+
+	['arabic'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Arabic}}; doesn't use header
+		['t'] = {
+			{'[[Arabic chat alphabet|Chat]]', 'chat'},							-- TODO: standardize on lowercase parameter names
+			{'[[Arabic chat alphabet|Chat]]', 'Chat'},
+			{'[[ALA-LC romanization|ALA-LC]]', 'ala-lc'},
+			{'[[ALA-LC romanization|ALA-LC]]', 'ALA-LC'},
+			{'[[ISO 233|ISO]]', 'iso'},
+			{'[[ISO 233|ISO]]', 'ISO'},
+			{'[[DIN 31635|DIN]]', 'din'},
+			{'[[DIN 31635|DIN]]', 'DIN'},
+			}
+		},
+	['hokkien'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Hokkien}}; doesn't use header
+		['t'] = {
+			{'[[Taiwanese Romanization System|Tâi-lô]]', 'tl'},
+			{'[[Bbánlám pìngyīm|Bbánpìng]]', 'bp'},
+			{'[[Help:IPA for Hokkien|IPA]]', 'hokkienipa'},
+			}
+		},
+	['japanese'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Japanese}}; doesn't use header
+		['t'] = {
+			{'[[Romanization of Japanese|Romanization]]', 'romaji'},
+			{'[[Hepburn romanization|Revised Hepburn]]', 'revhep'},
+			{'[[Hepburn romanization|Traditional Hepburn]]', 'tradhep'},
+			{'[[Kunrei-shiki romanization|Kunrei-shiki]]', 'kunrei'},
+			{'[[Nihon-shiki romanization|Nihon-shiki]]', 'nihon'},
+			}
+		},
+	['korean'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Korean}}; doesn't use header
+		['t'] = {
+			{'[[Revised Romanization of Korean|Revised Romanization]]', 'rr'},
+			{'[[McCune–Reischauer]]', 'mr'},
+			{'[[Yale romanization of Korean|Yale]]', 'kyale'},
+			{'[[Help:IPA/Korean|IPA]]', 'koreanipa'},
+			}
+		},
+	['mongolian'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Mongolian}}; doesn't use header
+		['t'] = {
+			{'[[SASM/GNC romanization#Mongolian|SASM/GNC]]', 'monr'},
+			}
+		},
+	['russian'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Russian}}; doesn't use header
+		['t'] = {
+			{'[[Scientific transliteration of Cyrillic|Scientific]]', 'scientific'},
+			{'[[Scientific transliteration of Cyrillic|Scientific]]', 'Scientific'},
+			{'[[ISO 9|ISO]]', 'iso'},
+			{'[[ISO 9|ISO]]', 'ISO'},
+			{'[[GOST 16876-71|GOST 71]]', 'gost'},
+			{'[[GOST 16876-71|GOST 71]]', 'GOST'},
+			{'[[BGN/PCGN romanization of Russian|BGN/PCGN]]', 'bgn/pcgn'},
+			{'[[BGN/PCGN romanization of Russian|BGN/PCGN]]', 'BGN/PGCN'},
+			}
+		},
+	['tibetan'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Tibetan}}; doesn't use header
+		['t'] = {
+			{'[[Wylie transliteration|Wylie]]', 'wylie'},
+			{'[[THL Simplified Phonetic Transcription|THL]]', 'thdl'},
+			{'[[Tibetan pinyin|Tibetan Pinyin]]', 'zwpy'},
+			{'[[Standard Tibetan|Lhasa]] [[Help:IPA/Tibetan|IPA]]', 'lhasa'},
+			}
+		},
+	['uyghur'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Uyghur}}; doesn't use header
+		['t'] = {
+			{'[[Uyghur Latin alphabet|Latin Yëziqi]]', 'uly'},
+			{'[[Uyghur New Script|Yengi Yeziⱪ]]', 'uyy'},
+			{'[[SASM/GNC romanization#Uyghur|SASM/GNC]]', 'sgs'},
+			{'[[Uyghur Cyrillic alphabet|Siril Yëziqi]]', 'usy'},
+			{'Uyghur [[Wikipedia: IPA|IPA]]', 'uipa'},
+			}
+		},
+	}
+
+
+--[[--------------------------&lt; I B O X _ Z H Z H _ E N U M _ P A R A M S &gt;------------------------------------
+]]
+
+local ibox_zhzh_enum_params = {													-- 'p', 'hp', 'xej' are special case enum parameters
+	'c', 't', 's', 'l', 'tp', 'w', 'mi', 'myr', 'psp', 'myale', 'gr', 'bpmf', 'mps',
+	'zh-dungan', 'sic', 'y', 'j', 'sl', 'gd', 'hk', 'mo', 'ci', 'toi', 'gan', 'wgn', 'wuu', 'ouji', 'suz', 'wi',
+	'hsn', 'h', 'phfs', 'poj', 'tl', 'bp', 'buc', 'hhbuc', 'mblmc', 'teo', 'lizu', 'hain',
+	'mc', 'emc', 'lmc', 'oc-bs', 'oc-zz',
+	'oc-b92', 																	-- only supported in the first ibox zhzh; why?
+	'lao', 'khm', 'tet'															-- not supported by ibox zh/zh  why are they here?
+	}
+
+
+--[[--------------------------&lt; Z H _ H D R _ N A M E S &gt;------------------------------------------------------
+
+this table fixes an oddity in the ibox zh/zh header name parameters.  |chinese_header= for the first ibox zh/zh 
+gets filled from |name1= but the second gets its name from |altname= and then the third from |altname3=.
+All of these parameter names should be replaced with |chinese_header= followed by |chinese_header2= ... like all
+of the other enumerated parameters
+
+]]
+
+local zh_hdr_names = {
+	[2] = {'altname', 'Alternative Chinese name'},
+	[3] = {'altname3', 'Second alternative Chinese name'},
+	[4] = {'altname4', 'Third alternative Chinese name'},
+	[5] = {'altname5', 'Fourth alternative Chinese name'},
+	[6] = {'altname6', 'Fifth alternative Chinese name'},
+	};
+
+
+--[[--------------------------&lt; E X P O R T E D   T A B L E S &gt;------------------------------------------------
+]]
+
+return {
+	ibox_zhzh_enum_params = ibox_zhzh_enum_params,
+	keys = keys,
+	label_map = label_map,
+	transl_map = transl_map,
+	xscript = xscript,
+	zh_hdr_names = zh_hdr_names,
+	}</text>
+      <sha1>oxpixndbgbfyb5fzjw9nndoyh8thfgz</sha1>
+    </revision>
+    <revision>
+      <id>3079319</id>
+      <parentid>3079318</parentid>
+      <timestamp>2025-11-30T22:29:40Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Template is being renamed per [[wikipedia:Templates_for_discussion/Log/2025_November_13%23Rename_Infobox_Chinese_subpages|TFD]]</comment>
+      <origin>3079319</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="13314" sha1="99xqnn0m6ku4bsercfymzv2a9y7mryt" xml:space="preserve">--[[--------------------------&lt; L A B E L _ M A P &gt;------------------------------------------------------------
+
+Table to map |showflags= value to the |labeln= parameter value for {{Infobox}}
+
+TODO: convert showflag to a comma delimited list instead of these peculiar codes?
+
+]]
+ 
+local label_map = {
+	['bp'] = '[[Bbánlám pìngyīm|Bbánlám Pìngyīm]]',
+	['bpmf'] = '[[Bopomofo]]',
+	['gan'] = '[[Gan Chinese|Gan]]',
+	['gd'] = '[[Guangdong Romanization]]',
+	['h'] = '[[Guangdong Romanization#Hakka|Hakka]]',
+	['hsn'] = '[[Xiang Chinese|Xiang]]',
+	['j'] = '[[Jyutping]]',
+	['p'] = '[[Hanyu Pinyin]]',
+	['phfs'] = '[[Pha̍k-fa-sṳ]]',
+	['poj'] = '[[Hokkien]] [[Pe̍h-ōe-jī|POJ]]',
+	['psic'] = '[[Sichuanese Mandarin|Sichuanese]] [[Sichuanese Pinyin|Pinyin]]',
+	['tl'] = '[[Taiwanese Romanization System|Tâi-lô]]',
+	['toi'] = '[[Taishanese]]',
+	['tp'] = '[[Tongyong Pinyin]]',
+	['w'] = '[[Wade–Giles]]',
+	['wgn'] = '[[Romanization of Wu Chinese|Wungiu]]',
+	['wuu'] = '[[Wu Chinese|Wu]]',
+	['xej'] = '[[Xiao\'erjing]]',
+	['y'] = '[[Cantonese]] [[Yale romanization of Cantonese|Yale]]',
+	}
+
+
+--[[--------------------------&lt; T R A N S L _ M A P &gt;----------------------------------------------------------
+
+Table to map |showflags= value to an index into label_map for child infobox |labeln= value and to map |showflags=
+value to the correct parameter for use in child infobox |datan= parameter
+
+Implementation deatils of |showflag= are in dispute see: Template_talk:Infobox_Chinese#Rfc_on_fixing_the_template_showflag
+
+linked conversation is at: Template_talk:Infobox_Chinese/Archive_4#Showflag broken
+
+]]
+
+local transl_map = {															-- maps |showflag= value to label from label_map table and data from matching parameter name
+	['bp'] = {['label1'] = 'bp', ['data1'] = 'bp'},
+	['bpmf'] = {['label1'] = 'bpmf', ['data1'] = 'bpmf'},
+	['gan'] = {['label1'] = 'gan', ['data1'] = 'gan'},
+	['gdp'] = {['label1'] = 'gd', ['data1'] = 'gd', ['label2'] = 'p', ['data2'] = 'p'},
+	['h'] = {['label1'] = 'h', ['data1'] = 'h'},
+	['hsn'] = {['label1'] = 'hsn', ['data1'] = 'hsn'},
+	['j'] = {['label1'] = 'j', ['data1'] = 'j'},
+	['jp'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'p', ['data2'] = 'p'},
+	['jy'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'y', ['data2'] = 'y'},
+	['jyp'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'y', ['data2'] = 'y', ['label3'] = 'p', ['data3'] = 'p'},
+	['p'] = {['label1'] = 'p', ['data1'] = 'p'},
+	['phfs'] = {['label1'] = 'phfs', ['data1'] = 'phfs'},
+	['phsn'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'hsn', ['data2'] = 'hsn'},
+	['pj'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'j', ['data2'] = 'j'},
+	['poj'] = {['label1'] = 'poj', ['data1'] = 'poj'},
+	['psic'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'sic', ['data2'] = 'sic'},
+	['pwuu'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'wuu', ['data2'] = 'wuu'},
+	['py'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'y', ['data2'] = 'y'},
+	['tl'] = {['label1'] = 'tl', ['data1'] = 'tl'},
+	['toip'] = {['label1'] = 'toi', ['data1'] = 'toi', ['label2'] = 'p', ['data2'] = 'p'},
+	['tp'] = {['label1'] = 'tp', ['data1'] = 'tp'},
+	['wp'] = {['label1'] = 'w', ['data1'] = 'w', ['label2'] = 'p', ['data2'] = 'p'},
+	['wgn'] = {['label1'] = 'wgn', ['data1'] = 'wgn'},
+	['wuu'] = {['label1'] = 'wuu', ['data1'] = 'wuu'},
+	['y'] = {['label1'] = 'y', ['data1'] = 'y'},
+	['yj'] = {['label1'] = 'y', ['data1'] = 'y', ['label2'] = 'j', ['data2'] = 'j'},
+	['xej'] = {
+		['label1'] = 'xej',
+		['data1'] = 'xej',				-- ???? what to do about this; template calls {{lang|zh-Arab|{{{xej}}}}} on this value
+		},
+	['xejp'] = {
+		['label1'] = 'xej',
+		['data1'] = 'xej',				-- ???? template does not call {{lang|zh-Arab|{{{xej}}}}} on this value; why?
+		['label2'] = 'p',
+		['data2'] = 'p'
+		},
+	}
+
+
+--[[--------------------------&lt; K E Y S &gt;----------------------------------------------------------------------
+]]
+
+local keys = {																	-- table of xscript table keys calls
+	ar = 'arabic',
+	bo = 'tibetan',
+	hokkien = 'hokkien',
+	ja = 'japanese',
+	ko = 'korean',
+	mn = 'mongolian',
+	ru = 'russian',
+	ug = 'uyghur',
+	}
+
+
+--[[--------------------------&lt; X S C R I P T &gt;----------------------------------------------------------------
+
+table that holds the various transcription headers and labels used by transcriptions()
+
+indexed in this table are lower case versions of the header display text without punctuation (if any)
+
+TODO: add support for transl transliteration standard parameter; akin to {{transl|lang code|standard code|text|italic=??}}
+
+]]
+
+local xscript = {
+	['standard mandarin'] = {													-- lower case version of the header display text
+		['header'] = '[[Standard Chinese|Standard Mandarin]]',					-- text to be displayed if headers are displayed
+		['t'] = {																-- table of labels and their associated data parameter
+			{'[[Hanyu Pinyin]]', 'p'},											-- label is [[Hanyu Pinyin]], data is taken from |p= parameter
+			{'[[Bopomofo]]','bpmf'},
+			{'[[Spelling in Gwoyeu Romatzyh|Gwoyeu Romatzyh]]', 'gr'},
+			{'[[Wade–Giles]]', 'w'},
+			{'[[Tongyong Pinyin]]', 'tp'},
+			{'[[Yale romanization of Mandarin|Yale Romanization]]', 'myr'},
+			{'[[Mandarin Phonetic Symbols II|MPS2]]', 'mps'},
+			{'[[Help:IPA/Mandarin|IPA]]', 'mi'}
+			}
+		},
+	['other mandarin'] = {
+		['header'] = '[[Mandarin Chinese|other Mandarin]]',
+		['t'] = {
+			{'[[Xiao\'erjing]]', 'xej'},
+			{'[[Dungan language|Dungan]]','zh-dungan'},
+			{'[[Sichuanese Mandarin|Sichuanese]] [[Sichuanese Pinyin|Pinyin]]', 'sic'},
+			}
+		},
+	['wu'] = {
+		['header'] = '[[Wu Chinese|Wu]]',
+		['t'] = {
+			{'[[Romanization of Wu Chinese|Wugniu]]', 'wgn'},
+			{'[[Romanization of Wu Chinese|Romanization]]', 'wuu'},
+			{'[[Wenzhounese]]&lt;br /&gt;[[Wenzhounese romanisation|Romanisation]]', 'ouji'},
+			{'[[Suzhounese]]', 'suz'},
+			{'[Help:IPA/Wu Chinese|IPA]]', 'wi'},
+			}
+		},
+	['gan'] = {
+		['header'] = '[[Gan Chinese|Gan]]',
+		['t'] = {
+			{'Romanization', 'gan'},
+			}
+		},
+	['xiang'] = {
+		['header'] = '[[Xiang Chinese|Xiang]]',
+		['t'] = {
+			{'IPA', 'hsn'},
+			}
+		},
+	['hakka'] = {
+		['header'] = '[[Hakka Chinese|Hakka]]',
+		['t'] = {
+			{'[[Guangdong Romanization#Hakka|Romanization]]', 'h'},
+			{'[[Pha̍k-fa-sṳ]]', 'phfs'},
+			}
+		},
+	['yue cantonese'] = {
+		['header'] = '[[Cantonese|Yue: Cantonese]]',
+		['t'] = {
+			{'[[Yale romanization of Cantonese|Yale Romanization]]', 'y'},
+			{'[[Jyutping]]', 'j'},
+			{'[[Sidney Lau romanisation|Sidney Lau]]', 'sl'},
+			{'[[Guangdong Romanization|Canton Romanization]]', 'gd'},
+			{'[[Hong Kong Government Cantonese Romanisation|Hong Kong Romanisation]]', 'hk'},
+			{'[[Cantonese#Romanization|Macau Romanization]]', 'mo'},
+			{'[[Help:IPA/Cantonese|IPA]]', 'ci'},
+			}
+		},
+	['other yue'] = {
+		['header'] = '[[Yue Chinese|other Yue]]',
+		['t'] = {
+			{'[[Taishanese]]', 'toi'},
+			}
+		},
+	['southern min'] = {
+		['header'] = '[[Southern Min]]',
+		['t'] = {
+			{'[[Hokkien]] [[Pe̍h-ōe-jī|POJ]]', 'poj'},
+			{'[[Taiwanese Romanization System|Tâi-lô]]', 'tl'},
+			{'[[Bbánlám pìngyīm|Bbánlám Pìngyīm]]', 'bp'},
+			{'[[Teochew dialect|Teochew]] [[Guangdong Romanization#Teochew|Peng\'im]]', 'teo'},
+			{'[[Hainanese]] Romanization', 'hain'},
+			{'[[Leizhou Min|Leizhou]] Romanization', 'lizu'},
+			}
+		},
+	['eastern min'] = {
+		['header'] = '[[Eastern Min]]',
+		['t'] = {
+			{'[[Fuzhou dialect|Fuzhou]] [[Foochow Romanized|BUC]]', 'buc'},
+			}
+		},
+	['pu-xian min'] = {
+		['header'] = '[[Pu-Xian Min]]',
+		['t'] = {
+			{'[[Pu-Xian Min|Hinghwa]] [[Hinghwa Romanized|BUC]]', 'hhbuc'},
+			}
+		},
+	['northern min'] = {
+		['header'] = '[[Northern Min]]',
+		['t'] = {
+			{'[[Jian\'ou dialect|Jian\'ou]] [[Kienning Colloquial Romanized|Romanized]]', 'mblmc'},
+			}
+		},
+	['old mandarin'] = {
+		['header'] = '[[Old Mandarin]]',
+		['t'] = {
+			{'Romanized \'Phags-pa', 'phagspa-latin'},
+			}
+		},
+	['middle chinese'] = {
+		['header'] = '[[Middle Chinese]]',
+		['t'] = {
+			{'[[Middle Chinese]]', 'mc'},
+			{'[[Middle Chinese#Early Middle Chinese|Early Middle Chinese]]', 'emc'},
+			{'[[Middle Chinese#Late Middle Chinese|Late Middle Chinese]]', 'lmc'},
+			}
+		},
+	['old chinese'] = {
+		['header'] = '[[Old Chinese]]',
+		['t'] = {
+			{'[[Reconstructions_of_Old_Chinese#Baxter (1992)|Baxter (1992)]]', 'oc-b92'},
+			{'[[Reconstructions of Old Chinese#Baxter–Sagart (2014)|Baxter–Sagart (2014)]]', 'oc-bs'},
+			{'[[Reconstructions of Old Chinese#Zhengzhang (1981–1995)|Zhengzhang]]', 'oc-zz'},
+			}
+		},
+
+--------&lt; non-Chinese transcriptions &gt;--------
+
+	['arabic'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Arabic}}; doesn't use header
+		['t'] = {
+			{'[[Arabic chat alphabet|Chat]]', 'chat'},							-- TODO: standardize on lowercase parameter names
+			{'[[Arabic chat alphabet|Chat]]', 'Chat'},
+			{'[[ALA-LC romanization|ALA-LC]]', 'ala-lc'},
+			{'[[ALA-LC romanization|ALA-LC]]', 'ALA-LC'},
+			{'[[ISO 233|ISO]]', 'iso'},
+			{'[[ISO 233|ISO]]', 'ISO'},
+			{'[[DIN 31635|DIN]]', 'din'},
+			{'[[DIN 31635|DIN]]', 'DIN'},
+			}
+		},
+	['hokkien'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Hokkien}}; doesn't use header
+		['t'] = {
+			{'[[Taiwanese Romanization System|Tâi-lô]]', 'tl'},
+			{'[[Bbánlám pìngyīm|Bbánpìng]]', 'bp'},
+			{'[[Help:IPA for Hokkien|IPA]]', 'hokkienipa'},
+			}
+		},
+	['japanese'] = {
+		['header'] = nil,														-- {{Infobox Japanese}}; doesn't use header
+		['t'] = {
+			{'[[Romanization of Japanese|Romanization]]', 'romaji'},
+			{'[[Hepburn romanization|Revised Hepburn]]', 'revhep'},
+			{'[[Hepburn romanization|Traditional Hepburn]]', 'tradhep'},
+			{'[[Kunrei-shiki romanization|Kunrei-shiki]]', 'kunrei'},
+			{'[[Nihon-shiki romanization|Nihon-shiki]]', 'nihon'},
+			}
+		},
+	['korean'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Korean}}; doesn't use header
+		['t'] = {
+			{'[[Revised Romanization of Korean|Revised Romanization]]', 'rr'},
+			{'[[McCune–Reischauer]]', 'mr'},
+			{'[[Yale romanization of Korean|Yale]]', 'kyale'},
+			{'[[Help:IPA/Korean|IPA]]', 'koreanipa'},
+			}
+		},
+	['mongolian'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Mongolian}}; doesn't use header
+		['t'] = {
+			{'[[SASM/GNC romanization#Mongolian|SASM/GNC]]', 'monr'},
+			}
+		},
+	['russian'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Russian}}; doesn't use header
+		['t'] = {
+			{'[[Scientific transliteration of Cyrillic|Scientific]]', 'scientific'},
+			{'[[Scientific transliteration of Cyrillic|Scientific]]', 'Scientific'},
+			{'[[ISO 9|ISO]]', 'iso'},
+			{'[[ISO 9|ISO]]', 'ISO'},
+			{'[[GOST 16876-71|GOST 71]]', 'gost'},
+			{'[[GOST 16876-71|GOST 71]]', 'GOST'},
+			{'[[BGN/PCGN romanization of Russian|BGN/PCGN]]', 'bgn/pcgn'},
+			{'[[BGN/PCGN romanization of Russian|BGN/PCGN]]', 'BGN/PGCN'},
+			}
+		},
+	['tibetan'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Tibetan}}; doesn't use header
+		['t'] = {
+			{'[[Wylie transliteration|Wylie]]', 'wylie'},
+			{'[[THL Simplified Phonetic Transcription|THL]]', 'thdl'},
+			{'[[Tibetan pinyin|Tibetan Pinyin]]', 'zwpy'},
+			{'[[Standard Tibetan|Lhasa]] [[Help:IPA/Tibetan|IPA]]', 'lhasa'},
+			}
+		},
+	['uyghur'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Uyghur}}; doesn't use header
+		['t'] = {
+			{'[[Uyghur Latin alphabet|Latin Yëziqi]]', 'uly'},
+			{'[[Uyghur New Script|Yengi Yeziⱪ]]', 'uyy'},
+			{'[[SASM/GNC romanization#Uyghur|SASM/GNC]]', 'sgs'},
+			{'[[Uyghur Cyrillic alphabet|Siril Yëziqi]]', 'usy'},
+			{'Uyghur [[Wikipedia: IPA|IPA]]', 'uipa'},
+			}
+		},
+	}
+
+
+--[[--------------------------&lt; I B O X _ Z H Z H _ E N U M _ P A R A M S &gt;------------------------------------
+]]
+
+local ibox_zhzh_enum_params = {													-- 'p', 'hp', 'xej' are special case enum parameters
+	'c', 't', 's', 'l', 'tp', 'w', 'mi', 'myr', 'psp', 'myale', 'gr', 'bpmf', 'mps',
+	'zh-dungan', 'sic', 'y', 'j', 'sl', 'gd', 'hk', 'mo', 'ci', 'toi', 'gan', 'wgn', 'wuu', 'ouji', 'suz', 'wi',
+	'hsn', 'h', 'phfs', 'poj', 'tl', 'bp', 'buc', 'hhbuc', 'mblmc', 'teo', 'lizu', 'hain',
+	'mc', 'emc', 'lmc', 'oc-bs', 'oc-zz',
+	'oc-b92', 																	-- only supported in the first ibox zhzh; why?
+	'lao', 'khm', 'tet'															-- not supported by ibox zh/zh  why are they here?
+	}
+
+
+--[[--------------------------&lt; Z H _ H D R _ N A M E S &gt;------------------------------------------------------
+
+this table fixes an oddity in the ibox zh/zh header name parameters.  |chinese_header= for the first ibox zh/zh 
+gets filled from |name1= but the second gets its name from |altname= and then the third from |altname3=.
+All of these parameter names should be replaced with |chinese_header= followed by |chinese_header2= ... like all
+of the other enumerated parameters
+
+]]
+
+local zh_hdr_names = {
+	[2] = {'altname', 'Alternative Chinese name'},
+	[3] = {'altname3', 'Second alternative Chinese name'},
+	[4] = {'altname4', 'Third alternative Chinese name'},
+	[5] = {'altname5', 'Fourth alternative Chinese name'},
+	[6] = {'altname6', 'Fifth alternative Chinese name'},
+	};
+
+
+--[[--------------------------&lt; E X P O R T E D   T A B L E S &gt;------------------------------------------------
+]]
+
+return {
+	ibox_zhzh_enum_params = ibox_zhzh_enum_params,
+	keys = keys,
+	label_map = label_map,
+	transl_map = transl_map,
+	xscript = xscript,
+	zh_hdr_names = zh_hdr_names,
+	}</text>
+      <sha1>99xqnn0m6ku4bsercfymzv2a9y7mryt</sha1>
+    </revision>
+    <revision>
+      <id>3079320</id>
+      <parentid>3079319</parentid>
+      <timestamp>2025-11-30T22:46:50Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Trappist the monk</username>
+        <id>0</id>
+      </contributor>
+      <comment>Undid revision [[Special:Diff/1325043065|1325043065]] by [[Special:Contributions/Zackmann08|Zackmann08]] ([[User talk:Zackmann08|talk]]) not a subject of the [[Wikipedia:Templates_for_discussion/Log/2025_November_13#Rename_Infobox_Chinese_subpages|tfd]];</comment>
+      <origin>3079320</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="13322" sha1="oxpixndbgbfyb5fzjw9nndoyh8thfgz" xml:space="preserve">--[[--------------------------&lt; L A B E L _ M A P &gt;------------------------------------------------------------
+
+Table to map |showflags= value to the |labeln= parameter value for {{Infobox}}
+
+TODO: convert showflag to a comma delimited list instead of these peculiar codes?
+
+]]
+ 
+local label_map = {
+	['bp'] = '[[Bbánlám pìngyīm|Bbánlám Pìngyīm]]',
+	['bpmf'] = '[[Bopomofo]]',
+	['gan'] = '[[Gan Chinese|Gan]]',
+	['gd'] = '[[Guangdong Romanization]]',
+	['h'] = '[[Guangdong Romanization#Hakka|Hakka]]',
+	['hsn'] = '[[Xiang Chinese|Xiang]]',
+	['j'] = '[[Jyutping]]',
+	['p'] = '[[Hanyu Pinyin]]',
+	['phfs'] = '[[Pha̍k-fa-sṳ]]',
+	['poj'] = '[[Hokkien]] [[Pe̍h-ōe-jī|POJ]]',
+	['psic'] = '[[Sichuanese Mandarin|Sichuanese]] [[Sichuanese Pinyin|Pinyin]]',
+	['tl'] = '[[Taiwanese Romanization System|Tâi-lô]]',
+	['toi'] = '[[Taishanese]]',
+	['tp'] = '[[Tongyong Pinyin]]',
+	['w'] = '[[Wade–Giles]]',
+	['wgn'] = '[[Romanization of Wu Chinese|Wungiu]]',
+	['wuu'] = '[[Wu Chinese|Wu]]',
+	['xej'] = '[[Xiao\'erjing]]',
+	['y'] = '[[Cantonese]] [[Yale romanization of Cantonese|Yale]]',
+	}
+
+
+--[[--------------------------&lt; T R A N S L _ M A P &gt;----------------------------------------------------------
+
+Table to map |showflags= value to an index into label_map for child infobox |labeln= value and to map |showflags=
+value to the correct parameter for use in child infobox |datan= parameter
+
+Implementation deatils of |showflag= are in dispute see: Template_talk:Infobox_Chinese#Rfc_on_fixing_the_template_showflag
+
+linked conversation is at: Template_talk:Infobox_Chinese/Archive_4#Showflag broken
+
+]]
+
+local transl_map = {															-- maps |showflag= value to label from label_map table and data from matching parameter name
+	['bp'] = {['label1'] = 'bp', ['data1'] = 'bp'},
+	['bpmf'] = {['label1'] = 'bpmf', ['data1'] = 'bpmf'},
+	['gan'] = {['label1'] = 'gan', ['data1'] = 'gan'},
+	['gdp'] = {['label1'] = 'gd', ['data1'] = 'gd', ['label2'] = 'p', ['data2'] = 'p'},
+	['h'] = {['label1'] = 'h', ['data1'] = 'h'},
+	['hsn'] = {['label1'] = 'hsn', ['data1'] = 'hsn'},
+	['j'] = {['label1'] = 'j', ['data1'] = 'j'},
+	['jp'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'p', ['data2'] = 'p'},
+	['jy'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'y', ['data2'] = 'y'},
+	['jyp'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'y', ['data2'] = 'y', ['label3'] = 'p', ['data3'] = 'p'},
+	['p'] = {['label1'] = 'p', ['data1'] = 'p'},
+	['phfs'] = {['label1'] = 'phfs', ['data1'] = 'phfs'},
+	['phsn'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'hsn', ['data2'] = 'hsn'},
+	['pj'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'j', ['data2'] = 'j'},
+	['poj'] = {['label1'] = 'poj', ['data1'] = 'poj'},
+	['psic'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'sic', ['data2'] = 'sic'},
+	['pwuu'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'wuu', ['data2'] = 'wuu'},
+	['py'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'y', ['data2'] = 'y'},
+	['tl'] = {['label1'] = 'tl', ['data1'] = 'tl'},
+	['toip'] = {['label1'] = 'toi', ['data1'] = 'toi', ['label2'] = 'p', ['data2'] = 'p'},
+	['tp'] = {['label1'] = 'tp', ['data1'] = 'tp'},
+	['wp'] = {['label1'] = 'w', ['data1'] = 'w', ['label2'] = 'p', ['data2'] = 'p'},
+	['wgn'] = {['label1'] = 'wgn', ['data1'] = 'wgn'},
+	['wuu'] = {['label1'] = 'wuu', ['data1'] = 'wuu'},
+	['y'] = {['label1'] = 'y', ['data1'] = 'y'},
+	['yj'] = {['label1'] = 'y', ['data1'] = 'y', ['label2'] = 'j', ['data2'] = 'j'},
+	['xej'] = {
+		['label1'] = 'xej',
+		['data1'] = 'xej',				-- ???? what to do about this; template calls {{lang|zh-Arab|{{{xej}}}}} on this value
+		},
+	['xejp'] = {
+		['label1'] = 'xej',
+		['data1'] = 'xej',				-- ???? template does not call {{lang|zh-Arab|{{{xej}}}}} on this value; why?
+		['label2'] = 'p',
+		['data2'] = 'p'
+		},
+	}
+
+
+--[[--------------------------&lt; K E Y S &gt;----------------------------------------------------------------------
+]]
+
+local keys = {																	-- table of xscript table keys calls
+	ar = 'arabic',
+	bo = 'tibetan',
+	hokkien = 'hokkien',
+	ja = 'japanese',
+	ko = 'korean',
+	mn = 'mongolian',
+	ru = 'russian',
+	ug = 'uyghur',
+	}
+
+
+--[[--------------------------&lt; X S C R I P T &gt;----------------------------------------------------------------
+
+table that holds the various transcription headers and labels used by transcriptions()
+
+indexed in this table are lower case versions of the header display text without punctuation (if any)
+
+TODO: add support for transl transliteration standard parameter; akin to {{transl|lang code|standard code|text|italic=??}}
+
+]]
+
+local xscript = {
+	['standard mandarin'] = {													-- lower case version of the header display text
+		['header'] = '[[Standard Chinese|Standard Mandarin]]',					-- text to be displayed if headers are displayed
+		['t'] = {																-- table of labels and their associated data parameter
+			{'[[Hanyu Pinyin]]', 'p'},											-- label is [[Hanyu Pinyin]], data is taken from |p= parameter
+			{'[[Bopomofo]]','bpmf'},
+			{'[[Spelling in Gwoyeu Romatzyh|Gwoyeu Romatzyh]]', 'gr'},
+			{'[[Wade–Giles]]', 'w'},
+			{'[[Tongyong Pinyin]]', 'tp'},
+			{'[[Yale romanization of Mandarin|Yale Romanization]]', 'myr'},
+			{'[[Mandarin Phonetic Symbols II|MPS2]]', 'mps'},
+			{'[[Help:IPA/Mandarin|IPA]]', 'mi'}
+			}
+		},
+	['other mandarin'] = {
+		['header'] = '[[Mandarin Chinese|other Mandarin]]',
+		['t'] = {
+			{'[[Xiao\'erjing]]', 'xej'},
+			{'[[Dungan language|Dungan]]','zh-dungan'},
+			{'[[Sichuanese Mandarin|Sichuanese]] [[Sichuanese Pinyin|Pinyin]]', 'sic'},
+			}
+		},
+	['wu'] = {
+		['header'] = '[[Wu Chinese|Wu]]',
+		['t'] = {
+			{'[[Romanization of Wu Chinese|Wugniu]]', 'wgn'},
+			{'[[Romanization of Wu Chinese|Romanization]]', 'wuu'},
+			{'[[Wenzhounese]]&lt;br /&gt;[[Wenzhounese romanisation|Romanisation]]', 'ouji'},
+			{'[[Suzhounese]]', 'suz'},
+			{'[Help:IPA/Wu Chinese|IPA]]', 'wi'},
+			}
+		},
+	['gan'] = {
+		['header'] = '[[Gan Chinese|Gan]]',
+		['t'] = {
+			{'Romanization', 'gan'},
+			}
+		},
+	['xiang'] = {
+		['header'] = '[[Xiang Chinese|Xiang]]',
+		['t'] = {
+			{'IPA', 'hsn'},
+			}
+		},
+	['hakka'] = {
+		['header'] = '[[Hakka Chinese|Hakka]]',
+		['t'] = {
+			{'[[Guangdong Romanization#Hakka|Romanization]]', 'h'},
+			{'[[Pha̍k-fa-sṳ]]', 'phfs'},
+			}
+		},
+	['yue cantonese'] = {
+		['header'] = '[[Cantonese|Yue: Cantonese]]',
+		['t'] = {
+			{'[[Yale romanization of Cantonese|Yale Romanization]]', 'y'},
+			{'[[Jyutping]]', 'j'},
+			{'[[Sidney Lau romanisation|Sidney Lau]]', 'sl'},
+			{'[[Guangdong Romanization|Canton Romanization]]', 'gd'},
+			{'[[Hong Kong Government Cantonese Romanisation|Hong Kong Romanisation]]', 'hk'},
+			{'[[Cantonese#Romanization|Macau Romanization]]', 'mo'},
+			{'[[Help:IPA/Cantonese|IPA]]', 'ci'},
+			}
+		},
+	['other yue'] = {
+		['header'] = '[[Yue Chinese|other Yue]]',
+		['t'] = {
+			{'[[Taishanese]]', 'toi'},
+			}
+		},
+	['southern min'] = {
+		['header'] = '[[Southern Min]]',
+		['t'] = {
+			{'[[Hokkien]] [[Pe̍h-ōe-jī|POJ]]', 'poj'},
+			{'[[Taiwanese Romanization System|Tâi-lô]]', 'tl'},
+			{'[[Bbánlám pìngyīm|Bbánlám Pìngyīm]]', 'bp'},
+			{'[[Teochew dialect|Teochew]] [[Guangdong Romanization#Teochew|Peng\'im]]', 'teo'},
+			{'[[Hainanese]] Romanization', 'hain'},
+			{'[[Leizhou Min|Leizhou]] Romanization', 'lizu'},
+			}
+		},
+	['eastern min'] = {
+		['header'] = '[[Eastern Min]]',
+		['t'] = {
+			{'[[Fuzhou dialect|Fuzhou]] [[Foochow Romanized|BUC]]', 'buc'},
+			}
+		},
+	['pu-xian min'] = {
+		['header'] = '[[Pu-Xian Min]]',
+		['t'] = {
+			{'[[Pu-Xian Min|Hinghwa]] [[Hinghwa Romanized|BUC]]', 'hhbuc'},
+			}
+		},
+	['northern min'] = {
+		['header'] = '[[Northern Min]]',
+		['t'] = {
+			{'[[Jian\'ou dialect|Jian\'ou]] [[Kienning Colloquial Romanized|Romanized]]', 'mblmc'},
+			}
+		},
+	['old mandarin'] = {
+		['header'] = '[[Old Mandarin]]',
+		['t'] = {
+			{'Romanized \'Phags-pa', 'phagspa-latin'},
+			}
+		},
+	['middle chinese'] = {
+		['header'] = '[[Middle Chinese]]',
+		['t'] = {
+			{'[[Middle Chinese]]', 'mc'},
+			{'[[Middle Chinese#Early Middle Chinese|Early Middle Chinese]]', 'emc'},
+			{'[[Middle Chinese#Late Middle Chinese|Late Middle Chinese]]', 'lmc'},
+			}
+		},
+	['old chinese'] = {
+		['header'] = '[[Old Chinese]]',
+		['t'] = {
+			{'[[Reconstructions_of_Old_Chinese#Baxter (1992)|Baxter (1992)]]', 'oc-b92'},
+			{'[[Reconstructions of Old Chinese#Baxter–Sagart (2014)|Baxter–Sagart (2014)]]', 'oc-bs'},
+			{'[[Reconstructions of Old Chinese#Zhengzhang (1981–1995)|Zhengzhang]]', 'oc-zz'},
+			}
+		},
+
+--------&lt; non-Chinese transcriptions &gt;--------
+
+	['arabic'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Arabic}}; doesn't use header
+		['t'] = {
+			{'[[Arabic chat alphabet|Chat]]', 'chat'},							-- TODO: standardize on lowercase parameter names
+			{'[[Arabic chat alphabet|Chat]]', 'Chat'},
+			{'[[ALA-LC romanization|ALA-LC]]', 'ala-lc'},
+			{'[[ALA-LC romanization|ALA-LC]]', 'ALA-LC'},
+			{'[[ISO 233|ISO]]', 'iso'},
+			{'[[ISO 233|ISO]]', 'ISO'},
+			{'[[DIN 31635|DIN]]', 'din'},
+			{'[[DIN 31635|DIN]]', 'DIN'},
+			}
+		},
+	['hokkien'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Hokkien}}; doesn't use header
+		['t'] = {
+			{'[[Taiwanese Romanization System|Tâi-lô]]', 'tl'},
+			{'[[Bbánlám pìngyīm|Bbánpìng]]', 'bp'},
+			{'[[Help:IPA for Hokkien|IPA]]', 'hokkienipa'},
+			}
+		},
+	['japanese'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Japanese}}; doesn't use header
+		['t'] = {
+			{'[[Romanization of Japanese|Romanization]]', 'romaji'},
+			{'[[Hepburn romanization|Revised Hepburn]]', 'revhep'},
+			{'[[Hepburn romanization|Traditional Hepburn]]', 'tradhep'},
+			{'[[Kunrei-shiki romanization|Kunrei-shiki]]', 'kunrei'},
+			{'[[Nihon-shiki romanization|Nihon-shiki]]', 'nihon'},
+			}
+		},
+	['korean'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Korean}}; doesn't use header
+		['t'] = {
+			{'[[Revised Romanization of Korean|Revised Romanization]]', 'rr'},
+			{'[[McCune–Reischauer]]', 'mr'},
+			{'[[Yale romanization of Korean|Yale]]', 'kyale'},
+			{'[[Help:IPA/Korean|IPA]]', 'koreanipa'},
+			}
+		},
+	['mongolian'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Mongolian}}; doesn't use header
+		['t'] = {
+			{'[[SASM/GNC romanization#Mongolian|SASM/GNC]]', 'monr'},
+			}
+		},
+	['russian'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Russian}}; doesn't use header
+		['t'] = {
+			{'[[Scientific transliteration of Cyrillic|Scientific]]', 'scientific'},
+			{'[[Scientific transliteration of Cyrillic|Scientific]]', 'Scientific'},
+			{'[[ISO 9|ISO]]', 'iso'},
+			{'[[ISO 9|ISO]]', 'ISO'},
+			{'[[GOST 16876-71|GOST 71]]', 'gost'},
+			{'[[GOST 16876-71|GOST 71]]', 'GOST'},
+			{'[[BGN/PCGN romanization of Russian|BGN/PCGN]]', 'bgn/pcgn'},
+			{'[[BGN/PCGN romanization of Russian|BGN/PCGN]]', 'BGN/PGCN'},
+			}
+		},
+	['tibetan'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Tibetan}}; doesn't use header
+		['t'] = {
+			{'[[Wylie transliteration|Wylie]]', 'wylie'},
+			{'[[THL Simplified Phonetic Transcription|THL]]', 'thdl'},
+			{'[[Tibetan pinyin|Tibetan Pinyin]]', 'zwpy'},
+			{'[[Standard Tibetan|Lhasa]] [[Help:IPA/Tibetan|IPA]]', 'lhasa'},
+			}
+		},
+	['uyghur'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Uyghur}}; doesn't use header
+		['t'] = {
+			{'[[Uyghur Latin alphabet|Latin Yëziqi]]', 'uly'},
+			{'[[Uyghur New Script|Yengi Yeziⱪ]]', 'uyy'},
+			{'[[SASM/GNC romanization#Uyghur|SASM/GNC]]', 'sgs'},
+			{'[[Uyghur Cyrillic alphabet|Siril Yëziqi]]', 'usy'},
+			{'Uyghur [[Wikipedia: IPA|IPA]]', 'uipa'},
+			}
+		},
+	}
+
+
+--[[--------------------------&lt; I B O X _ Z H Z H _ E N U M _ P A R A M S &gt;------------------------------------
+]]
+
+local ibox_zhzh_enum_params = {													-- 'p', 'hp', 'xej' are special case enum parameters
+	'c', 't', 's', 'l', 'tp', 'w', 'mi', 'myr', 'psp', 'myale', 'gr', 'bpmf', 'mps',
+	'zh-dungan', 'sic', 'y', 'j', 'sl', 'gd', 'hk', 'mo', 'ci', 'toi', 'gan', 'wgn', 'wuu', 'ouji', 'suz', 'wi',
+	'hsn', 'h', 'phfs', 'poj', 'tl', 'bp', 'buc', 'hhbuc', 'mblmc', 'teo', 'lizu', 'hain',
+	'mc', 'emc', 'lmc', 'oc-bs', 'oc-zz',
+	'oc-b92', 																	-- only supported in the first ibox zhzh; why?
+	'lao', 'khm', 'tet'															-- not supported by ibox zh/zh  why are they here?
+	}
+
+
+--[[--------------------------&lt; Z H _ H D R _ N A M E S &gt;------------------------------------------------------
+
+this table fixes an oddity in the ibox zh/zh header name parameters.  |chinese_header= for the first ibox zh/zh 
+gets filled from |name1= but the second gets its name from |altname= and then the third from |altname3=.
+All of these parameter names should be replaced with |chinese_header= followed by |chinese_header2= ... like all
+of the other enumerated parameters
+
+]]
+
+local zh_hdr_names = {
+	[2] = {'altname', 'Alternative Chinese name'},
+	[3] = {'altname3', 'Second alternative Chinese name'},
+	[4] = {'altname4', 'Third alternative Chinese name'},
+	[5] = {'altname5', 'Fourth alternative Chinese name'},
+	[6] = {'altname6', 'Fifth alternative Chinese name'},
+	};
+
+
+--[[--------------------------&lt; E X P O R T E D   T A B L E S &gt;------------------------------------------------
+]]
+
+return {
+	ibox_zhzh_enum_params = ibox_zhzh_enum_params,
+	keys = keys,
+	label_map = label_map,
+	transl_map = transl_map,
+	xscript = xscript,
+	zh_hdr_names = zh_hdr_names,
+	}</text>
+      <sha1>oxpixndbgbfyb5fzjw9nndoyh8thfgz</sha1>
+    </revision>
+    <revision>
+      <id>3079321</id>
+      <parentid>3079320</parentid>
+      <timestamp>2025-12-07T01:09:57Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>11 revisions imported from [[:wikipedia:Module:Infobox_multi-lingual_name/data]]</comment>
+      <origin>3079320</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="13322" sha1="oxpixndbgbfyb5fzjw9nndoyh8thfgz" xml:space="preserve">--[[--------------------------&lt; L A B E L _ M A P &gt;------------------------------------------------------------
+
+Table to map |showflags= value to the |labeln= parameter value for {{Infobox}}
+
+TODO: convert showflag to a comma delimited list instead of these peculiar codes?
+
+]]
+ 
+local label_map = {
+	['bp'] = '[[Bbánlám pìngyīm|Bbánlám Pìngyīm]]',
+	['bpmf'] = '[[Bopomofo]]',
+	['gan'] = '[[Gan Chinese|Gan]]',
+	['gd'] = '[[Guangdong Romanization]]',
+	['h'] = '[[Guangdong Romanization#Hakka|Hakka]]',
+	['hsn'] = '[[Xiang Chinese|Xiang]]',
+	['j'] = '[[Jyutping]]',
+	['p'] = '[[Hanyu Pinyin]]',
+	['phfs'] = '[[Pha̍k-fa-sṳ]]',
+	['poj'] = '[[Hokkien]] [[Pe̍h-ōe-jī|POJ]]',
+	['psic'] = '[[Sichuanese Mandarin|Sichuanese]] [[Sichuanese Pinyin|Pinyin]]',
+	['tl'] = '[[Taiwanese Romanization System|Tâi-lô]]',
+	['toi'] = '[[Taishanese]]',
+	['tp'] = '[[Tongyong Pinyin]]',
+	['w'] = '[[Wade–Giles]]',
+	['wgn'] = '[[Romanization of Wu Chinese|Wungiu]]',
+	['wuu'] = '[[Wu Chinese|Wu]]',
+	['xej'] = '[[Xiao\'erjing]]',
+	['y'] = '[[Cantonese]] [[Yale romanization of Cantonese|Yale]]',
+	}
+
+
+--[[--------------------------&lt; T R A N S L _ M A P &gt;----------------------------------------------------------
+
+Table to map |showflags= value to an index into label_map for child infobox |labeln= value and to map |showflags=
+value to the correct parameter for use in child infobox |datan= parameter
+
+Implementation deatils of |showflag= are in dispute see: Template_talk:Infobox_Chinese#Rfc_on_fixing_the_template_showflag
+
+linked conversation is at: Template_talk:Infobox_Chinese/Archive_4#Showflag broken
+
+]]
+
+local transl_map = {															-- maps |showflag= value to label from label_map table and data from matching parameter name
+	['bp'] = {['label1'] = 'bp', ['data1'] = 'bp'},
+	['bpmf'] = {['label1'] = 'bpmf', ['data1'] = 'bpmf'},
+	['gan'] = {['label1'] = 'gan', ['data1'] = 'gan'},
+	['gdp'] = {['label1'] = 'gd', ['data1'] = 'gd', ['label2'] = 'p', ['data2'] = 'p'},
+	['h'] = {['label1'] = 'h', ['data1'] = 'h'},
+	['hsn'] = {['label1'] = 'hsn', ['data1'] = 'hsn'},
+	['j'] = {['label1'] = 'j', ['data1'] = 'j'},
+	['jp'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'p', ['data2'] = 'p'},
+	['jy'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'y', ['data2'] = 'y'},
+	['jyp'] = {['label1'] = 'j', ['data1'] = 'j', ['label2'] = 'y', ['data2'] = 'y', ['label3'] = 'p', ['data3'] = 'p'},
+	['p'] = {['label1'] = 'p', ['data1'] = 'p'},
+	['phfs'] = {['label1'] = 'phfs', ['data1'] = 'phfs'},
+	['phsn'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'hsn', ['data2'] = 'hsn'},
+	['pj'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'j', ['data2'] = 'j'},
+	['poj'] = {['label1'] = 'poj', ['data1'] = 'poj'},
+	['psic'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'sic', ['data2'] = 'sic'},
+	['pwuu'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'wuu', ['data2'] = 'wuu'},
+	['py'] = {['label1'] = 'p', ['data1'] = 'p', ['label2'] = 'y', ['data2'] = 'y'},
+	['tl'] = {['label1'] = 'tl', ['data1'] = 'tl'},
+	['toip'] = {['label1'] = 'toi', ['data1'] = 'toi', ['label2'] = 'p', ['data2'] = 'p'},
+	['tp'] = {['label1'] = 'tp', ['data1'] = 'tp'},
+	['wp'] = {['label1'] = 'w', ['data1'] = 'w', ['label2'] = 'p', ['data2'] = 'p'},
+	['wgn'] = {['label1'] = 'wgn', ['data1'] = 'wgn'},
+	['wuu'] = {['label1'] = 'wuu', ['data1'] = 'wuu'},
+	['y'] = {['label1'] = 'y', ['data1'] = 'y'},
+	['yj'] = {['label1'] = 'y', ['data1'] = 'y', ['label2'] = 'j', ['data2'] = 'j'},
+	['xej'] = {
+		['label1'] = 'xej',
+		['data1'] = 'xej',				-- ???? what to do about this; template calls {{lang|zh-Arab|{{{xej}}}}} on this value
+		},
+	['xejp'] = {
+		['label1'] = 'xej',
+		['data1'] = 'xej',				-- ???? template does not call {{lang|zh-Arab|{{{xej}}}}} on this value; why?
+		['label2'] = 'p',
+		['data2'] = 'p'
+		},
+	}
+
+
+--[[--------------------------&lt; K E Y S &gt;----------------------------------------------------------------------
+]]
+
+local keys = {																	-- table of xscript table keys calls
+	ar = 'arabic',
+	bo = 'tibetan',
+	hokkien = 'hokkien',
+	ja = 'japanese',
+	ko = 'korean',
+	mn = 'mongolian',
+	ru = 'russian',
+	ug = 'uyghur',
+	}
+
+
+--[[--------------------------&lt; X S C R I P T &gt;----------------------------------------------------------------
+
+table that holds the various transcription headers and labels used by transcriptions()
+
+indexed in this table are lower case versions of the header display text without punctuation (if any)
+
+TODO: add support for transl transliteration standard parameter; akin to {{transl|lang code|standard code|text|italic=??}}
+
+]]
+
+local xscript = {
+	['standard mandarin'] = {													-- lower case version of the header display text
+		['header'] = '[[Standard Chinese|Standard Mandarin]]',					-- text to be displayed if headers are displayed
+		['t'] = {																-- table of labels and their associated data parameter
+			{'[[Hanyu Pinyin]]', 'p'},											-- label is [[Hanyu Pinyin]], data is taken from |p= parameter
+			{'[[Bopomofo]]','bpmf'},
+			{'[[Spelling in Gwoyeu Romatzyh|Gwoyeu Romatzyh]]', 'gr'},
+			{'[[Wade–Giles]]', 'w'},
+			{'[[Tongyong Pinyin]]', 'tp'},
+			{'[[Yale romanization of Mandarin|Yale Romanization]]', 'myr'},
+			{'[[Mandarin Phonetic Symbols II|MPS2]]', 'mps'},
+			{'[[Help:IPA/Mandarin|IPA]]', 'mi'}
+			}
+		},
+	['other mandarin'] = {
+		['header'] = '[[Mandarin Chinese|other Mandarin]]',
+		['t'] = {
+			{'[[Xiao\'erjing]]', 'xej'},
+			{'[[Dungan language|Dungan]]','zh-dungan'},
+			{'[[Sichuanese Mandarin|Sichuanese]] [[Sichuanese Pinyin|Pinyin]]', 'sic'},
+			}
+		},
+	['wu'] = {
+		['header'] = '[[Wu Chinese|Wu]]',
+		['t'] = {
+			{'[[Romanization of Wu Chinese|Wugniu]]', 'wgn'},
+			{'[[Romanization of Wu Chinese|Romanization]]', 'wuu'},
+			{'[[Wenzhounese]]&lt;br /&gt;[[Wenzhounese romanisation|Romanisation]]', 'ouji'},
+			{'[[Suzhounese]]', 'suz'},
+			{'[Help:IPA/Wu Chinese|IPA]]', 'wi'},
+			}
+		},
+	['gan'] = {
+		['header'] = '[[Gan Chinese|Gan]]',
+		['t'] = {
+			{'Romanization', 'gan'},
+			}
+		},
+	['xiang'] = {
+		['header'] = '[[Xiang Chinese|Xiang]]',
+		['t'] = {
+			{'IPA', 'hsn'},
+			}
+		},
+	['hakka'] = {
+		['header'] = '[[Hakka Chinese|Hakka]]',
+		['t'] = {
+			{'[[Guangdong Romanization#Hakka|Romanization]]', 'h'},
+			{'[[Pha̍k-fa-sṳ]]', 'phfs'},
+			}
+		},
+	['yue cantonese'] = {
+		['header'] = '[[Cantonese|Yue: Cantonese]]',
+		['t'] = {
+			{'[[Yale romanization of Cantonese|Yale Romanization]]', 'y'},
+			{'[[Jyutping]]', 'j'},
+			{'[[Sidney Lau romanisation|Sidney Lau]]', 'sl'},
+			{'[[Guangdong Romanization|Canton Romanization]]', 'gd'},
+			{'[[Hong Kong Government Cantonese Romanisation|Hong Kong Romanisation]]', 'hk'},
+			{'[[Cantonese#Romanization|Macau Romanization]]', 'mo'},
+			{'[[Help:IPA/Cantonese|IPA]]', 'ci'},
+			}
+		},
+	['other yue'] = {
+		['header'] = '[[Yue Chinese|other Yue]]',
+		['t'] = {
+			{'[[Taishanese]]', 'toi'},
+			}
+		},
+	['southern min'] = {
+		['header'] = '[[Southern Min]]',
+		['t'] = {
+			{'[[Hokkien]] [[Pe̍h-ōe-jī|POJ]]', 'poj'},
+			{'[[Taiwanese Romanization System|Tâi-lô]]', 'tl'},
+			{'[[Bbánlám pìngyīm|Bbánlám Pìngyīm]]', 'bp'},
+			{'[[Teochew dialect|Teochew]] [[Guangdong Romanization#Teochew|Peng\'im]]', 'teo'},
+			{'[[Hainanese]] Romanization', 'hain'},
+			{'[[Leizhou Min|Leizhou]] Romanization', 'lizu'},
+			}
+		},
+	['eastern min'] = {
+		['header'] = '[[Eastern Min]]',
+		['t'] = {
+			{'[[Fuzhou dialect|Fuzhou]] [[Foochow Romanized|BUC]]', 'buc'},
+			}
+		},
+	['pu-xian min'] = {
+		['header'] = '[[Pu-Xian Min]]',
+		['t'] = {
+			{'[[Pu-Xian Min|Hinghwa]] [[Hinghwa Romanized|BUC]]', 'hhbuc'},
+			}
+		},
+	['northern min'] = {
+		['header'] = '[[Northern Min]]',
+		['t'] = {
+			{'[[Jian\'ou dialect|Jian\'ou]] [[Kienning Colloquial Romanized|Romanized]]', 'mblmc'},
+			}
+		},
+	['old mandarin'] = {
+		['header'] = '[[Old Mandarin]]',
+		['t'] = {
+			{'Romanized \'Phags-pa', 'phagspa-latin'},
+			}
+		},
+	['middle chinese'] = {
+		['header'] = '[[Middle Chinese]]',
+		['t'] = {
+			{'[[Middle Chinese]]', 'mc'},
+			{'[[Middle Chinese#Early Middle Chinese|Early Middle Chinese]]', 'emc'},
+			{'[[Middle Chinese#Late Middle Chinese|Late Middle Chinese]]', 'lmc'},
+			}
+		},
+	['old chinese'] = {
+		['header'] = '[[Old Chinese]]',
+		['t'] = {
+			{'[[Reconstructions_of_Old_Chinese#Baxter (1992)|Baxter (1992)]]', 'oc-b92'},
+			{'[[Reconstructions of Old Chinese#Baxter–Sagart (2014)|Baxter–Sagart (2014)]]', 'oc-bs'},
+			{'[[Reconstructions of Old Chinese#Zhengzhang (1981–1995)|Zhengzhang]]', 'oc-zz'},
+			}
+		},
+
+--------&lt; non-Chinese transcriptions &gt;--------
+
+	['arabic'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Arabic}}; doesn't use header
+		['t'] = {
+			{'[[Arabic chat alphabet|Chat]]', 'chat'},							-- TODO: standardize on lowercase parameter names
+			{'[[Arabic chat alphabet|Chat]]', 'Chat'},
+			{'[[ALA-LC romanization|ALA-LC]]', 'ala-lc'},
+			{'[[ALA-LC romanization|ALA-LC]]', 'ALA-LC'},
+			{'[[ISO 233|ISO]]', 'iso'},
+			{'[[ISO 233|ISO]]', 'ISO'},
+			{'[[DIN 31635|DIN]]', 'din'},
+			{'[[DIN 31635|DIN]]', 'DIN'},
+			}
+		},
+	['hokkien'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Hokkien}}; doesn't use header
+		['t'] = {
+			{'[[Taiwanese Romanization System|Tâi-lô]]', 'tl'},
+			{'[[Bbánlám pìngyīm|Bbánpìng]]', 'bp'},
+			{'[[Help:IPA for Hokkien|IPA]]', 'hokkienipa'},
+			}
+		},
+	['japanese'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Japanese}}; doesn't use header
+		['t'] = {
+			{'[[Romanization of Japanese|Romanization]]', 'romaji'},
+			{'[[Hepburn romanization|Revised Hepburn]]', 'revhep'},
+			{'[[Hepburn romanization|Traditional Hepburn]]', 'tradhep'},
+			{'[[Kunrei-shiki romanization|Kunrei-shiki]]', 'kunrei'},
+			{'[[Nihon-shiki romanization|Nihon-shiki]]', 'nihon'},
+			}
+		},
+	['korean'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Korean}}; doesn't use header
+		['t'] = {
+			{'[[Revised Romanization of Korean|Revised Romanization]]', 'rr'},
+			{'[[McCune–Reischauer]]', 'mr'},
+			{'[[Yale romanization of Korean|Yale]]', 'kyale'},
+			{'[[Help:IPA/Korean|IPA]]', 'koreanipa'},
+			}
+		},
+	['mongolian'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Mongolian}}; doesn't use header
+		['t'] = {
+			{'[[SASM/GNC romanization#Mongolian|SASM/GNC]]', 'monr'},
+			}
+		},
+	['russian'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Russian}}; doesn't use header
+		['t'] = {
+			{'[[Scientific transliteration of Cyrillic|Scientific]]', 'scientific'},
+			{'[[Scientific transliteration of Cyrillic|Scientific]]', 'Scientific'},
+			{'[[ISO 9|ISO]]', 'iso'},
+			{'[[ISO 9|ISO]]', 'ISO'},
+			{'[[GOST 16876-71|GOST 71]]', 'gost'},
+			{'[[GOST 16876-71|GOST 71]]', 'GOST'},
+			{'[[BGN/PCGN romanization of Russian|BGN/PCGN]]', 'bgn/pcgn'},
+			{'[[BGN/PCGN romanization of Russian|BGN/PCGN]]', 'BGN/PGCN'},
+			}
+		},
+	['tibetan'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Tibetan}}; doesn't use header
+		['t'] = {
+			{'[[Wylie transliteration|Wylie]]', 'wylie'},
+			{'[[THL Simplified Phonetic Transcription|THL]]', 'thdl'},
+			{'[[Tibetan pinyin|Tibetan Pinyin]]', 'zwpy'},
+			{'[[Standard Tibetan|Lhasa]] [[Help:IPA/Tibetan|IPA]]', 'lhasa'},
+			}
+		},
+	['uyghur'] = {
+		['header'] = nil,														-- {{Infobox Chinese/Uyghur}}; doesn't use header
+		['t'] = {
+			{'[[Uyghur Latin alphabet|Latin Yëziqi]]', 'uly'},
+			{'[[Uyghur New Script|Yengi Yeziⱪ]]', 'uyy'},
+			{'[[SASM/GNC romanization#Uyghur|SASM/GNC]]', 'sgs'},
+			{'[[Uyghur Cyrillic alphabet|Siril Yëziqi]]', 'usy'},
+			{'Uyghur [[Wikipedia: IPA|IPA]]', 'uipa'},
+			}
+		},
+	}
+
+
+--[[--------------------------&lt; I B O X _ Z H Z H _ E N U M _ P A R A M S &gt;------------------------------------
+]]
+
+local ibox_zhzh_enum_params = {													-- 'p', 'hp', 'xej' are special case enum parameters
+	'c', 't', 's', 'l', 'tp', 'w', 'mi', 'myr', 'psp', 'myale', 'gr', 'bpmf', 'mps',
+	'zh-dungan', 'sic', 'y', 'j', 'sl', 'gd', 'hk', 'mo', 'ci', 'toi', 'gan', 'wgn', 'wuu', 'ouji', 'suz', 'wi',
+	'hsn', 'h', 'phfs', 'poj', 'tl', 'bp', 'buc', 'hhbuc', 'mblmc', 'teo', 'lizu', 'hain',
+	'mc', 'emc', 'lmc', 'oc-bs', 'oc-zz',
+	'oc-b92', 																	-- only supported in the first ibox zhzh; why?
+	'lao', 'khm', 'tet'															-- not supported by ibox zh/zh  why are they here?
+	}
+
+
+--[[--------------------------&lt; Z H _ H D R _ N A M E S &gt;------------------------------------------------------
+
+this table fixes an oddity in the ibox zh/zh header name parameters.  |chinese_header= for the first ibox zh/zh 
+gets filled from |name1= but the second gets its name from |altname= and then the third from |altname3=.
+All of these parameter names should be replaced with |chinese_header= followed by |chinese_header2= ... like all
+of the other enumerated parameters
+
+]]
+
+local zh_hdr_names = {
+	[2] = {'altname', 'Alternative Chinese name'},
+	[3] = {'altname3', 'Second alternative Chinese name'},
+	[4] = {'altname4', 'Third alternative Chinese name'},
+	[5] = {'altname5', 'Fourth alternative Chinese name'},
+	[6] = {'altname6', 'Fifth alternative Chinese name'},
+	};
+
+
+--[[--------------------------&lt; E X P O R T E D   T A B L E S &gt;------------------------------------------------
+]]
+
+return {
+	ibox_zhzh_enum_params = ibox_zhzh_enum_params,
+	keys = keys,
+	label_map = label_map,
+	transl_map = transl_map,
+	xscript = xscript,
+	zh_hdr_names = zh_hdr_names,
+	}</text>
+      <sha1>oxpixndbgbfyb5fzjw9nndoyh8thfgz</sha1>
+    </revision>
+  </page>
+</mediawiki>

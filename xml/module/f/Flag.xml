@@ -1,0 +1,349 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Flag</title>
+    <ns>828</ns>
+    <id>14241</id>
+    <revision>
+      <id>1155609</id>
+      <timestamp>2025-03-04T21:40:13Z</timestamp>
+      <contributor>
+        <username>Ahecht</username>
+        <id>54</id>
+      </contributor>
+      <comment>Don't error out on missing args[1]</comment>
+      <origin>1155609</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5348" sha1="9vh69h63esvhy0azkftw1slg9flll47" xml:space="preserve">local margs = require('Module:Arguments')
+
+local function _main(frame, name, mode)
+	local categories = {
+		['Flag icon'] = '[[Category:Flag icons missing country data templates]]',
+		['Flag decoration'] = '[[Category:Flag decoration missing country data templates]]',
+	}
+
+    local yesno = require('Module:Yesno')
+
+	--Get input arguments
+	local args = margs.getArgs(frame, {
+		frameOnly = ((frame.args.frameonly or '') ~= ''), valueFunc =
+			function(key,value)
+				if value then
+					value = mw.text.trim(value)
+					--Change empty string to nil for all args except 'image' and 'border'
+					if key=="image" or key=="border" or value~="" then
+						return value
+					end
+				end
+				return nil
+			end
+	} )
+	
+	local preftext, sufftext = "", ""
+	
+	if name == 'Flag+link' then
+		args.pref = args[1]
+	elseif name == 'Flag athlete' then
+		args.preftext = args[1]
+		args[2] = args.code or args[2] or ""
+		args.variant = args.variant or args[3]
+	elseif name == 'Flag medalist' then
+		preftext = (args[1] or "") .. "&lt;br/&gt;"
+		args[2] = args.code or args[2] or ""
+		args.variant = args.variant or args[3]
+	elseif name == 'Flag link' then
+		args.suff = args[2]
+		args[2] = args[1] or ""
+		args.variant = args.variant or args[3]
+	else
+		sports = {
+			fb = 'fb',
+			['fb-rt'] = 'fb',
+			fbicon = 'fb',
+			ru = 'ru',
+			fba = 'fba',
+			fbaicon = 'fba'
+		}
+		if sports[name] and args[1] then
+			args.avar = sports[name]
+			if name == 'fb' and yesno(args.align) == true then
+				args.align='c'
+			elseif args.avar == 'fba' then
+				local list = require("Module:Fba/list")
+				local old = ((args.old or "") ~= "") and "_old" or ""
+				local fba = list.fbas[args[1] .. old]
+				if not fba and string.len(args[1]) == 3 then
+					for k, v in pairs(list.codes) do
+						if v == args[1] then fba = list.fbas[k]; break end
+					end
+				end
+				if args.name == "code" then
+					args.name = list.codes[args[1]]
+				elseif args.name == "full" then
+					args.name = fba
+				end
+				if fba then
+					mode = string.gsub(mode, "p", "c")
+					args.link = fba
+				end
+				args.altlink = args.old
+			end
+		elseif name == "Flag team" and (args.code or args[1]) then
+			sufftext = '&amp;nbsp;&lt;span style="font-size:90%;"&gt;('..(args.code or args[1])..')&lt;/span&gt;'
+		end
+		args.variant = args.variant or args[2]
+		args[2] = args[1] or ""
+	end
+
+	args[1] = mode .. (args.opts or '')
+	args.missingcategory = categories[name]
+	args.noredlink = args.noredlink or 'notext'
+
+	if args.placeholder and yesno(args.placeholder) ~= true then
+		args[1] = args[1] .. 'o'
+	end
+
+	if mw.title.getCurrentTitle().namespace == 0 then
+		local unknown = '[[Category:Pages using ' .. mw.ustring.lower(name) .. 
+			' template with unknown parameters|_VALUE_' .. frame:getParent():getTitle() .. ']]'
+	else
+		local unknown = ''
+	end
+	
+	check = ''
+	
+	if name == 'Flag icon' then
+		local opts = {
+            unknown=unknown,
+            preview='Page using [[Template:' .. name .. ']] with unknown parameter "_VALUE_"',
+            ignoreblank='y',
+            '1','2','variant','image','size','sz','border','align','al','width',
+            'w','alt','ilink','noredlink','missingcategory','name','clink','link',
+            'pref','suff','plink','the','section','altvar','avar','age','nalign',
+            'nal','text','nodata','opts','placeholder','getParent','frameonly'
+		}
+		check = require('Module:Check for unknown parameters')._check(opts,args)
+	end
+
+	return preftext .. require('Module:Flagg').luaMain(frame,args) .. sufftext .. check
+end
+
+local p = {
+	['']       = function (frame) return _main(frame, 'Flag',            'unc'   ) end,
+	decoration = function (frame) return _main(frame, 'Flag decoration', 'uxx'   ) end,
+	icon       = function (frame) return _main(frame, 'Flag icon',       'cxxl'  ) end,
+	link       = function (frame) return _main(frame, 'Flag link',       'unpe'  ) end,
+	['+link']  = function (frame) return _main(frame, 'Flag+link',       'unpefo') end,
+	country    = function (frame) return _main(frame, 'Flag country',    'unce'  ) end,
+	team       = function (frame) return _main(frame, 'Flag team',       'unce'  ) end,
+	athlete    = function (frame) return _main(frame, 'Flag athlete',    'unape' ) end,
+	medalist   = function (frame) return _main(frame, 'Flag medalist',   'unce'  ) end,
+	fb         = function (frame) return _main(frame, 'fb',              'unpe'  ) end,
+	fba        = function (frame) return _main(frame, 'fba',             'unpe'  ) end,
+	['fb-rt']  = function (frame) return _main(frame, 'fb-rt',           'unpre' ) end,
+	fbicon     = function (frame) return _main(frame, 'fbicon',          'pxxl'  ) end,
+	fbaicon    = function (frame) return _main(frame, 'fbaicon',         'pxxl'  ) end,
+	ru         = function (frame) return _main(frame, 'ru',              'unpe'  ) end,
+	IOC        = function (frame) return require('Module:Country_alias').flagIOC(frame:newChild{ title = 'Template:Flag IOC' }) end,
+	IOC2       = function (frame) return require('Module:Country_alias').flagXYZ(frame:newChild{ title = 'Template:Flag IOC 2', args = {name = margs.getArgs(frame).name or '', type = 'name'} }) end,
+	IOCathlete = function (frame) return require('Module:Country_alias').flagXYZ(frame:newChild{ title = 'Template:Flag IOC athlete', args = {type = 'athlete-O'} }) end,
+}
+
+p['deco'] = p.decoration
+p['IOC 2'] = p.IOC2
+p['IOC athlete'] = p.IOCathlete
+
+return p</text>
+      <sha1>9vh69h63esvhy0azkftw1slg9flll47</sha1>
+    </revision>
+    <revision>
+      <id>14242</id>
+      <timestamp>2025-04-11T15:57:14Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported from [[:wikipedia:Module:Flag]]: Mass importing wikipedia</comment>
+      <origin>14242</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5348" sha1="9vh69h63esvhy0azkftw1slg9flll47" xml:space="preserve">local margs = require('Module:Arguments')
+
+local function _main(frame, name, mode)
+	local categories = {
+		['Flag icon'] = '[[Category:Flag icons missing country data templates]]',
+		['Flag decoration'] = '[[Category:Flag decoration missing country data templates]]',
+	}
+
+    local yesno = require('Module:Yesno')
+
+	--Get input arguments
+	local args = margs.getArgs(frame, {
+		frameOnly = ((frame.args.frameonly or '') ~= ''), valueFunc =
+			function(key,value)
+				if value then
+					value = mw.text.trim(value)
+					--Change empty string to nil for all args except 'image' and 'border'
+					if key=="image" or key=="border" or value~="" then
+						return value
+					end
+				end
+				return nil
+			end
+	} )
+	
+	local preftext, sufftext = "", ""
+	
+	if name == 'Flag+link' then
+		args.pref = args[1]
+	elseif name == 'Flag athlete' then
+		args.preftext = args[1]
+		args[2] = args.code or args[2] or ""
+		args.variant = args.variant or args[3]
+	elseif name == 'Flag medalist' then
+		preftext = (args[1] or "") .. "&lt;br/&gt;"
+		args[2] = args.code or args[2] or ""
+		args.variant = args.variant or args[3]
+	elseif name == 'Flag link' then
+		args.suff = args[2]
+		args[2] = args[1] or ""
+		args.variant = args.variant or args[3]
+	else
+		sports = {
+			fb = 'fb',
+			['fb-rt'] = 'fb',
+			fbicon = 'fb',
+			ru = 'ru',
+			fba = 'fba',
+			fbaicon = 'fba'
+		}
+		if sports[name] and args[1] then
+			args.avar = sports[name]
+			if name == 'fb' and yesno(args.align) == true then
+				args.align='c'
+			elseif args.avar == 'fba' then
+				local list = require("Module:Fba/list")
+				local old = ((args.old or "") ~= "") and "_old" or ""
+				local fba = list.fbas[args[1] .. old]
+				if not fba and string.len(args[1]) == 3 then
+					for k, v in pairs(list.codes) do
+						if v == args[1] then fba = list.fbas[k]; break end
+					end
+				end
+				if args.name == "code" then
+					args.name = list.codes[args[1]]
+				elseif args.name == "full" then
+					args.name = fba
+				end
+				if fba then
+					mode = string.gsub(mode, "p", "c")
+					args.link = fba
+				end
+				args.altlink = args.old
+			end
+		elseif name == "Flag team" and (args.code or args[1]) then
+			sufftext = '&amp;nbsp;&lt;span style="font-size:90%;"&gt;('..(args.code or args[1])..')&lt;/span&gt;'
+		end
+		args.variant = args.variant or args[2]
+		args[2] = args[1] or ""
+	end
+
+	args[1] = mode .. (args.opts or '')
+	args.missingcategory = categories[name]
+	args.noredlink = args.noredlink or 'notext'
+
+	if args.placeholder and yesno(args.placeholder) ~= true then
+		args[1] = args[1] .. 'o'
+	end
+
+	if mw.title.getCurrentTitle().namespace == 0 then
+		local unknown = '[[Category:Pages using ' .. mw.ustring.lower(name) .. 
+			' template with unknown parameters|_VALUE_' .. frame:getParent():getTitle() .. ']]'
+	else
+		local unknown = ''
+	end
+	
+	check = ''
+	
+	if name == 'Flag icon' then
+		local opts = {
+            unknown=unknown,
+            preview='Page using [[Template:' .. name .. ']] with unknown parameter "_VALUE_"',
+            ignoreblank='y',
+            '1','2','variant','image','size','sz','border','align','al','width',
+            'w','alt','ilink','noredlink','missingcategory','name','clink','link',
+            'pref','suff','plink','the','section','altvar','avar','age','nalign',
+            'nal','text','nodata','opts','placeholder','getParent','frameonly'
+		}
+		check = require('Module:Check for unknown parameters')._check(opts,args)
+	end
+
+	return preftext .. require('Module:Flagg').luaMain(frame,args) .. sufftext .. check
+end
+
+local p = {
+	['']       = function (frame) return _main(frame, 'Flag',            'unc'   ) end,
+	decoration = function (frame) return _main(frame, 'Flag decoration', 'uxx'   ) end,
+	icon       = function (frame) return _main(frame, 'Flag icon',       'cxxl'  ) end,
+	link       = function (frame) return _main(frame, 'Flag link',       'unpe'  ) end,
+	['+link']  = function (frame) return _main(frame, 'Flag+link',       'unpefo') end,
+	country    = function (frame) return _main(frame, 'Flag country',    'unce'  ) end,
+	team       = function (frame) return _main(frame, 'Flag team',       'unce'  ) end,
+	athlete    = function (frame) return _main(frame, 'Flag athlete',    'unape' ) end,
+	medalist   = function (frame) return _main(frame, 'Flag medalist',   'unce'  ) end,
+	fb         = function (frame) return _main(frame, 'fb',              'unpe'  ) end,
+	fba        = function (frame) return _main(frame, 'fba',             'unpe'  ) end,
+	['fb-rt']  = function (frame) return _main(frame, 'fb-rt',           'unpre' ) end,
+	fbicon     = function (frame) return _main(frame, 'fbicon',          'pxxl'  ) end,
+	fbaicon    = function (frame) return _main(frame, 'fbaicon',         'pxxl'  ) end,
+	ru         = function (frame) return _main(frame, 'ru',              'unpe'  ) end,
+	IOC        = function (frame) return require('Module:Country_alias').flagIOC(frame:newChild{ title = 'Template:Flag IOC' }) end,
+	IOC2       = function (frame) return require('Module:Country_alias').flagXYZ(frame:newChild{ title = 'Template:Flag IOC 2', args = {name = margs.getArgs(frame).name or '', type = 'name'} }) end,
+	IOCathlete = function (frame) return require('Module:Country_alias').flagXYZ(frame:newChild{ title = 'Template:Flag IOC athlete', args = {type = 'athlete-O'} }) end,
+}
+
+p['deco'] = p.decoration
+p['IOC 2'] = p.IOC2
+p['IOC athlete'] = p.IOCathlete
+
+return p</text>
+      <sha1>9vh69h63esvhy0azkftw1slg9flll47</sha1>
+    </revision>
+  </page>
+</mediawiki>

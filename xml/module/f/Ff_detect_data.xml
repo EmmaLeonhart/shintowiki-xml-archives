@@ -1,0 +1,239 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Ff detect/data</title>
+    <ns>828</ns>
+    <id>151202</id>
+    <revision>
+      <id>3407302</id>
+      <timestamp>2020-04-01T06:12:45Z</timestamp>
+      <contributor>
+        <username>MusikAnimal</username>
+        <id>53</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported</comment>
+      <origin>3407302</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2506" sha1="0uujs19sq2xvammpskxm7kykbkwuxlb" xml:space="preserve">--------------------------------------------------------------------------------
+--                          ff detect data                             --
+-- This module holds data for [[Module:ff detect]] to be loaded per    --
+-- page, rather than per #invoke, for performance reasons.                    --
+--------------------------------------------------------------------------------
+
+local cfg = require('Module:ff detect/config')
+
+local function addKey(t, key, defaultKey)
+	if key ~= defaultKey then
+		t[#t + 1] = key
+	end
+end
+
+-- Get a table of parameters to query for each default parameter name.
+-- This allows wikis to customise parameter names in the cfg table while
+-- ensuring that default parameter names will always work. The cfg table
+-- values can be added as a string, or as an array of strings.
+
+local defaultKeys = {
+	'main',
+	'talk',
+	'other',
+	'subjectns',
+	'demospace',
+	'demopage'
+}
+
+local argKeys = {}
+for i, defaultKey in ipairs(defaultKeys) do
+	argKeys[defaultKey] = {defaultKey}
+end
+
+for defaultKey, t in pairs(argKeys) do
+	local cfgValue = cfg[defaultKey]
+	local cfgValueType = type(cfgValue)
+	if cfgValueType == 'string' then
+		addKey(t, cfgValue, defaultKey)
+	elseif cfgValueType == 'table' then
+		for i, key in ipairs(cfgValue) do
+			addKey(t, key, defaultKey)
+		end
+	end
+	cfg[defaultKey] = nil -- Free the cfg value as we don't need it any more.
+end
+
+local function getParamMappings()
+	--[[
+	-- Returns a table of how parameter names map to ff names. The keys
+	-- are the actual ff names, in lower case, and the values are the
+	-- possible parameter names for that ff, also in lower case. The
+	-- table entries are structured like this:
+	-- {
+	--   [''] = {'main'},
+	--   ['wikipedia'] = {'wikipedia', 'project', 'wp'},
+	--   ...
+	-- }
+	--]]
+	local mappings = {}
+	local mainNsName = mw.site.subjectffs[0].name
+	mainNsName = mw.ustring.lower(mainNsName)
+	mappings[mainNsName] = mw.clone(argKeys.main)
+	mappings['talk'] = mw.clone(argKeys.talk)
+	for nsid, ns in pairs(mw.site.subjectffs) do
+		if nsid ~= 0 then -- Exclude main ff.
+			local nsname = mw.ustring.lower(ns.name)
+			local canonicalName = mw.ustring.lower(ns.canonicalName)
+			mappings[nsname] = {nsname}
+			if canonicalName ~= nsname then
+				table.insert(mappings[nsname], canonicalName)
+			end
+			for _, alias in ipairs(ns.aliases) do
+				table.insert(mappings[nsname], mw.ustring.lower(alias))
+			end
+		end
+	end
+	return mappings
+end
+
+return {
+	argKeys = argKeys,
+	cfg = cfg,
+	mappings = getParamMappings()
+}</text>
+      <sha1>0uujs19sq2xvammpskxm7kykbkwuxlb</sha1>
+    </revision>
+    <revision>
+      <id>3407303</id>
+      <parentid>3407302</parentid>
+      <timestamp>2026-03-12T20:21:23Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3407302</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2506" sha1="0uujs19sq2xvammpskxm7kykbkwuxlb" xml:space="preserve">--------------------------------------------------------------------------------
+--                          ff detect data                             --
+-- This module holds data for [[Module:ff detect]] to be loaded per    --
+-- page, rather than per #invoke, for performance reasons.                    --
+--------------------------------------------------------------------------------
+
+local cfg = require('Module:ff detect/config')
+
+local function addKey(t, key, defaultKey)
+	if key ~= defaultKey then
+		t[#t + 1] = key
+	end
+end
+
+-- Get a table of parameters to query for each default parameter name.
+-- This allows wikis to customise parameter names in the cfg table while
+-- ensuring that default parameter names will always work. The cfg table
+-- values can be added as a string, or as an array of strings.
+
+local defaultKeys = {
+	'main',
+	'talk',
+	'other',
+	'subjectns',
+	'demospace',
+	'demopage'
+}
+
+local argKeys = {}
+for i, defaultKey in ipairs(defaultKeys) do
+	argKeys[defaultKey] = {defaultKey}
+end
+
+for defaultKey, t in pairs(argKeys) do
+	local cfgValue = cfg[defaultKey]
+	local cfgValueType = type(cfgValue)
+	if cfgValueType == 'string' then
+		addKey(t, cfgValue, defaultKey)
+	elseif cfgValueType == 'table' then
+		for i, key in ipairs(cfgValue) do
+			addKey(t, key, defaultKey)
+		end
+	end
+	cfg[defaultKey] = nil -- Free the cfg value as we don't need it any more.
+end
+
+local function getParamMappings()
+	--[[
+	-- Returns a table of how parameter names map to ff names. The keys
+	-- are the actual ff names, in lower case, and the values are the
+	-- possible parameter names for that ff, also in lower case. The
+	-- table entries are structured like this:
+	-- {
+	--   [''] = {'main'},
+	--   ['wikipedia'] = {'wikipedia', 'project', 'wp'},
+	--   ...
+	-- }
+	--]]
+	local mappings = {}
+	local mainNsName = mw.site.subjectffs[0].name
+	mainNsName = mw.ustring.lower(mainNsName)
+	mappings[mainNsName] = mw.clone(argKeys.main)
+	mappings['talk'] = mw.clone(argKeys.talk)
+	for nsid, ns in pairs(mw.site.subjectffs) do
+		if nsid ~= 0 then -- Exclude main ff.
+			local nsname = mw.ustring.lower(ns.name)
+			local canonicalName = mw.ustring.lower(ns.canonicalName)
+			mappings[nsname] = {nsname}
+			if canonicalName ~= nsname then
+				table.insert(mappings[nsname], canonicalName)
+			end
+			for _, alias in ipairs(ns.aliases) do
+				table.insert(mappings[nsname], mw.ustring.lower(alias))
+			end
+		end
+	end
+	return mappings
+end
+
+return {
+	argKeys = argKeys,
+	cfg = cfg,
+	mappings = getParamMappings()
+}</text>
+      <sha1>0uujs19sq2xvammpskxm7kykbkwuxlb</sha1>
+    </revision>
+  </page>
+</mediawiki>

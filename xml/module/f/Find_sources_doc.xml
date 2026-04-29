@@ -1,0 +1,425 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Find sources/doc</title>
+    <ns>828</ns>
+    <id>7574</id>
+    <revision>
+      <id>884932</id>
+      <timestamp>2024-10-16T17:11:21Z</timestamp>
+      <contributor>
+        <username>en&gt;Danski454</username>
+        <id>0</id>
+      </contributor>
+      <comment>/* Adding new links */ tooltip not supported by link definition, only on template definition</comment>
+      <origin>884932</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="11673" sha1="kaaj4we8m4td2rsyl5vteh0skp7d92h" xml:space="preserve">{{High-use}}
+{{Module rating|protected}}
+This module produces a list of links to search engines to help editors find sources about a given subject. It implements {{tl|find sources}} and other similar templates. It is highly extensible; new templates and new link types can be added easily and by any user.
+
+== Usage ==
+=== From wikitext ===
+
+Usually, from wikitext this module should be used via a template, e.g. {{tl|find sources}}. However, it is also possible to use it directly from #invoke, like this:
+
+ &amp;#123;{#invoke:Find sources|''template''|''search term 1''|''search term 2''|...}&amp;#125;
+
+* &lt;var&gt;template&lt;/var&gt; is the name of the template that should be called. It must be the full page name of the template, without the namespace, and with the correct capitalisation. So, for [[Template:Find sources]], the template name should be "Find sources"; "find sources" with a lower-case "f" would cause an error. This parameter is required.
+* &lt;var&gt;search term 1&lt;/var&gt;,  &lt;var&gt;search term 2&lt;/var&gt;, etc., are the terms to be searched for in each of the search engine links. The first search term will appear in quotation marks, and subsequent search terms will be added without quotation marks. Each term will be separated by spaces. These parameters are all optional. If no parameters are given, the current page name will be used as a search term.
+
+Alternatively the following can be used, which will convert any title to a search query, with the main portion of the title in quotation marks, and any parenthetical disambiguator outside quotation marks.
+ &amp;#123;{#invoke:Find sources|''template''|title=''title''}&amp;#125;
+* &lt;var&gt;template&lt;/var&gt; as above, is the name of the template that should be called. It must be the full page name of the template, without the namespace, and with the correct capitalisation. So, for [[Template:Find sources]], the template name should be "Find sources"; "find sources" with a lower-case "f" would cause an error. This parameter is required.
+* &lt;var&gt;title&lt;/var&gt; the title to be converted to a search query. This is processed in the same way as the subpage name of the page if no parameters are used.
+
+=== From Lua ===
+
+Load the module with the following code:
+
+&lt;syntaxhighlight lang="lua"&gt;
+local mFindSources = require('Module:Find sources')
+&lt;/syntaxhighlight&gt;
+
+You can then produce the list of search links like this:
+
+&lt;syntaxhighlight lang="lua"&gt;
+mFindSources._main(template, searchTerms)
+&lt;/syntaxhighlight&gt;
+
+* &lt;var&gt;template&lt;/var&gt; is the template name, as outlined in the [[#From wikitext]] section above. This parameter is required.
+* &lt;var&gt;searchTerms&lt;/var&gt; is an array of search terms. Each item in the array corresponds to a numbered search term as outlined in the [[#From wikitext]] section above. Alternatively, an empty table with the &lt;code&gt;title&lt;/code&gt; key set will automatically generate a query as described above. This parameter is optional.
+
+Example syntax:
+
+&lt;syntaxhighlight lang="lua"&gt;
+mFindSources._main('Find sources', {'Albert Einstein', '-"Marilyn Monroe"', 'relativity', 'science'})
+&lt;/syntaxhighlight&gt;
+
+=== Available templates ===
+
+The following templates are available for use:
+
+{{#invoke:Find sources/autodoc|templateTable}}
+
+== Making new templates ==
+
+There are two basic ingredients to making a new source-finding template. The first is the template configuration module, and the second is the template invocation on the template page.
+
+=== Template configuration page ===
+
+To find the name of the template configuration page, take the page name of your proposed template without the namespace prefix, and add it to the base page of "Module:Find sources/templates/". For example, for [[Template:Find sources]], the configuration page is located at [[Module:Find sources/templates/Find sources]]. Note that the template must be capitalised exactly as the page name is, otherwise the arguments will not be passed through from the template page to the module.
+
+The template configuration page should look something like this:
+
+&lt;syntaxhighlight lang="lua"&gt;
+return {
+	blurb = "Find sources for $1 – $2",
+	introLink = {code = 'google'},
+	links = {
+		{code = 'google news', display = 'news'},
+		{code = 'google newspapers', display = 'newspapers', tooltip = 'Search newspapers with Google Books'}
+	},
+	separator = ', ',
+	isUsedInMainspace = true,
+	class = 'custom-class',
+	style = 'color: green; font-size: 110%;'
+}
+&lt;/syntaxhighlight&gt;
+
+* '''blurb''' - the text presented to users. There are two parameters available in the blurb, $1 and $2. $1 is the intro link, if specified, and $2 represents the other links. This field is required.
+* '''introLink''' - an optional introductory link. If specified, this must be a [[#Link tables|link table]]. If the display value in the link table is not set, the search terms that the user entered will be used instead.
+* '''links''' - an array of [[#Link tables|link tables]] defining the main links to be used by the template. This field is required.
+* '''separator''' - the text separating the search engine links. This field is optional; the default value is taken from [[MediaWiki:Dot-separator]].
+* '''isUsedInMainspace''' - set this to true if the template will be used in the main namespace. If this is not set, when the template is used in the main namespace it will produce an error and be put in [[:Category:Pages with templates in the wrong namespace]].
+* '''class''' - a custom HTML class to apply to the template text. The "plainlinks" class is added by default. This field is optional.
+* '''style''' - custom CSS to apply to the template text. This field is optional.
+
+Once you have created your template configuration page, you need to add the template to [[Module:Find sources/templates]] in order for it to show up in the table of templates on this documentation page.
+
+==== Link tables ====
+
+[[Module:Find sources/links|Link tables]] are used in the "introLink" and "links" fields of the template configuration. They can contain three fields, "code", "display", and "tooltip". The "code" field is required, and must be one of the link codes listed in the table below. The "display" field is optional, and specifies a custom display value for that link to be used by the template. If the display field is not set, a default value is set by the module. The "tooltip" field is also optional, and specifies a custom tooltip for the link. HTML reserved characters are escaped by the module. If the field is absent, no tooltip is displayed. For the "introLink" field, the default value is the search text entered by the user; for the "links" field, the default value is defined in the link configuration modules.
+
+The following table contains all the available link codes, with descriptions and examples.
+
+{{#invoke:Find sources/autodoc|linkTable}}
+
+=== Template invocation ===
+
+The template invocation on the template page itself should look like this:
+
+ &amp;#123;{#invoke:Find sources|''template''}&amp;#125;&amp;lt;noinclude&amp;gt;
+ &amp;#123;{#invoke:Find sources/autodoc|''template''}&amp;#125;
+ &amp;lt;/noinclude&amp;gt;
+
+This activates the template code and also provides automatic documentation. &lt;var&gt;template&lt;/var&gt; is the name of the template without the namespace prefix, and must be correctly capitalised.
+
+If you want to use custom documentation from a /doc subpage instead of the automatic documentation, use this invocation instead:
+
+ &amp;#123;{#invoke:Find sources|''template''}&amp;#125;&amp;lt;noinclude&amp;gt;
+ &amp;#123;{documentation}&amp;#125;
+ &amp;lt;!-- Categories go on the /doc subpage, and interwikis go on Wikidata. --&amp;gt;
+ &amp;lt;/noinclude&amp;gt;
+
+== Adding new links ==
+New links are added to [[Module:Find sources/links]]. Link codes should be short but descriptive, and should be in lower case. For example, the link code for Google search is "google".
+
+The link configuration page should look something like this:
+
+&lt;syntaxhighlight lang="lua"&gt;
+return {
+	url = '//www.google.com/search?as_eq=wikipedia&amp;q=$1',
+	display = 'Google',
+    description = '[[Google]], the flagship search engine from Google Inc.',
+}
+&lt;/syntaxhighlight&gt;
+
+{| class="wikitable"
+|+ Parameters
+|-
+! scope="col" | Parameter
+! scope="col" | Description
+|-
+! scope="row" | url
+| The url to perform the search. This field takes a parameter $1, which is the URL-encoded search text entered by the user. This field is required.
+|-
+! scope="row" | display
+| If a display value is not specified in the template configuration, this value is used instead. This field is required.
+|-
+! scope="row" | separator
+| This is used to separate the search terms entered by the user. This is optional, and defaults to "+" (a URL-encoded space).
+|-
+! scope="row" | description
+| a brief description of what the search engine link does. This is used in the template documentation to generate the list of link descriptions, and also to make the descriptions in the [[#Link tables|table of link codes]] above. This is optional, but recommended.
+|-
+! scope="row" | notes
+| notes about the search engine link. These are put in the [[#Link tables|table of link codes]] above, but they are not put in the template documentation for individual source-finding templates. This field is optional.
+|}
+
+== Automatic documentation ==
+
+Automatic documentation is provided for templates based on this module; the documentation is generated by [[Module:Find sources/autodoc]]. The autodoc module uses the following pages:
+* [[Template:Find sources documentation]] - the template used for most of the documentation content.
+* The [[#Template configuration page|template configuration page]]. Used to find the list of link codes, and to see if the template is used in articles.
+* The [[#Template documentation configuration page|template documentation configuration page]]. Used to find template shortcuts.
+* The [[#Link documentation configuration page|link documentation configuration page]]. Used to find descriptions of each of the search links.
+
+=== Template documentation configuration page ===
+
+This page is located at the "/autodoc" subpage of the [[#Template configuration page|template configuration page]]. It is only used to generate the documentation, not to generate any of the actual template output, so it does not need to be protected. It should look something like this:
+
+&lt;syntaxhighlight lang="lua"&gt;
+return {
+	shortcuts = {'shortcut1', 'shortcut2'},
+	description = 'This template is used to provide source links on [[WP:AFD|AfD]] pages',
+	docIntro = 'This template produces a series of search-engine links to be used on [[WP:AFD|AfD]] pages.'
+}
+&lt;/syntaxhighlight&gt;
+
+* '''shortcuts''' - an array of shortcuts that redirect to the template page. These are displayed on the template documentation page using the {{tl|template shortcut}} template.
+* '''description''' - a brief description of what the template does. This is displayed on this documentation page in the [[#Available templates|table of available templates]].
+* '''docIntro''' - text to be used instead of the first sentence of the template documentation for individual source-finding templates. This is optional, and the default value is "''This template produces a series of links to various search interfaces to help find additional reference material for articles.''"
+
+== Configuration ==
+
+The messages used in this module can be found at [[Module:Find sources/config]] and [[Module:Find sources/autodoc/config]]. This can be helpful for translating this module for use in other languages. Note that any template and link configuration used must also be translated.
+
+&lt;includeonly&gt;{{#ifeq:{{SUBPAGENAME}}|sandbox||
+&lt;!-- Categories go here and interwikis go in Wikidata. --&gt;
+[[Category:Wikipedia modules]]
+
+}}&lt;/includeonly&gt;&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>kaaj4we8m4td2rsyl5vteh0skp7d92h</sha1>
+    </revision>
+    <revision>
+      <id>7575</id>
+      <timestamp>2025-01-07T10:27:41Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: importing modules</comment>
+      <origin>7575</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="11673" sha1="kaaj4we8m4td2rsyl5vteh0skp7d92h" xml:space="preserve">{{High-use}}
+{{Module rating|protected}}
+This module produces a list of links to search engines to help editors find sources about a given subject. It implements {{tl|find sources}} and other similar templates. It is highly extensible; new templates and new link types can be added easily and by any user.
+
+== Usage ==
+=== From wikitext ===
+
+Usually, from wikitext this module should be used via a template, e.g. {{tl|find sources}}. However, it is also possible to use it directly from #invoke, like this:
+
+ &amp;#123;{#invoke:Find sources|''template''|''search term 1''|''search term 2''|...}&amp;#125;
+
+* &lt;var&gt;template&lt;/var&gt; is the name of the template that should be called. It must be the full page name of the template, without the namespace, and with the correct capitalisation. So, for [[Template:Find sources]], the template name should be "Find sources"; "find sources" with a lower-case "f" would cause an error. This parameter is required.
+* &lt;var&gt;search term 1&lt;/var&gt;,  &lt;var&gt;search term 2&lt;/var&gt;, etc., are the terms to be searched for in each of the search engine links. The first search term will appear in quotation marks, and subsequent search terms will be added without quotation marks. Each term will be separated by spaces. These parameters are all optional. If no parameters are given, the current page name will be used as a search term.
+
+Alternatively the following can be used, which will convert any title to a search query, with the main portion of the title in quotation marks, and any parenthetical disambiguator outside quotation marks.
+ &amp;#123;{#invoke:Find sources|''template''|title=''title''}&amp;#125;
+* &lt;var&gt;template&lt;/var&gt; as above, is the name of the template that should be called. It must be the full page name of the template, without the namespace, and with the correct capitalisation. So, for [[Template:Find sources]], the template name should be "Find sources"; "find sources" with a lower-case "f" would cause an error. This parameter is required.
+* &lt;var&gt;title&lt;/var&gt; the title to be converted to a search query. This is processed in the same way as the subpage name of the page if no parameters are used.
+
+=== From Lua ===
+
+Load the module with the following code:
+
+&lt;syntaxhighlight lang="lua"&gt;
+local mFindSources = require('Module:Find sources')
+&lt;/syntaxhighlight&gt;
+
+You can then produce the list of search links like this:
+
+&lt;syntaxhighlight lang="lua"&gt;
+mFindSources._main(template, searchTerms)
+&lt;/syntaxhighlight&gt;
+
+* &lt;var&gt;template&lt;/var&gt; is the template name, as outlined in the [[#From wikitext]] section above. This parameter is required.
+* &lt;var&gt;searchTerms&lt;/var&gt; is an array of search terms. Each item in the array corresponds to a numbered search term as outlined in the [[#From wikitext]] section above. Alternatively, an empty table with the &lt;code&gt;title&lt;/code&gt; key set will automatically generate a query as described above. This parameter is optional.
+
+Example syntax:
+
+&lt;syntaxhighlight lang="lua"&gt;
+mFindSources._main('Find sources', {'Albert Einstein', '-"Marilyn Monroe"', 'relativity', 'science'})
+&lt;/syntaxhighlight&gt;
+
+=== Available templates ===
+
+The following templates are available for use:
+
+{{#invoke:Find sources/autodoc|templateTable}}
+
+== Making new templates ==
+
+There are two basic ingredients to making a new source-finding template. The first is the template configuration module, and the second is the template invocation on the template page.
+
+=== Template configuration page ===
+
+To find the name of the template configuration page, take the page name of your proposed template without the namespace prefix, and add it to the base page of "Module:Find sources/templates/". For example, for [[Template:Find sources]], the configuration page is located at [[Module:Find sources/templates/Find sources]]. Note that the template must be capitalised exactly as the page name is, otherwise the arguments will not be passed through from the template page to the module.
+
+The template configuration page should look something like this:
+
+&lt;syntaxhighlight lang="lua"&gt;
+return {
+	blurb = "Find sources for $1 – $2",
+	introLink = {code = 'google'},
+	links = {
+		{code = 'google news', display = 'news'},
+		{code = 'google newspapers', display = 'newspapers', tooltip = 'Search newspapers with Google Books'}
+	},
+	separator = ', ',
+	isUsedInMainspace = true,
+	class = 'custom-class',
+	style = 'color: green; font-size: 110%;'
+}
+&lt;/syntaxhighlight&gt;
+
+* '''blurb''' - the text presented to users. There are two parameters available in the blurb, $1 and $2. $1 is the intro link, if specified, and $2 represents the other links. This field is required.
+* '''introLink''' - an optional introductory link. If specified, this must be a [[#Link tables|link table]]. If the display value in the link table is not set, the search terms that the user entered will be used instead.
+* '''links''' - an array of [[#Link tables|link tables]] defining the main links to be used by the template. This field is required.
+* '''separator''' - the text separating the search engine links. This field is optional; the default value is taken from [[MediaWiki:Dot-separator]].
+* '''isUsedInMainspace''' - set this to true if the template will be used in the main namespace. If this is not set, when the template is used in the main namespace it will produce an error and be put in [[:Category:Pages with templates in the wrong namespace]].
+* '''class''' - a custom HTML class to apply to the template text. The "plainlinks" class is added by default. This field is optional.
+* '''style''' - custom CSS to apply to the template text. This field is optional.
+
+Once you have created your template configuration page, you need to add the template to [[Module:Find sources/templates]] in order for it to show up in the table of templates on this documentation page.
+
+==== Link tables ====
+
+[[Module:Find sources/links|Link tables]] are used in the "introLink" and "links" fields of the template configuration. They can contain three fields, "code", "display", and "tooltip". The "code" field is required, and must be one of the link codes listed in the table below. The "display" field is optional, and specifies a custom display value for that link to be used by the template. If the display field is not set, a default value is set by the module. The "tooltip" field is also optional, and specifies a custom tooltip for the link. HTML reserved characters are escaped by the module. If the field is absent, no tooltip is displayed. For the "introLink" field, the default value is the search text entered by the user; for the "links" field, the default value is defined in the link configuration modules.
+
+The following table contains all the available link codes, with descriptions and examples.
+
+{{#invoke:Find sources/autodoc|linkTable}}
+
+=== Template invocation ===
+
+The template invocation on the template page itself should look like this:
+
+ &amp;#123;{#invoke:Find sources|''template''}&amp;#125;&amp;lt;noinclude&amp;gt;
+ &amp;#123;{#invoke:Find sources/autodoc|''template''}&amp;#125;
+ &amp;lt;/noinclude&amp;gt;
+
+This activates the template code and also provides automatic documentation. &lt;var&gt;template&lt;/var&gt; is the name of the template without the namespace prefix, and must be correctly capitalised.
+
+If you want to use custom documentation from a /doc subpage instead of the automatic documentation, use this invocation instead:
+
+ &amp;#123;{#invoke:Find sources|''template''}&amp;#125;&amp;lt;noinclude&amp;gt;
+ &amp;#123;{documentation}&amp;#125;
+ &amp;lt;!-- Categories go on the /doc subpage, and interwikis go on Wikidata. --&amp;gt;
+ &amp;lt;/noinclude&amp;gt;
+
+== Adding new links ==
+New links are added to [[Module:Find sources/links]]. Link codes should be short but descriptive, and should be in lower case. For example, the link code for Google search is "google".
+
+The link configuration page should look something like this:
+
+&lt;syntaxhighlight lang="lua"&gt;
+return {
+	url = '//www.google.com/search?as_eq=wikipedia&amp;q=$1',
+	display = 'Google',
+    description = '[[Google]], the flagship search engine from Google Inc.',
+}
+&lt;/syntaxhighlight&gt;
+
+{| class="wikitable"
+|+ Parameters
+|-
+! scope="col" | Parameter
+! scope="col" | Description
+|-
+! scope="row" | url
+| The url to perform the search. This field takes a parameter $1, which is the URL-encoded search text entered by the user. This field is required.
+|-
+! scope="row" | display
+| If a display value is not specified in the template configuration, this value is used instead. This field is required.
+|-
+! scope="row" | separator
+| This is used to separate the search terms entered by the user. This is optional, and defaults to "+" (a URL-encoded space).
+|-
+! scope="row" | description
+| a brief description of what the search engine link does. This is used in the template documentation to generate the list of link descriptions, and also to make the descriptions in the [[#Link tables|table of link codes]] above. This is optional, but recommended.
+|-
+! scope="row" | notes
+| notes about the search engine link. These are put in the [[#Link tables|table of link codes]] above, but they are not put in the template documentation for individual source-finding templates. This field is optional.
+|}
+
+== Automatic documentation ==
+
+Automatic documentation is provided for templates based on this module; the documentation is generated by [[Module:Find sources/autodoc]]. The autodoc module uses the following pages:
+* [[Template:Find sources documentation]] - the template used for most of the documentation content.
+* The [[#Template configuration page|template configuration page]]. Used to find the list of link codes, and to see if the template is used in articles.
+* The [[#Template documentation configuration page|template documentation configuration page]]. Used to find template shortcuts.
+* The [[#Link documentation configuration page|link documentation configuration page]]. Used to find descriptions of each of the search links.
+
+=== Template documentation configuration page ===
+
+This page is located at the "/autodoc" subpage of the [[#Template configuration page|template configuration page]]. It is only used to generate the documentation, not to generate any of the actual template output, so it does not need to be protected. It should look something like this:
+
+&lt;syntaxhighlight lang="lua"&gt;
+return {
+	shortcuts = {'shortcut1', 'shortcut2'},
+	description = 'This template is used to provide source links on [[WP:AFD|AfD]] pages',
+	docIntro = 'This template produces a series of search-engine links to be used on [[WP:AFD|AfD]] pages.'
+}
+&lt;/syntaxhighlight&gt;
+
+* '''shortcuts''' - an array of shortcuts that redirect to the template page. These are displayed on the template documentation page using the {{tl|template shortcut}} template.
+* '''description''' - a brief description of what the template does. This is displayed on this documentation page in the [[#Available templates|table of available templates]].
+* '''docIntro''' - text to be used instead of the first sentence of the template documentation for individual source-finding templates. This is optional, and the default value is "''This template produces a series of links to various search interfaces to help find additional reference material for articles.''"
+
+== Configuration ==
+
+The messages used in this module can be found at [[Module:Find sources/config]] and [[Module:Find sources/autodoc/config]]. This can be helpful for translating this module for use in other languages. Note that any template and link configuration used must also be translated.
+
+&lt;includeonly&gt;{{#ifeq:{{SUBPAGENAME}}|sandbox||
+&lt;!-- Categories go here and interwikis go in Wikidata. --&gt;
+[[Category:Wikipedia modules]]
+
+}}&lt;/includeonly&gt;&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>kaaj4we8m4td2rsyl5vteh0skp7d92h</sha1>
+    </revision>
+  </page>
+</mediawiki>

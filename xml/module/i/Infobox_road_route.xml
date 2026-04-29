@@ -1,0 +1,555 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Infobox road/route</title>
+    <ns>828</ns>
+    <id>17334</id>
+    <revision>
+      <id>1165244</id>
+      <timestamp>2025-04-25T22:09:29Z</timestamp>
+      <contributor>
+        <username>en&gt;Jonesey95</username>
+        <id>0</id>
+      </contributor>
+      <comment>Fix [[Special:LintErrors|Linter]] errors. p tags can't always successfully wrap div tags and other block content. Tested in the sandbox submodules and on the testcases pages; everything worked fine, but revert if I broke anything.</comment>
+      <origin>1165244</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4182" sha1="cva712o4kfhvhcsuqnpft32oyoi0u9k" xml:space="preserve">local p = {} 
+
+local format = mw.ustring.format
+require('strict')
+local getArgs = require('Module:Arguments').getArgs	
+local parserModule = require 'Module:Road data/parser'
+local parser = parserModule.parser
+
+local function banner(args, style)
+	if args.marker_image then return nil end
+	
+	local bannerSize
+		if style == 'small' then
+			bannerSize = "40px"
+		else
+			bannerSize = "72px"
+		end
+	
+	local shield = parser(args, 'banner')
+	local alt = parser(args, 'banner')
+
+	if not shield or shield == '' then
+		return nil
+	else
+		return string.format('[[File:%s|%s|alt=%s]]', shield, bannerSize, alt)
+	end
+end
+
+
+
+local function shield(args, style)
+
+	if args.marker_image then return args.marker_image end
+	
+	local horizontalSize
+	local verticalSize
+		if style == 'small' then
+			horizontalSize = "90x40px"
+			verticalSize = "40x90px"
+		else
+			horizontalSize = "154x72px"
+			verticalSize = "72x154px"
+		end
+
+	local shield = parser(args, 'shieldmain') or parser(args, 'shield') or ''
+	
+	local label = parser(args, 'name') or parser(args, 'abbr') or ''
+	local alt = label .. ' marker'
+	local orientation = parser(args, 'orientation')
+	
+	local function simpleSize(args)
+		if orientation and orientation == 'upright' then
+			return verticalSize
+		else
+			return horizontalSize
+		end
+	end
+	
+	local function shield_size(image_name, orientation)
+		local image = 'File:' .. image_name
+		local title = mw.title.new(image)
+
+		local width = title.file.width
+		local height = title.file.height
+		
+		if (orientation and orientation == 'upright') or height &gt; width then
+			return verticalSize
+		else
+			return horizontalSize
+		end
+	end
+	
+	
+	
+	if not shield or shield == '' then
+		return nil
+	elseif type(shield) == 'table' then
+		local res = {}
+		local sizes = {}
+		for i,v in ipairs(shield) do
+			sizes[i] = v
+			res[i] = string.format('[[File:%s|%s|alt=%s]]', v, shield_size(v), alt)
+		end
+    	return table.concat(res, ' ')
+	else
+		return string.format('[[File:%s|%s|alt=%s]]', shield, simpleSize(args), alt)
+	end
+end
+
+-- Links/abbreviations
+local function name(args)
+	local name = args.name or parser(args, 'name') or parser(args, 'abbr')
+	return name
+end
+
+function p._routeInfo(args)
+	
+	local style = args.style
+	local banner = banner(args, style)
+	local shield = shield(args, style)
+	local name = name(args)
+
+	if not args.type and not args.route and not args.name and not args.marker_image then
+		local container = nil
+	else local container = mw.html.create('div'):cssText('text-align:center;')
+		if shield == nil or args.marker_image == 'none' or args.name and not args.marker_image and not args.type and not args.route then 
+			container:tag('div'):cssText('margin:0.1em;'):wikitext(name)
+		elseif args.marker_image ~= '' and args.name == '' or args.name == nil and not args.type and not args.route then
+			container:tag('div'):cssText('margin:0.1em;'):wikitext(shield)
+		elseif args.country == 'AUS' then
+			container:tag('div'):cssText('margin:0.1em;'):wikitext(name)
+			container:tag('div'):cssText('margin:0.1em 0 0 0;'):wikitext(shield)
+		else
+			container:tag('div'):cssText('margin:0.1em 0 0 0;'):wikitext(banner)
+			container:tag('div'):cssText('margin:0 0 0.1em;'):wikitext(shield)
+			container:tag('div'):cssText('margin:0.1em;'):wikitext(name)
+		end
+		return tostring(container)
+	end
+end
+
+function p.routeInfo(frame)
+	local args = getArgs(frame)
+	return p._routeInfo(args);
+end
+
+function p._shields(args)
+	
+	local style = args.style
+	local banner = banner(args, style)
+	local shield = shield(args, style)
+
+	if not args.type and not args.route and not args.name and not args.marker_image then
+		local container = nil
+	else local container = mw.html.create('div'):cssText('text-align:center; display: inline-block; vertical-align: baseline; line-height: 0;')
+		container:tag('div'):cssText('margin:0.1em 0 0 0;'):wikitext(banner)
+		container:tag('div'):cssText('margin:0 0 0.1em;'):wikitext(shield)
+	return tostring(container)
+	end
+end
+
+function p.shields(frame)
+	local args = getArgs(frame)
+	return p._shields(args);
+end
+
+
+function p._names(args)
+	local name = name(args)
+	return name
+end
+
+function p.names(frame)
+	local args = getArgs(frame)
+	return p._names(args);
+end
+
+return p</text>
+      <sha1>cva712o4kfhvhcsuqnpft32oyoi0u9k</sha1>
+    </revision>
+    <revision>
+      <id>1165245</id>
+      <parentid>1165244</parentid>
+      <timestamp>2025-04-25T22:09:30Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: fixing this template</comment>
+      <origin>1165244</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4182" sha1="cva712o4kfhvhcsuqnpft32oyoi0u9k" xml:space="preserve">local p = {} 
+
+local format = mw.ustring.format
+require('strict')
+local getArgs = require('Module:Arguments').getArgs	
+local parserModule = require 'Module:Road data/parser'
+local parser = parserModule.parser
+
+local function banner(args, style)
+	if args.marker_image then return nil end
+	
+	local bannerSize
+		if style == 'small' then
+			bannerSize = "40px"
+		else
+			bannerSize = "72px"
+		end
+	
+	local shield = parser(args, 'banner')
+	local alt = parser(args, 'banner')
+
+	if not shield or shield == '' then
+		return nil
+	else
+		return string.format('[[File:%s|%s|alt=%s]]', shield, bannerSize, alt)
+	end
+end
+
+
+
+local function shield(args, style)
+
+	if args.marker_image then return args.marker_image end
+	
+	local horizontalSize
+	local verticalSize
+		if style == 'small' then
+			horizontalSize = "90x40px"
+			verticalSize = "40x90px"
+		else
+			horizontalSize = "154x72px"
+			verticalSize = "72x154px"
+		end
+
+	local shield = parser(args, 'shieldmain') or parser(args, 'shield') or ''
+	
+	local label = parser(args, 'name') or parser(args, 'abbr') or ''
+	local alt = label .. ' marker'
+	local orientation = parser(args, 'orientation')
+	
+	local function simpleSize(args)
+		if orientation and orientation == 'upright' then
+			return verticalSize
+		else
+			return horizontalSize
+		end
+	end
+	
+	local function shield_size(image_name, orientation)
+		local image = 'File:' .. image_name
+		local title = mw.title.new(image)
+
+		local width = title.file.width
+		local height = title.file.height
+		
+		if (orientation and orientation == 'upright') or height &gt; width then
+			return verticalSize
+		else
+			return horizontalSize
+		end
+	end
+	
+	
+	
+	if not shield or shield == '' then
+		return nil
+	elseif type(shield) == 'table' then
+		local res = {}
+		local sizes = {}
+		for i,v in ipairs(shield) do
+			sizes[i] = v
+			res[i] = string.format('[[File:%s|%s|alt=%s]]', v, shield_size(v), alt)
+		end
+    	return table.concat(res, ' ')
+	else
+		return string.format('[[File:%s|%s|alt=%s]]', shield, simpleSize(args), alt)
+	end
+end
+
+-- Links/abbreviations
+local function name(args)
+	local name = args.name or parser(args, 'name') or parser(args, 'abbr')
+	return name
+end
+
+function p._routeInfo(args)
+	
+	local style = args.style
+	local banner = banner(args, style)
+	local shield = shield(args, style)
+	local name = name(args)
+
+	if not args.type and not args.route and not args.name and not args.marker_image then
+		local container = nil
+	else local container = mw.html.create('div'):cssText('text-align:center;')
+		if shield == nil or args.marker_image == 'none' or args.name and not args.marker_image and not args.type and not args.route then 
+			container:tag('div'):cssText('margin:0.1em;'):wikitext(name)
+		elseif args.marker_image ~= '' and args.name == '' or args.name == nil and not args.type and not args.route then
+			container:tag('div'):cssText('margin:0.1em;'):wikitext(shield)
+		elseif args.country == 'AUS' then
+			container:tag('div'):cssText('margin:0.1em;'):wikitext(name)
+			container:tag('div'):cssText('margin:0.1em 0 0 0;'):wikitext(shield)
+		else
+			container:tag('div'):cssText('margin:0.1em 0 0 0;'):wikitext(banner)
+			container:tag('div'):cssText('margin:0 0 0.1em;'):wikitext(shield)
+			container:tag('div'):cssText('margin:0.1em;'):wikitext(name)
+		end
+		return tostring(container)
+	end
+end
+
+function p.routeInfo(frame)
+	local args = getArgs(frame)
+	return p._routeInfo(args);
+end
+
+function p._shields(args)
+	
+	local style = args.style
+	local banner = banner(args, style)
+	local shield = shield(args, style)
+
+	if not args.type and not args.route and not args.name and not args.marker_image then
+		local container = nil
+	else local container = mw.html.create('div'):cssText('text-align:center; display: inline-block; vertical-align: baseline; line-height: 0;')
+		container:tag('div'):cssText('margin:0.1em 0 0 0;'):wikitext(banner)
+		container:tag('div'):cssText('margin:0 0 0.1em;'):wikitext(shield)
+	return tostring(container)
+	end
+end
+
+function p.shields(frame)
+	local args = getArgs(frame)
+	return p._shields(args);
+end
+
+
+function p._names(args)
+	local name = name(args)
+	return name
+end
+
+function p.names(frame)
+	local args = getArgs(frame)
+	return p._names(args);
+end
+
+return p</text>
+      <sha1>cva712o4kfhvhcsuqnpft32oyoi0u9k</sha1>
+    </revision>
+    <revision>
+      <id>17335</id>
+      <timestamp>2025-11-22T14:38:03Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Text replacement - "↵↵↵" to "
+"</comment>
+      <origin>17335</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4178" sha1="e7swu10joynkwt5p6i5tu0bgembzowh" xml:space="preserve">local p = {} 
+
+local format = mw.ustring.format
+require('strict')
+local getArgs = require('Module:Arguments').getArgs	
+local parserModule = require 'Module:Road data/parser'
+local parser = parserModule.parser
+
+local function banner(args, style)
+	if args.marker_image then return nil end
+	
+	local bannerSize
+		if style == 'small' then
+			bannerSize = "40px"
+		else
+			bannerSize = "72px"
+		end
+	
+	local shield = parser(args, 'banner')
+	local alt = parser(args, 'banner')
+
+	if not shield or shield == '' then
+		return nil
+	else
+		return string.format('[[File:%s|%s|alt=%s]]', shield, bannerSize, alt)
+	end
+end
+
+local function shield(args, style)
+
+	if args.marker_image then return args.marker_image end
+	
+	local horizontalSize
+	local verticalSize
+		if style == 'small' then
+			horizontalSize = "90x40px"
+			verticalSize = "40x90px"
+		else
+			horizontalSize = "154x72px"
+			verticalSize = "72x154px"
+		end
+
+	local shield = parser(args, 'shieldmain') or parser(args, 'shield') or ''
+	
+	local label = parser(args, 'name') or parser(args, 'abbr') or ''
+	local alt = label .. ' marker'
+	local orientation = parser(args, 'orientation')
+	
+	local function simpleSize(args)
+		if orientation and orientation == 'upright' then
+			return verticalSize
+		else
+			return horizontalSize
+		end
+	end
+	
+	local function shield_size(image_name, orientation)
+		local image = 'File:' .. image_name
+		local title = mw.title.new(image)
+
+		local width = title.file.width
+		local height = title.file.height
+		
+		if (orientation and orientation == 'upright') or height &gt; width then
+			return verticalSize
+		else
+			return horizontalSize
+		end
+	end
+	
+	
+	
+	if not shield or shield == '' then
+		return nil
+	elseif type(shield) == 'table' then
+		local res = {}
+		local sizes = {}
+		for i,v in ipairs(shield) do
+			sizes[i] = v
+			res[i] = string.format('[[File:%s|%s|alt=%s]]', v, shield_size(v), alt)
+		end
+    	return table.concat(res, ' ')
+	else
+		return string.format('[[File:%s|%s|alt=%s]]', shield, simpleSize(args), alt)
+	end
+end
+
+-- Links/abbreviations
+local function name(args)
+	local name = args.name or parser(args, 'name') or parser(args, 'abbr')
+	return name
+end
+
+function p._routeInfo(args)
+	
+	local style = args.style
+	local banner = banner(args, style)
+	local shield = shield(args, style)
+	local name = name(args)
+
+	if not args.type and not args.route and not args.name and not args.marker_image then
+		local container = nil
+	else local container = mw.html.create('div'):cssText('text-align:center;')
+		if shield == nil or args.marker_image == 'none' or args.name and not args.marker_image and not args.type and not args.route then 
+			container:tag('div'):cssText('margin:0.1em;'):wikitext(name)
+		elseif args.marker_image ~= '' and args.name == '' or args.name == nil and not args.type and not args.route then
+			container:tag('div'):cssText('margin:0.1em;'):wikitext(shield)
+		elseif args.country == 'AUS' then
+			container:tag('div'):cssText('margin:0.1em;'):wikitext(name)
+			container:tag('div'):cssText('margin:0.1em 0 0 0;'):wikitext(shield)
+		else
+			container:tag('div'):cssText('margin:0.1em 0 0 0;'):wikitext(banner)
+			container:tag('div'):cssText('margin:0 0 0.1em;'):wikitext(shield)
+			container:tag('div'):cssText('margin:0.1em;'):wikitext(name)
+		end
+		return tostring(container)
+	end
+end
+
+function p.routeInfo(frame)
+	local args = getArgs(frame)
+	return p._routeInfo(args);
+end
+
+function p._shields(args)
+	
+	local style = args.style
+	local banner = banner(args, style)
+	local shield = shield(args, style)
+
+	if not args.type and not args.route and not args.name and not args.marker_image then
+		local container = nil
+	else local container = mw.html.create('div'):cssText('text-align:center; display: inline-block; vertical-align: baseline; line-height: 0;')
+		container:tag('div'):cssText('margin:0.1em 0 0 0;'):wikitext(banner)
+		container:tag('div'):cssText('margin:0 0 0.1em;'):wikitext(shield)
+	return tostring(container)
+	end
+end
+
+function p.shields(frame)
+	local args = getArgs(frame)
+	return p._shields(args);
+end
+function p._names(args)
+	local name = name(args)
+	return name
+end
+
+function p.names(frame)
+	local args = getArgs(frame)
+	return p._names(args);
+end
+
+return p</text>
+      <sha1>e7swu10joynkwt5p6i5tu0bgembzowh</sha1>
+    </revision>
+  </page>
+</mediawiki>

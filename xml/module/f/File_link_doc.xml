@@ -1,0 +1,231 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:File link/doc</title>
+    <ns>828</ns>
+    <id>7572</id>
+    <revision>
+      <id>884930</id>
+      <timestamp>2024-08-29T21:20:29Z</timestamp>
+      <contributor>
+        <username>en&gt;Nickps</username>
+        <id>0</id>
+      </contributor>
+      <comment>Added the page to [[:Category:Module documentation pages]]</comment>
+      <origin>884930</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="4044" sha1="a6rlfwxht22q79vkaxydqnkwckoemqe" xml:space="preserve">{{high-use}}
+{{Module rating|protected}}
+{{Lua|Module:Yesno|Module:Arguments}}
+This module is used to construct wikitext links to files. It is primarily useful for templates and modules that use complicated logic to make file links. Simple file links should be made with wikitext markup directly, as it uses less resources than calling this module. For help with wikitext file markup please refer to the [[mw:Help:Images|documentation at mediawiki.org]].
+
+== Usage from wikitext ==
+
+From wikitext, this module should be called from a template, usually {{tl|file link}}. Please see the template page for documentation. However, it can also be called using the syntax &lt;code&gt;&lt;nowiki&gt;{{#invoke:File link|main|&lt;/nowiki&gt;''arguments''&lt;nowiki&gt;}}&lt;/nowiki&gt;&lt;/code&gt;.
+
+== Usage from Lua ==
+
+First, you need to import the module.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local mFileLink = require('Module:File link')
+&lt;/syntaxhighlight&gt;
+
+Then you can make file links using the &lt;code&gt;_main&lt;/code&gt; function.
+
+&lt;syntaxhighlight lang="lua"&gt;
+mFileLink._main(args)
+&lt;/syntaxhighlight&gt;
+
+&lt;var&gt;args&lt;/var&gt; is a table of arguments that can have the following keys:
+* &lt;code&gt;file&lt;/code&gt; - the filename. (required)
+* &lt;code&gt;format&lt;/code&gt; - the file format, e.g. 'thumb', 'thumbnail', 'frame', 'framed', or 'frameless'.
+* &lt;code&gt;formatfile&lt;/code&gt; - a filename to specify with the 'thumbnail' format option. The filename specified will be used instead of the automatically generated thumbnail.
+* &lt;code&gt;border&lt;/code&gt; - set this to true or "yes" (or any other value recognized as true by [[Module:Yesno]]) to set a border for the image.
+* &lt;code&gt;location&lt;/code&gt; - the horizontal alignment of the file, e.g. 'right', 'left', 'center', or 'none'.
+* &lt;code&gt;alignment&lt;/code&gt; - the vertical alignment of the file, e.g. 'baseline', 'middle', 'sub', 'super', 'text-top', 'text-bottom', 'top', or 'bottom'.
+* &lt;code&gt;size&lt;/code&gt; - the size of the image, e.g. '100px', 'x100px' or '100x100px'.
+* &lt;code&gt;upright&lt;/code&gt; - the 'upright' parameter, used for setting the size of tall and thin images.
+* &lt;code&gt;link&lt;/code&gt; - the page that the file should link to. Use the blank string &lt;nowiki&gt;''&lt;/nowiki&gt; to suppress the default link to the file description page.
+* &lt;code&gt;alt&lt;/code&gt; - the alt text. Use the blank string &lt;nowiki&gt;''&lt;/nowiki&gt; to suppress the default alt text.
+* &lt;code&gt;caption&lt;/code&gt; - a caption for the file.
+* &lt;code&gt;page&lt;/code&gt; - sets a page number for multi-paged files such as PDFs.
+* &lt;code&gt;class&lt;/code&gt; - adds a &lt;code&gt;class&lt;/code&gt; parameter to image links. The MediaWiki software adds this parameter to the &lt;code&gt;class="..."&lt;/code&gt; attribute of the image's &lt;code&gt;&lt;nowiki&gt;&lt;img /&gt;&lt;/nowiki&gt;&lt;/code&gt; element when the page is rendered into HTML.
+* &lt;code&gt;lang&lt;/code&gt; - adds a language attribute to specify what language to render the file in.
+* &lt;code&gt;start&lt;/code&gt; - specifies a start time for audio and video files.
+* &lt;code&gt;end&lt;/code&gt; - specifies an end time for audio and video files.
+* &lt;code&gt;thumbtime&lt;/code&gt; - specifies the time to use to generate the thumbnail image for video files.
+
+To see the effect of each of these parameters, see the [[mw:Help:Images#Format|images help page on mediawiki.org]].
+
+=== Examples ===
+
+With the file only:
+&lt;syntaxhighlight lang="lua"&gt;
+mFileLink.main{file = 'Example.png'}
+-- Renders as [[File:Example.png]]
+&lt;/syntaxhighlight&gt;
+
+With format, size, link and caption options:
+&lt;syntaxhighlight lang="lua"&gt;
+mFileLink.main{
+	file = 'Example.png',
+	format = 'thumb',
+	size = '220px',
+	link = 'Wikipedia:Sandbox',
+	caption = 'An example.'
+}
+-- Renders as [[File:Example.png|thumb|220px|link=Wikipedia:Sandbox|An example.]]
+&lt;/syntaxhighlight&gt;
+
+With format, size, and border:
+&lt;syntaxhighlight lang="lua"&gt;
+mFileLink.main{
+	file = 'Example.png',
+	format = 'frameless',
+	size = '220px',
+	border = true
+}
+-- Renders as [[File:Example.png|frameless|border|220px]]
+&lt;/syntaxhighlight&gt;
+
+&lt;includeonly&gt;{{Sandbox other||
+&lt;!-- Categories go here and interwikis go in Wikidata. --&gt;
+[[Category:Link modules]]
+}}&lt;/includeonly&gt;&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>a6rlfwxht22q79vkaxydqnkwckoemqe</sha1>
+    </revision>
+    <revision>
+      <id>7573</id>
+      <timestamp>2025-01-07T10:27:40Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: importing modules</comment>
+      <origin>7573</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="4044" sha1="a6rlfwxht22q79vkaxydqnkwckoemqe" xml:space="preserve">{{high-use}}
+{{Module rating|protected}}
+{{Lua|Module:Yesno|Module:Arguments}}
+This module is used to construct wikitext links to files. It is primarily useful for templates and modules that use complicated logic to make file links. Simple file links should be made with wikitext markup directly, as it uses less resources than calling this module. For help with wikitext file markup please refer to the [[mw:Help:Images|documentation at mediawiki.org]].
+
+== Usage from wikitext ==
+
+From wikitext, this module should be called from a template, usually {{tl|file link}}. Please see the template page for documentation. However, it can also be called using the syntax &lt;code&gt;&lt;nowiki&gt;{{#invoke:File link|main|&lt;/nowiki&gt;''arguments''&lt;nowiki&gt;}}&lt;/nowiki&gt;&lt;/code&gt;.
+
+== Usage from Lua ==
+
+First, you need to import the module.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local mFileLink = require('Module:File link')
+&lt;/syntaxhighlight&gt;
+
+Then you can make file links using the &lt;code&gt;_main&lt;/code&gt; function.
+
+&lt;syntaxhighlight lang="lua"&gt;
+mFileLink._main(args)
+&lt;/syntaxhighlight&gt;
+
+&lt;var&gt;args&lt;/var&gt; is a table of arguments that can have the following keys:
+* &lt;code&gt;file&lt;/code&gt; - the filename. (required)
+* &lt;code&gt;format&lt;/code&gt; - the file format, e.g. 'thumb', 'thumbnail', 'frame', 'framed', or 'frameless'.
+* &lt;code&gt;formatfile&lt;/code&gt; - a filename to specify with the 'thumbnail' format option. The filename specified will be used instead of the automatically generated thumbnail.
+* &lt;code&gt;border&lt;/code&gt; - set this to true or "yes" (or any other value recognized as true by [[Module:Yesno]]) to set a border for the image.
+* &lt;code&gt;location&lt;/code&gt; - the horizontal alignment of the file, e.g. 'right', 'left', 'center', or 'none'.
+* &lt;code&gt;alignment&lt;/code&gt; - the vertical alignment of the file, e.g. 'baseline', 'middle', 'sub', 'super', 'text-top', 'text-bottom', 'top', or 'bottom'.
+* &lt;code&gt;size&lt;/code&gt; - the size of the image, e.g. '100px', 'x100px' or '100x100px'.
+* &lt;code&gt;upright&lt;/code&gt; - the 'upright' parameter, used for setting the size of tall and thin images.
+* &lt;code&gt;link&lt;/code&gt; - the page that the file should link to. Use the blank string &lt;nowiki&gt;''&lt;/nowiki&gt; to suppress the default link to the file description page.
+* &lt;code&gt;alt&lt;/code&gt; - the alt text. Use the blank string &lt;nowiki&gt;''&lt;/nowiki&gt; to suppress the default alt text.
+* &lt;code&gt;caption&lt;/code&gt; - a caption for the file.
+* &lt;code&gt;page&lt;/code&gt; - sets a page number for multi-paged files such as PDFs.
+* &lt;code&gt;class&lt;/code&gt; - adds a &lt;code&gt;class&lt;/code&gt; parameter to image links. The MediaWiki software adds this parameter to the &lt;code&gt;class="..."&lt;/code&gt; attribute of the image's &lt;code&gt;&lt;nowiki&gt;&lt;img /&gt;&lt;/nowiki&gt;&lt;/code&gt; element when the page is rendered into HTML.
+* &lt;code&gt;lang&lt;/code&gt; - adds a language attribute to specify what language to render the file in.
+* &lt;code&gt;start&lt;/code&gt; - specifies a start time for audio and video files.
+* &lt;code&gt;end&lt;/code&gt; - specifies an end time for audio and video files.
+* &lt;code&gt;thumbtime&lt;/code&gt; - specifies the time to use to generate the thumbnail image for video files.
+
+To see the effect of each of these parameters, see the [[mw:Help:Images#Format|images help page on mediawiki.org]].
+
+=== Examples ===
+
+With the file only:
+&lt;syntaxhighlight lang="lua"&gt;
+mFileLink.main{file = 'Example.png'}
+-- Renders as [[File:Example.png]]
+&lt;/syntaxhighlight&gt;
+
+With format, size, link and caption options:
+&lt;syntaxhighlight lang="lua"&gt;
+mFileLink.main{
+	file = 'Example.png',
+	format = 'thumb',
+	size = '220px',
+	link = 'Wikipedia:Sandbox',
+	caption = 'An example.'
+}
+-- Renders as [[File:Example.png|thumb|220px|link=Wikipedia:Sandbox|An example.]]
+&lt;/syntaxhighlight&gt;
+
+With format, size, and border:
+&lt;syntaxhighlight lang="lua"&gt;
+mFileLink.main{
+	file = 'Example.png',
+	format = 'frameless',
+	size = '220px',
+	border = true
+}
+-- Renders as [[File:Example.png|frameless|border|220px]]
+&lt;/syntaxhighlight&gt;
+
+&lt;includeonly&gt;{{Sandbox other||
+&lt;!-- Categories go here and interwikis go in Wikidata. --&gt;
+[[Category:Link modules]]
+}}&lt;/includeonly&gt;&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>a6rlfwxht22q79vkaxydqnkwckoemqe</sha1>
+    </revision>
+  </page>
+</mediawiki>

@@ -1,0 +1,576 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Infobox road/errors</title>
+    <ns>828</ns>
+    <id>17343</id>
+    <revision>
+      <id>1165257</id>
+      <timestamp>2025-04-25T22:09:51Z</timestamp>
+      <contributor>
+        <username>en&gt;MusikBot II</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:Infobox road/errors]]": [[Wikipedia:High-risk templates|High-risk template or module]]: 24025 transclusions ([[User:MusikBot II/TemplateProtector|more info]]) ([Edit=Require template editor access] (indefinite) [Move=Require template editor access] (indefinite))</comment>
+      <origin>1165257</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="11954" sha1="4rxk1qncfr48urrb3571ry6wck3nd7h" xml:space="preserve">local p = {}
+local getArgs = require('Module:Arguments').getArgs
+local util = require("Module:Road data/util")
+local yesno = require('Module:Yesno')
+local routeModule = require("Module:Infobox road/route")
+local parserModule = require("Module:Road data/parser")
+local parser = parserModule.parser
+local format = mw.ustring.format
+local frame = mw.getCurrentFrame()
+
+local function country(args)
+	local state = args.state or args.province
+	local country
+	local countryModule = mw.loadData("Module:Road data/countrymask")
+	local country = args.country or countryModule[state]
+	
+	return country
+end
+
+local function countries(args)
+	if not country(args) then
+		if args.countries then
+			return "no"
+		end
+	elseif country(args) == 'EUR' or country(args) == 'AFRICA' or country(args) == 'ASIA' or country(args) == 'SAD' then
+		if args.countries then
+			return "no"
+		end
+	end
+end
+
+local function states(args)
+	if country(args) == 'BRA' or country(args) == 'MEX' then
+		if args.areas or args.borough or args.boroughs or args.cantons or args.communes or args.communities or args.countries or args.county or args.departments or args.districts or args.divisions or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.municipality or args.oblasts or args.okrugs or args.parish or args.parishes or args.prefectures or args.provinces or args.regions or args.republics or args.rural_municipalities or args.sheadings or args.subcounties or args.subprefectures or args.subregions or args.territories then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function australia(args)
+	if country(args) == 'AUS' then
+		if args.areas or args.borough or args.boroughs or args.cantons or args.communes or args.communities or args.counties or args.countries or args.county or args.departments or args.districts or args.divisions or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.municipalities or args.municipality or args.oblasts or args.okrugs or args.parish or args.parishes or args.prefectures or args.provinces or args.regions or args.republics or args.rural_municipalities or args.sheadings or args.subcounties or args.subprefectures or args.subregions or args.territories then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function canada(args)
+	if country(args) == 'CAN' then
+		if args.borough or args.boroughs or args.cantons or args.communes or args.countries or args.departments or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.oblasts or args.okrugs or args.prefectures or args.republics or args.sheadings or args.states or args.subcounties or args.subprefectures or args.subregions then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function china(args)
+	if country(args) == 'CHN' then
+		if args.areas or args.borough or args.boroughs or args.cantons or args.communes or args.communities or args.countries or args.departments or args.divisions or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.municipalities or args.municipality or args.oblasts or args.okrugs or args.parish or args.parishes or args.prefectures or args.republics or args.rural_municipalities or args.sheadings or args.states or args.subcounties or args.subprefectures or args.subregions or args.territories then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function france(args)
+	if country(args) == 'FRA' then
+		if args.areas or args.borough or args.boroughs or args.cantons or args.communes or args.communities or args.counties or args.countries or args.county or args.districts or args.divisions or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.municipalities or args.municipality or args.oblasts or args.okrugs or args.parish or args.parishes or args.prefectures or args.provinces or args.republics or args.rural_municipalities or args.sheadings or args.states or args.subcounties or args.subprefectures or args.subregions or args.territories then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function india(args)
+	if country(args) == 'IND' then
+		if args.areas or args.borough or args.boroughs or args.cantons or args.communes or args.communities or args.counties or args.countries or args.county or args.departments or args.divisions or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.oblasts or args.okrugs or args.parish or args.parishes or args.prefectures or args.provinces or args.regions or args.republics or args.rural_municipalities or args.sheadings or args.subcounties or args.subprefectures or args.subregions then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function netherlands(args)
+	if country(args) == 'NLD' then
+		if args.areas or args.borough or args.boroughs or args.cantons or args.communes or args.communities or args.counties or args.countries or args.county or args.departments or args.districts or args.divisions or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.oblasts or args.okrugs or args.parish or args.parishes or args.prefectures or args.regions or args.republics or args.rural_municipalities or args.sheadings or args.states or args.subcounties or args.subprefectures or args.subregions or args.territories then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function russia(args)
+	if country(args) == 'RUS' then
+		if args.areas or args.borough or args.boroughs or args.cantons or args.communes or args.communities or args.counties or args.countries or args.county or args.departments or args.districts or args.divisions or args.governorates or args.indep_city or args.indep_cities or args.island or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.municipalities or args.municipality or args.parish or args.parishes or args.prefectures or args.provinces or args.regions or args.rural_municipalities or args.sheadings or args.states or args.subcounties or args.subprefectures or args.subregions or args.territories then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function spain(args)
+	if country(args) == 'ESP' then
+		if args.areas or args.borough or args.boroughs or args.cantons or args.communes or args.counties or args.countries or args.county or args.departments or args.districts or args.divisions or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.municipalities or args.municipality or args.oblasts or args.okrugs or args.parish or args.parishes or args.prefectures or args.regions or args.republics or args.rural_municipalities or args.sheadings or args.states or args.subcounties or args.subprefectures or args.subregions or args.territories then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function unitedKingdom(args)
+	if country(args) == 'GBR' then
+		if args.borough or args.cantons or args.communes or args.communities or args.countries or args.county or args.departments or args.divisions or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.municipalities or args.municipality or args.oblasts or args.okrugs or args.parish or args.prefectures or args.provinces or args.regions or args.republics or args.rural_municipalities or args.states or args.subcounties or args.subprefectures or args.subregions or args.territories then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function unitedStates(args)
+	if country(args) == 'USA' then
+		if args.areas or args.cantons or args.cities  or args.communes or args.communities or args.countries or args.departments or args.destinations or args.districts or args.divisions or args.federal_cities or args.governorates or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.oblasts or args.okrugs or args.photo or args.prefectures or args.provinces or args.regions or args.republics or args.rural_municipalities or args.sheadings or args.subcounties or args.subprefectures or args.subregions or args.territories or args.towns or args.villages then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function trigger(args)
+	if countries(args) == 'yes' or states(args) == 'yes' or australia(args) == 'yes' or canada(args) == 'yes' or china(args) == 'yes' or france(args) == 'yes' or india(args) == 'yes' or netherlands(args) == 'yes' or russia(args) == 'yes' or spain(args) == 'yes' or unitedKingdom(args) == 'yes' or unitedStates(args) == 'yes' then
+		return true
+	else
+		return false
+	end
+end
+
+function p.errors(frame)
+	local args = getArgs(frame)
+	local pagename = frame:getTitle()
+	
+	if trigger(args) == true then
+		return string.format("[[Category:Infobox road transclusion errors|%% %s]]", pagename)
+	else
+		return nil
+	end
+end
+
+return p
+
+
+--args.areas or args.borough or args.boroughs or args.cantons or args.communes or args.communities or args.counties or args.countries or args.county or args.departments or args.districts or args.divisions or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.municipalities or args.municipality or args.oblasts or args.okrugs or args.parish or args.parishes or args.prefectures or args.provinces or args.regions or args.republics or args.rural_municipalities or args.sheadings or args.states or args.subcounties or args.subprefectures or args.subregions or args.territories then</text>
+      <sha1>4rxk1qncfr48urrb3571ry6wck3nd7h</sha1>
+    </revision>
+    <revision>
+      <id>1165258</id>
+      <parentid>1165257</parentid>
+      <timestamp>2025-04-25T22:09:52Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: fixing this template</comment>
+      <origin>1165257</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="11954" sha1="4rxk1qncfr48urrb3571ry6wck3nd7h" xml:space="preserve">local p = {}
+local getArgs = require('Module:Arguments').getArgs
+local util = require("Module:Road data/util")
+local yesno = require('Module:Yesno')
+local routeModule = require("Module:Infobox road/route")
+local parserModule = require("Module:Road data/parser")
+local parser = parserModule.parser
+local format = mw.ustring.format
+local frame = mw.getCurrentFrame()
+
+local function country(args)
+	local state = args.state or args.province
+	local country
+	local countryModule = mw.loadData("Module:Road data/countrymask")
+	local country = args.country or countryModule[state]
+	
+	return country
+end
+
+local function countries(args)
+	if not country(args) then
+		if args.countries then
+			return "no"
+		end
+	elseif country(args) == 'EUR' or country(args) == 'AFRICA' or country(args) == 'ASIA' or country(args) == 'SAD' then
+		if args.countries then
+			return "no"
+		end
+	end
+end
+
+local function states(args)
+	if country(args) == 'BRA' or country(args) == 'MEX' then
+		if args.areas or args.borough or args.boroughs or args.cantons or args.communes or args.communities or args.countries or args.county or args.departments or args.districts or args.divisions or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.municipality or args.oblasts or args.okrugs or args.parish or args.parishes or args.prefectures or args.provinces or args.regions or args.republics or args.rural_municipalities or args.sheadings or args.subcounties or args.subprefectures or args.subregions or args.territories then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function australia(args)
+	if country(args) == 'AUS' then
+		if args.areas or args.borough or args.boroughs or args.cantons or args.communes or args.communities or args.counties or args.countries or args.county or args.departments or args.districts or args.divisions or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.municipalities or args.municipality or args.oblasts or args.okrugs or args.parish or args.parishes or args.prefectures or args.provinces or args.regions or args.republics or args.rural_municipalities or args.sheadings or args.subcounties or args.subprefectures or args.subregions or args.territories then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function canada(args)
+	if country(args) == 'CAN' then
+		if args.borough or args.boroughs or args.cantons or args.communes or args.countries or args.departments or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.oblasts or args.okrugs or args.prefectures or args.republics or args.sheadings or args.states or args.subcounties or args.subprefectures or args.subregions then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function china(args)
+	if country(args) == 'CHN' then
+		if args.areas or args.borough or args.boroughs or args.cantons or args.communes or args.communities or args.countries or args.departments or args.divisions or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.municipalities or args.municipality or args.oblasts or args.okrugs or args.parish or args.parishes or args.prefectures or args.republics or args.rural_municipalities or args.sheadings or args.states or args.subcounties or args.subprefectures or args.subregions or args.territories then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function france(args)
+	if country(args) == 'FRA' then
+		if args.areas or args.borough or args.boroughs or args.cantons or args.communes or args.communities or args.counties or args.countries or args.county or args.districts or args.divisions or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.municipalities or args.municipality or args.oblasts or args.okrugs or args.parish or args.parishes or args.prefectures or args.provinces or args.republics or args.rural_municipalities or args.sheadings or args.states or args.subcounties or args.subprefectures or args.subregions or args.territories then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function india(args)
+	if country(args) == 'IND' then
+		if args.areas or args.borough or args.boroughs or args.cantons or args.communes or args.communities or args.counties or args.countries or args.county or args.departments or args.divisions or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.oblasts or args.okrugs or args.parish or args.parishes or args.prefectures or args.provinces or args.regions or args.republics or args.rural_municipalities or args.sheadings or args.subcounties or args.subprefectures or args.subregions then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function netherlands(args)
+	if country(args) == 'NLD' then
+		if args.areas or args.borough or args.boroughs or args.cantons or args.communes or args.communities or args.counties or args.countries or args.county or args.departments or args.districts or args.divisions or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.oblasts or args.okrugs or args.parish or args.parishes or args.prefectures or args.regions or args.republics or args.rural_municipalities or args.sheadings or args.states or args.subcounties or args.subprefectures or args.subregions or args.territories then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function russia(args)
+	if country(args) == 'RUS' then
+		if args.areas or args.borough or args.boroughs or args.cantons or args.communes or args.communities or args.counties or args.countries or args.county or args.departments or args.districts or args.divisions or args.governorates or args.indep_city or args.indep_cities or args.island or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.municipalities or args.municipality or args.parish or args.parishes or args.prefectures or args.provinces or args.regions or args.rural_municipalities or args.sheadings or args.states or args.subcounties or args.subprefectures or args.subregions or args.territories then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function spain(args)
+	if country(args) == 'ESP' then
+		if args.areas or args.borough or args.boroughs or args.cantons or args.communes or args.counties or args.countries or args.county or args.departments or args.districts or args.divisions or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.municipalities or args.municipality or args.oblasts or args.okrugs or args.parish or args.parishes or args.prefectures or args.regions or args.republics or args.rural_municipalities or args.sheadings or args.states or args.subcounties or args.subprefectures or args.subregions or args.territories then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function unitedKingdom(args)
+	if country(args) == 'GBR' then
+		if args.borough or args.cantons or args.communes or args.communities or args.countries or args.county or args.departments or args.divisions or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.municipalities or args.municipality or args.oblasts or args.okrugs or args.parish or args.prefectures or args.provinces or args.regions or args.republics or args.rural_municipalities or args.states or args.subcounties or args.subprefectures or args.subregions or args.territories then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function unitedStates(args)
+	if country(args) == 'USA' then
+		if args.areas or args.cantons or args.cities  or args.communes or args.communities or args.countries or args.departments or args.destinations or args.districts or args.divisions or args.federal_cities or args.governorates or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.oblasts or args.okrugs or args.photo or args.prefectures or args.provinces or args.regions or args.republics or args.rural_municipalities or args.sheadings or args.subcounties or args.subprefectures or args.subregions or args.territories or args.towns or args.villages then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function trigger(args)
+	if countries(args) == 'yes' or states(args) == 'yes' or australia(args) == 'yes' or canada(args) == 'yes' or china(args) == 'yes' or france(args) == 'yes' or india(args) == 'yes' or netherlands(args) == 'yes' or russia(args) == 'yes' or spain(args) == 'yes' or unitedKingdom(args) == 'yes' or unitedStates(args) == 'yes' then
+		return true
+	else
+		return false
+	end
+end
+
+function p.errors(frame)
+	local args = getArgs(frame)
+	local pagename = frame:getTitle()
+	
+	if trigger(args) == true then
+		return string.format("[[Category:Infobox road transclusion errors|%% %s]]", pagename)
+	else
+		return nil
+	end
+end
+
+return p
+
+
+--args.areas or args.borough or args.boroughs or args.cantons or args.communes or args.communities or args.counties or args.countries or args.county or args.departments or args.districts or args.divisions or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.municipalities or args.municipality or args.oblasts or args.okrugs or args.parish or args.parishes or args.prefectures or args.provinces or args.regions or args.republics or args.rural_municipalities or args.sheadings or args.states or args.subcounties or args.subprefectures or args.subregions or args.territories then</text>
+      <sha1>4rxk1qncfr48urrb3571ry6wck3nd7h</sha1>
+    </revision>
+    <revision>
+      <id>17344</id>
+      <timestamp>2025-11-22T14:38:03Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Text replacement - "↵↵↵" to "
+"</comment>
+      <origin>17344</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="11952" sha1="3nxn0qqzo168i8bjo416xwz1tu3upka" xml:space="preserve">local p = {}
+local getArgs = require('Module:Arguments').getArgs
+local util = require("Module:Road data/util")
+local yesno = require('Module:Yesno')
+local routeModule = require("Module:Infobox road/route")
+local parserModule = require("Module:Road data/parser")
+local parser = parserModule.parser
+local format = mw.ustring.format
+local frame = mw.getCurrentFrame()
+
+local function country(args)
+	local state = args.state or args.province
+	local country
+	local countryModule = mw.loadData("Module:Road data/countrymask")
+	local country = args.country or countryModule[state]
+	
+	return country
+end
+
+local function countries(args)
+	if not country(args) then
+		if args.countries then
+			return "no"
+		end
+	elseif country(args) == 'EUR' or country(args) == 'AFRICA' or country(args) == 'ASIA' or country(args) == 'SAD' then
+		if args.countries then
+			return "no"
+		end
+	end
+end
+
+local function states(args)
+	if country(args) == 'BRA' or country(args) == 'MEX' then
+		if args.areas or args.borough or args.boroughs or args.cantons or args.communes or args.communities or args.countries or args.county or args.departments or args.districts or args.divisions or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.municipality or args.oblasts or args.okrugs or args.parish or args.parishes or args.prefectures or args.provinces or args.regions or args.republics or args.rural_municipalities or args.sheadings or args.subcounties or args.subprefectures or args.subregions or args.territories then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function australia(args)
+	if country(args) == 'AUS' then
+		if args.areas or args.borough or args.boroughs or args.cantons or args.communes or args.communities or args.counties or args.countries or args.county or args.departments or args.districts or args.divisions or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.municipalities or args.municipality or args.oblasts or args.okrugs or args.parish or args.parishes or args.prefectures or args.provinces or args.regions or args.republics or args.rural_municipalities or args.sheadings or args.subcounties or args.subprefectures or args.subregions or args.territories then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function canada(args)
+	if country(args) == 'CAN' then
+		if args.borough or args.boroughs or args.cantons or args.communes or args.countries or args.departments or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.oblasts or args.okrugs or args.prefectures or args.republics or args.sheadings or args.states or args.subcounties or args.subprefectures or args.subregions then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function china(args)
+	if country(args) == 'CHN' then
+		if args.areas or args.borough or args.boroughs or args.cantons or args.communes or args.communities or args.countries or args.departments or args.divisions or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.municipalities or args.municipality or args.oblasts or args.okrugs or args.parish or args.parishes or args.prefectures or args.republics or args.rural_municipalities or args.sheadings or args.states or args.subcounties or args.subprefectures or args.subregions or args.territories then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function france(args)
+	if country(args) == 'FRA' then
+		if args.areas or args.borough or args.boroughs or args.cantons or args.communes or args.communities or args.counties or args.countries or args.county or args.districts or args.divisions or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.municipalities or args.municipality or args.oblasts or args.okrugs or args.parish or args.parishes or args.prefectures or args.provinces or args.republics or args.rural_municipalities or args.sheadings or args.states or args.subcounties or args.subprefectures or args.subregions or args.territories then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function india(args)
+	if country(args) == 'IND' then
+		if args.areas or args.borough or args.boroughs or args.cantons or args.communes or args.communities or args.counties or args.countries or args.county or args.departments or args.divisions or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.oblasts or args.okrugs or args.parish or args.parishes or args.prefectures or args.provinces or args.regions or args.republics or args.rural_municipalities or args.sheadings or args.subcounties or args.subprefectures or args.subregions then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function netherlands(args)
+	if country(args) == 'NLD' then
+		if args.areas or args.borough or args.boroughs or args.cantons or args.communes or args.communities or args.counties or args.countries or args.county or args.departments or args.districts or args.divisions or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.oblasts or args.okrugs or args.parish or args.parishes or args.prefectures or args.regions or args.republics or args.rural_municipalities or args.sheadings or args.states or args.subcounties or args.subprefectures or args.subregions or args.territories then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function russia(args)
+	if country(args) == 'RUS' then
+		if args.areas or args.borough or args.boroughs or args.cantons or args.communes or args.communities or args.counties or args.countries or args.county or args.departments or args.districts or args.divisions or args.governorates or args.indep_city or args.indep_cities or args.island or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.municipalities or args.municipality or args.parish or args.parishes or args.prefectures or args.provinces or args.regions or args.rural_municipalities or args.sheadings or args.states or args.subcounties or args.subprefectures or args.subregions or args.territories then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function spain(args)
+	if country(args) == 'ESP' then
+		if args.areas or args.borough or args.boroughs or args.cantons or args.communes or args.counties or args.countries or args.county or args.departments or args.districts or args.divisions or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.municipalities or args.municipality or args.oblasts or args.okrugs or args.parish or args.parishes or args.prefectures or args.regions or args.republics or args.rural_municipalities or args.sheadings or args.states or args.subcounties or args.subprefectures or args.subregions or args.territories then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function unitedKingdom(args)
+	if country(args) == 'GBR' then
+		if args.borough or args.cantons or args.communes or args.communities or args.countries or args.county or args.departments or args.divisions or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.municipalities or args.municipality or args.oblasts or args.okrugs or args.parish or args.prefectures or args.provinces or args.regions or args.republics or args.rural_municipalities or args.states or args.subcounties or args.subprefectures or args.subregions or args.territories then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function unitedStates(args)
+	if country(args) == 'USA' then
+		if args.areas or args.cantons or args.cities  or args.communes or args.communities or args.countries or args.departments or args.destinations or args.districts or args.divisions or args.federal_cities or args.governorates or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.oblasts or args.okrugs or args.photo or args.prefectures or args.provinces or args.regions or args.republics or args.rural_municipalities or args.sheadings or args.subcounties or args.subprefectures or args.subregions or args.territories or args.towns or args.villages then
+			return "yes"
+		else
+			return "no"
+		end
+	end
+end
+
+local function trigger(args)
+	if countries(args) == 'yes' or states(args) == 'yes' or australia(args) == 'yes' or canada(args) == 'yes' or china(args) == 'yes' or france(args) == 'yes' or india(args) == 'yes' or netherlands(args) == 'yes' or russia(args) == 'yes' or spain(args) == 'yes' or unitedKingdom(args) == 'yes' or unitedStates(args) == 'yes' then
+		return true
+	else
+		return false
+	end
+end
+
+function p.errors(frame)
+	local args = getArgs(frame)
+	local pagename = frame:getTitle()
+	
+	if trigger(args) == true then
+		return string.format("[[Category:Infobox road transclusion errors|%% %s]]", pagename)
+	else
+		return nil
+	end
+end
+
+return p
+--args.areas or args.borough or args.boroughs or args.cantons or args.communes or args.communities or args.counties or args.countries or args.county or args.departments or args.districts or args.divisions or args.federal_cities or args.governorates or args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.municipalities or args.municipality or args.oblasts or args.okrugs or args.parish or args.parishes or args.prefectures or args.provinces or args.regions or args.republics or args.rural_municipalities or args.sheadings or args.states or args.subcounties or args.subprefectures or args.subregions or args.territories then</text>
+      <sha1>3nxn0qqzo168i8bjo416xwz1tu3upka</sha1>
+    </revision>
+  </page>
+</mediawiki>

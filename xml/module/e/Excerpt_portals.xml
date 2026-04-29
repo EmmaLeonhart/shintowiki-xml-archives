@@ -1,0 +1,2295 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Excerpt/portals</title>
+    <ns>828</ns>
+    <id>5494</id>
+    <revision>
+      <id>811617</id>
+      <timestamp>2024-12-16T06:21:37Z</timestamp>
+      <contributor>
+        <username>en&gt;Solidest</username>
+        <id>0</id>
+      </contributor>
+      <comment>showall also outputs the list of articles at the top of the page (if list param is not called)</comment>
+      <origin>811617</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="49690" sha1="q11zhrxceghzthmm6apoa62ekkmfmw1" xml:space="preserve">-- ATTENTION !
+-- This version of Excerpt is designed specifically for the portal namespace and its associated templates
+-- Prefer Module:Excerpt whenever possible
+
+-- Name of the category to track content pages with errors
+local errorCategory = "Articles with broken excerpts"
+
+-- Error messages
+local errorMessages = {
+	prefix = "Excerpt error: ",
+	noPage = "No page given",
+	pageNotFound = "Page '%s' not found",
+	leadEmpty = "Lead section is empty",
+	sectionEmpty = "Section '%s' is empty",
+	sectionNotFound = "Section '%s' not found",
+	fragmentEmpty = "Fragment '%s' is empty",
+	fragmentNotFound = "Fragment '%s' not found"
+}
+
+-- Regular expressions to match all aliases of the file namespace
+local fileNamespaces = {
+	"[Ff]ile",
+	"[Ii]mage"
+}
+
+-- Regular expressions to match all image parameters
+local imageParams = {
+	{"thumb", "thumbnail", "frame", "framed", "frameless"},
+	{"right", "left", "center", "centre", "none"},
+	{"baseline", "middle", "sub", "super", "text-top", "text-bottom", "top", "bottom"}
+}
+
+-- Regular expressions to match all infobox parameters for image captions
+local captionParams = {
+	"[^=|]*[Cc]aption[^=|]*",
+	"[^=|]*[Ll]egend[^=|]*"
+}
+
+-- List of file types that are allowed to be transcluded
+local fileTypes = {"[Gg][Ii][Ff]", "[Jj][Pp][Ee]?[Gg]", "[Pp][Nn][Gg]", "[Ss][Vv][Gg]", "[Tt][Ii][Ff][Ff]", "[Xx][Cc][Ff]"}
+
+-- Regular expressions to match all inline templates that are undesirable in excerpts
+local unwantedInlineTemplates = {
+	"[Ee]fn", "[Ee]fn%-[lu][arg]", "[Ee]fn [%a ]-", "[Ee]l[mn]", "[Rr]p?", "[Ss]fn[bmp]", "[Ss]f[bn]", "[Nn]ote[Tt]ag", "#[Tt]ag:%s*[Rr]ef", "[Rr]efn?", "[Ff]amily[ _]name[ _]footnote",
+	"[CcDd]n", "[Cc]itation[%- _]needed", "[Dd]isambiguation needed", "[Ff]eatured article", "[Gg]ood article",
+	"[Dd]ISPLAYTITLE", "[Ss]hort[ _]+description", "[Cc]itation", "[Cc]ite[%- _]+[%w_%s]-", "[Cc]oor[%w_%s]-",
+	"[Uu]?n?[Rr]eliable source[%?%w_%s]-", "[Rr]s%??", "[Vv]c", "[Vv]erify credibility", "[Bb]y[ _]*[Ww]ho[m]*%??", "[Ww]ikisource[ -_]*multi", "[Ii]nflation[ _/-]*[Ff]n",
+	"[Bb]iblesource",
+	"[Dd]ecadebox",
+	"[Ee]vents by year for decade",
+	-- aliases for Clarification needed
+	"[Cc]f[ny]", "[Cc]larification[ _]+inline", "[Cc]larification[%- _]*needed", "[Cc]larification", "[Cc]larify%-inline", "[Cc]larify%-?me",
+	"[Cc]larify[ _]+inline", "[Cc]larify", "[Cc]LARIFY", "[Cc]onfusing%-inline", "[Cc]onfusing%-short", "[Ee]xplainme", "[Hh]uh[ _]*%??", "[Ww]hat%?",
+	"[Ii]nline[ _]+[Uu]nclear", "[Ii]n[ _]+what[ _]+sense", "[Oo]bscure", "[Pp]lease[ _]+clarify", "[Uu]nclear[ _]+inline", "[Ww]hat's[ _]+this%?",
+	"[Gg]eoQuelle", "[Nn]eed[s]+[%- _]+[Ii][Pp][Aa]", "[Ii]PA needed",
+	-- aliases for Clarification needed lead
+	"[Cc]itation needed %(?lea?de?%)?", "[Cc]nl", "[Ff]act %(?lea?de?%)?", "[Ll]ead citation needed", "[Nn]ot in body", "[Nn]ot verified in body",
+	-- Primary source etc.
+	"[Pp]s[ci]", "[Nn]psn", "[Nn]on%-primary[ _]+source[ _]+needed", "[Ss]elf%-published[%w_%s]-", "[Uu]ser%-generated[%w_%s]-",
+	"[Pp]rimary source[%w_%s]-", "[Ss]econdary source[%w_%s]-", "[Tt]ertiary source[%w_%s]-", "[Tt]hird%-party[%w_%s]-",
+	-- aliases for Disambiguation (page) and similar
+	"[Bb]egriffsklärung", "[Dd][Aa][Bb]", "[Dd]big", "[%w_%s]-%f[%w][Dd]isam[%w_%s]-", "[Hh][Nn][Dd][Ii][Ss]",
+	-- aliases for Failed verification
+	"[Bb]adref", "[Ff]aile?[ds] ?[rv][%w_%s]-", "[Ff][Vv]", "[Nn][Ii]?[Cc][Gg]", "[Nn]ot ?in ?[crs][%w_%s]-", "[Nn]ot specifically in source",
+	"[Vv]erification[%- _]failed",
+	-- aliases for When
+	"[Aa]s[ _]+of[ _]+when%??", "[Aa]s[ _%-]+of%?", "[Cc]larify date", "[Dd]ate[ _]*needed", "[Nn]eeds?[ _]+date", "[Rr]ecently", "[Ss]ince[ _]+when%??",
+	"[Ww]HEN", "[Ww]hen%??",
+	-- aliases for Update
+	"[Nn]ot[ _]*up[ _]*to[ _]*date","[Oo]u?[Tt][Dd]","[Oo]ut[%- _]*o?f?[%- _]*dated?", "[Uu]pdate",  "[Uu]pdate[ _]+sect", "[Uu]pdate[ _]+Watch",
+	-- aliases for Pronunciation needed
+	"[Pp]ronunciation%??[%- _]*n?e?e?d?e?d?", "[Pp]ronounce", "[Rr]equested[%- _]*pronunciation", "[Rr]e?q?pron", "[Nn]eeds[%- _]*pronunciation",
+	-- Chart, including Chart/start etc.
+	"[Cc]hart", "[Cc]hart/[%w_%s]-",
+	-- Cref and others
+	"[Cc]ref2?", "[Cc]note",
+	-- Explain and others
+	"[Ee]xplain", "[Ff]urther[ ]*explanation[ ]*needed", "[Ee]laboration[ ]*needed", "[Ee]xplanation[ ]*needed",
+	-- TOC templates
+	"[Cc][Oo][Mm][Pp][Aa][Cc][Tt][ _]*[Tt][Oo][Cc][8]*[5]*", "[Tt][Oo][Cc]", "09[Aa][Zz]", "[Tt][Oo][Cc][ ]*[Cc][Oo][Mm][Pp][Aa][Cc][Tt]", "[Tt][Oo][Cc][ ]*[Ss][Mm][Aa][Ll][Ll]", "[Cc][Oo][Mm][Pp][Aa][Cc][Tt][ _]*[Aa][Ll][Pp][Hh][Aa][Bb][Ee][Tt][Ii][Cc][ _]*[Tt][Oo][Cc]",
+	"DEFAULTSORT:.-",
+	"[Oo]ne[ _]+source",
+	"[Cc]ontains[ _]+special[ _]+characters",
+	"[Ii]nfobox[ _]+[Cc]hinese"
+}
+
+-- Regular expressions to match all block templates that are desirable in excerpts
+local wantedBlockTemplates = {
+	"[Bb]asketball[ _]roster[ _]header",
+	"[Cc]abinet[ _]table[^|}]*",
+	"[Cc]hart[^|}]*",
+	"[Cc]lear",
+	"[Cc]ol[%- es][^|}]*", -- all abbreviated column templates without excessively matching ({{col-2}}, {{colend}}, etc.)
+	"[Cc]olumn[^|}]*", -- all other column templates
+	"COVID-19[ _]pandemic[ _]data[^|}]*",
+	"[Cc]ycling[ _]squad[^|}]*",
+	"[Dd]ynamic[ _]list",
+	"[Ee]lection[ _]box[^|}]*",
+	"[Gg]allery",
+	"[Gg]raph[^|}]*",
+	"[Hh]idden",
+	"[Hh]istorical[ _]populations",
+	"[Ll]egend[ _]inline",
+	"[Pp]lainlist",
+	"[Pp]layer[^|}]*",
+	"[Ss]eries[ _]overview",
+	"[Ss]ide[ _]box",
+	"[Ss]witcher",
+	"[Tt]ree[ _]chart[^|}]*",
+	"[Tt]elevision[ _]ratings[ _]graph"
+}
+
+-- Regular expressions to match non-free file templates
+local nonFreeFileTemplates = {
+	"[Nn]on%-free",
+}
+
+local Transcluder = require("Module:Transcluder")
+local escapeString = require("Module:String")._escapePattern
+local yesno = require('Module:Yesno')
+local p = {}
+
+-- Helper function to test for truthy and falsy values
+local function is(value)
+	if not value or value == "" or value == "0" or value == "false" or value == "no" then
+		return false
+	end
+	return true
+end
+
+-- Error handling function
+-- Throws a Lua error or returns an empty string if error reporting is disabled
+local errors = true -- show errors by default
+local function luaError(message, value)
+	if not is(errors) then return '' end -- error reporting is disabled
+	message = errorMessages[message] or message or ''
+	message = mw.ustring.format(message, value)
+	error(message, 2)
+end
+
+-- Error handling function
+-- Returns a wiki friendly error or an empty string if error reporting is disabled
+local function wikiError(message, value)
+	if not is(errors) then return '' end -- error reporting is disabled
+	message = errorMessages[message] or message or ''
+	message = mw.ustring.format(message, value)
+	message = errorMessages.prefix .. message
+	if mw.title.getCurrentTitle().isContentPage then
+		local errorCategory = mw.title.new(errorCategory, 'Category')
+		if errorCategory then message = message .. '[[' .. errorCategory.prefixedText .. ']]' end
+	end
+	message = mw.html.create('div'):addClass('error'):wikitext(message)
+	return message
+end
+
+-- Helper function to match from a list regular expressions
+-- Like so: match pre..list[1]..post or pre..list[2]..post or ...
+local function matchAny(text, pre, list, post, init)
+	local match = {}
+	for i = 1, #list do
+		match = { mw.ustring.match(text, pre .. list[i] .. post, init) }
+		if match[1] then return unpack(match) end
+	end
+	return nil
+end
+
+-- Helper function to convert imagemaps into standard images
+local function convertImageMap(imagemap)
+	local image = matchAny(imagemap, "[&gt;\n]%s*", fileNamespaces, "[^\n]*")
+	if image then
+		return "&lt;!--imagemap--&gt;[[" .. mw.ustring.gsub(image, "[&gt;\n]%s*", "", 1) .. "]]"
+	else
+		return "" -- remove entire block if image can't be extracted
+	end
+end
+
+-- Helper function to convert a comma-separated list of numbers or min-max ranges into a list of booleans
+-- For example: "1,3-5" to {1=true,2=false,3=true,4=true,5=true}
+local function numberFlags(str)
+	if not str then return {} end
+	local flags = {}
+	local ranges = mw.text.split(str, ",") -- parse ranges: "1,3-5" to {"1","3-5"}
+	for _, r in pairs(ranges) do
+		local min, max = mw.ustring.match(r, "^%s*(%d+)%s*[-–—]%s*(%d+)%s*$") -- "3-5" to min=3 max=5
+		if not max then	min, max = mw.ustring.match(r, "^%s*((%d+))%s*$") end -- "1" to min=1 max=1
+		if max then
+			for p = min, max do flags[p] = true end
+		end
+	end
+	return flags
+end
+
+-- Helper function to convert template arguments into an array of arguments fit for get()
+local function parseArgs(frame)
+	local args = {}
+	for key, value in pairs(frame:getParent().args) do args[key] = value end
+	for key, value in pairs(frame.args) do args[key] = value end -- args from a Lua call have priority over parent args from template
+	args.paraflags = numberFlags(args["paragraphs"] or "") -- parse paragraphs: "1,3-5" to {"1","3-5"}
+	args.fileflags = numberFlags(args["files"] or "") -- parse file numbers
+	return args
+end
+
+-- simulate {{Airreg}} without the footnote, given "N|485US|," or similar
+local function airreg(p)
+	local s = mw.text.split(p, "%s*|%s*")
+	if s[1] ~= "N" and s[1] ~= "HL" and s[1] ~= "JA" then s[1]=s[1] .. "-" end
+	return table.concat(s, "")
+end
+
+-- Helper function to remove unwanted templates and pseudo-templates such as #tag:ref and DEFAULTSORT
+local function stripTemplate(t)
+	-- If template is unwanted then return "" (gsub will replace by nothing), else return nil (gsub will keep existing string)
+	if matchAny(t, "^{{%s*", unwantedInlineTemplates, "%s*%f[|}]") then return "" end
+
+	-- If template is wanted but produces an unwanted reference then return the string with |Note=, |ref or |shortref removed
+	local noRef = mw.ustring.gsub(t, "|%s*Note%s*=.-%f[|}]", "")
+	noRef = mw.ustring.gsub(noRef, "|%s*ref%s*%f[|}]", "")
+	noRef = mw.ustring.gsub(noRef, "|%s*shortref%s*%f[|}]", "")
+
+	-- If a wanted template has unwanted nested templates, purge them too
+	noRef = mw.ustring.sub(noRef, 1, 2) .. mw.ustring.gsub(mw.ustring.sub(noRef, 3), "%b{}", stripTemplate)
+
+	-- Replace {{audio}} by its text parameter: {{Audio|Foo.ogg|Bar}} → Bar
+	noRef = mw.ustring.gsub(noRef, "^{{%s*[Aa]udio.-|.-|(.-)%f[|}].*", "%1")
+
+	-- Replace {{Nihongo foot}} by its text parameter: {{Nihongo foot|English|英語|eigo}} → English
+	noRef = mw.ustring.gsub(noRef, "^{{%s*[Nn]ihongo[ _]+foot%s*|(.-)%f[|}].*", "%1")
+
+	-- Replace {{Airreg}} by its text parameter: {{Airreg|N|485US|,}} → N485US,
+	noRef = mw.ustring.gsub(noRef, "^{{%s*[Aa]irreg%s*|%s*(.-)}}", airreg)
+
+	if noRef ~= t then return noRef end
+
+	return nil -- not an unwanted template: keep
+end
+
+-- Get a page's content, following redirects
+-- Also returns the page name, or the target page name if a redirect was followed, or false if no page found
+-- For file pages, returns the content of the file description page
+local function getContent(page)
+	local title = mw.title.new(page)
+	if not title then return false, false end
+
+	local target = title.redirectTarget
+	if target then title = target end
+
+	return title:getContent(), title.prefixedText
+end
+
+-- Get the tables only
+local function getTables(text, options)
+	local tables = {}
+	for candidate in mw.ustring.gmatch(text, "%b{}") do
+		if mw.ustring.sub(candidate, 1, 2) == '{|' then
+			table.insert(tables, candidate)
+		end
+	end
+	return table.concat(tables, '\n')
+end
+
+-- Get the lists only
+local function getLists(text, options)
+	local lists = {}
+	for list in mw.ustring.gmatch(text, "\n[*#][^\n]+") do
+		table.insert(lists, list)
+	end
+	return table.concat(lists, '\n')
+end
+
+-- Check image for suitability
+local function checkImage(image)
+	if type(image) == "table" then
+		--Infobox image. Pass in a quick string equivilant of the image, since we should still check it for things like non-free files
+		return checkImage("[[File:"..image.file.."]]")
+	end
+	local page = matchAny(image, "", fileNamespaces, "%s*:[^|%]]*") -- match File:(name) or Image:(name)
+	if not page then return false end
+
+	-- Limit to image types: .gif, .jpg, .jpeg, .png, .svg, .tiff, .xcf (exclude .ogg, audio, etc.)
+	if not matchAny(page, "%.", fileTypes, "%s*$") then return false end
+
+	-- Check the local wiki
+	local fileDescription, fileTitle = getContent(page) -- get file description and title after following any redirect
+	if not fileTitle or fileTitle == "" then return false end -- the image doesn't exist
+
+	-- Check Commons
+	if not fileDescription or fileDescription == "" then
+		local frame = mw.getCurrentFrame()
+		fileDescription = frame:preprocess("{{" .. fileTitle .. "}}")
+	end
+
+	-- Filter non-free images
+	if not fileDescription or fileDescription == "" or matchAny(fileDescription, "", nonFreeFileTemplates, "") then
+		return false
+	end
+
+	return true
+end
+
+-- Attempt to parse [[File:...]] or [[Image:...]], either anywhere (start=false) or at the start only (start=true)
+local function parseImage(text, start)
+	local startre = ""
+	if start then startre = "^" end -- a true flag restricts search to start of string
+	local image = matchAny(text, startre .. "%[%[%s*", fileNamespaces, "%s*:.*") -- [[File: or [[Image: ...
+	if image then
+		image = mw.ustring.match(image, "%b[]%s*") -- matching [[...]] to handle wikilinks nested in caption
+	end
+	return image
+end
+
+-- Returns the file name and the arg data of the file if it exists
+local function extractFileData(str,notmultiline)
+	local reg = "^%[?%[?%a-:([^{|]+)(.-)%]?%]?$"
+	local name,args,_ = mw.ustring.match(str,reg)
+	if name then
+		return name,args
+	else
+		return str,"" --Default fallback
+	end
+end
+
+--Modifies an image's parameters, automatically fixing related parameters in the process
+local function modifyImage(image, fileArgs)
+	if type(image) == "table" then
+		--Pass in a dummy string version and use that to handle modification
+		local newversion = modifyImage("[[File:"..image.file..string.gsub(image.args,"{{!}}","|").."]]",fileArgs)
+		--Since we know the format is strictly controlled, we can do a lazy sub grab for the args
+		image.args = string.sub(newversion,8+#image.file,-3)
+		return image
+	end
+	if fileArgs then
+		for _, filearg in pairs(mw.text.split(fileArgs, "|")) do -- handle fileArgs=left|border etc.
+			local fa = mw.ustring.gsub(filearg, "=.*", "") -- "upright=0.75" → "upright"
+			local group = {fa} -- group of "border" is ["border"]...
+			for _, g in pairs(imageParams) do
+				for _, a in pairs(g) do
+					if fa == a then group = g end -- ...but group of "left" is ["right", "left", "center", "centre", "none"]
+				end
+			end
+			for _, a in pairs(group) do
+				image = mw.ustring.gsub(image, "|%s*" .. a .. "%f[%A]%s*=[^|%]]*", "") -- remove "|upright=0.75" etc.
+				image = mw.ustring.gsub(image, "|%s*" .. a .. "%s*([|%]])", "%1") -- replace "|left|" by "|" etc.
+			end
+			image = mw.ustring.gsub(image, "([|%]])", "|" .. filearg .. "%1", 1) -- replace "|" by "|left|" etc.
+		end
+	end
+	image = mw.ustring.gsub(image, "(|%s*%d*x?%d+%s*px%s*.-)|%s*%d*x?%d+%s*px%s*([|%]])", "%1%2") -- double px args
+	return image
+end
+
+-- Turns a template's file table into a [[File:...]] string
+local function formatTemplateImage(image,allowFancy)
+	--Certain positional elements may need to apply to the containing infobox, and not the file itself, so we should check that here
+	if is(image.caption) and allowFancy then --Will be displayed like an infobox
+		local alignment =
+			(string.find(image.args, "|left") and "left")
+			or (string.find(image.args, "|center") or string.find(image.args, "|centre")) and "center"
+			or "right"
+		modifyImage(image, "none") --Remove all positioning elements from the image
+		modifyImage(image, "frameless")
+		local args = image.args
+		args = string.gsub(args, "|thumb", "") --Don't allow using |thumb in this mode
+		
+		return mw.text.unstrip(mw.getCurrentFrame():expandTemplate({
+			title = "Image frame",
+			args = {
+				content="[[File:"..image.file..args.."]]", caption='&lt;div class="center"&gt;'..image.caption.."&lt;/div&gt;",
+				align=alignment, ["max-width"]=300, mode="scrollable"
+			}
+		})) .. "\n"
+	else
+		local captionText = (is(image.caption) and "|"..image.caption) or ""
+		return "[[File:"..image.file..captionText..image.args.."]]\n"
+	end
+end
+
+-- Attempts to construct a [[File:...]] block from {{infobox ... |image= ...}} or other templates
+local function getTemplateImages(text)
+	local hasNamedArgs = mw.ustring.find(text, "|") and mw.ustring.find(text, "=")
+	if not hasNamedArgs then return nil end -- filter out any template that obviously doesn't contain an image
+
+	-- ensure image map is captured, while removing anything beyond it
+	text = mw.ustring.gsub(text, '&lt;!%-%-imagemap%-%-&gt;(%[%b[]%])[^|]+', '|imagemap=%1')
+
+	-- filter through parameters for image related ones
+	local images = {}
+	local parameters, _, parameterOrder = Transcluder.getParameters(text)
+	
+	--Search all template parameters for file-like objects
+	local positionalImages = {}
+	local position = 1
+	for _,key in ipairs(parameterOrder) do
+		position = position + 1 --Cant rely on ipairs due to potentially weird manipulation later
+		local value = parameters[key]
+		if is(value) then --Ensure its not empty
+			if string.sub(value,1,2) == "{{" and string.sub(value,-2,-1) == "}}" then --Template in a template
+				--Extract files from the template and insert files if any appear
+				local internalImages = getTemplateImages(value) or {}
+				local initialPosition = position
+				for index,image in ipairs(internalImages) do
+					positionalImages[initialPosition+index] = image --Still positional, technically
+					position = position + 1 --Advance our own counter to avoid overlap
+				end
+			else
+				if matchAny(key, "", captionParams, "%s*") then
+					--Caption-like parameter name, try to associate it with an image
+					local scanPosition = position
+					while scanPosition &gt; 0 do
+						scanPosition = scanPosition - 1
+						local image = positionalImages[scanPosition]
+						if image and image.caption == "" then
+							image.caption = mw.getCurrentFrame():preprocess(value) --Assign caption to most recently defined image
+							break
+						end
+					end
+				
+				elseif matchAny(value, "%.", fileTypes, "%s*$") then
+					--File-like value, assume its an image
+					local filename,fileargs = extractFileData(value)
+					positionalImages[position] = {file=filename,caption="",args=fileargs}
+				
+				elseif mw.ustring.match(key, "[Ii][Mm][Aa][Gg][Ee]") or mw.ustring.match(key, "[Pp][Hh][Oo][Tt][Oo]") or mw.ustring.match(key, "[Ss][Yy][Mm][Bb][Oo][Ll]") then
+					--File-like parameter name, assume its an image after some scrutinization
+					local keyLower = string.lower(key)
+					if string.find(keyLower,"caption")
+					 or string.find(keyLower,"size") or string.find(keyLower,"width")
+					 or string.find(keyLower,"upright")
+					 or string.find(keyLower,"alt") then --Argument is defining image settings, not an image
+						--Do nothing for now
+						--TODO: we really should extract some of this for later use
+					else
+						local filename,fileargs = extractFileData(value)
+						positionalImages[position] = {file=filename,caption="",args=fileargs}
+					end
+				end
+			end --End of "Is template in template" check
+		end --End of "is(value)" check
+	end
+	
+	--Append entries from positionalImages into the main images table
+	for i = 1,position do
+		local value = positionalImages[i]
+		if value then
+			table.insert(images,value)
+		end
+	end
+
+	return images
+end
+
+-- a basic parser to trim down extracted wikitext
+--   @param text : Wikitext to be processed
+--   @param options : A table of options...
+--          options.paraflags : Which number paragraphs to keep, as either a string (e.g. '1,3-5') or a table (e.g. {1=true,2=false,3=true,4=true,5=true}. If not present, all paragraphs will be kept.
+--          options.fileflags : table of which files to keep, as either a string (e.g. '1,3-5') or a table (e.g. {1=true,2=false,3=true,4=true,5=true}
+--          options.fileargs : args for the [[File:]] syntax, such as 'left'
+--			options.filesOnly : only return the files and not the prose
+local function parse(text, options)
+	local allParagraphs = true -- keep all paragraphs?
+	if options.paraflags then
+		if type(options.paraflags) ~= "table" then options.paraflags = numberFlags(options.paraflags) end
+		for _, v in pairs(options.paraflags) do
+			if v then allParagraphs = false end -- if any para specifically requested, don't keep all
+		end
+	end
+	if is(options.filesOnly) then
+		allParagraphs = false
+		options.paraflags = {}
+	end
+
+	local maxfile = 0 -- for efficiency, stop checking images after this many have been found
+	if options.fileflags then
+		if type(options.fileflags) ~= "table" then options.fileflags = numberFlags(options.fileflags) end
+		for k, v in pairs(options.fileflags) do
+			if v and k &gt; maxfile then maxfile = k end -- set maxfile = highest key in fileflags
+		end
+	end
+	
+	local fileArgs = options.fileargs and mw.text.trim(options.fileargs)
+	if fileArgs == '' then fileArgs = nil end
+	local doFancyFiles = yesno(options.doFancyFiles)
+	if doFancyFiles == nil then doFancyFiles = true end
+
+	local leadStart = nil -- have we found some text yet?
+	local t = "" -- the stripped down output text
+	local fileText = "" -- output text with concatenated [[File:Foo|...]]\n entries
+	local files = 0 -- how many images so far
+	local paras = 0 -- how many paragraphs so far
+	local startLine = true -- at the start of a line (no non-spaces found since last \n)?
+
+	text = mw.ustring.gsub(text,"^%s*","") -- remove initial white space
+
+	-- Add named files
+	local f = options.files
+	if f and mw.ustring.match(f, "[^%d%s%-,]") then -- filename rather than number list
+		f = mw.ustring.gsub(f, "^%s*File%s*:%s*", "", 1)
+		f = mw.ustring.gsub(f, "^%s*Image%s*:%s*", "", 1)
+		f = "[[File:" .. f .. "]]"
+		f = modifyImage(f, "thumb")
+		f = modifyImage(f, fileArgs)
+		if checkImage(f) then fileText = fileText .. f .. "\n" end
+	end
+
+	repeat -- loop around parsing a template, image or paragraph
+		local token = mw.ustring.match(text, "^%b{}%s*") or false -- {{Template}} or {| Table |}
+		if not leadStart and not token then token = mw.ustring.match(text, "^%b&lt;&gt;%s*%b{}%s*") end -- allow &lt;tag&gt;{{template}} before lead has started
+
+		local line = mw.ustring.match(text, "[^\n]*")
+		if token and line and mw.ustring.len(token) &lt; mw.ustring.len(line) then -- template is followed by text (but it may just be other templates)
+			line = mw.ustring.gsub(line, "%b{}", "") -- remove all templates from this line
+			line = mw.ustring.gsub(line, "%b&lt;&gt;", "") -- remove all HTML tags from this line
+			-- if anything is left, other than an incomplete further template or an image, keep the template: it counts as part of the line
+			if mw.ustring.find(line, "%S") and not matchAny(line, "^%s*", { "{{", "%[%[%s*[Ff]ile:", "%[%[%s*[Ii]mage:" }, "") then
+				token = nil
+			end
+		end
+
+		if token then -- found a template which is not the prefix to a line of text
+
+			if is(options.keepTables) and mw.ustring.sub(token, 1, 2) == '{|' then
+				t = t .. token -- keep tables
+
+			elseif mw.ustring.sub(token, 1, 3) == '{{#' then
+				t = t .. token -- keep parser functions
+
+			elseif leadStart then -- lead has already started, so keep the template within the text, unless it's a whole line (navbox etc.)
+				if not is(options.filesOnly) and not startLine then t = t .. token end
+
+			elseif matchAny(token, "^{{%s*", wantedBlockTemplates, "%s*%f[|}]") then
+				t = t .. token -- keep wanted block templates
+
+			elseif files &lt; maxfile then -- Check it for images if we need those, and then discard it
+				local images = getTemplateImages(token) or {}
+				for _, image in ipairs(images) do
+					if files &lt; maxfile and checkImage(image) then -- if image is found and qualifies (not a sound file, not non-free, etc.)
+						files = files + 1 -- count the file, whether displaying it or not
+						if options.fileflags and options.fileflags[files] then -- if displaying this image
+							image = modifyImage(image, "thumb")
+							image = modifyImage(image, fileArgs)
+							fileText = fileText .. formatTemplateImage(image, doFancyFiles)
+						end
+					end
+				end
+			end
+		else -- the next token in text is not a template
+			token = parseImage(text, true)
+			if token then -- the next token in text looks like an image
+				if files &lt; maxfile and checkImage(token) then -- if more images are wanted and this is a wanted image
+					files = files + 1
+					if options.fileflags and options.fileflags[files] then
+						local image = token -- copy token for manipulation by adding |right etc. without changing the original
+						image = modifyImage(image, fileArgs)
+						fileText = fileText .. image
+					end
+				end
+			else -- got a paragraph, which ends at a file, image, blank line or end of text
+				local afterEnd = mw.ustring.len(text) + 1
+				local blankPosition = mw.ustring.find(text, "\n%s*\n") or afterEnd -- position of next paragraph delimiter (or end of text)
+				local endPosition = math.min( -- find position of whichever comes first: [[File:, [[Image: or paragraph delimiter
+				 mw.ustring.find(text, "%[%[%s*[Ff]ile%s*:") or afterEnd,
+				 mw.ustring.find(text, "%[%[%s*[Ii]mage%s*:") or afterEnd,
+				 blankPosition)
+				token = mw.ustring.sub(text, 1, endPosition-1)
+				if blankPosition &lt; afterEnd and blankPosition == endPosition then -- paragraph ends with a blank line
+					token = token .. mw.ustring.match(text, "\n%s*\n", blankPosition)
+				end
+				local isHatnote = not(leadStart) and mw.ustring.sub(token, 1, 1) == ':'
+				if not isHatnote then
+					leadStart = leadStart or mw.ustring.len(t) + 1 -- we got a paragraph, so mark the start of the lead section
+					paras = paras + 1
+					if allParagraphs or (options.paraflags and options.paraflags[paras]) then t = t .. token end -- add if this paragraph wanted
+				end
+			end -- of "else got a paragraph"
+		end -- of "else not a template"
+
+		if token then text = mw.ustring.sub(text, mw.ustring.len(token)+1) end -- remove parsed token from remaining text
+		startLine = mw.ustring.find(token, "\n%s*$") -- will the next token be the first non-space on a line?
+	until not text or text == "" or not token or token == "" -- loop until all text parsed
+
+	text = mw.ustring.gsub(t, "\n+$", "") -- remove trailing line feeds, so "{{Transclude text excerpt|Foo}} more" flows on one line
+
+	return fileText .. text
+end
+
+local function cleanupText(text, options)
+	text = mw.ustring.gsub(text, "&lt;!%-%-.-%-%-&gt;","") -- remove HTML comments
+	text = mw.ustring.gsub(text, "&lt;[Nn][Oo][Ii][Nn][Cc][Ll][Uu][Dd][Ee]&gt;.-&lt;/[Nn][Oo][Ii][Nn][Cc][Ll][Uu][Dd][Ee]&gt;", "") -- remove noinclude bits
+	if not is(options.ignoreOnlyincludes) and mw.ustring.find(text, "[Oo][Nn][Ll][Yy][Ii][Nn][Cc][Ll][Uu][Dd][Ee]") then -- avoid expensive search if possible
+		text = mw.ustring.gsub(text, "&lt;/[Oo][Nn][Ll][Yy][Ii][Nn][Cc][Ll][Uu][Dd][Ee]&gt;.-&lt;[Oo][Nn][Ll][Yy][Ii][Nn][Cc][Ll][Uu][Dd][Ee]&gt;", "") -- remove text between onlyinclude sections
+		text = mw.ustring.gsub(text, "^.-&lt;[Oo][Nn][Ll][Yy][Ii][Nn][Cc][Ll][Uu][Dd][Ee]&gt;", "") -- remove text before first onlyinclude section
+		text = mw.ustring.gsub(text, "&lt;/[Oo][Nn][Ll][Yy][Ii][Nn][Cc][Ll][Uu][Dd][Ee]&gt;.*", "") -- remove text after last onlyinclude section
+	end
+	if not is(options.keepSubsections) then
+		text = mw.ustring.gsub(text, "\n==.*","") -- remove first ==Heading== and everything after it
+		text = mw.ustring.gsub(text, "^==.*","") -- ...even if the lead is empty
+	end
+	if not is(options.keepRefs) then
+		text = mw.ustring.gsub(text, "&lt;%s*[Rr][Ee][Ff][^&gt;]-/%s*&gt;", "") -- remove refs cited elsewhere
+		text = mw.ustring.gsub(text, "&lt;%s*[Rr][Ee][Ff].-&gt;.-&lt;%s*/%s*[Rr][Ee][Ff]%s*&gt;", "") -- remove refs
+		text = mw.ustring.gsub(text, "{%b{}}", stripTemplate) -- remove unwanted templates such as references
+	end
+	text = mw.ustring.gsub(text, "&lt;%s*[Ss][Cc][Oo][Rr][Ee].-&gt;.-&lt;%s*/%s*[Ss][Cc][Oo][Rr][Ee]%s*&gt;", "") -- remove musical scores
+	text = mw.ustring.gsub(text, "&lt;%s*[Ii][Mm][Aa][Gg][Ee][Mm][Aa][Pp].-&gt;.-&lt;%s*/%s*[Ii][Mm][Aa][Gg][Ee][Mm][Aa][Pp]%s*&gt;", convertImageMap) -- convert imagemaps into standard images
+	text = mw.ustring.gsub(text, "%s*{{%s*[Tt][Oo][Cc].-}}", "") -- remove most common tables of contents
+	text = mw.ustring.gsub(text, "%s*__[A-Z]*TOC__", "") -- remove TOC behavior switches
+	text = mw.ustring.gsub(text, "\n%s*{{%s*[Pp]p%-.-}}", "\n") -- remove protection templates
+	text = mw.ustring.gsub(text, "%s*{{[^{|}]*[Ss]idebar%s*}}", "") -- remove most sidebars
+	text = mw.ustring.gsub(text, "%s*{{[^{|}]*%-[Ss]tub%s*}}", "") -- remove most stub templates
+	text = mw.ustring.gsub(text, "%s*%[%[%s*:?[Cc]ategory:.-%]%]", "") -- remove categories
+	text = mw.ustring.gsub(text, "^:[^\n]+\n","") -- remove DIY hatnote indented with a colon
+	return text
+end
+
+-- Parse a ==Section== from a page
+local function getSection(text, section, mainOnly)
+	local escapedSection = mw.ustring.gsub(mw.uri.decode(section), "([%^%$%(%)%%%.%[%]%*%+%-%?])", "%%%1") -- %26 → &amp; etc, then ^ → %^ etc.
+	local level, content = mw.ustring.match(text .. "\n", "\n(==+)%s*" .. escapedSection .. "%s*==.-\n(.*)")
+	if not content then return luaError("sectionNotFound", section) end
+	local nextSection
+	if mainOnly then
+		nextSection = "\n==.*" -- Main part of section terminates at any level of header
+	else
+		nextSection = "\n==" .. mw.ustring.rep("=?", #level - 2) .. "[^=].*" -- "===" → "\n===?[^=].*", matching "==" or "===" but not "===="
+	end
+	content = mw.ustring.gsub(content, nextSection, "") -- remove later sections with headings at this level or higher
+	if mw.ustring.match(content, "^%s*$") then return luaError("sectionEmpty", section) end
+	return content
+end
+
+-- Parse a &lt;section begin="Name of the fragment"&gt;
+-- @todo Implement custom parsing of fragments rather than relying on #lst
+local function getFragment(page, fragment)
+	local frame = mw.getCurrentFrame()
+	local text = frame:callParserFunction('#lst', page, fragment)
+	if mw.ustring.match(text, "^%s*$") then return luaError("fragmentEmpty", fragment) end
+	return text
+end
+
+-- Remove unmatched &lt;tag&gt; or &lt;/tag&gt; tags
+local function fixTags(text, tag)
+	local startCount = 0
+	for i in mw.ustring.gmatch(text, "&lt;%s*" .. tag .. "%f[^%w_].-&gt;") do startCount = startCount + 1 end
+
+	local endCount = 0
+	for i in mw.ustring.gmatch(text, "&lt;/" .. tag .. "%s*&gt;") do endCount = endCount + 1 end
+
+	if startCount &gt; endCount then -- more &lt;tag&gt; than &lt;/tag&gt;: remove the last few &lt;tag&gt;s
+		local i = 0
+		text = mw.ustring.gsub(text, "&lt;%s*" .. tag .. "%f[^%w_].-&gt;", function(t)
+			i = i + 1
+			if i &gt; endCount then return "" else return nil end
+		end) -- "end" here terminates the anonymous replacement function(t) passed to gsub
+	elseif endCount &gt; startCount then -- more &lt;/tag&gt; than &lt;tag&gt;: remove the first few &lt;/tag&gt;s
+		text = mw.ustring.gsub(text, "&lt;/" .. tag .. "%s*&gt;", "", endCount - startCount)
+	end
+	return text
+end
+
+local function fixTemplates(text)
+	repeat -- hide matched {{template}}s including nested templates
+		local t = text
+		text = mw.ustring.gsub(text, "{(%b{})}", "\27{\27%1\27}\27") -- {{sometemplate}} → E{E{sometemplate}E}E where E represents escape
+		text = mw.ustring.gsub(text, "(&lt; *math[^&gt;]*&gt;[^&lt;]-)}}(.-&lt; */math *&gt;)", "%1}\27}\27%2") -- &lt;math&gt;\{sqrt\{hat{x}}&lt;/math&gt; → &lt;math&gt;\{sqrt\{hat{x}E}E&lt;/math&gt;
+	until text == t
+	text = text.gsub(text, "([{}])%1[^\27].*", "") -- remove unmatched {{, }} and everything thereafter, avoiding }E}E etc.
+	text = text.gsub(text, "([{}])%1$", "") -- remove unmatched {{, }} at end of text
+	text = mw.ustring.gsub(text, "\27", "") -- unhide matched pairs: E{E{ → {{, etc.
+	return text
+end
+
+local function fixTables(text)
+	repeat -- hide matched {|tables|}s
+		local t = text
+		for potentialTable in string.gmatch(text, "\n%b{}") do
+			if string.sub(potentialTable, 1, 3) == "\n{|" then
+				local innerContent = mw.ustring.sub(potentialTable, 3, -2)
+				text = mw.ustring.gsub(text, escapeString(potentialTable), "\n\27{\27"..mw.ustring.gsub(innerContent, "%%", "%%%%").."\27}\27")
+				-- {|sometable|} → E{E|sometable|E}E where E represents escape
+			end
+		end
+	until text == t
+	text = mw.ustring.gsub(text, "\n{|.*", "") -- remove unmatched {| and everything after it
+	text = mw.ustring.gsub(text, "\27", "") -- unhide matched pairs: E{E| → {|, etc.
+	return text
+end
+
+local function fixLinks(text)
+	repeat -- hide matched [[wikilink]]s including nested links like [[File:Example.jpg|Some [[nested]] link.]]
+		local t = text
+		text = mw.ustring.gsub(text, "%[(%b[])%]", "\27[\27%1\27]\27")
+	until text == t
+	text = text.gsub(text, "([%[%]])%1[^\27].*", "") -- remove unmatched [[ or ]] and everything thereafter, avoiding ]E]E etc.
+	text = text.gsub(text, "([%[%]])%1$", "") -- remove unmatched [[ or ]] at end of text
+	text = mw.ustring.gsub(text, "\27", "") -- unhide matched pairs: ]E]E → ]], etc.
+	return text
+end
+
+-- Replace the first call to each reference defined outside of the text for the full reference, to prevent undefined references
+-- Then prefix the page title to the reference names to prevent conflicts
+-- that is, replace &lt;ref name="Foo"&gt; for &lt;ref name="Title of the article Foo"&gt;
+-- and also &lt;ref name="Foo" /&gt; for &lt;ref name="Title of the article Foo" /&gt;
+-- also remove reference groups: &lt;ref name="Foo" group="Bar"&gt; for &lt;ref name="Title of the article Foo"&gt;
+-- and &lt;ref group="Bar"&gt; for &lt;ref&gt;
+-- @todo The current regex may fail in cases with both kinds of quotes, like &lt;ref name="Darwin's book"&gt;
+local function fixRefs(text, page, full)
+	if not full then full = getContent(page) end
+	local refNames = {}
+	local refName
+	local refBody
+	local position = 1
+	while position &lt; mw.ustring.len(text) do
+		refName, position = mw.ustring.match(text, "&lt;%s*[Rr][Ee][Ff][^&gt;]*name%s*=%s*[\"']?([^\"'&gt;]+)[\"']?[^&gt;]*/%s*&gt;()", position)
+		if refName then
+			refName = mw.text.trim(refName)
+			if not refNames[refName] then -- make sure we process each ref name only once
+				table.insert(refNames, refName)
+				refName = mw.ustring.gsub(refName, "[%^%$%(%)%.%[%]%*%+%-%?%%]", "%%%0") -- escape special characters
+				refBody = mw.ustring.match(text, "&lt;%s*[Rr][Ee][Ff][^&gt;]*name%s*=%s*[\"']?%s*" .. refName .. "%s*[\"']?[^&gt;/]*&gt;.-&lt;%s*/%s*[Rr][Ee][Ff]%s*&gt;")
+				if not refBody then -- the ref body is not in the excerpt
+					refBody = mw.ustring.match(full, "&lt;%s*[Rr][Ee][Ff][^&gt;]*name%s*=%s*[\"']?%s*" .. refName .. "%s*[\"']?[^/&gt;]*&gt;.-&lt;%s*/%s*[Rr][Ee][Ff]%s*&gt;")
+					if refBody then -- the ref body was found elsewhere
+						text = mw.ustring.gsub(text, "&lt;%s*[Rr][Ee][Ff][^&gt;]*name%s*=%s*[\"']?%s*" .. refName .. "%s*[\"']?[^&gt;]*/?%s*&gt;", refBody, 1)
+					end
+				end
+			end
+		else
+			position = mw.ustring.len(text)
+		end
+	end
+	text = mw.ustring.gsub(text, "&lt;%s*[Rr][Ee][Ff][^&gt;]*name%s*=%s*[\"']?([^\"'&gt;/]+)[\"']?[^&gt;/]*(/?)%s*&gt;", '&lt;ref name="' .. page .. ' %1" %2&gt;')
+	text = mw.ustring.gsub(text, "&lt;%s*[Rr][Ee][Ff][^&gt;]*group%s*=%s*[\"']?[^\"'&gt;/]+[\"']%s*&gt;", '&lt;ref&gt;')
+	return text
+end
+
+-- Replace the bold title or synonym near the start of the article by a wikilink to the article
+function linkBold(text, page)
+	local lang = mw.language.getContentLanguage()
+	local position = mw.ustring.find(text, "'''" .. lang:ucfirst(page) .. "'''", 1, true) -- look for "'''Foo''' is..." (uc) or "A '''foo''' is..." (lc)
+		or mw.ustring.find(text, "'''" .. lang:lcfirst(page) .. "'''", 1, true) -- plain search: special characters in page represent themselves
+	if position then
+		local length = mw.ustring.len(page)
+		text = mw.ustring.sub(text, 1, position + 2) .. "[[" .. mw.ustring.sub(text, position + 3, position + length + 2) .. "]]" .. mw.ustring.sub(text, position + length + 3, -1) -- link it
+	else -- look for anything unlinked in bold, assumed to be a synonym of the title (e.g. a person's birth name)
+		text = mw.ustring.gsub(text, "()'''(.-'*)'''", function(a, b)
+			if not mw.ustring.find(b, "%[") then -- if not wikilinked
+				return "'''[[" .. page .. "|" .. b .. "]]'''" -- replace '''Foo''' by '''[[page|Foo]]'''
+			else
+				return nil -- instruct gsub to make no change
+			end
+		 end, 1) -- "end" here terminates the anonymous replacement function(a, b) passed to gsub
+	end
+	return text
+end
+
+-- Main function for modules
+local function get(page, options)
+	if options.errors then errors = options.errors end
+
+	if not page or page == "" then return luaError("noPage") end
+
+	local text
+	page, section = mw.ustring.match(page, "([^#]+)#?([^#]*)")
+	text, page = getContent(page)
+	if not page then return luaError("noPage") end
+	if not text then return luaError("pageNotFound", page) end
+	local full = text -- save the full text for later
+
+	if is(options.fragment) then
+		text = getFragment(page, options.fragment)
+	end
+
+	if is(section) then
+		text = getSection(text, section)
+	end
+
+	-- Strip text of all undersirables
+	text = cleanupText(text, options)
+	text = parse(text, options)
+
+	-- Replace the bold title or synonym near the start of the article by a wikilink to the article
+	text = linkBold(text, page)
+
+	-- Remove '''bold text''' if requested
+	if is(options.nobold) then text = mw.ustring.gsub(text, "'''", "") end
+
+	-- Keep only tables if requested
+	if is(options.tablesOnly) then text = getTables(text) end
+
+	-- Keep only lists if requested
+	if is(options.listsOnly) then text = getLists(text) end
+
+	-- Seek and destroy unterminated templates, tables, links and tags
+	text = fixTemplates(text)
+	text = fixTables(text)
+	text = fixLinks(text)
+	text = fixTags(text, "div")
+
+	-- Fix broken references
+	if is(options.keepRefs) then text = fixRefs(text, page, full) end
+
+	-- Trim trailing newlines to avoid appending text weirdly
+	text = mw.text.trim(text)
+
+	-- Add (Full article...) link
+	if options.moreLinkText then
+		text = text .. " ('''[[" .. page .. "|" .. options.moreLinkText .. "]]''')"
+	end
+
+	return text
+end
+
+-- Main invocation function for templates
+local function main(frame)
+	local args = parseArgs(frame)
+	local page = args[1]
+	local ok, text = pcall(get, page, args)
+	if not ok then
+		text = errorMessages.prefix .. text
+		if errorCategory and errorCategory ~= '' and mw.title.getCurrentTitle().isContentPage then
+			text = text .. '[[' .. errorCategory .. ']]'
+		end
+		return mw.html.create('div'):addClass('error'):wikitext(text)
+	end
+	return frame:preprocess(text)
+end
+
+local function getMoreLinkText(more)
+	local defaultText = "Full article..." -- default text, same as in [[Template:TFAFULL]]
+	if not more or more == '' then -- nil/empty =&gt; use default
+		return defaultText
+	end
+	if not yesno(more, true) then -- falsy values =&gt; suppress the link
+		return nil
+	end
+	return more
+end
+
+-- Shared invocation function used by templates meant for portals
+local function portal(frame, template)
+	local args = parseArgs(frame)
+
+	errors = args['errors'] or false -- disable error reporting unless requested
+
+	-- There should be at least one argument except with selected=Foo and Foo=Somepage
+	if #args &lt; 1 and not (template == "selected" and args[template] and args[args[template]]) then
+		return wikiError("noPage")
+	end
+
+	-- Figure out the page to excerpt
+	local page
+	local candidates = {}
+
+	if template == "lead" then
+		page = args[1]
+		page = mw.text.trim(page)
+		if not page or page == "" then return wikiError("noPage") end
+		candidates = { page }
+
+	elseif template == "selected" then
+		local key = args[template]
+		local count = #args
+		if tonumber(key) then -- normalise article number into the range 1..#args
+			key = key % count
+			if key == 0 then key = count end
+		end
+		page = args[key]
+		page = mw.text.trim(page)
+		if not page or page == "" then return wikiError("noPage") end
+		candidates = { page }
+
+	elseif template == "linked" or template == "listitem" then
+		local source = args[1]
+		local text, source = getContent(source)
+		if not source then
+			return wikiError("noPage")
+		elseif not text then
+			return wikiError("noPage")
+		end
+		local section = args.section
+		if section then -- check relevant section only
+			text = getSection(text, section)
+			if not text then return wikiError("sectionNotFound", section) end
+		end
+		-- Replace annotated links with real links
+		text = mw.ustring.gsub(text, "{{%s*[Aa]nnotated[ _]link%s*|%s*(.-)%s*}}", "[[%1]]")
+		if template == "linked" then
+			for candidate in mw.ustring.gmatch(text, "%[%[%s*([^%]|\n]*)") do table.insert(candidates, candidate) end
+		else -- listitem: first wikilink on a line beginning *, :#, etc. except in "See also" or later section
+			text = mw.ustring.gsub(text, "\n== *See also.*", "")
+			for candidate in mw.ustring.gmatch(text, "\n:*[%*#][^\n]-%[%[%s*([^%]|\n]*)") do table.insert(candidates, candidate) end
+		end
+
+	elseif template == "random" then
+		for key, value in pairs(args) do
+			if value and type(key) == "number" then
+				table.insert(candidates, mw.text.trim(value))
+			end
+		end
+	end
+
+	-- Build an options array for the Excerpt module out of the arguments and the desired defaults
+	local options = {
+		errors = args['errors'] or false,
+		fileargs = args['fileargs'],
+		fileflags = numberFlags( args['files'] ),
+		paraflags = numberFlags( args['paragraphs'] ),
+		moreLinkText = getMoreLinkText(args['more'] ),
+		keepSubsections = args['keepSubsections'],
+		keepRefs = args['keepRefs'],
+		nobold = args['nobold'],
+		doFancyFiles = args['fancyfiles']
+	}
+
+	-- Select a random candidate and make sure its valid
+	local text
+	local candidateCount = #candidates
+	if candidateCount &gt; 0 then
+		local candidateKey = 1
+		local candidateString
+		local candidateArgs
+		if candidateCount &gt; 1 then math.randomseed(os.time()) end
+		while (not text or text == "") and candidateCount &gt; 0 do
+			if candidateCount &gt; 1 then candidateKey = math.random(candidateCount) end -- pick a random candidate
+			candidateString = candidates[candidateKey]
+			if candidateString and candidateString ~= "" then
+				-- We have page or [[page]] or [[page|text]], possibly followed by |opt1|opt2...
+				page, candidateArgs = mw.ustring.match(candidateString, "^%s*(%[%b[]%])%s*|?(.*)")
+				if page and page ~= "" then
+					page = mw.ustring.match(page, "%[%[([^|%]]*)") -- turn [[page|text]] into page, discarding text
+				else -- we have page or page|opt...
+					page, candidateArgs = mw.ustring.match(candidateString, "%s*([^|]*[^|%s])%s*|?(.*)")
+				end
+				-- candidate arguments (even if value is "") have priority over global arguments
+				if candidateArgs and candidateArgs ~= "" then
+					for _, t in pairs(mw.text.split(candidateArgs, "|")) do
+						local k, v = mw.ustring.match(t, "%s*([^=]-)%s*=(.-)%s*$")
+						if k == 'files' then options.fileflags = numberFlags(v)
+						elseif k == 'paragraphs' then options.paraflags = numberFlags(v)
+						elseif k == 'more' then args.more = v
+						else options[k] = v end
+					end
+				end
+				if page and page ~= "" then
+					local section = mw.ustring.match(page, "[^#]+#([^#]+)") -- save the section
+					text, page = getContent(page) -- make sure the page exists
+					if page and page ~= "" and text and text ~= "" then
+						if args.nostubs then
+							local isStub = mw.ustring.find(text, "%s*{{[^{|}]*%-[Ss]tub%s*}}")
+							if isStub then text = nil end
+						end
+						if section and section ~= "" then
+							page = page .. '#' .. section -- restore the section
+						end
+						text = get(page, options)
+					end
+				end
+			end
+			table.remove(candidates, candidateKey) -- candidate processed
+			candidateCount = candidateCount - 1 -- ensure that we exit the loop after all candidates are done
+		end
+	end
+	if not text or text == "" then return wikiError("No valid pages found") end
+
+	-- Store all candidates before processing
+	local allCandidates = {page}  -- Include current page
+	for _, candidate in pairs(candidates) do
+		table.insert(allCandidates, candidate)
+	end
+
+	if args.showall then
+		local separator = args.showall
+		if separator == "" then separator = "{{clear}}{{hr}}" end
+		-- Add list at the top for showall if list parameter is not present
+		if not args.list then
+			local listText = "{{collapse top|title={{resize|85%|List of articles in rotation}}|bg=fff}}{{hlist"
+			for _, candidate in pairs(allCandidates) do
+				if mw.ustring.match(candidate, "%S") then 
+					listText = listText .. "|[[" .. mw.text.trim(candidate) .. "]]" 
+				end
+			end
+			listText = listText .. "}}\n{{collapse bottom}}\n"
+			text = listText .. text
+		end
+		for _, candidate in pairs(candidates) do
+			local t = get(candidate, options)
+			if t ~= "" then
+				text = text .. separator .. t
+			end
+		end
+	end
+
+	-- Add a collapsed list of pages which might appear
+	if args.list then
+		local list = args.list
+		if list == "" then list = "Other articles" end
+		text = text .. "{{collapse top|title={{resize|85%|" ..list .. "}}|bg=fff}}{{hlist"
+		for _, candidate in pairs(candidates) do
+			if mw.ustring.match(candidate, "%S") then text = text .. "|[[" .. mw.text.trim(candidate) .. "]]" end
+		end
+		text = text .. "}}\n{{collapse bottom}}"
+	end
+
+	return frame:preprocess(text)
+end
+
+-- Old invocation function used by {{Excerpt}}
+local function excerpt(frame)
+	local args = parseArgs(frame)
+
+	-- Make sure the requested page exists
+	local page = args[1] or args.article or args.source or args.page
+	if not page then return wikiError("noPage") end
+	local title = mw.title.new(page)
+	if not title then return wikiError("noPage") end
+	if title.isRedirect then title = title.redirectTarget end
+	if not title.exists then return wikiError("pageNotFound", page) end
+	page = title.prefixedText
+
+	-- Define some useful variables
+	local section = args[2] or args.section or mw.ustring.match(args[1], "[^#]+#([^#]+)")
+	local tag = args.tag or 'div'
+
+	-- Define the HTML elements
+	local block = mw.html.create(tag):addClass('excerpt-block')
+	if is(args.indicator) then block:addClass('excerpt-indicator') end
+
+	local style = frame:extensionTag{ name = 'templatestyles', args = { src = 'Excerpt/styles.css' } }
+
+	local hatnote
+	if not args.nohat then
+		if args.this then
+			hatnote = args.this
+		elseif args.indicator then
+			hatnote = 'This is'
+		elseif args.only == 'file' then
+			hatnote = 'This file is'
+		elseif args.only == 'file' then
+			hatnote = 'These files are'
+		elseif args.only == 'list' then
+			hatnote = 'This list is'
+		elseif args.only == 'lists' then
+			hatnote = 'These lists are'
+		elseif args.only == 'table' then
+			hatnote = 'This table is'
+		elseif args.only == 'tables' then
+			hatnote = 'These tables are'
+		else
+			hatnote = 'This section is'
+		end
+		hatnote = hatnote .. ' an excerpt from '
+		if section then
+			hatnote = hatnote .. '[[' .. page .. '#' .. section .. '|' .. page .. ' § ' .. section .. ']]'
+		else
+			hatnote = hatnote .. '[[' .. page .. ']]'
+		end
+		hatnote = hatnote .. "''" .. '&lt;span class="mw-editsection-like plainlinks"&gt;&lt;span class="mw-editsection-bracket"&gt;[&lt;/span&gt;['
+		hatnote = hatnote .. title:fullUrl('action=edit') .. ' edit'
+		hatnote = hatnote .. ']&lt;span class="mw-editsection-bracket"&gt;]&lt;/span&gt;&lt;/span&gt;' .. "''"
+		hatnote = require('Module:Hatnote')._hatnote(hatnote, {selfref=true}) or wikiError('Error generating hatnote')
+	end
+
+	-- Build the module options out of the template arguments and the desired defaults
+	local options = {
+		fileflags = numberFlags( args['files'] or 1 ),
+		paraflags = numberFlags( args['paragraphs'] ),
+		filesOnly = is( args['only'] == 'file' or args['only'] == 'files' ),
+		listsOnly = is( args['only'] == 'list' or args['only'] == 'lists'),
+		tablesOnly = is( args['only'] == 'table' or args['only'] == 'tables' ),
+		keepTables = is( args['tables'] or true ),
+		keepRefs = is( args['references']  or true ),
+		keepSubsections = is( args['subsections'] ),
+		nobold = not is( args['bold'] ),
+		fragment = args['fragment']
+	}
+
+	-- Get the excerpt itself
+	if section then page = page .. '#' .. section end
+	local ok, excerpt = pcall(e.get, page, options)
+	if not ok then return wikiError(excerpt) end
+	excerpt = "\n" .. excerpt -- line break is necessary to prevent broken tables and lists
+	if mw.title.getCurrentTitle().isContentPage then excerpt = excerpt .. '[[Category:Articles with excerpts]]' end
+	excerpt = frame:preprocess(excerpt)
+	excerpt = mw.html.create(tag):addClass('excerpt'):wikitext(excerpt)
+
+	-- Combine and return the elements
+	return block:node(style):node(hatnote):node(excerpt)
+end
+
+-- Entry points for templates
+function p.main(frame) return main(frame) end
+function p.lead(frame) return portal(frame, "lead") end -- {{Transclude lead excerpt}} reads a randomly selected article linked from the given page
+function p.linked(frame) return portal(frame, "linked") end -- {{Transclude linked excerpt}} reads a randomly selected article linked from the given page
+function p.listitem(frame) return portal(frame, "listitem") end -- {{Transclude list item excerpt}} reads a randomly selected article listed on the given page
+function p.random(frame) return portal(frame, "random") end -- {{Transclude random excerpt}} reads any article (default for invoke with one argument)
+function p.selected(frame) return portal(frame, "selected") end -- {{Transclude selected excerpt}} reads the article whose key is in the selected= parameter
+function p.excerpt(frame) return excerpt(frame) end -- {{Excerpt}} transcludes part of an article into another article
+
+-- Entry points for other Lua modules
+function p.get(page, options) return get(page, options) end
+function p.getContent(page) return getContent(page) end
+function p.getSection(text, section) return getSection(text, section) end
+function p.getTables(text, options) return getTables(text, options) end
+function p.getLists(text, options) return getLists(text, options) end
+function p.parse(text, options) return parse(text, options) end
+function p.parseImage(text, start) return parseImage(text, start) end
+function p.parseArgs(frame) return parseArgs(frame) end
+function p.getTemplateImages(text) return getTemplateImages(text) end
+function p.checkImage(image) return checkImage(image) end
+function p.cleanupText(text, options) return cleanupText(text, options) end
+function p.numberFlags(str) return numberFlags(str) end
+function p.getMoreLinkText(more) return getMoreLinkText(more) end
+
+return p</text>
+      <sha1>q11zhrxceghzthmm6apoa62ekkmfmw1</sha1>
+    </revision>
+    <revision>
+      <id>5495</id>
+      <timestamp>2024-12-27T08:45:32Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: impor5ting these because otherwise I might accidentally redirect them</comment>
+      <origin>5495</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="49690" sha1="q11zhrxceghzthmm6apoa62ekkmfmw1" xml:space="preserve">-- ATTENTION !
+-- This version of Excerpt is designed specifically for the portal namespace and its associated templates
+-- Prefer Module:Excerpt whenever possible
+
+-- Name of the category to track content pages with errors
+local errorCategory = "Articles with broken excerpts"
+
+-- Error messages
+local errorMessages = {
+	prefix = "Excerpt error: ",
+	noPage = "No page given",
+	pageNotFound = "Page '%s' not found",
+	leadEmpty = "Lead section is empty",
+	sectionEmpty = "Section '%s' is empty",
+	sectionNotFound = "Section '%s' not found",
+	fragmentEmpty = "Fragment '%s' is empty",
+	fragmentNotFound = "Fragment '%s' not found"
+}
+
+-- Regular expressions to match all aliases of the file namespace
+local fileNamespaces = {
+	"[Ff]ile",
+	"[Ii]mage"
+}
+
+-- Regular expressions to match all image parameters
+local imageParams = {
+	{"thumb", "thumbnail", "frame", "framed", "frameless"},
+	{"right", "left", "center", "centre", "none"},
+	{"baseline", "middle", "sub", "super", "text-top", "text-bottom", "top", "bottom"}
+}
+
+-- Regular expressions to match all infobox parameters for image captions
+local captionParams = {
+	"[^=|]*[Cc]aption[^=|]*",
+	"[^=|]*[Ll]egend[^=|]*"
+}
+
+-- List of file types that are allowed to be transcluded
+local fileTypes = {"[Gg][Ii][Ff]", "[Jj][Pp][Ee]?[Gg]", "[Pp][Nn][Gg]", "[Ss][Vv][Gg]", "[Tt][Ii][Ff][Ff]", "[Xx][Cc][Ff]"}
+
+-- Regular expressions to match all inline templates that are undesirable in excerpts
+local unwantedInlineTemplates = {
+	"[Ee]fn", "[Ee]fn%-[lu][arg]", "[Ee]fn [%a ]-", "[Ee]l[mn]", "[Rr]p?", "[Ss]fn[bmp]", "[Ss]f[bn]", "[Nn]ote[Tt]ag", "#[Tt]ag:%s*[Rr]ef", "[Rr]efn?", "[Ff]amily[ _]name[ _]footnote",
+	"[CcDd]n", "[Cc]itation[%- _]needed", "[Dd]isambiguation needed", "[Ff]eatured article", "[Gg]ood article",
+	"[Dd]ISPLAYTITLE", "[Ss]hort[ _]+description", "[Cc]itation", "[Cc]ite[%- _]+[%w_%s]-", "[Cc]oor[%w_%s]-",
+	"[Uu]?n?[Rr]eliable source[%?%w_%s]-", "[Rr]s%??", "[Vv]c", "[Vv]erify credibility", "[Bb]y[ _]*[Ww]ho[m]*%??", "[Ww]ikisource[ -_]*multi", "[Ii]nflation[ _/-]*[Ff]n",
+	"[Bb]iblesource",
+	"[Dd]ecadebox",
+	"[Ee]vents by year for decade",
+	-- aliases for Clarification needed
+	"[Cc]f[ny]", "[Cc]larification[ _]+inline", "[Cc]larification[%- _]*needed", "[Cc]larification", "[Cc]larify%-inline", "[Cc]larify%-?me",
+	"[Cc]larify[ _]+inline", "[Cc]larify", "[Cc]LARIFY", "[Cc]onfusing%-inline", "[Cc]onfusing%-short", "[Ee]xplainme", "[Hh]uh[ _]*%??", "[Ww]hat%?",
+	"[Ii]nline[ _]+[Uu]nclear", "[Ii]n[ _]+what[ _]+sense", "[Oo]bscure", "[Pp]lease[ _]+clarify", "[Uu]nclear[ _]+inline", "[Ww]hat's[ _]+this%?",
+	"[Gg]eoQuelle", "[Nn]eed[s]+[%- _]+[Ii][Pp][Aa]", "[Ii]PA needed",
+	-- aliases for Clarification needed lead
+	"[Cc]itation needed %(?lea?de?%)?", "[Cc]nl", "[Ff]act %(?lea?de?%)?", "[Ll]ead citation needed", "[Nn]ot in body", "[Nn]ot verified in body",
+	-- Primary source etc.
+	"[Pp]s[ci]", "[Nn]psn", "[Nn]on%-primary[ _]+source[ _]+needed", "[Ss]elf%-published[%w_%s]-", "[Uu]ser%-generated[%w_%s]-",
+	"[Pp]rimary source[%w_%s]-", "[Ss]econdary source[%w_%s]-", "[Tt]ertiary source[%w_%s]-", "[Tt]hird%-party[%w_%s]-",
+	-- aliases for Disambiguation (page) and similar
+	"[Bb]egriffsklärung", "[Dd][Aa][Bb]", "[Dd]big", "[%w_%s]-%f[%w][Dd]isam[%w_%s]-", "[Hh][Nn][Dd][Ii][Ss]",
+	-- aliases for Failed verification
+	"[Bb]adref", "[Ff]aile?[ds] ?[rv][%w_%s]-", "[Ff][Vv]", "[Nn][Ii]?[Cc][Gg]", "[Nn]ot ?in ?[crs][%w_%s]-", "[Nn]ot specifically in source",
+	"[Vv]erification[%- _]failed",
+	-- aliases for When
+	"[Aa]s[ _]+of[ _]+when%??", "[Aa]s[ _%-]+of%?", "[Cc]larify date", "[Dd]ate[ _]*needed", "[Nn]eeds?[ _]+date", "[Rr]ecently", "[Ss]ince[ _]+when%??",
+	"[Ww]HEN", "[Ww]hen%??",
+	-- aliases for Update
+	"[Nn]ot[ _]*up[ _]*to[ _]*date","[Oo]u?[Tt][Dd]","[Oo]ut[%- _]*o?f?[%- _]*dated?", "[Uu]pdate",  "[Uu]pdate[ _]+sect", "[Uu]pdate[ _]+Watch",
+	-- aliases for Pronunciation needed
+	"[Pp]ronunciation%??[%- _]*n?e?e?d?e?d?", "[Pp]ronounce", "[Rr]equested[%- _]*pronunciation", "[Rr]e?q?pron", "[Nn]eeds[%- _]*pronunciation",
+	-- Chart, including Chart/start etc.
+	"[Cc]hart", "[Cc]hart/[%w_%s]-",
+	-- Cref and others
+	"[Cc]ref2?", "[Cc]note",
+	-- Explain and others
+	"[Ee]xplain", "[Ff]urther[ ]*explanation[ ]*needed", "[Ee]laboration[ ]*needed", "[Ee]xplanation[ ]*needed",
+	-- TOC templates
+	"[Cc][Oo][Mm][Pp][Aa][Cc][Tt][ _]*[Tt][Oo][Cc][8]*[5]*", "[Tt][Oo][Cc]", "09[Aa][Zz]", "[Tt][Oo][Cc][ ]*[Cc][Oo][Mm][Pp][Aa][Cc][Tt]", "[Tt][Oo][Cc][ ]*[Ss][Mm][Aa][Ll][Ll]", "[Cc][Oo][Mm][Pp][Aa][Cc][Tt][ _]*[Aa][Ll][Pp][Hh][Aa][Bb][Ee][Tt][Ii][Cc][ _]*[Tt][Oo][Cc]",
+	"DEFAULTSORT:.-",
+	"[Oo]ne[ _]+source",
+	"[Cc]ontains[ _]+special[ _]+characters",
+	"[Ii]nfobox[ _]+[Cc]hinese"
+}
+
+-- Regular expressions to match all block templates that are desirable in excerpts
+local wantedBlockTemplates = {
+	"[Bb]asketball[ _]roster[ _]header",
+	"[Cc]abinet[ _]table[^|}]*",
+	"[Cc]hart[^|}]*",
+	"[Cc]lear",
+	"[Cc]ol[%- es][^|}]*", -- all abbreviated column templates without excessively matching ({{col-2}}, {{colend}}, etc.)
+	"[Cc]olumn[^|}]*", -- all other column templates
+	"COVID-19[ _]pandemic[ _]data[^|}]*",
+	"[Cc]ycling[ _]squad[^|}]*",
+	"[Dd]ynamic[ _]list",
+	"[Ee]lection[ _]box[^|}]*",
+	"[Gg]allery",
+	"[Gg]raph[^|}]*",
+	"[Hh]idden",
+	"[Hh]istorical[ _]populations",
+	"[Ll]egend[ _]inline",
+	"[Pp]lainlist",
+	"[Pp]layer[^|}]*",
+	"[Ss]eries[ _]overview",
+	"[Ss]ide[ _]box",
+	"[Ss]witcher",
+	"[Tt]ree[ _]chart[^|}]*",
+	"[Tt]elevision[ _]ratings[ _]graph"
+}
+
+-- Regular expressions to match non-free file templates
+local nonFreeFileTemplates = {
+	"[Nn]on%-free",
+}
+
+local Transcluder = require("Module:Transcluder")
+local escapeString = require("Module:String")._escapePattern
+local yesno = require('Module:Yesno')
+local p = {}
+
+-- Helper function to test for truthy and falsy values
+local function is(value)
+	if not value or value == "" or value == "0" or value == "false" or value == "no" then
+		return false
+	end
+	return true
+end
+
+-- Error handling function
+-- Throws a Lua error or returns an empty string if error reporting is disabled
+local errors = true -- show errors by default
+local function luaError(message, value)
+	if not is(errors) then return '' end -- error reporting is disabled
+	message = errorMessages[message] or message or ''
+	message = mw.ustring.format(message, value)
+	error(message, 2)
+end
+
+-- Error handling function
+-- Returns a wiki friendly error or an empty string if error reporting is disabled
+local function wikiError(message, value)
+	if not is(errors) then return '' end -- error reporting is disabled
+	message = errorMessages[message] or message or ''
+	message = mw.ustring.format(message, value)
+	message = errorMessages.prefix .. message
+	if mw.title.getCurrentTitle().isContentPage then
+		local errorCategory = mw.title.new(errorCategory, 'Category')
+		if errorCategory then message = message .. '[[' .. errorCategory.prefixedText .. ']]' end
+	end
+	message = mw.html.create('div'):addClass('error'):wikitext(message)
+	return message
+end
+
+-- Helper function to match from a list regular expressions
+-- Like so: match pre..list[1]..post or pre..list[2]..post or ...
+local function matchAny(text, pre, list, post, init)
+	local match = {}
+	for i = 1, #list do
+		match = { mw.ustring.match(text, pre .. list[i] .. post, init) }
+		if match[1] then return unpack(match) end
+	end
+	return nil
+end
+
+-- Helper function to convert imagemaps into standard images
+local function convertImageMap(imagemap)
+	local image = matchAny(imagemap, "[&gt;\n]%s*", fileNamespaces, "[^\n]*")
+	if image then
+		return "&lt;!--imagemap--&gt;[[" .. mw.ustring.gsub(image, "[&gt;\n]%s*", "", 1) .. "]]"
+	else
+		return "" -- remove entire block if image can't be extracted
+	end
+end
+
+-- Helper function to convert a comma-separated list of numbers or min-max ranges into a list of booleans
+-- For example: "1,3-5" to {1=true,2=false,3=true,4=true,5=true}
+local function numberFlags(str)
+	if not str then return {} end
+	local flags = {}
+	local ranges = mw.text.split(str, ",") -- parse ranges: "1,3-5" to {"1","3-5"}
+	for _, r in pairs(ranges) do
+		local min, max = mw.ustring.match(r, "^%s*(%d+)%s*[-–—]%s*(%d+)%s*$") -- "3-5" to min=3 max=5
+		if not max then	min, max = mw.ustring.match(r, "^%s*((%d+))%s*$") end -- "1" to min=1 max=1
+		if max then
+			for p = min, max do flags[p] = true end
+		end
+	end
+	return flags
+end
+
+-- Helper function to convert template arguments into an array of arguments fit for get()
+local function parseArgs(frame)
+	local args = {}
+	for key, value in pairs(frame:getParent().args) do args[key] = value end
+	for key, value in pairs(frame.args) do args[key] = value end -- args from a Lua call have priority over parent args from template
+	args.paraflags = numberFlags(args["paragraphs"] or "") -- parse paragraphs: "1,3-5" to {"1","3-5"}
+	args.fileflags = numberFlags(args["files"] or "") -- parse file numbers
+	return args
+end
+
+-- simulate {{Airreg}} without the footnote, given "N|485US|," or similar
+local function airreg(p)
+	local s = mw.text.split(p, "%s*|%s*")
+	if s[1] ~= "N" and s[1] ~= "HL" and s[1] ~= "JA" then s[1]=s[1] .. "-" end
+	return table.concat(s, "")
+end
+
+-- Helper function to remove unwanted templates and pseudo-templates such as #tag:ref and DEFAULTSORT
+local function stripTemplate(t)
+	-- If template is unwanted then return "" (gsub will replace by nothing), else return nil (gsub will keep existing string)
+	if matchAny(t, "^{{%s*", unwantedInlineTemplates, "%s*%f[|}]") then return "" end
+
+	-- If template is wanted but produces an unwanted reference then return the string with |Note=, |ref or |shortref removed
+	local noRef = mw.ustring.gsub(t, "|%s*Note%s*=.-%f[|}]", "")
+	noRef = mw.ustring.gsub(noRef, "|%s*ref%s*%f[|}]", "")
+	noRef = mw.ustring.gsub(noRef, "|%s*shortref%s*%f[|}]", "")
+
+	-- If a wanted template has unwanted nested templates, purge them too
+	noRef = mw.ustring.sub(noRef, 1, 2) .. mw.ustring.gsub(mw.ustring.sub(noRef, 3), "%b{}", stripTemplate)
+
+	-- Replace {{audio}} by its text parameter: {{Audio|Foo.ogg|Bar}} → Bar
+	noRef = mw.ustring.gsub(noRef, "^{{%s*[Aa]udio.-|.-|(.-)%f[|}].*", "%1")
+
+	-- Replace {{Nihongo foot}} by its text parameter: {{Nihongo foot|English|英語|eigo}} → English
+	noRef = mw.ustring.gsub(noRef, "^{{%s*[Nn]ihongo[ _]+foot%s*|(.-)%f[|}].*", "%1")
+
+	-- Replace {{Airreg}} by its text parameter: {{Airreg|N|485US|,}} → N485US,
+	noRef = mw.ustring.gsub(noRef, "^{{%s*[Aa]irreg%s*|%s*(.-)}}", airreg)
+
+	if noRef ~= t then return noRef end
+
+	return nil -- not an unwanted template: keep
+end
+
+-- Get a page's content, following redirects
+-- Also returns the page name, or the target page name if a redirect was followed, or false if no page found
+-- For file pages, returns the content of the file description page
+local function getContent(page)
+	local title = mw.title.new(page)
+	if not title then return false, false end
+
+	local target = title.redirectTarget
+	if target then title = target end
+
+	return title:getContent(), title.prefixedText
+end
+
+-- Get the tables only
+local function getTables(text, options)
+	local tables = {}
+	for candidate in mw.ustring.gmatch(text, "%b{}") do
+		if mw.ustring.sub(candidate, 1, 2) == '{|' then
+			table.insert(tables, candidate)
+		end
+	end
+	return table.concat(tables, '\n')
+end
+
+-- Get the lists only
+local function getLists(text, options)
+	local lists = {}
+	for list in mw.ustring.gmatch(text, "\n[*#][^\n]+") do
+		table.insert(lists, list)
+	end
+	return table.concat(lists, '\n')
+end
+
+-- Check image for suitability
+local function checkImage(image)
+	if type(image) == "table" then
+		--Infobox image. Pass in a quick string equivilant of the image, since we should still check it for things like non-free files
+		return checkImage("[[File:"..image.file.."]]")
+	end
+	local page = matchAny(image, "", fileNamespaces, "%s*:[^|%]]*") -- match File:(name) or Image:(name)
+	if not page then return false end
+
+	-- Limit to image types: .gif, .jpg, .jpeg, .png, .svg, .tiff, .xcf (exclude .ogg, audio, etc.)
+	if not matchAny(page, "%.", fileTypes, "%s*$") then return false end
+
+	-- Check the local wiki
+	local fileDescription, fileTitle = getContent(page) -- get file description and title after following any redirect
+	if not fileTitle or fileTitle == "" then return false end -- the image doesn't exist
+
+	-- Check Commons
+	if not fileDescription or fileDescription == "" then
+		local frame = mw.getCurrentFrame()
+		fileDescription = frame:preprocess("{{" .. fileTitle .. "}}")
+	end
+
+	-- Filter non-free images
+	if not fileDescription or fileDescription == "" or matchAny(fileDescription, "", nonFreeFileTemplates, "") then
+		return false
+	end
+
+	return true
+end
+
+-- Attempt to parse [[File:...]] or [[Image:...]], either anywhere (start=false) or at the start only (start=true)
+local function parseImage(text, start)
+	local startre = ""
+	if start then startre = "^" end -- a true flag restricts search to start of string
+	local image = matchAny(text, startre .. "%[%[%s*", fileNamespaces, "%s*:.*") -- [[File: or [[Image: ...
+	if image then
+		image = mw.ustring.match(image, "%b[]%s*") -- matching [[...]] to handle wikilinks nested in caption
+	end
+	return image
+end
+
+-- Returns the file name and the arg data of the file if it exists
+local function extractFileData(str,notmultiline)
+	local reg = "^%[?%[?%a-:([^{|]+)(.-)%]?%]?$"
+	local name,args,_ = mw.ustring.match(str,reg)
+	if name then
+		return name,args
+	else
+		return str,"" --Default fallback
+	end
+end
+
+--Modifies an image's parameters, automatically fixing related parameters in the process
+local function modifyImage(image, fileArgs)
+	if type(image) == "table" then
+		--Pass in a dummy string version and use that to handle modification
+		local newversion = modifyImage("[[File:"..image.file..string.gsub(image.args,"{{!}}","|").."]]",fileArgs)
+		--Since we know the format is strictly controlled, we can do a lazy sub grab for the args
+		image.args = string.sub(newversion,8+#image.file,-3)
+		return image
+	end
+	if fileArgs then
+		for _, filearg in pairs(mw.text.split(fileArgs, "|")) do -- handle fileArgs=left|border etc.
+			local fa = mw.ustring.gsub(filearg, "=.*", "") -- "upright=0.75" → "upright"
+			local group = {fa} -- group of "border" is ["border"]...
+			for _, g in pairs(imageParams) do
+				for _, a in pairs(g) do
+					if fa == a then group = g end -- ...but group of "left" is ["right", "left", "center", "centre", "none"]
+				end
+			end
+			for _, a in pairs(group) do
+				image = mw.ustring.gsub(image, "|%s*" .. a .. "%f[%A]%s*=[^|%]]*", "") -- remove "|upright=0.75" etc.
+				image = mw.ustring.gsub(image, "|%s*" .. a .. "%s*([|%]])", "%1") -- replace "|left|" by "|" etc.
+			end
+			image = mw.ustring.gsub(image, "([|%]])", "|" .. filearg .. "%1", 1) -- replace "|" by "|left|" etc.
+		end
+	end
+	image = mw.ustring.gsub(image, "(|%s*%d*x?%d+%s*px%s*.-)|%s*%d*x?%d+%s*px%s*([|%]])", "%1%2") -- double px args
+	return image
+end
+
+-- Turns a template's file table into a [[File:...]] string
+local function formatTemplateImage(image,allowFancy)
+	--Certain positional elements may need to apply to the containing infobox, and not the file itself, so we should check that here
+	if is(image.caption) and allowFancy then --Will be displayed like an infobox
+		local alignment =
+			(string.find(image.args, "|left") and "left")
+			or (string.find(image.args, "|center") or string.find(image.args, "|centre")) and "center"
+			or "right"
+		modifyImage(image, "none") --Remove all positioning elements from the image
+		modifyImage(image, "frameless")
+		local args = image.args
+		args = string.gsub(args, "|thumb", "") --Don't allow using |thumb in this mode
+		
+		return mw.text.unstrip(mw.getCurrentFrame():expandTemplate({
+			title = "Image frame",
+			args = {
+				content="[[File:"..image.file..args.."]]", caption='&lt;div class="center"&gt;'..image.caption.."&lt;/div&gt;",
+				align=alignment, ["max-width"]=300, mode="scrollable"
+			}
+		})) .. "\n"
+	else
+		local captionText = (is(image.caption) and "|"..image.caption) or ""
+		return "[[File:"..image.file..captionText..image.args.."]]\n"
+	end
+end
+
+-- Attempts to construct a [[File:...]] block from {{infobox ... |image= ...}} or other templates
+local function getTemplateImages(text)
+	local hasNamedArgs = mw.ustring.find(text, "|") and mw.ustring.find(text, "=")
+	if not hasNamedArgs then return nil end -- filter out any template that obviously doesn't contain an image
+
+	-- ensure image map is captured, while removing anything beyond it
+	text = mw.ustring.gsub(text, '&lt;!%-%-imagemap%-%-&gt;(%[%b[]%])[^|]+', '|imagemap=%1')
+
+	-- filter through parameters for image related ones
+	local images = {}
+	local parameters, _, parameterOrder = Transcluder.getParameters(text)
+	
+	--Search all template parameters for file-like objects
+	local positionalImages = {}
+	local position = 1
+	for _,key in ipairs(parameterOrder) do
+		position = position + 1 --Cant rely on ipairs due to potentially weird manipulation later
+		local value = parameters[key]
+		if is(value) then --Ensure its not empty
+			if string.sub(value,1,2) == "{{" and string.sub(value,-2,-1) == "}}" then --Template in a template
+				--Extract files from the template and insert files if any appear
+				local internalImages = getTemplateImages(value) or {}
+				local initialPosition = position
+				for index,image in ipairs(internalImages) do
+					positionalImages[initialPosition+index] = image --Still positional, technically
+					position = position + 1 --Advance our own counter to avoid overlap
+				end
+			else
+				if matchAny(key, "", captionParams, "%s*") then
+					--Caption-like parameter name, try to associate it with an image
+					local scanPosition = position
+					while scanPosition &gt; 0 do
+						scanPosition = scanPosition - 1
+						local image = positionalImages[scanPosition]
+						if image and image.caption == "" then
+							image.caption = mw.getCurrentFrame():preprocess(value) --Assign caption to most recently defined image
+							break
+						end
+					end
+				
+				elseif matchAny(value, "%.", fileTypes, "%s*$") then
+					--File-like value, assume its an image
+					local filename,fileargs = extractFileData(value)
+					positionalImages[position] = {file=filename,caption="",args=fileargs}
+				
+				elseif mw.ustring.match(key, "[Ii][Mm][Aa][Gg][Ee]") or mw.ustring.match(key, "[Pp][Hh][Oo][Tt][Oo]") or mw.ustring.match(key, "[Ss][Yy][Mm][Bb][Oo][Ll]") then
+					--File-like parameter name, assume its an image after some scrutinization
+					local keyLower = string.lower(key)
+					if string.find(keyLower,"caption")
+					 or string.find(keyLower,"size") or string.find(keyLower,"width")
+					 or string.find(keyLower,"upright")
+					 or string.find(keyLower,"alt") then --Argument is defining image settings, not an image
+						--Do nothing for now
+						--TODO: we really should extract some of this for later use
+					else
+						local filename,fileargs = extractFileData(value)
+						positionalImages[position] = {file=filename,caption="",args=fileargs}
+					end
+				end
+			end --End of "Is template in template" check
+		end --End of "is(value)" check
+	end
+	
+	--Append entries from positionalImages into the main images table
+	for i = 1,position do
+		local value = positionalImages[i]
+		if value then
+			table.insert(images,value)
+		end
+	end
+
+	return images
+end
+
+-- a basic parser to trim down extracted wikitext
+--   @param text : Wikitext to be processed
+--   @param options : A table of options...
+--          options.paraflags : Which number paragraphs to keep, as either a string (e.g. '1,3-5') or a table (e.g. {1=true,2=false,3=true,4=true,5=true}. If not present, all paragraphs will be kept.
+--          options.fileflags : table of which files to keep, as either a string (e.g. '1,3-5') or a table (e.g. {1=true,2=false,3=true,4=true,5=true}
+--          options.fileargs : args for the [[File:]] syntax, such as 'left'
+--			options.filesOnly : only return the files and not the prose
+local function parse(text, options)
+	local allParagraphs = true -- keep all paragraphs?
+	if options.paraflags then
+		if type(options.paraflags) ~= "table" then options.paraflags = numberFlags(options.paraflags) end
+		for _, v in pairs(options.paraflags) do
+			if v then allParagraphs = false end -- if any para specifically requested, don't keep all
+		end
+	end
+	if is(options.filesOnly) then
+		allParagraphs = false
+		options.paraflags = {}
+	end
+
+	local maxfile = 0 -- for efficiency, stop checking images after this many have been found
+	if options.fileflags then
+		if type(options.fileflags) ~= "table" then options.fileflags = numberFlags(options.fileflags) end
+		for k, v in pairs(options.fileflags) do
+			if v and k &gt; maxfile then maxfile = k end -- set maxfile = highest key in fileflags
+		end
+	end
+	
+	local fileArgs = options.fileargs and mw.text.trim(options.fileargs)
+	if fileArgs == '' then fileArgs = nil end
+	local doFancyFiles = yesno(options.doFancyFiles)
+	if doFancyFiles == nil then doFancyFiles = true end
+
+	local leadStart = nil -- have we found some text yet?
+	local t = "" -- the stripped down output text
+	local fileText = "" -- output text with concatenated [[File:Foo|...]]\n entries
+	local files = 0 -- how many images so far
+	local paras = 0 -- how many paragraphs so far
+	local startLine = true -- at the start of a line (no non-spaces found since last \n)?
+
+	text = mw.ustring.gsub(text,"^%s*","") -- remove initial white space
+
+	-- Add named files
+	local f = options.files
+	if f and mw.ustring.match(f, "[^%d%s%-,]") then -- filename rather than number list
+		f = mw.ustring.gsub(f, "^%s*File%s*:%s*", "", 1)
+		f = mw.ustring.gsub(f, "^%s*Image%s*:%s*", "", 1)
+		f = "[[File:" .. f .. "]]"
+		f = modifyImage(f, "thumb")
+		f = modifyImage(f, fileArgs)
+		if checkImage(f) then fileText = fileText .. f .. "\n" end
+	end
+
+	repeat -- loop around parsing a template, image or paragraph
+		local token = mw.ustring.match(text, "^%b{}%s*") or false -- {{Template}} or {| Table |}
+		if not leadStart and not token then token = mw.ustring.match(text, "^%b&lt;&gt;%s*%b{}%s*") end -- allow &lt;tag&gt;{{template}} before lead has started
+
+		local line = mw.ustring.match(text, "[^\n]*")
+		if token and line and mw.ustring.len(token) &lt; mw.ustring.len(line) then -- template is followed by text (but it may just be other templates)
+			line = mw.ustring.gsub(line, "%b{}", "") -- remove all templates from this line
+			line = mw.ustring.gsub(line, "%b&lt;&gt;", "") -- remove all HTML tags from this line
+			-- if anything is left, other than an incomplete further template or an image, keep the template: it counts as part of the line
+			if mw.ustring.find(line, "%S") and not matchAny(line, "^%s*", { "{{", "%[%[%s*[Ff]ile:", "%[%[%s*[Ii]mage:" }, "") then
+				token = nil
+			end
+		end
+
+		if token then -- found a template which is not the prefix to a line of text
+
+			if is(options.keepTables) and mw.ustring.sub(token, 1, 2) == '{|' then
+				t = t .. token -- keep tables
+
+			elseif mw.ustring.sub(token, 1, 3) == '{{#' then
+				t = t .. token -- keep parser functions
+
+			elseif leadStart then -- lead has already started, so keep the template within the text, unless it's a whole line (navbox etc.)
+				if not is(options.filesOnly) and not startLine then t = t .. token end
+
+			elseif matchAny(token, "^{{%s*", wantedBlockTemplates, "%s*%f[|}]") then
+				t = t .. token -- keep wanted block templates
+
+			elseif files &lt; maxfile then -- Check it for images if we need those, and then discard it
+				local images = getTemplateImages(token) or {}
+				for _, image in ipairs(images) do
+					if files &lt; maxfile and checkImage(image) then -- if image is found and qualifies (not a sound file, not non-free, etc.)
+						files = files + 1 -- count the file, whether displaying it or not
+						if options.fileflags and options.fileflags[files] then -- if displaying this image
+							image = modifyImage(image, "thumb")
+							image = modifyImage(image, fileArgs)
+							fileText = fileText .. formatTemplateImage(image, doFancyFiles)
+						end
+					end
+				end
+			end
+		else -- the next token in text is not a template
+			token = parseImage(text, true)
+			if token then -- the next token in text looks like an image
+				if files &lt; maxfile and checkImage(token) then -- if more images are wanted and this is a wanted image
+					files = files + 1
+					if options.fileflags and options.fileflags[files] then
+						local image = token -- copy token for manipulation by adding |right etc. without changing the original
+						image = modifyImage(image, fileArgs)
+						fileText = fileText .. image
+					end
+				end
+			else -- got a paragraph, which ends at a file, image, blank line or end of text
+				local afterEnd = mw.ustring.len(text) + 1
+				local blankPosition = mw.ustring.find(text, "\n%s*\n") or afterEnd -- position of next paragraph delimiter (or end of text)
+				local endPosition = math.min( -- find position of whichever comes first: [[File:, [[Image: or paragraph delimiter
+				 mw.ustring.find(text, "%[%[%s*[Ff]ile%s*:") or afterEnd,
+				 mw.ustring.find(text, "%[%[%s*[Ii]mage%s*:") or afterEnd,
+				 blankPosition)
+				token = mw.ustring.sub(text, 1, endPosition-1)
+				if blankPosition &lt; afterEnd and blankPosition == endPosition then -- paragraph ends with a blank line
+					token = token .. mw.ustring.match(text, "\n%s*\n", blankPosition)
+				end
+				local isHatnote = not(leadStart) and mw.ustring.sub(token, 1, 1) == ':'
+				if not isHatnote then
+					leadStart = leadStart or mw.ustring.len(t) + 1 -- we got a paragraph, so mark the start of the lead section
+					paras = paras + 1
+					if allParagraphs or (options.paraflags and options.paraflags[paras]) then t = t .. token end -- add if this paragraph wanted
+				end
+			end -- of "else got a paragraph"
+		end -- of "else not a template"
+
+		if token then text = mw.ustring.sub(text, mw.ustring.len(token)+1) end -- remove parsed token from remaining text
+		startLine = mw.ustring.find(token, "\n%s*$") -- will the next token be the first non-space on a line?
+	until not text or text == "" or not token or token == "" -- loop until all text parsed
+
+	text = mw.ustring.gsub(t, "\n+$", "") -- remove trailing line feeds, so "{{Transclude text excerpt|Foo}} more" flows on one line
+
+	return fileText .. text
+end
+
+local function cleanupText(text, options)
+	text = mw.ustring.gsub(text, "&lt;!%-%-.-%-%-&gt;","") -- remove HTML comments
+	text = mw.ustring.gsub(text, "&lt;[Nn][Oo][Ii][Nn][Cc][Ll][Uu][Dd][Ee]&gt;.-&lt;/[Nn][Oo][Ii][Nn][Cc][Ll][Uu][Dd][Ee]&gt;", "") -- remove noinclude bits
+	if not is(options.ignoreOnlyincludes) and mw.ustring.find(text, "[Oo][Nn][Ll][Yy][Ii][Nn][Cc][Ll][Uu][Dd][Ee]") then -- avoid expensive search if possible
+		text = mw.ustring.gsub(text, "&lt;/[Oo][Nn][Ll][Yy][Ii][Nn][Cc][Ll][Uu][Dd][Ee]&gt;.-&lt;[Oo][Nn][Ll][Yy][Ii][Nn][Cc][Ll][Uu][Dd][Ee]&gt;", "") -- remove text between onlyinclude sections
+		text = mw.ustring.gsub(text, "^.-&lt;[Oo][Nn][Ll][Yy][Ii][Nn][Cc][Ll][Uu][Dd][Ee]&gt;", "") -- remove text before first onlyinclude section
+		text = mw.ustring.gsub(text, "&lt;/[Oo][Nn][Ll][Yy][Ii][Nn][Cc][Ll][Uu][Dd][Ee]&gt;.*", "") -- remove text after last onlyinclude section
+	end
+	if not is(options.keepSubsections) then
+		text = mw.ustring.gsub(text, "\n==.*","") -- remove first ==Heading== and everything after it
+		text = mw.ustring.gsub(text, "^==.*","") -- ...even if the lead is empty
+	end
+	if not is(options.keepRefs) then
+		text = mw.ustring.gsub(text, "&lt;%s*[Rr][Ee][Ff][^&gt;]-/%s*&gt;", "") -- remove refs cited elsewhere
+		text = mw.ustring.gsub(text, "&lt;%s*[Rr][Ee][Ff].-&gt;.-&lt;%s*/%s*[Rr][Ee][Ff]%s*&gt;", "") -- remove refs
+		text = mw.ustring.gsub(text, "{%b{}}", stripTemplate) -- remove unwanted templates such as references
+	end
+	text = mw.ustring.gsub(text, "&lt;%s*[Ss][Cc][Oo][Rr][Ee].-&gt;.-&lt;%s*/%s*[Ss][Cc][Oo][Rr][Ee]%s*&gt;", "") -- remove musical scores
+	text = mw.ustring.gsub(text, "&lt;%s*[Ii][Mm][Aa][Gg][Ee][Mm][Aa][Pp].-&gt;.-&lt;%s*/%s*[Ii][Mm][Aa][Gg][Ee][Mm][Aa][Pp]%s*&gt;", convertImageMap) -- convert imagemaps into standard images
+	text = mw.ustring.gsub(text, "%s*{{%s*[Tt][Oo][Cc].-}}", "") -- remove most common tables of contents
+	text = mw.ustring.gsub(text, "%s*__[A-Z]*TOC__", "") -- remove TOC behavior switches
+	text = mw.ustring.gsub(text, "\n%s*{{%s*[Pp]p%-.-}}", "\n") -- remove protection templates
+	text = mw.ustring.gsub(text, "%s*{{[^{|}]*[Ss]idebar%s*}}", "") -- remove most sidebars
+	text = mw.ustring.gsub(text, "%s*{{[^{|}]*%-[Ss]tub%s*}}", "") -- remove most stub templates
+	text = mw.ustring.gsub(text, "%s*%[%[%s*:?[Cc]ategory:.-%]%]", "") -- remove categories
+	text = mw.ustring.gsub(text, "^:[^\n]+\n","") -- remove DIY hatnote indented with a colon
+	return text
+end
+
+-- Parse a ==Section== from a page
+local function getSection(text, section, mainOnly)
+	local escapedSection = mw.ustring.gsub(mw.uri.decode(section), "([%^%$%(%)%%%.%[%]%*%+%-%?])", "%%%1") -- %26 → &amp; etc, then ^ → %^ etc.
+	local level, content = mw.ustring.match(text .. "\n", "\n(==+)%s*" .. escapedSection .. "%s*==.-\n(.*)")
+	if not content then return luaError("sectionNotFound", section) end
+	local nextSection
+	if mainOnly then
+		nextSection = "\n==.*" -- Main part of section terminates at any level of header
+	else
+		nextSection = "\n==" .. mw.ustring.rep("=?", #level - 2) .. "[^=].*" -- "===" → "\n===?[^=].*", matching "==" or "===" but not "===="
+	end
+	content = mw.ustring.gsub(content, nextSection, "") -- remove later sections with headings at this level or higher
+	if mw.ustring.match(content, "^%s*$") then return luaError("sectionEmpty", section) end
+	return content
+end
+
+-- Parse a &lt;section begin="Name of the fragment"&gt;
+-- @todo Implement custom parsing of fragments rather than relying on #lst
+local function getFragment(page, fragment)
+	local frame = mw.getCurrentFrame()
+	local text = frame:callParserFunction('#lst', page, fragment)
+	if mw.ustring.match(text, "^%s*$") then return luaError("fragmentEmpty", fragment) end
+	return text
+end
+
+-- Remove unmatched &lt;tag&gt; or &lt;/tag&gt; tags
+local function fixTags(text, tag)
+	local startCount = 0
+	for i in mw.ustring.gmatch(text, "&lt;%s*" .. tag .. "%f[^%w_].-&gt;") do startCount = startCount + 1 end
+
+	local endCount = 0
+	for i in mw.ustring.gmatch(text, "&lt;/" .. tag .. "%s*&gt;") do endCount = endCount + 1 end
+
+	if startCount &gt; endCount then -- more &lt;tag&gt; than &lt;/tag&gt;: remove the last few &lt;tag&gt;s
+		local i = 0
+		text = mw.ustring.gsub(text, "&lt;%s*" .. tag .. "%f[^%w_].-&gt;", function(t)
+			i = i + 1
+			if i &gt; endCount then return "" else return nil end
+		end) -- "end" here terminates the anonymous replacement function(t) passed to gsub
+	elseif endCount &gt; startCount then -- more &lt;/tag&gt; than &lt;tag&gt;: remove the first few &lt;/tag&gt;s
+		text = mw.ustring.gsub(text, "&lt;/" .. tag .. "%s*&gt;", "", endCount - startCount)
+	end
+	return text
+end
+
+local function fixTemplates(text)
+	repeat -- hide matched {{template}}s including nested templates
+		local t = text
+		text = mw.ustring.gsub(text, "{(%b{})}", "\27{\27%1\27}\27") -- {{sometemplate}} → E{E{sometemplate}E}E where E represents escape
+		text = mw.ustring.gsub(text, "(&lt; *math[^&gt;]*&gt;[^&lt;]-)}}(.-&lt; */math *&gt;)", "%1}\27}\27%2") -- &lt;math&gt;\{sqrt\{hat{x}}&lt;/math&gt; → &lt;math&gt;\{sqrt\{hat{x}E}E&lt;/math&gt;
+	until text == t
+	text = text.gsub(text, "([{}])%1[^\27].*", "") -- remove unmatched {{, }} and everything thereafter, avoiding }E}E etc.
+	text = text.gsub(text, "([{}])%1$", "") -- remove unmatched {{, }} at end of text
+	text = mw.ustring.gsub(text, "\27", "") -- unhide matched pairs: E{E{ → {{, etc.
+	return text
+end
+
+local function fixTables(text)
+	repeat -- hide matched {|tables|}s
+		local t = text
+		for potentialTable in string.gmatch(text, "\n%b{}") do
+			if string.sub(potentialTable, 1, 3) == "\n{|" then
+				local innerContent = mw.ustring.sub(potentialTable, 3, -2)
+				text = mw.ustring.gsub(text, escapeString(potentialTable), "\n\27{\27"..mw.ustring.gsub(innerContent, "%%", "%%%%").."\27}\27")
+				-- {|sometable|} → E{E|sometable|E}E where E represents escape
+			end
+		end
+	until text == t
+	text = mw.ustring.gsub(text, "\n{|.*", "") -- remove unmatched {| and everything after it
+	text = mw.ustring.gsub(text, "\27", "") -- unhide matched pairs: E{E| → {|, etc.
+	return text
+end
+
+local function fixLinks(text)
+	repeat -- hide matched [[wikilink]]s including nested links like [[File:Example.jpg|Some [[nested]] link.]]
+		local t = text
+		text = mw.ustring.gsub(text, "%[(%b[])%]", "\27[\27%1\27]\27")
+	until text == t
+	text = text.gsub(text, "([%[%]])%1[^\27].*", "") -- remove unmatched [[ or ]] and everything thereafter, avoiding ]E]E etc.
+	text = text.gsub(text, "([%[%]])%1$", "") -- remove unmatched [[ or ]] at end of text
+	text = mw.ustring.gsub(text, "\27", "") -- unhide matched pairs: ]E]E → ]], etc.
+	return text
+end
+
+-- Replace the first call to each reference defined outside of the text for the full reference, to prevent undefined references
+-- Then prefix the page title to the reference names to prevent conflicts
+-- that is, replace &lt;ref name="Foo"&gt; for &lt;ref name="Title of the article Foo"&gt;
+-- and also &lt;ref name="Foo" /&gt; for &lt;ref name="Title of the article Foo" /&gt;
+-- also remove reference groups: &lt;ref name="Foo" group="Bar"&gt; for &lt;ref name="Title of the article Foo"&gt;
+-- and &lt;ref group="Bar"&gt; for &lt;ref&gt;
+-- @todo The current regex may fail in cases with both kinds of quotes, like &lt;ref name="Darwin's book"&gt;
+local function fixRefs(text, page, full)
+	if not full then full = getContent(page) end
+	local refNames = {}
+	local refName
+	local refBody
+	local position = 1
+	while position &lt; mw.ustring.len(text) do
+		refName, position = mw.ustring.match(text, "&lt;%s*[Rr][Ee][Ff][^&gt;]*name%s*=%s*[\"']?([^\"'&gt;]+)[\"']?[^&gt;]*/%s*&gt;()", position)
+		if refName then
+			refName = mw.text.trim(refName)
+			if not refNames[refName] then -- make sure we process each ref name only once
+				table.insert(refNames, refName)
+				refName = mw.ustring.gsub(refName, "[%^%$%(%)%.%[%]%*%+%-%?%%]", "%%%0") -- escape special characters
+				refBody = mw.ustring.match(text, "&lt;%s*[Rr][Ee][Ff][^&gt;]*name%s*=%s*[\"']?%s*" .. refName .. "%s*[\"']?[^&gt;/]*&gt;.-&lt;%s*/%s*[Rr][Ee][Ff]%s*&gt;")
+				if not refBody then -- the ref body is not in the excerpt
+					refBody = mw.ustring.match(full, "&lt;%s*[Rr][Ee][Ff][^&gt;]*name%s*=%s*[\"']?%s*" .. refName .. "%s*[\"']?[^/&gt;]*&gt;.-&lt;%s*/%s*[Rr][Ee][Ff]%s*&gt;")
+					if refBody then -- the ref body was found elsewhere
+						text = mw.ustring.gsub(text, "&lt;%s*[Rr][Ee][Ff][^&gt;]*name%s*=%s*[\"']?%s*" .. refName .. "%s*[\"']?[^&gt;]*/?%s*&gt;", refBody, 1)
+					end
+				end
+			end
+		else
+			position = mw.ustring.len(text)
+		end
+	end
+	text = mw.ustring.gsub(text, "&lt;%s*[Rr][Ee][Ff][^&gt;]*name%s*=%s*[\"']?([^\"'&gt;/]+)[\"']?[^&gt;/]*(/?)%s*&gt;", '&lt;ref name="' .. page .. ' %1" %2&gt;')
+	text = mw.ustring.gsub(text, "&lt;%s*[Rr][Ee][Ff][^&gt;]*group%s*=%s*[\"']?[^\"'&gt;/]+[\"']%s*&gt;", '&lt;ref&gt;')
+	return text
+end
+
+-- Replace the bold title or synonym near the start of the article by a wikilink to the article
+function linkBold(text, page)
+	local lang = mw.language.getContentLanguage()
+	local position = mw.ustring.find(text, "'''" .. lang:ucfirst(page) .. "'''", 1, true) -- look for "'''Foo''' is..." (uc) or "A '''foo''' is..." (lc)
+		or mw.ustring.find(text, "'''" .. lang:lcfirst(page) .. "'''", 1, true) -- plain search: special characters in page represent themselves
+	if position then
+		local length = mw.ustring.len(page)
+		text = mw.ustring.sub(text, 1, position + 2) .. "[[" .. mw.ustring.sub(text, position + 3, position + length + 2) .. "]]" .. mw.ustring.sub(text, position + length + 3, -1) -- link it
+	else -- look for anything unlinked in bold, assumed to be a synonym of the title (e.g. a person's birth name)
+		text = mw.ustring.gsub(text, "()'''(.-'*)'''", function(a, b)
+			if not mw.ustring.find(b, "%[") then -- if not wikilinked
+				return "'''[[" .. page .. "|" .. b .. "]]'''" -- replace '''Foo''' by '''[[page|Foo]]'''
+			else
+				return nil -- instruct gsub to make no change
+			end
+		 end, 1) -- "end" here terminates the anonymous replacement function(a, b) passed to gsub
+	end
+	return text
+end
+
+-- Main function for modules
+local function get(page, options)
+	if options.errors then errors = options.errors end
+
+	if not page or page == "" then return luaError("noPage") end
+
+	local text
+	page, section = mw.ustring.match(page, "([^#]+)#?([^#]*)")
+	text, page = getContent(page)
+	if not page then return luaError("noPage") end
+	if not text then return luaError("pageNotFound", page) end
+	local full = text -- save the full text for later
+
+	if is(options.fragment) then
+		text = getFragment(page, options.fragment)
+	end
+
+	if is(section) then
+		text = getSection(text, section)
+	end
+
+	-- Strip text of all undersirables
+	text = cleanupText(text, options)
+	text = parse(text, options)
+
+	-- Replace the bold title or synonym near the start of the article by a wikilink to the article
+	text = linkBold(text, page)
+
+	-- Remove '''bold text''' if requested
+	if is(options.nobold) then text = mw.ustring.gsub(text, "'''", "") end
+
+	-- Keep only tables if requested
+	if is(options.tablesOnly) then text = getTables(text) end
+
+	-- Keep only lists if requested
+	if is(options.listsOnly) then text = getLists(text) end
+
+	-- Seek and destroy unterminated templates, tables, links and tags
+	text = fixTemplates(text)
+	text = fixTables(text)
+	text = fixLinks(text)
+	text = fixTags(text, "div")
+
+	-- Fix broken references
+	if is(options.keepRefs) then text = fixRefs(text, page, full) end
+
+	-- Trim trailing newlines to avoid appending text weirdly
+	text = mw.text.trim(text)
+
+	-- Add (Full article...) link
+	if options.moreLinkText then
+		text = text .. " ('''[[" .. page .. "|" .. options.moreLinkText .. "]]''')"
+	end
+
+	return text
+end
+
+-- Main invocation function for templates
+local function main(frame)
+	local args = parseArgs(frame)
+	local page = args[1]
+	local ok, text = pcall(get, page, args)
+	if not ok then
+		text = errorMessages.prefix .. text
+		if errorCategory and errorCategory ~= '' and mw.title.getCurrentTitle().isContentPage then
+			text = text .. '[[' .. errorCategory .. ']]'
+		end
+		return mw.html.create('div'):addClass('error'):wikitext(text)
+	end
+	return frame:preprocess(text)
+end
+
+local function getMoreLinkText(more)
+	local defaultText = "Full article..." -- default text, same as in [[Template:TFAFULL]]
+	if not more or more == '' then -- nil/empty =&gt; use default
+		return defaultText
+	end
+	if not yesno(more, true) then -- falsy values =&gt; suppress the link
+		return nil
+	end
+	return more
+end
+
+-- Shared invocation function used by templates meant for portals
+local function portal(frame, template)
+	local args = parseArgs(frame)
+
+	errors = args['errors'] or false -- disable error reporting unless requested
+
+	-- There should be at least one argument except with selected=Foo and Foo=Somepage
+	if #args &lt; 1 and not (template == "selected" and args[template] and args[args[template]]) then
+		return wikiError("noPage")
+	end
+
+	-- Figure out the page to excerpt
+	local page
+	local candidates = {}
+
+	if template == "lead" then
+		page = args[1]
+		page = mw.text.trim(page)
+		if not page or page == "" then return wikiError("noPage") end
+		candidates = { page }
+
+	elseif template == "selected" then
+		local key = args[template]
+		local count = #args
+		if tonumber(key) then -- normalise article number into the range 1..#args
+			key = key % count
+			if key == 0 then key = count end
+		end
+		page = args[key]
+		page = mw.text.trim(page)
+		if not page or page == "" then return wikiError("noPage") end
+		candidates = { page }
+
+	elseif template == "linked" or template == "listitem" then
+		local source = args[1]
+		local text, source = getContent(source)
+		if not source then
+			return wikiError("noPage")
+		elseif not text then
+			return wikiError("noPage")
+		end
+		local section = args.section
+		if section then -- check relevant section only
+			text = getSection(text, section)
+			if not text then return wikiError("sectionNotFound", section) end
+		end
+		-- Replace annotated links with real links
+		text = mw.ustring.gsub(text, "{{%s*[Aa]nnotated[ _]link%s*|%s*(.-)%s*}}", "[[%1]]")
+		if template == "linked" then
+			for candidate in mw.ustring.gmatch(text, "%[%[%s*([^%]|\n]*)") do table.insert(candidates, candidate) end
+		else -- listitem: first wikilink on a line beginning *, :#, etc. except in "See also" or later section
+			text = mw.ustring.gsub(text, "\n== *See also.*", "")
+			for candidate in mw.ustring.gmatch(text, "\n:*[%*#][^\n]-%[%[%s*([^%]|\n]*)") do table.insert(candidates, candidate) end
+		end
+
+	elseif template == "random" then
+		for key, value in pairs(args) do
+			if value and type(key) == "number" then
+				table.insert(candidates, mw.text.trim(value))
+			end
+		end
+	end
+
+	-- Build an options array for the Excerpt module out of the arguments and the desired defaults
+	local options = {
+		errors = args['errors'] or false,
+		fileargs = args['fileargs'],
+		fileflags = numberFlags( args['files'] ),
+		paraflags = numberFlags( args['paragraphs'] ),
+		moreLinkText = getMoreLinkText(args['more'] ),
+		keepSubsections = args['keepSubsections'],
+		keepRefs = args['keepRefs'],
+		nobold = args['nobold'],
+		doFancyFiles = args['fancyfiles']
+	}
+
+	-- Select a random candidate and make sure its valid
+	local text
+	local candidateCount = #candidates
+	if candidateCount &gt; 0 then
+		local candidateKey = 1
+		local candidateString
+		local candidateArgs
+		if candidateCount &gt; 1 then math.randomseed(os.time()) end
+		while (not text or text == "") and candidateCount &gt; 0 do
+			if candidateCount &gt; 1 then candidateKey = math.random(candidateCount) end -- pick a random candidate
+			candidateString = candidates[candidateKey]
+			if candidateString and candidateString ~= "" then
+				-- We have page or [[page]] or [[page|text]], possibly followed by |opt1|opt2...
+				page, candidateArgs = mw.ustring.match(candidateString, "^%s*(%[%b[]%])%s*|?(.*)")
+				if page and page ~= "" then
+					page = mw.ustring.match(page, "%[%[([^|%]]*)") -- turn [[page|text]] into page, discarding text
+				else -- we have page or page|opt...
+					page, candidateArgs = mw.ustring.match(candidateString, "%s*([^|]*[^|%s])%s*|?(.*)")
+				end
+				-- candidate arguments (even if value is "") have priority over global arguments
+				if candidateArgs and candidateArgs ~= "" then
+					for _, t in pairs(mw.text.split(candidateArgs, "|")) do
+						local k, v = mw.ustring.match(t, "%s*([^=]-)%s*=(.-)%s*$")
+						if k == 'files' then options.fileflags = numberFlags(v)
+						elseif k == 'paragraphs' then options.paraflags = numberFlags(v)
+						elseif k == 'more' then args.more = v
+						else options[k] = v end
+					end
+				end
+				if page and page ~= "" then
+					local section = mw.ustring.match(page, "[^#]+#([^#]+)") -- save the section
+					text, page = getContent(page) -- make sure the page exists
+					if page and page ~= "" and text and text ~= "" then
+						if args.nostubs then
+							local isStub = mw.ustring.find(text, "%s*{{[^{|}]*%-[Ss]tub%s*}}")
+							if isStub then text = nil end
+						end
+						if section and section ~= "" then
+							page = page .. '#' .. section -- restore the section
+						end
+						text = get(page, options)
+					end
+				end
+			end
+			table.remove(candidates, candidateKey) -- candidate processed
+			candidateCount = candidateCount - 1 -- ensure that we exit the loop after all candidates are done
+		end
+	end
+	if not text or text == "" then return wikiError("No valid pages found") end
+
+	-- Store all candidates before processing
+	local allCandidates = {page}  -- Include current page
+	for _, candidate in pairs(candidates) do
+		table.insert(allCandidates, candidate)
+	end
+
+	if args.showall then
+		local separator = args.showall
+		if separator == "" then separator = "{{clear}}{{hr}}" end
+		-- Add list at the top for showall if list parameter is not present
+		if not args.list then
+			local listText = "{{collapse top|title={{resize|85%|List of articles in rotation}}|bg=fff}}{{hlist"
+			for _, candidate in pairs(allCandidates) do
+				if mw.ustring.match(candidate, "%S") then 
+					listText = listText .. "|[[" .. mw.text.trim(candidate) .. "]]" 
+				end
+			end
+			listText = listText .. "}}\n{{collapse bottom}}\n"
+			text = listText .. text
+		end
+		for _, candidate in pairs(candidates) do
+			local t = get(candidate, options)
+			if t ~= "" then
+				text = text .. separator .. t
+			end
+		end
+	end
+
+	-- Add a collapsed list of pages which might appear
+	if args.list then
+		local list = args.list
+		if list == "" then list = "Other articles" end
+		text = text .. "{{collapse top|title={{resize|85%|" ..list .. "}}|bg=fff}}{{hlist"
+		for _, candidate in pairs(candidates) do
+			if mw.ustring.match(candidate, "%S") then text = text .. "|[[" .. mw.text.trim(candidate) .. "]]" end
+		end
+		text = text .. "}}\n{{collapse bottom}}"
+	end
+
+	return frame:preprocess(text)
+end
+
+-- Old invocation function used by {{Excerpt}}
+local function excerpt(frame)
+	local args = parseArgs(frame)
+
+	-- Make sure the requested page exists
+	local page = args[1] or args.article or args.source or args.page
+	if not page then return wikiError("noPage") end
+	local title = mw.title.new(page)
+	if not title then return wikiError("noPage") end
+	if title.isRedirect then title = title.redirectTarget end
+	if not title.exists then return wikiError("pageNotFound", page) end
+	page = title.prefixedText
+
+	-- Define some useful variables
+	local section = args[2] or args.section or mw.ustring.match(args[1], "[^#]+#([^#]+)")
+	local tag = args.tag or 'div'
+
+	-- Define the HTML elements
+	local block = mw.html.create(tag):addClass('excerpt-block')
+	if is(args.indicator) then block:addClass('excerpt-indicator') end
+
+	local style = frame:extensionTag{ name = 'templatestyles', args = { src = 'Excerpt/styles.css' } }
+
+	local hatnote
+	if not args.nohat then
+		if args.this then
+			hatnote = args.this
+		elseif args.indicator then
+			hatnote = 'This is'
+		elseif args.only == 'file' then
+			hatnote = 'This file is'
+		elseif args.only == 'file' then
+			hatnote = 'These files are'
+		elseif args.only == 'list' then
+			hatnote = 'This list is'
+		elseif args.only == 'lists' then
+			hatnote = 'These lists are'
+		elseif args.only == 'table' then
+			hatnote = 'This table is'
+		elseif args.only == 'tables' then
+			hatnote = 'These tables are'
+		else
+			hatnote = 'This section is'
+		end
+		hatnote = hatnote .. ' an excerpt from '
+		if section then
+			hatnote = hatnote .. '[[' .. page .. '#' .. section .. '|' .. page .. ' § ' .. section .. ']]'
+		else
+			hatnote = hatnote .. '[[' .. page .. ']]'
+		end
+		hatnote = hatnote .. "''" .. '&lt;span class="mw-editsection-like plainlinks"&gt;&lt;span class="mw-editsection-bracket"&gt;[&lt;/span&gt;['
+		hatnote = hatnote .. title:fullUrl('action=edit') .. ' edit'
+		hatnote = hatnote .. ']&lt;span class="mw-editsection-bracket"&gt;]&lt;/span&gt;&lt;/span&gt;' .. "''"
+		hatnote = require('Module:Hatnote')._hatnote(hatnote, {selfref=true}) or wikiError('Error generating hatnote')
+	end
+
+	-- Build the module options out of the template arguments and the desired defaults
+	local options = {
+		fileflags = numberFlags( args['files'] or 1 ),
+		paraflags = numberFlags( args['paragraphs'] ),
+		filesOnly = is( args['only'] == 'file' or args['only'] == 'files' ),
+		listsOnly = is( args['only'] == 'list' or args['only'] == 'lists'),
+		tablesOnly = is( args['only'] == 'table' or args['only'] == 'tables' ),
+		keepTables = is( args['tables'] or true ),
+		keepRefs = is( args['references']  or true ),
+		keepSubsections = is( args['subsections'] ),
+		nobold = not is( args['bold'] ),
+		fragment = args['fragment']
+	}
+
+	-- Get the excerpt itself
+	if section then page = page .. '#' .. section end
+	local ok, excerpt = pcall(e.get, page, options)
+	if not ok then return wikiError(excerpt) end
+	excerpt = "\n" .. excerpt -- line break is necessary to prevent broken tables and lists
+	if mw.title.getCurrentTitle().isContentPage then excerpt = excerpt .. '[[Category:Articles with excerpts]]' end
+	excerpt = frame:preprocess(excerpt)
+	excerpt = mw.html.create(tag):addClass('excerpt'):wikitext(excerpt)
+
+	-- Combine and return the elements
+	return block:node(style):node(hatnote):node(excerpt)
+end
+
+-- Entry points for templates
+function p.main(frame) return main(frame) end
+function p.lead(frame) return portal(frame, "lead") end -- {{Transclude lead excerpt}} reads a randomly selected article linked from the given page
+function p.linked(frame) return portal(frame, "linked") end -- {{Transclude linked excerpt}} reads a randomly selected article linked from the given page
+function p.listitem(frame) return portal(frame, "listitem") end -- {{Transclude list item excerpt}} reads a randomly selected article listed on the given page
+function p.random(frame) return portal(frame, "random") end -- {{Transclude random excerpt}} reads any article (default for invoke with one argument)
+function p.selected(frame) return portal(frame, "selected") end -- {{Transclude selected excerpt}} reads the article whose key is in the selected= parameter
+function p.excerpt(frame) return excerpt(frame) end -- {{Excerpt}} transcludes part of an article into another article
+
+-- Entry points for other Lua modules
+function p.get(page, options) return get(page, options) end
+function p.getContent(page) return getContent(page) end
+function p.getSection(text, section) return getSection(text, section) end
+function p.getTables(text, options) return getTables(text, options) end
+function p.getLists(text, options) return getLists(text, options) end
+function p.parse(text, options) return parse(text, options) end
+function p.parseImage(text, start) return parseImage(text, start) end
+function p.parseArgs(frame) return parseArgs(frame) end
+function p.getTemplateImages(text) return getTemplateImages(text) end
+function p.checkImage(image) return checkImage(image) end
+function p.cleanupText(text, options) return cleanupText(text, options) end
+function p.numberFlags(str) return numberFlags(str) end
+function p.getMoreLinkText(more) return getMoreLinkText(more) end
+
+return p</text>
+      <sha1>q11zhrxceghzthmm6apoa62ekkmfmw1</sha1>
+    </revision>
+  </page>
+</mediawiki>

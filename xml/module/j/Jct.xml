@@ -1,0 +1,928 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Jct</title>
+    <ns>828</ns>
+    <id>17316</id>
+    <revision>
+      <id>1165232</id>
+      <timestamp>2025-04-25T22:09:18Z</timestamp>
+      <contributor>
+        <username>Fredddie</username>
+        <id>52</id>
+      </contributor>
+      <comment>24</comment>
+      <origin>1165232</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="12555" sha1="8zdtprrw0y52l3zpnas8jeju9hx0cog" xml:space="preserve">local p = {}
+-- Change to "" upon deployment.
+local moduleSuffix = ""
+
+local parserModuleName = "Module:Road data/parser" .. moduleSuffix
+local statenameModuleName = "Module:Jct/statename" .. moduleSuffix -- TODO transition
+local cityModuleName = "Module:Jct/city" .. moduleSuffix
+
+local concat = table.concat
+local insert = table.insert
+local format = mw.ustring.format
+local trim = mw.text.trim
+
+local parserModule = require(parserModuleName)
+local parser = parserModule.parser
+local util = require("Module:Road data/util")
+
+
+-- Shields
+local defaultShieldSize = 24
+
+local function addContextBanner(route, name, suffix, bannerSpec)
+	local bannerModule = 'Module:Road data/banners/' .. string.upper(route.country)
+	local shieldfield = name .. 'shield'
+	local shield = parser(route, shieldfield)
+	if shield == nil then
+		-- This route type does not define shield.
+		-- Find shield in the default banner table.
+		shield = parser(route, 'shield', name, bannerModule)
+		if shield and shield ~= '' then
+			if suffix == nil then
+				suffix = parser(route, 'shield', 'suffix', bannerModule)
+			end
+			if suffix and suffix ~= '' then
+				shield = shield .. " " .. suffix
+			end
+			shield = shield .. ".svg"
+		end
+	end
+	if shield and shield ~= '' then
+		local shieldSize = defaultShieldSize
+		-- Add banner plate.
+		insert(bannerSpec, {shield, shieldSize})
+	end
+end
+
+local function bannerSpec(banner, bannerSize, bannerSuffix, route)
+	local banners = {}
+	if type(banner) == "table" then
+		local bannerSizeIsNotTable = type(bannerSize) ~= "table"
+		for i,filename in ipairs(banner) do
+			local bannersize = bannerSizeIsNotTable and bannerSize or bannerSize[i] or defaultShieldSize
+			insert(banners, {filename, bannersize})
+		end
+	elseif banner ~= '' then
+		insert(banners, {banner, bannerSize})
+	end
+
+	if route.dir then
+		addContextBanner(route, 'dir', bannerSuffix, banners)
+	end
+	if route.to then
+		addContextBanner(route, 'to', bannerSuffix, banners)
+	end
+
+	return banners
+end
+
+local function shieldSpec(route, mainShield, shieldList)
+	local shieldSpec = {}
+
+	local shield
+	local shieldto = parser(route, 'shieldto')
+	
+	if route.to then
+		if not shield then shield = shieldto or parser(route, 'shield') or '' end
+	else
+		if not shield then shield = parser(route, 'shield') or '' end
+	end
+	if shield == '' then return shieldSpec end
+	local orientation = parser(route, 'orientation')
+
+	local function size(route)
+		if orientation == "upright" then
+			return defaultShieldSize
+			else return "x" .. defaultShieldSize
+		end
+	end
+	
+	local shieldsize = size(route)
+	
+	local banner = parser(route, 'banner') or {}
+	local bannersize = defaultShieldSize
+	local bannersuffix = parser(route, 'bannersuffix')
+
+	local bannerIsNotTable = type(banner) ~= "table"
+	local bannersizeIsNotTable = type(bannersize) ~= "table"
+	local bannersuffixIsNotTable = type(bannersuffix) ~= "table"
+
+	if type(shield) == "table" then
+		for i,filename in ipairs(shield) do
+			local size = shieldsize or shieldsize[i]
+			if size == "" then size = nil end
+			-- banner.all describes banners that apply to all multiple shields.
+			local shieldBanner = bannerIsNotTable and banner or (banner[i] or banner.all or {})
+			-- Banner size is default if the corresponding entry
+			-- in bannerSize table is not set.
+			local shieldBannerSize =
+				bannersizeIsNotTable and bannersize
+				or (bannersize[i] or bannersize.all or defaultShieldSize)
+			local shieldBannerSuffix = bannersuffix and (bannersuffixIsNotTable and bannersuffix or bannersuffix[i])
+			insert(shieldSpec, {
+				shield = {filename, size},
+				banners = bannerSpec(shieldBanner, shieldBannerSize, shieldBannerSuffix, route)
+			})
+		end
+	elseif shield ~= '' then
+		if shieldsize == "" then shieldsize = nil end
+		insert(shieldSpec, {
+			shield = {shield, shieldsize},
+			banners = bannerSpec(banner, bannersize,  bannersuffix, route)
+		})
+	end
+
+	return shieldSpec
+end
+
+local missingShields
+
+local shieldExistsCache = {}
+
+local function render(shieldEntry, scale, showLink)
+	local shield = shieldEntry.shield
+	local banners = shieldEntry.banners
+
+	local size
+	if shield[2] then
+		local width, height = mw.ustring.match(shield[2], "(%d*)x?(%d*)")
+		width = tonumber(width)
+		height = tonumber(height)
+		local sizeparts = {}
+		if width then
+			insert(sizeparts, format("%d", width * scale))
+		end
+		if height then
+			insert(sizeparts, format("x%d", height * scale))
+		end
+		size = concat(sizeparts)
+	else
+		size = format("%s%d", landscape and "x" or "", defaultShieldSize * scale)
+	end
+	local shieldCode = format("[[File:%s|%spx|link=|alt=]]", shield[1], size)
+	if not banners[1] then return shieldCode end
+
+	for _,banner in ipairs(banners) do
+		shieldCode = format("[[File:%s|%spx|link=|alt=]]&lt;br&gt;%s",
+			banner[1],
+			defaultShieldSize,
+			shieldCode)
+	end
+	return '&lt;span style="display: inline-block; vertical-align: baseline; line-height: 0; text-align: center;"&gt;' .. shieldCode .. '&lt;/span&gt;'
+end
+
+function p.shield(route, scale, showLink, mainShield, shieldList)
+	missingShields = {}
+
+	scale = scale or 1
+
+	local rendered = {}
+	for _,entry in ipairs(shieldSpec(route, mainShield, shieldList)) do
+		insert(rendered, render(entry, scale, showLink))
+	end
+	return concat(rendered), missingShields
+end
+
+-- Links/abbreviations
+function p.link(route)
+	local nolink = route.nolink
+	local abbr = parser(route, 'abbr')
+	if nolink then
+		return abbr
+	else
+		local link = parser(route, 'link')
+		if not link or link == '' then
+			return abbr
+		else
+			return format("[[%s|%s]]", link, abbr)
+		end
+	end
+end
+-------------------------------------------
+
+-- Links/abbreviations
+local function routeText(route, jctname, frame)
+	local link
+	local type = route.type
+	if not type or type == '' then
+		link = route.route
+	else
+		link = p.link(route)
+	end
+
+	local dir = route.dir and ' ' .. string.lower(route.dir) or ''
+	local routeText = link .. dir
+
+	local name = route.name
+	if name and name ~= '' then
+		local mainText = jctname and name or routeText
+		local parenText = jctname and routeText or name
+		
+		return format('%s (%s)', mainText, parenText)
+	else
+		return routeText
+	end
+end
+
+local function extra(args)
+	local extraTypes = mw.loadData('Module:Road data/extra')
+	local extraIcon = extraTypes[string.lower(args.extra or '')]
+	if not extraIcon then return '' end
+	local size = defaultShieldSize .. 'px'
+	local countryIcon = extraIcon[args.country] or extraIcon.default
+	if type(countryIcon) == 'table' then
+		local localIcon = countryIcon[args.state] or countryIcon.default
+		return string.format("[[File:%s|%s|alt=|link=]]", localIcon, size)
+	else
+		return string.format("[[File:%s|%s|alt=|link=]]", countryIcon, size)
+	end
+end
+
+local function parseArgs(args)
+	local state = args.state or args.province or ''
+	args.state = state
+	local country
+	if args.country and args.country ~= '' then
+		country = string.upper(args.country)
+	else
+		local countryModule = mw.loadData("Module:Road data/countrymask")
+		country = countryModule[state] or 'UNK'
+	end
+	args.country = country
+
+	local params = {'denom', 'county', 'township', 'dab', 'nolink', 'noshield', 'to', 'dir', 'name'}
+	local routes = {}
+	local routeCount = 1
+	local seenTo = false
+	while true do
+		local routeType = args[routeCount * 2 - 1]
+		if not routeType then break end
+		local route = {type = routeType, route = args[routeCount * 2]}
+		for _,v in pairs(params) do
+			route[v] = args[v .. routeCount]
+		end
+		
+		if args.nolink then
+			route.nolink = args.nolink
+		end
+		
+		route.country = country
+		route.state = state
+
+		-- Set the first .to to true.
+		-- Set all following .to to ''.
+		if seenTo then
+			if route.to then
+				-- Report duplicate to flag.
+				route.toerror = true
+			end
+			route.to = ''
+		elseif route.to then
+			route.to = true
+			seenTo = true
+		end
+
+		insert(routes, route)
+		routeCount = routeCount + 1
+	end
+	return routes
+end
+
+local function prefix(to, num)
+	if to and to ~= '' then
+		return num == 1 and 'To ' or ' to '
+	end
+	return num == 1 and '' or '&amp;nbsp;/ '
+end
+
+local function addErrorMsg(catCode, msg, errorMsg)
+	errorMsg.code = errorMsg.code or catCode
+	insert(errorMsg, format('&lt;span style="display: none;"&gt;Module:Jct %s&lt;/span&gt;', msg))
+end
+
+function p._jct(args, frame)
+	local routes = parseArgs(args)
+	local shields = {}
+	local links = {}
+	local allMissingShields = {}
+	local typeErr = false
+	local toErr = false
+	frame = frame or mw.getCurrentFrame()
+	for num,route in ipairs(routes) do
+		if not (args.noshield or route.noshield) then
+			local shield, missingShields = p.shield(route)
+			insert(shields, shield)
+			if missingShields[1] then
+				insert(allMissingShields, concat(missingShields, ' / '))
+			end
+		end
+		local prefix = prefix(route.to, num)
+		if prefix ~= '' then insert(links, prefix) end
+		insert(links, routeText(route, args.jctname, frame))
+		typeErr = typeErr or route.typeerror or false
+		toErr = toErr or route.toerror or false
+	end
+	local graphics = concat(shields) .. extra(args) .. ' '
+	local linkText = concat(links)
+	local cities = ''
+	if args.city1 or args.location1 then
+		local citiesPrefix
+		if args.citiesprefix then
+			citiesPrefix = args.citiesprefix ~= '' and format(" %s ", args.citiesprefix) or ''
+		else
+			citiesPrefix = '&amp;nbsp;'
+		end
+		local cityModule = require(cityModuleName)
+		cities = citiesPrefix .. cityModule.city(args)
+	end
+
+	local errorMsg = {}
+	-- Errors must be reported by the level of severity, most severe first.
+	if typeErr then
+		-- Report invalid type errors.
+		addErrorMsg("§", 'error: Invalid route type', errorMsg)
+	end
+	if #allMissingShields &gt; 0 then
+		-- Report missing shield error.
+		-- shieldExists() would have populated missingShields if shields are missing.
+		addErrorMsg("¶", 'error: Missing route marker graphics: ' .. concat(allMissingShields, ' / '), errorMsg)
+	end
+	if toErr then
+		-- Report invalid to errors.
+		addErrorMsg("&amp;", 'error: Invalid "to" argument', errorMsg)
+	end
+	if args.road then
+		-- Report deprecated "road" warning.
+		addErrorMsg("∆", 'warning: "road" parameter is deprecated', errorMsg)
+	end
+	if args.rdt then
+		-- Report deprecated "rdt" warning.
+		addErrorMsg("£", 'warning: "rdt" parameter is deprecated', errorMsg)
+	end
+	if #errorMsg &gt; 0 then
+		local page = mw.title.getCurrentTitle().prefixedText -- Get transcluding page's title
+		-- Add a category for the first, most severe error.
+		insert(errorMsg, format('[[Category:Jct template errors|%s %s]]', errorMsg.code, page))
+		errorMsg = concat(errorMsg)
+	else
+		errorMsg = ''
+	end
+
+	return graphics .. linkText .. cities .. errorMsg
+end
+
+function p.jct(frame)
+	-- Import module function to work with passed arguments
+	local getArgs = require('Module:Arguments').getArgs
+	local args = getArgs(frame, {removeBlanks = false})
+	return p._jct(args, frame)
+end
+
+function p._roadlink(args, frame)
+	local routes = parseArgs(args)
+	local links = {}
+	local typeErr = false
+	local toErr = false
+	frame = frame or mw.getCurrentFrame()
+	for num,route in ipairs(routes) do
+		local prefix = prefix(route.to, num)
+		if prefix ~= '' then insert(links, prefix) end
+		insert(links, routeText(route, args.jctname, frame))
+		typeErr = typeErr or route.typeerror or false
+		toErr = toErr or route.toerror or false
+	end
+	local linkText = concat(links)
+	local cities = ''
+	if args.city1 or args.location1 then
+		local citiesPrefix
+		if args.citiesprefix then
+			citiesPrefix = args.citiesprefix ~= '' and format(" %s ", args.citiesprefix) or ''
+		else
+			citiesPrefix = '&amp;nbsp;'
+		end
+		local cityModule = require(cityModuleName)
+		cities = citiesPrefix .. cityModule.city(args)
+	end
+
+	local errorMsg = {}
+	-- Errors must be reported by the level of severity, most severe first.
+	if typeErr then
+		-- Report invalid type errors.
+		addErrorMsg("2", 'error: Invalid route type', errorMsg)
+	end
+	if toErr then
+		-- Report invalid to errors.
+		addErrorMsg("3", 'error: Invalid "to" argument', errorMsg)
+	end
+	if args.road then
+		-- Report deprecated "road" warning.
+		addErrorMsg("W", 'warning: "road" parameter is deprecated', errorMsg)
+	end
+	if #errorMsg &gt; 0 then
+		local page = mw.title.getCurrentTitle().prefixedText -- Get transcluding page's title
+		-- Add a category for the first, most severe error.
+		insert(errorMsg, format('[[Category:Jct template errors|%s %s]]', errorMsg.code, page))
+		errorMsg = concat(errorMsg)
+	else
+		errorMsg = ''
+	end
+
+	return linkText .. cities
+end
+
+function p.roadlink(frame)
+	-- Import module function to work with passed arguments
+	local getArgs = require('Module:Arguments').getArgs
+	local args = getArgs(frame, {removeBlanks = true})
+	return p._roadlink(args, frame)
+end
+
+return p</text>
+      <sha1>8zdtprrw0y52l3zpnas8jeju9hx0cog</sha1>
+    </revision>
+    <revision>
+      <id>17317</id>
+      <timestamp>2025-11-22T14:38:03Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Text replacement - "↵↵↵" to "
+"</comment>
+      <origin>17317</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="12553" sha1="2yf037c71rvea61wgjsm2zmunazoq71" xml:space="preserve">local p = {}
+-- Change to "" upon deployment.
+local moduleSuffix = ""
+
+local parserModuleName = "Module:Road data/parser" .. moduleSuffix
+local statenameModuleName = "Module:Jct/statename" .. moduleSuffix -- TODO transition
+local cityModuleName = "Module:Jct/city" .. moduleSuffix
+
+local concat = table.concat
+local insert = table.insert
+local format = mw.ustring.format
+local trim = mw.text.trim
+
+local parserModule = require(parserModuleName)
+local parser = parserModule.parser
+local util = require("Module:Road data/util")
+-- Shields
+local defaultShieldSize = 24
+
+local function addContextBanner(route, name, suffix, bannerSpec)
+	local bannerModule = 'Module:Road data/banners/' .. string.upper(route.country)
+	local shieldfield = name .. 'shield'
+	local shield = parser(route, shieldfield)
+	if shield == nil then
+		-- This route type does not define shield.
+		-- Find shield in the default banner table.
+		shield = parser(route, 'shield', name, bannerModule)
+		if shield and shield ~= '' then
+			if suffix == nil then
+				suffix = parser(route, 'shield', 'suffix', bannerModule)
+			end
+			if suffix and suffix ~= '' then
+				shield = shield .. " " .. suffix
+			end
+			shield = shield .. ".svg"
+		end
+	end
+	if shield and shield ~= '' then
+		local shieldSize = defaultShieldSize
+		-- Add banner plate.
+		insert(bannerSpec, {shield, shieldSize})
+	end
+end
+
+local function bannerSpec(banner, bannerSize, bannerSuffix, route)
+	local banners = {}
+	if type(banner) == "table" then
+		local bannerSizeIsNotTable = type(bannerSize) ~= "table"
+		for i,filename in ipairs(banner) do
+			local bannersize = bannerSizeIsNotTable and bannerSize or bannerSize[i] or defaultShieldSize
+			insert(banners, {filename, bannersize})
+		end
+	elseif banner ~= '' then
+		insert(banners, {banner, bannerSize})
+	end
+
+	if route.dir then
+		addContextBanner(route, 'dir', bannerSuffix, banners)
+	end
+	if route.to then
+		addContextBanner(route, 'to', bannerSuffix, banners)
+	end
+
+	return banners
+end
+
+local function shieldSpec(route, mainShield, shieldList)
+	local shieldSpec = {}
+
+	local shield
+	local shieldto = parser(route, 'shieldto')
+	
+	if route.to then
+		if not shield then shield = shieldto or parser(route, 'shield') or '' end
+	else
+		if not shield then shield = parser(route, 'shield') or '' end
+	end
+	if shield == '' then return shieldSpec end
+	local orientation = parser(route, 'orientation')
+
+	local function size(route)
+		if orientation == "upright" then
+			return defaultShieldSize
+			else return "x" .. defaultShieldSize
+		end
+	end
+	
+	local shieldsize = size(route)
+	
+	local banner = parser(route, 'banner') or {}
+	local bannersize = defaultShieldSize
+	local bannersuffix = parser(route, 'bannersuffix')
+
+	local bannerIsNotTable = type(banner) ~= "table"
+	local bannersizeIsNotTable = type(bannersize) ~= "table"
+	local bannersuffixIsNotTable = type(bannersuffix) ~= "table"
+
+	if type(shield) == "table" then
+		for i,filename in ipairs(shield) do
+			local size = shieldsize or shieldsize[i]
+			if size == "" then size = nil end
+			-- banner.all describes banners that apply to all multiple shields.
+			local shieldBanner = bannerIsNotTable and banner or (banner[i] or banner.all or {})
+			-- Banner size is default if the corresponding entry
+			-- in bannerSize table is not set.
+			local shieldBannerSize =
+				bannersizeIsNotTable and bannersize
+				or (bannersize[i] or bannersize.all or defaultShieldSize)
+			local shieldBannerSuffix = bannersuffix and (bannersuffixIsNotTable and bannersuffix or bannersuffix[i])
+			insert(shieldSpec, {
+				shield = {filename, size},
+				banners = bannerSpec(shieldBanner, shieldBannerSize, shieldBannerSuffix, route)
+			})
+		end
+	elseif shield ~= '' then
+		if shieldsize == "" then shieldsize = nil end
+		insert(shieldSpec, {
+			shield = {shield, shieldsize},
+			banners = bannerSpec(banner, bannersize,  bannersuffix, route)
+		})
+	end
+
+	return shieldSpec
+end
+
+local missingShields
+
+local shieldExistsCache = {}
+
+local function render(shieldEntry, scale, showLink)
+	local shield = shieldEntry.shield
+	local banners = shieldEntry.banners
+
+	local size
+	if shield[2] then
+		local width, height = mw.ustring.match(shield[2], "(%d*)x?(%d*)")
+		width = tonumber(width)
+		height = tonumber(height)
+		local sizeparts = {}
+		if width then
+			insert(sizeparts, format("%d", width * scale))
+		end
+		if height then
+			insert(sizeparts, format("x%d", height * scale))
+		end
+		size = concat(sizeparts)
+	else
+		size = format("%s%d", landscape and "x" or "", defaultShieldSize * scale)
+	end
+	local shieldCode = format("[[File:%s|%spx|link=|alt=]]", shield[1], size)
+	if not banners[1] then return shieldCode end
+
+	for _,banner in ipairs(banners) do
+		shieldCode = format("[[File:%s|%spx|link=|alt=]]&lt;br&gt;%s",
+			banner[1],
+			defaultShieldSize,
+			shieldCode)
+	end
+	return '&lt;span style="display: inline-block; vertical-align: baseline; line-height: 0; text-align: center;"&gt;' .. shieldCode .. '&lt;/span&gt;'
+end
+
+function p.shield(route, scale, showLink, mainShield, shieldList)
+	missingShields = {}
+
+	scale = scale or 1
+
+	local rendered = {}
+	for _,entry in ipairs(shieldSpec(route, mainShield, shieldList)) do
+		insert(rendered, render(entry, scale, showLink))
+	end
+	return concat(rendered), missingShields
+end
+
+-- Links/abbreviations
+function p.link(route)
+	local nolink = route.nolink
+	local abbr = parser(route, 'abbr')
+	if nolink then
+		return abbr
+	else
+		local link = parser(route, 'link')
+		if not link or link == '' then
+			return abbr
+		else
+			return format("[[%s|%s]]", link, abbr)
+		end
+	end
+end
+-------------------------------------------
+
+-- Links/abbreviations
+local function routeText(route, jctname, frame)
+	local link
+	local type = route.type
+	if not type or type == '' then
+		link = route.route
+	else
+		link = p.link(route)
+	end
+
+	local dir = route.dir and ' ' .. string.lower(route.dir) or ''
+	local routeText = link .. dir
+
+	local name = route.name
+	if name and name ~= '' then
+		local mainText = jctname and name or routeText
+		local parenText = jctname and routeText or name
+		
+		return format('%s (%s)', mainText, parenText)
+	else
+		return routeText
+	end
+end
+
+local function extra(args)
+	local extraTypes = mw.loadData('Module:Road data/extra')
+	local extraIcon = extraTypes[string.lower(args.extra or '')]
+	if not extraIcon then return '' end
+	local size = defaultShieldSize .. 'px'
+	local countryIcon = extraIcon[args.country] or extraIcon.default
+	if type(countryIcon) == 'table' then
+		local localIcon = countryIcon[args.state] or countryIcon.default
+		return string.format("[[File:%s|%s|alt=|link=]]", localIcon, size)
+	else
+		return string.format("[[File:%s|%s|alt=|link=]]", countryIcon, size)
+	end
+end
+
+local function parseArgs(args)
+	local state = args.state or args.province or ''
+	args.state = state
+	local country
+	if args.country and args.country ~= '' then
+		country = string.upper(args.country)
+	else
+		local countryModule = mw.loadData("Module:Road data/countrymask")
+		country = countryModule[state] or 'UNK'
+	end
+	args.country = country
+
+	local params = {'denom', 'county', 'township', 'dab', 'nolink', 'noshield', 'to', 'dir', 'name'}
+	local routes = {}
+	local routeCount = 1
+	local seenTo = false
+	while true do
+		local routeType = args[routeCount * 2 - 1]
+		if not routeType then break end
+		local route = {type = routeType, route = args[routeCount * 2]}
+		for _,v in pairs(params) do
+			route[v] = args[v .. routeCount]
+		end
+		
+		if args.nolink then
+			route.nolink = args.nolink
+		end
+		
+		route.country = country
+		route.state = state
+
+		-- Set the first .to to true.
+		-- Set all following .to to ''.
+		if seenTo then
+			if route.to then
+				-- Report duplicate to flag.
+				route.toerror = true
+			end
+			route.to = ''
+		elseif route.to then
+			route.to = true
+			seenTo = true
+		end
+
+		insert(routes, route)
+		routeCount = routeCount + 1
+	end
+	return routes
+end
+
+local function prefix(to, num)
+	if to and to ~= '' then
+		return num == 1 and 'To ' or ' to '
+	end
+	return num == 1 and '' or '&amp;nbsp;/ '
+end
+
+local function addErrorMsg(catCode, msg, errorMsg)
+	errorMsg.code = errorMsg.code or catCode
+	insert(errorMsg, format('&lt;span style="display: none;"&gt;Module:Jct %s&lt;/span&gt;', msg))
+end
+
+function p._jct(args, frame)
+	local routes = parseArgs(args)
+	local shields = {}
+	local links = {}
+	local allMissingShields = {}
+	local typeErr = false
+	local toErr = false
+	frame = frame or mw.getCurrentFrame()
+	for num,route in ipairs(routes) do
+		if not (args.noshield or route.noshield) then
+			local shield, missingShields = p.shield(route)
+			insert(shields, shield)
+			if missingShields[1] then
+				insert(allMissingShields, concat(missingShields, ' / '))
+			end
+		end
+		local prefix = prefix(route.to, num)
+		if prefix ~= '' then insert(links, prefix) end
+		insert(links, routeText(route, args.jctname, frame))
+		typeErr = typeErr or route.typeerror or false
+		toErr = toErr or route.toerror or false
+	end
+	local graphics = concat(shields) .. extra(args) .. ' '
+	local linkText = concat(links)
+	local cities = ''
+	if args.city1 or args.location1 then
+		local citiesPrefix
+		if args.citiesprefix then
+			citiesPrefix = args.citiesprefix ~= '' and format(" %s ", args.citiesprefix) or ''
+		else
+			citiesPrefix = '&amp;nbsp;'
+		end
+		local cityModule = require(cityModuleName)
+		cities = citiesPrefix .. cityModule.city(args)
+	end
+
+	local errorMsg = {}
+	-- Errors must be reported by the level of severity, most severe first.
+	if typeErr then
+		-- Report invalid type errors.
+		addErrorMsg("§", 'error: Invalid route type', errorMsg)
+	end
+	if #allMissingShields &gt; 0 then
+		-- Report missing shield error.
+		-- shieldExists() would have populated missingShields if shields are missing.
+		addErrorMsg("¶", 'error: Missing route marker graphics: ' .. concat(allMissingShields, ' / '), errorMsg)
+	end
+	if toErr then
+		-- Report invalid to errors.
+		addErrorMsg("&amp;", 'error: Invalid "to" argument', errorMsg)
+	end
+	if args.road then
+		-- Report deprecated "road" warning.
+		addErrorMsg("∆", 'warning: "road" parameter is deprecated', errorMsg)
+	end
+	if args.rdt then
+		-- Report deprecated "rdt" warning.
+		addErrorMsg("£", 'warning: "rdt" parameter is deprecated', errorMsg)
+	end
+	if #errorMsg &gt; 0 then
+		local page = mw.title.getCurrentTitle().prefixedText -- Get transcluding page's title
+		-- Add a category for the first, most severe error.
+		insert(errorMsg, format('[[Category:Jct template errors|%s %s]]', errorMsg.code, page))
+		errorMsg = concat(errorMsg)
+	else
+		errorMsg = ''
+	end
+
+	return graphics .. linkText .. cities .. errorMsg
+end
+
+function p.jct(frame)
+	-- Import module function to work with passed arguments
+	local getArgs = require('Module:Arguments').getArgs
+	local args = getArgs(frame, {removeBlanks = false})
+	return p._jct(args, frame)
+end
+
+function p._roadlink(args, frame)
+	local routes = parseArgs(args)
+	local links = {}
+	local typeErr = false
+	local toErr = false
+	frame = frame or mw.getCurrentFrame()
+	for num,route in ipairs(routes) do
+		local prefix = prefix(route.to, num)
+		if prefix ~= '' then insert(links, prefix) end
+		insert(links, routeText(route, args.jctname, frame))
+		typeErr = typeErr or route.typeerror or false
+		toErr = toErr or route.toerror or false
+	end
+	local linkText = concat(links)
+	local cities = ''
+	if args.city1 or args.location1 then
+		local citiesPrefix
+		if args.citiesprefix then
+			citiesPrefix = args.citiesprefix ~= '' and format(" %s ", args.citiesprefix) or ''
+		else
+			citiesPrefix = '&amp;nbsp;'
+		end
+		local cityModule = require(cityModuleName)
+		cities = citiesPrefix .. cityModule.city(args)
+	end
+
+	local errorMsg = {}
+	-- Errors must be reported by the level of severity, most severe first.
+	if typeErr then
+		-- Report invalid type errors.
+		addErrorMsg("2", 'error: Invalid route type', errorMsg)
+	end
+	if toErr then
+		-- Report invalid to errors.
+		addErrorMsg("3", 'error: Invalid "to" argument', errorMsg)
+	end
+	if args.road then
+		-- Report deprecated "road" warning.
+		addErrorMsg("W", 'warning: "road" parameter is deprecated', errorMsg)
+	end
+	if #errorMsg &gt; 0 then
+		local page = mw.title.getCurrentTitle().prefixedText -- Get transcluding page's title
+		-- Add a category for the first, most severe error.
+		insert(errorMsg, format('[[Category:Jct template errors|%s %s]]', errorMsg.code, page))
+		errorMsg = concat(errorMsg)
+	else
+		errorMsg = ''
+	end
+
+	return linkText .. cities
+end
+
+function p.roadlink(frame)
+	-- Import module function to work with passed arguments
+	local getArgs = require('Module:Arguments').getArgs
+	local args = getArgs(frame, {removeBlanks = true})
+	return p._roadlink(args, frame)
+end
+
+return p</text>
+      <sha1>2yf037c71rvea61wgjsm2zmunazoq71</sha1>
+    </revision>
+  </page>
+</mediawiki>

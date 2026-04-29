@@ -1,0 +1,421 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Linguistic</title>
+    <ns>828</ns>
+    <id>56316</id>
+    <revision>
+      <id>2938463</id>
+      <timestamp>2018-11-27T20:24:43Z</timestamp>
+      <contributor>
+        <username>Jarekt</username>
+        <id>637</id>
+      </contributor>
+      <comment>restore previous inparentheses function</comment>
+      <origin>2938463</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="6304" sha1="62v8sdhzbbazirrzgw1rjqswgsf1eoc" xml:space="preserve">--[[
+  __  __           _       _        _     _                   _     _   _      
+ |  \/  | ___   __| |_   _| | ___ _| |   (_)_ __   __ _ _   _(_)___| |_(_) ___ 
+ | |\/| |/ _ \ / _` | | | | |/ _ (_) |   | | '_ \ / _` | | | | / __| __| |/ __|
+ | |  | | (_) | (_| | |_| | |  __/_| |___| | | | | (_| | |_| | \__ \ |_| | (__ 
+ |_|  |_|\___/ \__,_|\__,_|_|\___(_)_____|_|_| |_|\__, |\__,_|_|___/\__|_|\___|
+                                                  |___/                        
+Simple internationalization functions that can be called by other modules.
+This Module was copied from Wikimedia Commons, so please request changes there.
+
+Maintainers:
+* Zolo - original version
+* Jarekt
+
+Dependencies:
+* Module:I18n/or
+* Module:Delink
+* Module:Yesno
+]]
+
+-- ==================================================
+-- === Internal functions ===========================
+-- ==================================================
+
+local function langSwitch(list,lang)
+	local langList = mw.language.getFallbacksFor(lang)
+	table.insert(langList,1,lang)
+	for i,language in ipairs(langList) do
+		if list[language] then
+			return list[language]
+		end
+	end
+	return nil
+end
+
+-- ==================================================
+-- === External functions ===========================
+-- ==================================================
+local p = {}
+
+function p.vowelfirst (str)
+	if str then 
+		local vowels = 'aeiouyąăẵằẳặȃắâẫấầẩậãäǟāáàȁǎảẚåǻḁạǡæǣǽĕȇêễếềểệḙẽḛëēḕéḗèȅěẻẹęȩḝǝĭȋîĩḭïḯīíìȉǐỉịįıŏȏôỗốồổộõṏṍöōṑóṓòȍǒỏọǫǭơỡớờởợøǿŭȗûṷũṻṹṵüǖǘǜǚṳūúùȕǔủůụųưữứừửựŷỹÿȳýỳỷẙỵ'
+		str = mw.ustring.lower(mw.ustring.sub(str,1,1))
+		return mw.ustring.find(vowels, str, 1, true ) 
+	end
+end
+
+function p.inparentheses(str, lang)
+	--todo: define language with exotic parentheses
+	if (not str) or (str == "") then
+		return str
+	else
+		return ' (' .. str .. ')'
+		-- needs internationalization.
+		-- Needs leading space in English because as some languages do not use it, it is part of the formatting
+	end
+end
+
+function p.of(word, lang, raw, gender, number, determiner) -- rough translation of "of" in various languages
+-- note that the cases when on "of" is employed varies a lot among languages, so it is more prudent to call this from lang specific function only
+	if not raw or mw.text.trim(raw) == "" then 
+		local args = {}
+		local Delink = require('Module:Delink')._delink
+		args[1] = word
+		raw = mw.ustring.lower(Delink(args))
+	end
+
+	-- raw is the string without the Wikiformatting so that it correctly analyses the string that is [[:fr:Italie|Italie]] -&gt; 'italie'
+	-- any way to automate this ?
+	
+	if lang == 'fr' then 
+		local yesno = require('Module:Yesno')
+		determiner = yesno(determiner,false)
+
+		if determiner then
+			if string.sub(number or '',1,1)=='p' then -- number == 'plural'
+				return 'des&amp;#32;' .. word
+			elseif p.vowelfirst(raw) then
+				return 'de l’' .. word
+			elseif string.sub(gender or '',1,1)=='f' then -- gender == 'feminine'
+				return 'de la&amp;#32;' .. word
+			else
+				return 'du&amp;#32;' .. word
+			end
+		else
+			if p.vowelfirst(raw) then
+				return 'd’' .. word
+			else
+				return 'de&amp;#32;' .. word
+			end
+		end
+	elseif lang == 'ca' then
+		-- implement [[Template:Of/ca]] or  https://ca.wikipedia.org/wiki/Plantilla:Deod%27/base for case where "{{{context}}}" is "en" (default on Commons)
+		if ( p.vowelfirst(raw) and not mw.ustring.find( 'ia|ià|ie|io|iu|ua|ue|ui|uí|uï|uo|ya|ye|yi|yo|yu|', mw.ustring.sub(raw,1,2) .. '|')) then
+			return 'd\'' .. word
+		else
+			return 'de ' .. word
+		end
+	end	
+
+end
+
+function p.offromwiki(frame)
+	args = frame.args
+	return p.of(args.word, args.lang, args.raw, args.gender, args.number, args.determiner)
+end
+
+function p.noungroup(noun, adj, lang)
+	if not noun or noun == '' then 
+		return nil -- not '' so that it is not counted as a string by mw.listToText
+	end
+	if not adj or adj == ''
+		then return noun
+	end
+	
+	local wordsep = mw.message.new( "Word-separator" ):inLanguage(lang):plain()
+	local LUT = { de=1, en=1, pl=1, zh=1, fr=2, es=2, it=2}
+	local case = langSwitch(LUT, lang)
+	if case==1 then     -- adjective before the noun
+		return adj .. wordsep .. noun
+	elseif case==2 then -- adjective after the noun
+		return noun .. wordsep .. adj
+	else                -- order unknown
+		return noun ' (' .. adj .. ')'
+	end
+end
+
+function p.conj(args, lang, conjtype)
+	local comma    = mw.message.new( "comma-separator"):inLanguage(lang):plain()
+	local wordsep  = mw.message.new( "Word-separator" ):inLanguage(lang):plain()
+	local andtable = { ar=' و', he=' ו', ja='および', pl=' i '} -- languages with a problem with the MediaWiki:And
+	if conjtype == 'comma' then
+		return mw.text.listToText(args, comma, comma)
+	elseif conjtype == 'or' then 
+		local wordor = 	langSwitch(require('Module:I18n/or'), lang)
+		return mw.text.listToText(args, comma, wordor  .. wordsep)
+	elseif conjtype == 'explicit or' then -- adds "or" betwen all words when the context can be confusing
+		local wordor = 	langSwitch(require('Module:I18n/or'), lang)
+		return mw.text.listToText(args, wordor .. wordsep, wordor  .. wordsep)
+	elseif conjtype and conjtype ~= 'and' and conjtype ~= '' then
+		return mw.text.listToText(args, conjtype, conjtype)
+	elseif andtable[lang] then 
+		return mw.text.listToText(args, comma, andtable[lang])
+	else
+		local wordand = mw.message.new( "and" ):inLanguage(lang):plain()
+		return mw.text.listToText(args, comma, wordand .. wordsep)
+	end
+end
+
+function p.conjfromWiki(frame)
+	args = frame.args
+	if not args or not args[1] then
+		args = frame:getParent().args
+	end
+	local lang = args.lang
+	if not lang or mw.text.trim(lang) == '' then
+		lang = frame:callParserFunction( "int", "lang" )
+	end
+	newargs = {}  -- transform args metatable into a table so it can be concetenated
+	for i, j in pairs(args) do
+			if type(i) == 'number' then
+				j = mw.text.trim(j)
+				if j ~= '' then
+					table.insert(newargs, j)
+				end
+			else 
+				if i ~= 'type' and i ~= 'lang' then 
+					return 'error: bad parameter in template:Conj: ' .. i .. '[[Category:Pages with incorrect template usage/Conj|A]]'
+				end
+			end
+	end
+	return p.conj(newargs, lang, args.type)
+end
+
+return p</text>
+      <sha1>62v8sdhzbbazirrzgw1rjqswgsf1eoc</sha1>
+    </revision>
+    <revision>
+      <id>56317</id>
+      <timestamp>2025-08-11T09:31:20Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: importing wikidata q template</comment>
+      <origin>56317</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="6304" sha1="62v8sdhzbbazirrzgw1rjqswgsf1eoc" xml:space="preserve">--[[
+  __  __           _       _        _     _                   _     _   _      
+ |  \/  | ___   __| |_   _| | ___ _| |   (_)_ __   __ _ _   _(_)___| |_(_) ___ 
+ | |\/| |/ _ \ / _` | | | | |/ _ (_) |   | | '_ \ / _` | | | | / __| __| |/ __|
+ | |  | | (_) | (_| | |_| | |  __/_| |___| | | | | (_| | |_| | \__ \ |_| | (__ 
+ |_|  |_|\___/ \__,_|\__,_|_|\___(_)_____|_|_| |_|\__, |\__,_|_|___/\__|_|\___|
+                                                  |___/                        
+Simple internationalization functions that can be called by other modules.
+This Module was copied from Wikimedia Commons, so please request changes there.
+
+Maintainers:
+* Zolo - original version
+* Jarekt
+
+Dependencies:
+* Module:I18n/or
+* Module:Delink
+* Module:Yesno
+]]
+
+-- ==================================================
+-- === Internal functions ===========================
+-- ==================================================
+
+local function langSwitch(list,lang)
+	local langList = mw.language.getFallbacksFor(lang)
+	table.insert(langList,1,lang)
+	for i,language in ipairs(langList) do
+		if list[language] then
+			return list[language]
+		end
+	end
+	return nil
+end
+
+-- ==================================================
+-- === External functions ===========================
+-- ==================================================
+local p = {}
+
+function p.vowelfirst (str)
+	if str then 
+		local vowels = 'aeiouyąăẵằẳặȃắâẫấầẩậãäǟāáàȁǎảẚåǻḁạǡæǣǽĕȇêễếềểệḙẽḛëēḕéḗèȅěẻẹęȩḝǝĭȋîĩḭïḯīíìȉǐỉịįıŏȏôỗốồổộõṏṍöōṑóṓòȍǒỏọǫǭơỡớờởợøǿŭȗûṷũṻṹṵüǖǘǜǚṳūúùȕǔủůụųưữứừửựŷỹÿȳýỳỷẙỵ'
+		str = mw.ustring.lower(mw.ustring.sub(str,1,1))
+		return mw.ustring.find(vowels, str, 1, true ) 
+	end
+end
+
+function p.inparentheses(str, lang)
+	--todo: define language with exotic parentheses
+	if (not str) or (str == "") then
+		return str
+	else
+		return ' (' .. str .. ')'
+		-- needs internationalization.
+		-- Needs leading space in English because as some languages do not use it, it is part of the formatting
+	end
+end
+
+function p.of(word, lang, raw, gender, number, determiner) -- rough translation of "of" in various languages
+-- note that the cases when on "of" is employed varies a lot among languages, so it is more prudent to call this from lang specific function only
+	if not raw or mw.text.trim(raw) == "" then 
+		local args = {}
+		local Delink = require('Module:Delink')._delink
+		args[1] = word
+		raw = mw.ustring.lower(Delink(args))
+	end
+
+	-- raw is the string without the Wikiformatting so that it correctly analyses the string that is [[:fr:Italie|Italie]] -&gt; 'italie'
+	-- any way to automate this ?
+	
+	if lang == 'fr' then 
+		local yesno = require('Module:Yesno')
+		determiner = yesno(determiner,false)
+
+		if determiner then
+			if string.sub(number or '',1,1)=='p' then -- number == 'plural'
+				return 'des&amp;#32;' .. word
+			elseif p.vowelfirst(raw) then
+				return 'de l’' .. word
+			elseif string.sub(gender or '',1,1)=='f' then -- gender == 'feminine'
+				return 'de la&amp;#32;' .. word
+			else
+				return 'du&amp;#32;' .. word
+			end
+		else
+			if p.vowelfirst(raw) then
+				return 'd’' .. word
+			else
+				return 'de&amp;#32;' .. word
+			end
+		end
+	elseif lang == 'ca' then
+		-- implement [[Template:Of/ca]] or  https://ca.wikipedia.org/wiki/Plantilla:Deod%27/base for case where "{{{context}}}" is "en" (default on Commons)
+		if ( p.vowelfirst(raw) and not mw.ustring.find( 'ia|ià|ie|io|iu|ua|ue|ui|uí|uï|uo|ya|ye|yi|yo|yu|', mw.ustring.sub(raw,1,2) .. '|')) then
+			return 'd\'' .. word
+		else
+			return 'de ' .. word
+		end
+	end	
+
+end
+
+function p.offromwiki(frame)
+	args = frame.args
+	return p.of(args.word, args.lang, args.raw, args.gender, args.number, args.determiner)
+end
+
+function p.noungroup(noun, adj, lang)
+	if not noun or noun == '' then 
+		return nil -- not '' so that it is not counted as a string by mw.listToText
+	end
+	if not adj or adj == ''
+		then return noun
+	end
+	
+	local wordsep = mw.message.new( "Word-separator" ):inLanguage(lang):plain()
+	local LUT = { de=1, en=1, pl=1, zh=1, fr=2, es=2, it=2}
+	local case = langSwitch(LUT, lang)
+	if case==1 then     -- adjective before the noun
+		return adj .. wordsep .. noun
+	elseif case==2 then -- adjective after the noun
+		return noun .. wordsep .. adj
+	else                -- order unknown
+		return noun ' (' .. adj .. ')'
+	end
+end
+
+function p.conj(args, lang, conjtype)
+	local comma    = mw.message.new( "comma-separator"):inLanguage(lang):plain()
+	local wordsep  = mw.message.new( "Word-separator" ):inLanguage(lang):plain()
+	local andtable = { ar=' و', he=' ו', ja='および', pl=' i '} -- languages with a problem with the MediaWiki:And
+	if conjtype == 'comma' then
+		return mw.text.listToText(args, comma, comma)
+	elseif conjtype == 'or' then 
+		local wordor = 	langSwitch(require('Module:I18n/or'), lang)
+		return mw.text.listToText(args, comma, wordor  .. wordsep)
+	elseif conjtype == 'explicit or' then -- adds "or" betwen all words when the context can be confusing
+		local wordor = 	langSwitch(require('Module:I18n/or'), lang)
+		return mw.text.listToText(args, wordor .. wordsep, wordor  .. wordsep)
+	elseif conjtype and conjtype ~= 'and' and conjtype ~= '' then
+		return mw.text.listToText(args, conjtype, conjtype)
+	elseif andtable[lang] then 
+		return mw.text.listToText(args, comma, andtable[lang])
+	else
+		local wordand = mw.message.new( "and" ):inLanguage(lang):plain()
+		return mw.text.listToText(args, comma, wordand .. wordsep)
+	end
+end
+
+function p.conjfromWiki(frame)
+	args = frame.args
+	if not args or not args[1] then
+		args = frame:getParent().args
+	end
+	local lang = args.lang
+	if not lang or mw.text.trim(lang) == '' then
+		lang = frame:callParserFunction( "int", "lang" )
+	end
+	newargs = {}  -- transform args metatable into a table so it can be concetenated
+	for i, j in pairs(args) do
+			if type(i) == 'number' then
+				j = mw.text.trim(j)
+				if j ~= '' then
+					table.insert(newargs, j)
+				end
+			else 
+				if i ~= 'type' and i ~= 'lang' then 
+					return 'error: bad parameter in template:Conj: ' .. i .. '[[Category:Pages with incorrect template usage/Conj|A]]'
+				end
+			end
+	end
+	return p.conj(newargs, lang, args.type)
+end
+
+return p</text>
+      <sha1>62v8sdhzbbazirrzgw1rjqswgsf1eoc</sha1>
+    </revision>
+  </page>
+</mediawiki>

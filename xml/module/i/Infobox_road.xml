@@ -1,0 +1,981 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Infobox road</title>
+    <ns>828</ns>
+    <id>17329</id>
+    <revision>
+      <id>1165240</id>
+      <timestamp>2025-04-25T22:09:26Z</timestamp>
+      <contributor>
+        <username>BrandonXLF</username>
+        <id>163</id>
+      </contributor>
+      <comment>Use [[Module:Road data/browsetable]] to generate the browse table</comment>
+      <origin>1165240</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="11648" sha1="qctvnh8s1hy7kw9a0ufnt7bokwmhryq" xml:space="preserve">local p = {}
+local getArgs = require('Module:Arguments').getArgs
+local util = require("Module:Road data/util")
+local yesno = require('Module:Yesno')
+local langModule = require('Module:Lang')
+local routeModule = require("Module:Infobox road/route")
+local parserModule = require("Module:Road data/parser")
+local parser = parserModule.parser
+local format = mw.ustring.format
+local frame = mw.getCurrentFrame()
+
+local function country(args)
+	local state = args.state or args.province
+	local country
+	local countryModule = mw.loadData("Module:Road data/countrymask")
+	local country = args.country or countryModule[state]
+	
+	return country
+end
+
+-- HEADER COLORS
+
+function p.headerStyle(frame)
+	local args = getArgs(frame)
+	local header 
+		if args.header_type == nil then
+			header = args.header_type
+		else
+			header = string.lower(args.header_type)
+		end
+		
+	local deleted = args.decommissioned or args.deleted or header == "former"
+	local uc = header == "under construction" or header == "const" or header == "uc"
+	local minor = header == "minor"
+	local hist = header == "hist" or header == "historic" or header == "historical" or header == "scenic"
+	local color = parser(args, 'color') or args['header_color']
+	local freeway = header == "freeway"
+	
+	if freeway then
+		return "header-MUTCDblue"
+	elseif uc then
+		return "header-uc"
+	elseif minor then
+		return "header-minor"
+	elseif deleted and header == 'hist' or deleted and color == 'hist' then
+		return "header-deleted-hist"
+	elseif deleted then
+		return "header-deleted"
+	elseif hist then
+		return "header-hist"
+	elseif color then
+		return "header-" .. color
+	elseif args.state or args.province or args.country then
+		local country = country(args)
+		return "header-" .. country or "header-default"
+	else
+		return "header-default"
+	end
+end
+
+-- SECOND IMAGE
+
+local function photo(args)
+	local country = country(args)
+	local photo = args.photo or args.image
+	local width = args.photo_wide or args.image_width or "290px"
+	local alt = args.photo_alt or args.image_alt or photo
+	
+	if photo == nil then
+		return nil
+	elseif country == "USA" then
+		return nil
+		else return string.format('[[File:%s|%s|alt=%s]]', photo, width, alt)
+	end
+end
+
+function p.photo(frame)
+	local args = getArgs(frame)
+	return photo(args)
+end
+
+-- TRANSLATION
+
+local function translate(args, lang)
+	local lang = parser(args, 'lang') or args.lang or 'none'
+	local translation = args.translation or parser(args, 'translation') or ''
+	
+	if country(args) == "PAK" and translation ~= '' then
+		local route = args.route
+		
+		if route ~= nil then
+			local arabicModule = require( "Module:Convert to eastern arabic numerals" )
+			local arabic = arabicModule._convert({route})
+			local translated = string.gsub( translation, route, arabic)
+		
+			return frame:expandTemplate{title = 'Nastaliq', args = {translated}}
+		else
+			return frame:expandTemplate{title = 'Nastaliq', args = {translation}}
+		end
+	elseif translation ~= '' and lang == 'none' then
+		return translation
+	elseif country(args) == "CHN" and args.type == "Expwy" then
+		local trans = require( "Module:Road data/masks/CHN/Expwy translations" )
+		local route = args.route
+		
+		return langModule._lang({lang, trans[route]})
+	elseif country(args) == "HUN" then
+		local nominal = require( "Module:Road data/masks/HUN" )
+		local routeNum
+		local leading
+		
+			if string.len(args.route) &gt; 2 then
+				routeNum = string.match(args.route, "%d%d$", 0)
+				leading = string.match(args.route, "(%d*)%d%d$", 0)
+			else
+				routeNum = args.route
+				leading = ''
+			end
+		
+		if args.type == "M" then
+			return langModule._lang({"hu", "M" .. leading .. nominal[routeNum] .. " autópálya"})
+		elseif args.type == "Mb" then
+			return langModule._lang({"hu", "M" .. leading .. nominal[routeNum] .. " autóút"})
+		elseif args.type == "MR" then
+			return langModule._lang({"hu", leading .. nominal[routeNum] .. " főút"})
+		elseif args.type == "Mb" then
+			return langModule._lang({"hu", leading .. nominal[routeNum] .. " közút"})
+		end
+	elseif lang == "ar" and translation ~= '' then
+		local route = args.route
+		local arabicModule = require( "Module:Convert to eastern arabic numerals" )
+		local arabic = arabicModule._convert({route})
+		local translated = string.gsub( translation, route, arabic)
+		
+		return langModule._lang({lang, translated})
+	elseif translation ~= '' and lang ~= 'none' then
+		return langModule._lang({lang, translation})
+	else
+		return nil
+	end
+end
+
+function p.translate(frame)
+	local pframe = frame:getParent()
+    local config = frame.args -- the arguments passed BY the template, in the wikitext of the template itself
+    local args = pframe.args -- the arguments passed TO the template, in the wikitext that transcludes the template
+    
+    local lang = config.lang
+	return translate(args, lang)
+end
+
+-- MAINTAINED BY
+
+local function maint(args)
+	local maint = args.maint or parser(args, 'maint') or ''
+	if maint == "none" or maint == '' then
+		return nil
+	else
+		return "Maintained by " .. maint
+	end
+end
+
+function p.maint(frame)
+	local args = getArgs(frame)
+	return maint(args)
+end
+
+-- DEFINED BY LAW
+
+local function law(args)
+	local law = parser(args, 'law') or ''
+	if args.section == '' then
+		return nil
+	else
+		return "Defined by " .. law
+	end
+end
+
+function p.law(frame)
+	local args = getArgs(frame)
+	return law(args)
+end
+
+-- EXISTED
+
+function p._existed(args)
+	local formed = args.established or args.formed or ''
+	local deleted = args.decommissioned or args.deleted or ''
+	
+	if formed == '' then
+		return nil
+	elseif deleted == '' then
+		return formed .. "–present"
+	else
+		return formed .. "–" .. deleted
+	end
+end
+
+function p.existed(frame)
+	local args = getArgs(frame)
+	return p._existed(args)
+end
+
+-- TIME PERIOD
+
+local function period(args)
+	
+	local infobox_args = {}
+	
+	infobox_args['bodystyle'] = 'display:inline-table;'
+	infobox_args['child'] = 'yes'
+	infobox_args['decat'] = 'yes'
+	infobox_args['label1'] = "Time period"
+	infobox_args['data1'] = args.time_period
+	
+	if args.time_period then
+		infobox_args['label2'] = "Cultural significance"
+		infobox_args['data2'] = args.significance
+		infobox_args['label3'] = "Known for"
+		infobox_args['data3'] = args.known_for
+		infobox_args['label4'] = "Related routes"
+		infobox_args['data4'] = args.related
+	else
+		infobox_args['label3'] = "Known for"
+		infobox_args['data3'] = args.known_for
+	end
+
+	return frame:expandTemplate ({title='Infobox', args = infobox_args})
+end
+
+local function period_params(args)
+
+	if args.time_period or args.known_for then
+		return true
+	else
+		return false
+	end
+end
+
+function p.period(frame)
+	local args = getArgs(frame)
+	
+	if period_params(args) == false then
+			return nil
+		else
+			return period(args)
+		end
+	end
+
+-- ALLOCATION
+
+local function allocation(args)
+	local country = country(args)
+	
+	if country == "AUS" then
+		return "[[Route number#Australia|Allocation]]"
+		else return "Component&lt;br&gt;highways"
+	end
+end
+
+function p.allocation(frame)
+	local args = getArgs(frame)
+	return allocation(args)
+end
+
+-- SPUR OF
+
+local function spurOf(args)
+	local state = args.state or args.province
+	local country = args.country
+	local county = args.county
+	local parentType = args.spur_type
+	local parentRoute = args.spur_of
+	local aux = parser(args, 'aux') or "Auxiliary route" or nil
+	local jct = frame:expandTemplate{
+			title = 'jct', args = {
+				state = state,
+				country = country,
+				county1 = county,
+				parentType,
+				parentRoute,
+				noshield1 = "yes"
+			}
+		}
+
+	if not parentType and not parentRoute then
+		return nil
+	elseif type(aux) == "table" then
+		return "Auxiliary route of " .. jct
+		else return tostring(aux) .. " of " .. jct
+	end
+end
+
+function p.spurOf(frame)
+	local args = getArgs(frame)
+	return spurOf(args)
+end
+
+-- PART OF
+
+local function partOf(args)
+	
+	if args["e-road"] or args.ahn or args.tahn or args.mrn then
+
+		local infobox_args = {}
+		
+		infobox_args['bodystyle'] = 'display:inline-table;'
+		infobox_args['child'] = 'yes'
+		infobox_args['decat'] = 'yes'
+
+		if args["e-road"] then
+			local eshield = args["e-road-shield"] or ''
+			infobox_args['data1'] = eshield .. " Part of " .. args["e-road"]
+		end
+		if args.ahn then
+			local ashield = args["ahn-shield"] or ''
+			infobox_args['data2'] = ashield .. " Part of " .. args.ahn
+		end
+		if args.tahn then
+			local tshield = args["tahn-shield"] or ''
+			infobox_args['data3'] = tshield .. " Part of " .. args.tahn
+		end
+		if args.mrn then
+			local mshield = args["mrn-shield"] or ''
+			infobox_args['data4'] = mshield .. " Part of " .. args.mrn
+		end
+		
+		return frame:expandTemplate ({title='Infobox', args = infobox_args})
+		
+	else return nil
+	end	
+end
+
+function p.partOf(frame)
+	local args = getArgs(frame)
+	return partOf(args)
+end
+
+--BROWSE LINKS
+
+local function browse(args)
+	if args.nobrowse then return nil end
+	
+	local previousRoute = args.previous_route
+	local nextRoute = args.next_route
+	if previousRoute or nextRoute then
+		local boxModule = require "Module:Road data/browse"
+		local primary = boxModule._browse(args)
+		local tblModule = require "Module:Road data/browsetable"
+		return tblModule._browsetable(primary)
+	end
+end
+
+function p.browse(frame)
+	local args = getArgs(frame)
+	return browse(args)
+end
+
+local function extended(args)
+	local extended = args.browse
+	if args.nobrowse or extended == nil then
+		return nil 
+	else
+		local tblModule = require "Module:Road data/browsetable"
+		-- Negative margin to counteract infobox border-spacing
+		return tblModule._browsetable(extended, 'margin-top:-3px')
+	end
+end
+
+function p.extended(frame)
+	local args = getArgs(frame)
+	return extended(args)
+end
+
+-- HIGHWAY SYSTEM LINKS
+
+local function system(args)
+	if args.system1 then
+		
+	local infobox_args = {
+		['child'] = "yes",
+		['decat'] = "yes",
+		['bodystyle'] = "border-collapse:collapse;"
+	}
+		
+		
+	local i = 1
+	while (1) do
+		local systemClassn = "class" .. i
+		local systemDatan = "data" .. i
+		local systemArgn = args['system' .. i]
+		
+		infobox_args[systemClassn] = "hlist"
+		infobox_args[systemDatan] = systemArgn
+		
+			if i == 10 then
+				break
+			else
+				i = i + 1
+			end
+		end
+	
+	return frame:expandTemplate ({title='Infobox', args = infobox_args})
+	end
+end
+
+function p.system(frame)
+	local args = getArgs(frame)
+	return system(args)
+end
+
+-- ROUTE INFORMATION HEADER
+
+local function info(args)
+	local maint = maint(args)
+	local law = law(args)
+	local period = period_params(args)
+	local existed = args.established or args.formed or nil
+	local spur = args.spur_type or args.spur_of or nil
+	local part = partOf(args)
+	
+	if period == true or spur ~= nil or part ~= nil or existed ~= nil or maint ~= nil or args.section or args.length_mi or args.length_km or args.allocation or args.history or args.restrictions or args.tourist or args.status or args.margary then
+		return "Route information"
+	else
+		return nil
+	end
+end
+
+function p.info(frame)
+	local args = getArgs(frame)
+	return info(args)
+end
+
+-- HIGHWAY SYSTEM HEADER
+
+local function highwaySystem(args)
+	if args.nobrowse then return nil end
+	local country = country(args) or args.countries
+	
+	if country == nil then
+		return nil
+	elseif country == "GBR" or country == "ENG" or country == "NIR" or country == "SCT" or country == "WLS" or
+		country == "GGY" or country == "IMN" or country == "JEY" or country == "AIA" or country == "BMU" or
+		country == "IOT" or country == "VGB" or country == "CYM" or country == "FLK" or country == "GIB" or
+		country == "MSR" or country == "PCN" or country == "SHN" or country == "SGS" or country == "TCA" then
+		return "Road network"
+		else return "Highway system"
+	end
+end
+
+function p.highwaySystem(frame)
+	local args = getArgs(frame)
+	return highwaySystem(args)
+end
+
+return p</text>
+      <sha1>qctvnh8s1hy7kw9a0ufnt7bokwmhryq</sha1>
+    </revision>
+    <revision>
+      <id>17330</id>
+      <timestamp>2025-04-25T22:09:27Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: fixing this template</comment>
+      <origin>17330</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="11648" sha1="qctvnh8s1hy7kw9a0ufnt7bokwmhryq" xml:space="preserve">local p = {}
+local getArgs = require('Module:Arguments').getArgs
+local util = require("Module:Road data/util")
+local yesno = require('Module:Yesno')
+local langModule = require('Module:Lang')
+local routeModule = require("Module:Infobox road/route")
+local parserModule = require("Module:Road data/parser")
+local parser = parserModule.parser
+local format = mw.ustring.format
+local frame = mw.getCurrentFrame()
+
+local function country(args)
+	local state = args.state or args.province
+	local country
+	local countryModule = mw.loadData("Module:Road data/countrymask")
+	local country = args.country or countryModule[state]
+	
+	return country
+end
+
+-- HEADER COLORS
+
+function p.headerStyle(frame)
+	local args = getArgs(frame)
+	local header 
+		if args.header_type == nil then
+			header = args.header_type
+		else
+			header = string.lower(args.header_type)
+		end
+		
+	local deleted = args.decommissioned or args.deleted or header == "former"
+	local uc = header == "under construction" or header == "const" or header == "uc"
+	local minor = header == "minor"
+	local hist = header == "hist" or header == "historic" or header == "historical" or header == "scenic"
+	local color = parser(args, 'color') or args['header_color']
+	local freeway = header == "freeway"
+	
+	if freeway then
+		return "header-MUTCDblue"
+	elseif uc then
+		return "header-uc"
+	elseif minor then
+		return "header-minor"
+	elseif deleted and header == 'hist' or deleted and color == 'hist' then
+		return "header-deleted-hist"
+	elseif deleted then
+		return "header-deleted"
+	elseif hist then
+		return "header-hist"
+	elseif color then
+		return "header-" .. color
+	elseif args.state or args.province or args.country then
+		local country = country(args)
+		return "header-" .. country or "header-default"
+	else
+		return "header-default"
+	end
+end
+
+-- SECOND IMAGE
+
+local function photo(args)
+	local country = country(args)
+	local photo = args.photo or args.image
+	local width = args.photo_wide or args.image_width or "290px"
+	local alt = args.photo_alt or args.image_alt or photo
+	
+	if photo == nil then
+		return nil
+	elseif country == "USA" then
+		return nil
+		else return string.format('[[File:%s|%s|alt=%s]]', photo, width, alt)
+	end
+end
+
+function p.photo(frame)
+	local args = getArgs(frame)
+	return photo(args)
+end
+
+-- TRANSLATION
+
+local function translate(args, lang)
+	local lang = parser(args, 'lang') or args.lang or 'none'
+	local translation = args.translation or parser(args, 'translation') or ''
+	
+	if country(args) == "PAK" and translation ~= '' then
+		local route = args.route
+		
+		if route ~= nil then
+			local arabicModule = require( "Module:Convert to eastern arabic numerals" )
+			local arabic = arabicModule._convert({route})
+			local translated = string.gsub( translation, route, arabic)
+		
+			return frame:expandTemplate{title = 'Nastaliq', args = {translated}}
+		else
+			return frame:expandTemplate{title = 'Nastaliq', args = {translation}}
+		end
+	elseif translation ~= '' and lang == 'none' then
+		return translation
+	elseif country(args) == "CHN" and args.type == "Expwy" then
+		local trans = require( "Module:Road data/masks/CHN/Expwy translations" )
+		local route = args.route
+		
+		return langModule._lang({lang, trans[route]})
+	elseif country(args) == "HUN" then
+		local nominal = require( "Module:Road data/masks/HUN" )
+		local routeNum
+		local leading
+		
+			if string.len(args.route) &gt; 2 then
+				routeNum = string.match(args.route, "%d%d$", 0)
+				leading = string.match(args.route, "(%d*)%d%d$", 0)
+			else
+				routeNum = args.route
+				leading = ''
+			end
+		
+		if args.type == "M" then
+			return langModule._lang({"hu", "M" .. leading .. nominal[routeNum] .. " autópálya"})
+		elseif args.type == "Mb" then
+			return langModule._lang({"hu", "M" .. leading .. nominal[routeNum] .. " autóút"})
+		elseif args.type == "MR" then
+			return langModule._lang({"hu", leading .. nominal[routeNum] .. " főút"})
+		elseif args.type == "Mb" then
+			return langModule._lang({"hu", leading .. nominal[routeNum] .. " közút"})
+		end
+	elseif lang == "ar" and translation ~= '' then
+		local route = args.route
+		local arabicModule = require( "Module:Convert to eastern arabic numerals" )
+		local arabic = arabicModule._convert({route})
+		local translated = string.gsub( translation, route, arabic)
+		
+		return langModule._lang({lang, translated})
+	elseif translation ~= '' and lang ~= 'none' then
+		return langModule._lang({lang, translation})
+	else
+		return nil
+	end
+end
+
+function p.translate(frame)
+	local pframe = frame:getParent()
+    local config = frame.args -- the arguments passed BY the template, in the wikitext of the template itself
+    local args = pframe.args -- the arguments passed TO the template, in the wikitext that transcludes the template
+    
+    local lang = config.lang
+	return translate(args, lang)
+end
+
+-- MAINTAINED BY
+
+local function maint(args)
+	local maint = args.maint or parser(args, 'maint') or ''
+	if maint == "none" or maint == '' then
+		return nil
+	else
+		return "Maintained by " .. maint
+	end
+end
+
+function p.maint(frame)
+	local args = getArgs(frame)
+	return maint(args)
+end
+
+-- DEFINED BY LAW
+
+local function law(args)
+	local law = parser(args, 'law') or ''
+	if args.section == '' then
+		return nil
+	else
+		return "Defined by " .. law
+	end
+end
+
+function p.law(frame)
+	local args = getArgs(frame)
+	return law(args)
+end
+
+-- EXISTED
+
+function p._existed(args)
+	local formed = args.established or args.formed or ''
+	local deleted = args.decommissioned or args.deleted or ''
+	
+	if formed == '' then
+		return nil
+	elseif deleted == '' then
+		return formed .. "–present"
+	else
+		return formed .. "–" .. deleted
+	end
+end
+
+function p.existed(frame)
+	local args = getArgs(frame)
+	return p._existed(args)
+end
+
+-- TIME PERIOD
+
+local function period(args)
+	
+	local infobox_args = {}
+	
+	infobox_args['bodystyle'] = 'display:inline-table;'
+	infobox_args['child'] = 'yes'
+	infobox_args['decat'] = 'yes'
+	infobox_args['label1'] = "Time period"
+	infobox_args['data1'] = args.time_period
+	
+	if args.time_period then
+		infobox_args['label2'] = "Cultural significance"
+		infobox_args['data2'] = args.significance
+		infobox_args['label3'] = "Known for"
+		infobox_args['data3'] = args.known_for
+		infobox_args['label4'] = "Related routes"
+		infobox_args['data4'] = args.related
+	else
+		infobox_args['label3'] = "Known for"
+		infobox_args['data3'] = args.known_for
+	end
+
+	return frame:expandTemplate ({title='Infobox', args = infobox_args})
+end
+
+local function period_params(args)
+
+	if args.time_period or args.known_for then
+		return true
+	else
+		return false
+	end
+end
+
+function p.period(frame)
+	local args = getArgs(frame)
+	
+	if period_params(args) == false then
+			return nil
+		else
+			return period(args)
+		end
+	end
+
+-- ALLOCATION
+
+local function allocation(args)
+	local country = country(args)
+	
+	if country == "AUS" then
+		return "[[Route number#Australia|Allocation]]"
+		else return "Component&lt;br&gt;highways"
+	end
+end
+
+function p.allocation(frame)
+	local args = getArgs(frame)
+	return allocation(args)
+end
+
+-- SPUR OF
+
+local function spurOf(args)
+	local state = args.state or args.province
+	local country = args.country
+	local county = args.county
+	local parentType = args.spur_type
+	local parentRoute = args.spur_of
+	local aux = parser(args, 'aux') or "Auxiliary route" or nil
+	local jct = frame:expandTemplate{
+			title = 'jct', args = {
+				state = state,
+				country = country,
+				county1 = county,
+				parentType,
+				parentRoute,
+				noshield1 = "yes"
+			}
+		}
+
+	if not parentType and not parentRoute then
+		return nil
+	elseif type(aux) == "table" then
+		return "Auxiliary route of " .. jct
+		else return tostring(aux) .. " of " .. jct
+	end
+end
+
+function p.spurOf(frame)
+	local args = getArgs(frame)
+	return spurOf(args)
+end
+
+-- PART OF
+
+local function partOf(args)
+	
+	if args["e-road"] or args.ahn or args.tahn or args.mrn then
+
+		local infobox_args = {}
+		
+		infobox_args['bodystyle'] = 'display:inline-table;'
+		infobox_args['child'] = 'yes'
+		infobox_args['decat'] = 'yes'
+
+		if args["e-road"] then
+			local eshield = args["e-road-shield"] or ''
+			infobox_args['data1'] = eshield .. " Part of " .. args["e-road"]
+		end
+		if args.ahn then
+			local ashield = args["ahn-shield"] or ''
+			infobox_args['data2'] = ashield .. " Part of " .. args.ahn
+		end
+		if args.tahn then
+			local tshield = args["tahn-shield"] or ''
+			infobox_args['data3'] = tshield .. " Part of " .. args.tahn
+		end
+		if args.mrn then
+			local mshield = args["mrn-shield"] or ''
+			infobox_args['data4'] = mshield .. " Part of " .. args.mrn
+		end
+		
+		return frame:expandTemplate ({title='Infobox', args = infobox_args})
+		
+	else return nil
+	end	
+end
+
+function p.partOf(frame)
+	local args = getArgs(frame)
+	return partOf(args)
+end
+
+--BROWSE LINKS
+
+local function browse(args)
+	if args.nobrowse then return nil end
+	
+	local previousRoute = args.previous_route
+	local nextRoute = args.next_route
+	if previousRoute or nextRoute then
+		local boxModule = require "Module:Road data/browse"
+		local primary = boxModule._browse(args)
+		local tblModule = require "Module:Road data/browsetable"
+		return tblModule._browsetable(primary)
+	end
+end
+
+function p.browse(frame)
+	local args = getArgs(frame)
+	return browse(args)
+end
+
+local function extended(args)
+	local extended = args.browse
+	if args.nobrowse or extended == nil then
+		return nil 
+	else
+		local tblModule = require "Module:Road data/browsetable"
+		-- Negative margin to counteract infobox border-spacing
+		return tblModule._browsetable(extended, 'margin-top:-3px')
+	end
+end
+
+function p.extended(frame)
+	local args = getArgs(frame)
+	return extended(args)
+end
+
+-- HIGHWAY SYSTEM LINKS
+
+local function system(args)
+	if args.system1 then
+		
+	local infobox_args = {
+		['child'] = "yes",
+		['decat'] = "yes",
+		['bodystyle'] = "border-collapse:collapse;"
+	}
+		
+		
+	local i = 1
+	while (1) do
+		local systemClassn = "class" .. i
+		local systemDatan = "data" .. i
+		local systemArgn = args['system' .. i]
+		
+		infobox_args[systemClassn] = "hlist"
+		infobox_args[systemDatan] = systemArgn
+		
+			if i == 10 then
+				break
+			else
+				i = i + 1
+			end
+		end
+	
+	return frame:expandTemplate ({title='Infobox', args = infobox_args})
+	end
+end
+
+function p.system(frame)
+	local args = getArgs(frame)
+	return system(args)
+end
+
+-- ROUTE INFORMATION HEADER
+
+local function info(args)
+	local maint = maint(args)
+	local law = law(args)
+	local period = period_params(args)
+	local existed = args.established or args.formed or nil
+	local spur = args.spur_type or args.spur_of or nil
+	local part = partOf(args)
+	
+	if period == true or spur ~= nil or part ~= nil or existed ~= nil or maint ~= nil or args.section or args.length_mi or args.length_km or args.allocation or args.history or args.restrictions or args.tourist or args.status or args.margary then
+		return "Route information"
+	else
+		return nil
+	end
+end
+
+function p.info(frame)
+	local args = getArgs(frame)
+	return info(args)
+end
+
+-- HIGHWAY SYSTEM HEADER
+
+local function highwaySystem(args)
+	if args.nobrowse then return nil end
+	local country = country(args) or args.countries
+	
+	if country == nil then
+		return nil
+	elseif country == "GBR" or country == "ENG" or country == "NIR" or country == "SCT" or country == "WLS" or
+		country == "GGY" or country == "IMN" or country == "JEY" or country == "AIA" or country == "BMU" or
+		country == "IOT" or country == "VGB" or country == "CYM" or country == "FLK" or country == "GIB" or
+		country == "MSR" or country == "PCN" or country == "SHN" or country == "SGS" or country == "TCA" then
+		return "Road network"
+		else return "Highway system"
+	end
+end
+
+function p.highwaySystem(frame)
+	local args = getArgs(frame)
+	return highwaySystem(args)
+end
+
+return p</text>
+      <sha1>qctvnh8s1hy7kw9a0ufnt7bokwmhryq</sha1>
+    </revision>
+  </page>
+</mediawiki>

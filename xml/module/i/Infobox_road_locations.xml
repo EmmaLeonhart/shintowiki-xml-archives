@@ -1,0 +1,2910 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Infobox road/locations</title>
+    <ns>828</ns>
+    <id>17332</id>
+    <revision>
+      <id>1165241</id>
+      <timestamp>2025-04-25T22:09:28Z</timestamp>
+      <contributor>
+        <username>BrandonXLF</username>
+        <id>163</id>
+      </contributor>
+      <comment>Remove unused require</comment>
+      <origin>1165241</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="24855" sha1="bf7y5djm83ccfujslc45hfilb9r1fqn" xml:space="preserve">local p = {}
+
+local format = mw.ustring.format
+local frame = mw.getCurrentFrame()
+local getArgs = require('Module:Arguments').getArgs
+
+local function country(args)
+	local state = args.state or args.province
+	local country
+	local countryModule = mw.loadData("Module:Road data/countrymask")
+	local country = args.country or countryModule[state]
+	
+	return country
+end
+
+local function state(args)
+	local state = args.state or args.province
+	local country = country(args)
+	
+	return frame:expandTemplate ({title='Country name', args = { country .. "-" .. state}})
+end
+
+local function state2(args)
+	local state = args.state2 or args.province2
+	local country = country(args)
+	
+	return frame:expandTemplate ({title='Country name', args = { country .. "-" .. state}})
+end
+
+local function spain(args)
+	local province = args.province or args.community
+	
+	local communities = {
+		["AL"] = "AN",
+		["CA"] = "AN",
+		["CO"] = "AN",
+		["GR"] = "AN",
+		["H"] = "AN",
+		["J"] = "AN",
+		["MA"] = "AN",
+		["SE"] = "AN",
+		["HU"] = "AR",
+		["TE"] = "AR",
+		["Z"] = "AR",
+		["O"] = "AS",
+		["S"] = "CB",
+		["AV"] = "CL",
+		["BU"] = "CL",
+		["LE"] = "CL",
+		["P"] = "CL",
+		["SA"] = "CL",
+		["SG"] = "CL",
+		["SO"] = "CL",
+		["VA"] = "CL",
+		["ZA"] = "CL",
+		["AB"] = "CM",
+		["CR"] = "CM",
+		["CU"] = "CM",
+		["GU"] = "CM",
+		["TO"] = "CM",
+		["GC"] = "CN",
+		["TF"] = "CN",
+		["B"] = "CT",
+		["GI"] = "CT",
+		["L"] = "CT",
+		["T"] = "CT",
+		["BA"] = "EX",
+		["CC"] = "EX",
+		["C"] = "GA",
+		["LU"] = "GA",
+		["OR"] = "GA",
+		["PO"] = "GA",
+		["PM"] = "IB",
+		["MU"] = "MC",
+		["M"] = "MD",
+		["NA"] = "NC",
+		["VI"] = "PV",
+		["BI"] = "PV",
+		["SS"] = "PV",
+		["LO"] = "RI",
+		["A"] = "VC",
+		["CS"] = "VC",
+		["V"] = "VC",
+	}
+	
+	local comm = communities[province]
+    local data = frame:expandTemplate ({title='Flagg', args = { "xx", frame:expandTemplate ({title='Country name', args = { "ESP-" .. comm}}) } })
+    return data
+    
+    end
+
+local function constituent(args)
+	local loc = country(args)
+	
+	if loc == "GBR" then
+		return nil
+	else
+	    local labels = {
+	    	["ENG"] = "Constituent country",
+	    	["NIR"] = "Constituent country",
+	    	["SCT"] = "Constituent country",
+	    	["WLS"] = "Constituent country",
+	    	["NLD"] = "Constituent country",
+	    	["ABW"] = "Constituent country",
+	    	["CUW"] = "Constituent country",
+	    	["SXM"] = "Constituent country",
+	    	["GGY"] = "Crown dependency",
+	    	["IMN"] = "Crown dependency",
+	    	["JEY"] = "Crown dependency",
+	    	["AIA"] = "Overseas territory",
+	    	["BMU"] = "Overseas territory",
+	    	["IOT"] = "Overseas territory",
+	    	["VGB"] = "Overseas territory",
+	    	["CYM"] = "Overseas territory",
+	    	["FLK"] = "Overseas territory",
+	    	["GIB"] = "Overseas territory",
+	    	["MSR"] = "Overseas territory",
+	    	["PCN"] = "Overseas territory",
+	    	["SHN"] = "Overseas territory",
+	    	["SGS"] = "Overseas territory",
+	    	["TCA"] = "Overseas territory",
+	    }
+	    local label = labels[loc]
+	    local countryname = frame:expandTemplate ({title='Country name', args = { country(args)}})
+	    local data = frame:expandTemplate ({title='Flagg', args = { "xx", countryname, nodata = 1 }})
+	    return label, data
+	end
+end
+
+local function location(args)
+	
+	local infobox_args = {}
+	
+	infobox_args['title'] = 'Location'
+	infobox_args['bodystyle'] = 'display:inline-table;'
+	infobox_args['child'] = 'yes'
+	infobox_args['decat'] = 'yes'
+
+	------------- EUROPE &amp; ASIA --------------
+	if country(args) == "EUR" or country(args) == "ASIA" then
+		infobox_args['label1'] = 'Countries'
+		infobox_args['data1'] = args.countries
+		
+	------------- ÅLAND --------------	
+	elseif country(args) == "ALA" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Finland]]"
+		infobox_args['label2'] = 'Autonomous region'
+		infobox_args['data2'] = "[[Åland]]"
+
+	------------- AUSTRALIA --------------
+	elseif country(args) == "AUS" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Australia]]"
+	
+	local function lga(args)
+		local labels = {
+			SA = "[[Local government areas of South Australia|LGA(s)]]",
+			VIC = "[[Local government in Victoria|LGA(s)]]",
+			NSW = "[[Local government areas of New South Wales|LGA(s)]]",
+			QLD = "[[Local government areas of Queensland|LGA(s)]]",
+			NT = "[[Local government areas of the Northern Territory|LGA(s)]]",
+			WA = "[[Local government areas of Western Australia|LGA(s)]]",
+			TAS = "[[Local government areas of Tasmania|LGA(s)]]", 
+			ACT = "District(s)"
+		}
+	    local state = args.state or ''
+	    local label = labels[state] or "[[Local government in Australia|LGA(s)]]"
+	    return label, args.lga
+	end
+	
+	local function locations(args)
+	    local labels = {
+	    	highway = "Major settlements",
+	    	["rural road"] = "Major settlements",
+	    	freeway = "Major suburbs",
+	    	["city highway"] = "Major suburbs",
+	    	road = "Major suburbs",
+	    	street = "Suburb"
+	    }
+	    local type = args.type or ''
+	    local label = labels[type] or "Primary&lt;br&gt;destinations"
+	    return label, args.locations
+	end
+			
+		if args.state then
+			if args.state == "NT" or args.state == "ACT" or args.state == "JBT" then
+				infobox_args['label2'] = 'Territory'
+			else
+				infobox_args['label2'] = 'State'
+			end
+				infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+		else
+			infobox_args['label2'] = 'States'
+			infobox_args['data2'] = args.states
+		end
+		
+		infobox_args['label3'], infobox_args['data3'] = lga(args)
+		infobox_args['label4'], infobox_args['data4'] = locations(args)
+			
+	------------- BRAZIL --------------
+	elseif country(args) == "BRA" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Brazil]]"
+		
+		if args.state then
+			if args.state == "DF" then
+				infobox_args['label2'] = 'Federal district'
+			else
+				infobox_args['label2'] = 'State'
+			end
+				infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+		else
+			infobox_args['label2'] = 'States'
+			infobox_args['data2'] = args.states
+		end
+		
+	------------- CANADA --------------	
+	elseif country(args) == "CAN" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Canada]]"
+		
+		if args.province then
+			if args.province == "YK" or args.province == "NT" or args.province == "NU" then
+				infobox_args['label2'] = 'Territory'
+			else
+				infobox_args['label2'] = 'Province'
+			end
+				infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+		else
+			infobox_args['label2'] = 'Provinces'
+			infobox_args['data2'] = args.provinces
+		end
+		
+			if args.province == 'AB' then
+				infobox_args['label3'] = "Specialized and rural municipalities"
+				infobox_args['data3'] = args.rural_municipalities
+				infobox_args['label4'] = "Special areas"
+				infobox_args['data4'] = args.areas
+				infobox_args['label5'] = "Improvement districts"
+				infobox_args['data5'] = args.districts
+			elseif args.province == 'BC' then
+				infobox_args['label3'] = "Regional districts"
+				infobox_args['data3'] = args.districts or args.rural_municipalities
+			elseif args.province == 'MB' or args.province == 'SK' then
+				infobox_args['label3'] = "Rural municipalities"
+				infobox_args['data3'] = args.rural_municipalities
+			elseif args.province == 'NB' or args.province == 'PE' then
+				infobox_args['label3'] = "Counties"
+				infobox_args['data3'] = args.counties
+				infobox_args['label4'] = "Parishes"
+				infobox_args['data4'] = args.parishes
+				infobox_args['label5'] = "Communities"
+				infobox_args['data5'] = args.communities
+			elseif args.province == 'NS' then
+				infobox_args['label3'] = "Counties"
+				infobox_args['data3'] = args.counties
+			elseif args.province == 'ON' then
+				infobox_args['label3'] = "Municipalities"
+				infobox_args['data3'] = args.rural_municipalities
+				infobox_args['label4'] = "Counties"
+				infobox_args['data4'] = args.counties
+				infobox_args['label5'] = "Regions"
+				infobox_args['data5'] = args.regions
+				infobox_args['label6'] = "Districts"
+				infobox_args['data6'] = args.districts
+				infobox_args['label7'] = "Divisions"
+				infobox_args['data7'] = args.divisions
+			elseif args.province == 'QC' then
+				infobox_args['label3'] = "Regional county municipalities"
+				infobox_args['data3'] = args.rural_municipalities
+				infobox_args['label4'] = "Equivalent territories"
+				infobox_args['data4'] = args.territories
+			elseif args.province == 'NT' or args.province == 'NU' then
+				infobox_args['label3'] = "Regions"
+				infobox_args['data3'] = args.regions
+			end
+
+	------------- CHINA --------------	
+	elseif country(args) == "CHN" or country(args) == "HKG" or country(args) == "MAC" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[China]]"
+		
+		if country(args) == "HKG" then
+			infobox_args['label2'] = 'Special administrative region'
+			infobox_args['data2'] = "[[Hong Kong]]"
+			infobox_args['label3'] = 'Districts'
+			infobox_args['data3'] = args.districts
+		elseif country(args) == "MAC" then
+			infobox_args['label2'] = 'Special administrative region'
+			infobox_args['data2'] = "[[Macau]]"
+		else
+			if args.province then
+				infobox_args['label2'] = 'Province'
+				infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+				infobox_args['label3'] = 'Counties'
+				infobox_args['data3'] = args.counties
+			else
+				infobox_args['label2'] = 'Provinces'
+				infobox_args['data2'] = args.provinces
+				infobox_args['label3'] = 'Autonomous regions'
+				infobox_args['data3'] = args.regions
+			end
+		end
+		
+	------------- FRANCE --------------
+	elseif country(args) == "FRA" or country(args) == "GUF" or country(args) == "GLP" or country(args) == "MTQ" or country(args) == "MYT" or country(args) == "REU" then
+			
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[France]]"
+		
+		if country(args) == "GUF" then
+			infobox_args['label2'] = 'Overseas region'
+			infobox_args['data2'] = "[[French Guiana]]"
+			infobox_args['label3'] = 'Department'
+			infobox_args['data3'] = "[[Guyane]]"
+		elseif country(args) == "GLP" then
+			infobox_args['label2'] = 'Overseas region and department'
+			infobox_args['data2'] = "[[Guadeloupe]]"
+		elseif country(args) == "MTQ" then
+			infobox_args['label2'] = 'Overseas region and department'
+			infobox_args['data2'] = "[[Martinique]]"
+		elseif country(args) == "MYT" then
+			infobox_args['label2'] = 'Overseas region and department'
+			infobox_args['data2'] = "[[Mayotte]]"
+		elseif country(args) == "REU" then
+			infobox_args['label2'] = 'Overseas region'
+			infobox_args['data2'] = "[[Réunion]]"
+			infobox_args['label3'] = 'Department'
+			infobox_args['data3'] = "[[La Réunion]]"
+		else
+			infobox_args['label2'] = 'Regions'
+			infobox_args['data2'] = args.regions
+			infobox_args['label3'] = 'Departments'
+			infobox_args['data3'] = args.departments
+		end
+	
+	------------ GEORGIA -------------
+	elseif country(args) == "GEO" then
+		infobox_args['data1'] = "[[Georgia (country)|Georgia]]"
+		
+	------------- INDIA --------------
+	elseif country(args) == "IND" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[India]]"
+		infobox_args['label4'] = 'Districts'
+		infobox_args['data4'] = args.districts
+		
+		if args.state then
+			if args.state == "AN" or args.state == 'CH' or args.state == 'DH' or args.state == 'DL' or args.state == 'JK' or args.state == 'LA' or args.state == 'LD' or args.state == 'PY' then
+				infobox_args['label2'] = 'Union territory'
+			else
+				infobox_args['label2'] = 'State'
+			end
+				infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+		else
+			infobox_args['label2'] = 'States'
+			infobox_args['data2'] = args.states
+			infobox_args['label3'] = 'Union territories'
+			infobox_args['data3'] = args.territories
+		end
+		
+			
+	------------- MEXICO --------------
+	elseif country(args) == "MEX" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Mexico]]"
+		
+		if args.state then
+			if args.state == "CMX" then
+				infobox_args['label2'] = 'Autonomous city'
+			else
+				infobox_args['label2'] = 'State'
+			end
+			if args.state == "CHH" then
+				infobox_args['data2'] = '[[Chihuahua (state)|Chihuahua]]'
+			elseif args.state == "HID" then
+				infobox_args['data2'] = '[[Hidalgo (state)|Hidalgo]]'
+			elseif args.state == "MEX" then
+				infobox_args['data2'] = '[[State of Mexico|México]]'
+			else
+				infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+			end
+			infobox_args['label3'] = 'Municipalities'
+			infobox_args['data3'] = args.counties or args.municipalities
+		else
+			infobox_args['label2'] = 'States'
+			infobox_args['data2'] = args.states
+			infobox_args['label3'] = 'Municipalities'
+			infobox_args['data3'] = args.counties or args.municipalities
+		end
+
+	------------- NETHERLANDS --------------
+	elseif country(args) == "NLD" or country(args) == "ABW" or country(args) == "CUW" or country(args) == "SXM"then
+			
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Kingdom of the Netherlands]]"
+		infobox_args['label2'], infobox_args['data2'] = constituent(args)	
+		
+		if country(args) == "NLD" then
+			infobox_args['label3'] = 'Provinces'
+			infobox_args['data3'] = args.provinces
+		end
+		
+	------------- RUSSIA --------------
+	elseif country(args) == "RUS" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Russia]]"
+		infobox_args['label2'] = 'Oblasts'
+		infobox_args['data2'] = args.oblasts
+		infobox_args['label3'] = 'Republics'
+		infobox_args['data3'] = args.republics
+		infobox_args['label4'] = 'Autonomous okrugs'
+		infobox_args['data4'] = args.okrugs
+		infobox_args['label5'] = 'Krais'
+		infobox_args['data5'] = args.krais
+		infobox_args['label6'] = 'Federal cities'
+		infobox_args['data6'] = args.federal_cities
+		
+	------------- SPAIN --------------
+	elseif country(args) == "ESP" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Spain]]"
+		
+		local province = args.province
+		
+		if province and province ~= '' then
+			infobox_args['label2'] = 'Autonomous&lt;br&gt;community'
+			infobox_args['data2'] = spain(args)
+			if province == "O" or province == "S" or province == "PM" or province == "LO" or province == "M" or province == "MU" or province == "NA" then
+				return nil
+			else
+				infobox_args['label3'] = 'Province'
+				infobox_args['data3'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+			end
+		elseif args.community then
+			infobox_args['label2'] = 'Autonomous&lt;br&gt;community'
+			infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , frame:expandTemplate ({title='country name', args = {"ESP-" .. args.community} }) } })
+			infobox_args['label3'] = 'Provinces'
+			infobox_args['data3'] = args.provinces
+		else
+			infobox_args['label2'] = 'Autonomous&lt;br&gt;communities'
+			infobox_args['data2'] = args.communities
+			infobox_args['label3'] = 'Provinces'
+			infobox_args['data3'] = args.provinces
+			
+		end
+		
+			
+
+	------------- UNITED KINGDOM --------------
+	elseif country(args) == "GBR" or country(args) == "ENG" or country(args) == "NIR" or country(args) == "SCT" or country(args) == "WLS" or
+		country(args) == "GGY" or country(args) == "IMN" or country(args) == "JEY" or country(args) == "AIA" or country(args) == "BMU" or
+		country(args) == "IOT" or country(args) == "VGB" or country(args) == "CYM" or country(args) == "FLK" or country(args) == "GIB" or
+		country(args) == "MSR" or country(args) == "PCN" or country(args) == "SHN" or country(args) == "SGS" or country(args) == "TCA" then
+
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[United Kingdom]]"
+		infobox_args['label2'], infobox_args['data2'] = constituent(args)
+		
+		if country(args) ~= "ENG" then
+			infobox_args['label5'] = 'Counties'
+			infobox_args['data5'] = args.counties
+		end
+
+		if country(args) == "ENG" then
+			infobox_args['label3'] = 'Administrative areas'
+			infobox_args['data3'] = args.areas
+			infobox_args['label4'] = 'Counties'
+			infobox_args['data4'] = args.counties
+			infobox_args['label5'] = 'Boroughs'
+			infobox_args['data5'] = args.boroughs
+		elseif country(args) == "NIR" then
+			infobox_args['label3'] = 'Districts'
+			infobox_args['data3'] = args.districts
+		elseif country(args) == "SCT" then
+			infobox_args['label3'] = 'Council areas'
+			infobox_args['data3'] = args.areas
+		elseif country(args) == "WLS" then
+			infobox_args['label3'] = 'Counties'
+			infobox_args['data3'] = args.counties
+			infobox_args['label4'] = 'County boroughs'
+			infobox_args['data4'] = args.boroughs
+		elseif country(args) == "GGY" or country(args) == "JEY" or country(args) == "BMU" or country(args) == "MSR" then
+			infobox_args['label3'] = 'Parishes'
+			infobox_args['data3'] = args.parishes
+		elseif country(args) == "IMN" then
+			infobox_args['label3'] = 'Sheadings'
+			infobox_args['data3'] = args.sheadings
+		elseif country(args) == "AIA" or country(args) == "VGB" or country(args) == "CYM" or country(args) == "TCA" then
+			infobox_args['label3'] = 'Districts'
+			infobox_args['data3'] = args.districts
+		elseif country(args) == "SHN" then
+			infobox_args['label3'] = 'Island'
+			infobox_args['data3'] = args.island
+		end
+
+	------------- UNITED STATES --------------
+	elseif country(args) == "USA" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[United States]]"
+		
+		local function county(args)
+			local state = args.state
+			local stateName = frame:expandTemplate ({title='Country name', args = { "USA-" .. state}})
+			local country = country(args)
+			local countyName = args.county or args.parish or args.borough or args.municipality
+			
+			local county
+			if state == 'LA' then
+				county = 'Parish'
+			elseif state == 'AK' then
+				county = 'Borough'
+			elseif state == 'PR' then
+				county = 'Municipality'
+			else
+				county = 'County'
+			end
+			
+			return string.format("[[%s %s, %s|%s]]", countyName, county, stateName, countyName)
+		end
+
+		if args.state2 then
+			infobox_args['label2'] = 'States'
+			infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args) }}) .. ", " .. frame:expandTemplate ({title='Flagg', args = {"xx" , state2(args) }})
+		elseif args.state then
+			if args.state == "AS" or args.state == "GU" or args.state == "MP" or args.state == "PR" or args.state == "VI" then
+				infobox_args['label2'] = 'Territory'
+			elseif args.state == "DC" then
+				infobox_args['label2'] = 'Federal district'
+			else
+				infobox_args['label2'] = 'State'
+			end
+			if args.state == "GA" then
+				infobox_args['data2'] = '[[Georgia (U.S. state)|Georgia]]'
+			elseif args.state == "WA" then
+				infobox_args['data2'] = '[[Washington (state)|Washington]]'
+			elseif args.state == "NY" then
+				infobox_args['data2'] = '[[New York (state)|New York]]'
+			else
+				infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+			end
+		else
+			infobox_args['label2'] = 'States'
+			infobox_args['data2'] = args.states
+		end
+		
+		if args.county then
+			infobox_args['label3'] = 'County'
+			infobox_args['data3'] = county(args)
+		else
+			infobox_args['label3'] = 'Counties'
+			infobox_args['data3'] = args.counties
+		end
+		
+		if args.parish then
+			infobox_args['label4'] = 'Parish'
+			infobox_args['data4'] = county(args)
+		else
+			infobox_args['label4'] = 'Parishes'
+			infobox_args['data4'] = args.parishes
+		end
+		
+		if args.borough then
+			infobox_args['label5'] = 'Borough'
+			infobox_args['data5'] = county(args)
+		else
+			infobox_args['label5'] = 'Boroughs'
+			infobox_args['data5'] = args.boroughs
+		end
+		
+		if args.municipality then
+			infobox_args['label6'] = 'Municipality'
+			infobox_args['data6'] = county(args)
+		else
+			infobox_args['label6'] = 'Municipalities'
+			infobox_args['data6'] = args.municipalities
+		end
+		
+		if args.indep_city then
+			infobox_args['label6'] = 'Independent city'
+			infobox_args['data6'] = args.indep_city
+		else
+			infobox_args['label7'] = 'Independent cities'
+			infobox_args['data7'] = args.indep_cities
+		end
+		
+	else
+		
+	------------- ALL OTHER COUNTRIES --------------
+	if country(args) ~= nil then
+		local countryname = frame:expandTemplate ({title='Country name', args = { country(args)}})
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = frame:expandTemplate ({title='Flagg', args = { "xx", countryname, nodata = 1 }})
+	else
+		infobox_args['label1'] = 'Countries'
+		infobox_args['data1'] = args.countries
+	end
+	
+	infobox_args['label2'] = 'Island'
+	infobox_args['data2'] = args.island
+	infobox_args['label3'] = 'Communities'
+	infobox_args['data3'] = args.communities
+	infobox_args['label4'] = 'Regions'
+	infobox_args['data4'] = args.regions
+	infobox_args['label5'] = 'Provinces'
+	infobox_args['data5'] = args.provinces
+	infobox_args['label6'] = 'States'
+	infobox_args['data6'] = args.states
+	infobox_args['label7'] = 'Governorates'
+	infobox_args['data7'] = args.governorates
+	infobox_args['label8'] = 'Counties'
+	infobox_args['data8'] = args.counties
+	infobox_args['label9'] = 'Departments'
+	infobox_args['data9'] = args.departments
+	infobox_args['label10'] = 'Cantons'
+	infobox_args['data10'] = args.cantons
+	infobox_args['label11'] = 'Prefectures'
+	infobox_args['data11'] = args.prefectures
+	infobox_args['label12'] = 'Divisions'
+	infobox_args['data12'] = args.divisions
+	infobox_args['label13'] = 'Oblasts'
+	infobox_args['data13'] = args.oblasts
+	infobox_args['label14'] = 'Districts'
+	infobox_args['data14'] = args.districts
+	infobox_args['label15'] = 'Parishes'
+	infobox_args['data15'] = args.parishes
+	infobox_args['label16'] = 'Communes'
+	infobox_args['data16'] = args.communes
+	infobox_args['label17'] = 'Territories'
+	infobox_args['data17'] = args.territories
+	infobox_args['label18'] = args.label1
+	infobox_args['data18'] = args.location1
+	infobox_args['label19'] = args.label2
+	infobox_args['data19'] = args.location2
+	infobox_args['label20'] = args.label3
+	infobox_args['data20'] = args.location3
+	infobox_args['label21'] = args.label4
+	infobox_args['data21'] = args.location4
+	infobox_args['label22'] = args.label5
+	infobox_args['data22'] = args.location5
+	infobox_args['label23'] = 'Subregions'
+	infobox_args['data23'] = args.subregions
+	infobox_args['label24'] = 'Subcounties'
+	infobox_args['data24'] = args.subcounties
+	infobox_args['label25'] = 'Subprefectures'
+	infobox_args['data25'] = args.subprefectures
+	end
+	
+	if country(args) ~= "USA" then
+		infobox_args['label26'] = 'Municipalities'
+		infobox_args['data26'] = args.municipalities
+		infobox_args['label27'] = 'Major cities'
+		infobox_args['data27'] = args.cities
+		infobox_args['label28'] = 'Towns'
+		infobox_args['data28'] = args.towns
+		infobox_args['label29'] = 'Villages'
+		infobox_args['data29'] = args.villages
+		
+		if country(args) == "GBR" or country(args) == "ENG" or country(args) == "NIR" or country(args) == "SCT" or country(args) == "WLS" or
+			country(args) == "GGY" or country(args) == "IMN" or country(args) == "JEY" or country(args) == "AIA" or country(args) == "BMU" or
+			country(args) == "IOT" or country(args) == "VGB" or country(args) == "CYM" or country(args) == "FLK" or country(args) == "GIB" or
+			country(args) == "MSR" or country(args) == "PCN" or country(args) == "SHN" or country(args) == "SGS" or country(args) == "TCA" then
+				
+			infobox_args['label30'] = '[[Primary status|Primary&lt;br&gt;destinations]]'
+			infobox_args['data30'] = args.destinations
+		else
+			infobox_args['label30'] = 'Primary&lt;br&gt;destinations'
+			infobox_args['data30'] = args.destinations
+		end
+	
+	end
+
+	return frame:expandTemplate ({title='Infobox', args = infobox_args})
+	
+end
+
+local function params(args)
+
+	if country(args) or args.areas or args.borough or args.boroughs or args.cantons or args.cities or args.communes or args.communities or args.counties or
+	args.countries or args.county or args.departments or args.destinations or args.districts or args.divisions or args.federal_cities or args.governorates or
+	args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or 
+	args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.municipalities or args.municipality or
+	args.oblasts or args.okrugs or args.parish or args.parishes or args.prefectures or args.provinces or args.regions or args.republics or args.rural_municipalities or
+	args.sheadings or args.states or args.subcounties or args.subprefectures or args.subregions or args.territories or args.towns or args.villages then
+		return true
+	else
+		return false
+	end
+end
+
+
+function p.location(frame)
+	local args = getArgs(frame)
+	
+	if params(args) == false then
+		return nil
+	else
+		return location(args)
+	end
+end
+
+return p</text>
+      <sha1>bf7y5djm83ccfujslc45hfilb9r1fqn</sha1>
+    </revision>
+    <revision>
+      <id>1165242</id>
+      <parentid>1165241</parentid>
+      <timestamp>2025-04-25T22:09:29Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: fixing this template</comment>
+      <origin>1165241</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="24855" sha1="bf7y5djm83ccfujslc45hfilb9r1fqn" xml:space="preserve">local p = {}
+
+local format = mw.ustring.format
+local frame = mw.getCurrentFrame()
+local getArgs = require('Module:Arguments').getArgs
+
+local function country(args)
+	local state = args.state or args.province
+	local country
+	local countryModule = mw.loadData("Module:Road data/countrymask")
+	local country = args.country or countryModule[state]
+	
+	return country
+end
+
+local function state(args)
+	local state = args.state or args.province
+	local country = country(args)
+	
+	return frame:expandTemplate ({title='Country name', args = { country .. "-" .. state}})
+end
+
+local function state2(args)
+	local state = args.state2 or args.province2
+	local country = country(args)
+	
+	return frame:expandTemplate ({title='Country name', args = { country .. "-" .. state}})
+end
+
+local function spain(args)
+	local province = args.province or args.community
+	
+	local communities = {
+		["AL"] = "AN",
+		["CA"] = "AN",
+		["CO"] = "AN",
+		["GR"] = "AN",
+		["H"] = "AN",
+		["J"] = "AN",
+		["MA"] = "AN",
+		["SE"] = "AN",
+		["HU"] = "AR",
+		["TE"] = "AR",
+		["Z"] = "AR",
+		["O"] = "AS",
+		["S"] = "CB",
+		["AV"] = "CL",
+		["BU"] = "CL",
+		["LE"] = "CL",
+		["P"] = "CL",
+		["SA"] = "CL",
+		["SG"] = "CL",
+		["SO"] = "CL",
+		["VA"] = "CL",
+		["ZA"] = "CL",
+		["AB"] = "CM",
+		["CR"] = "CM",
+		["CU"] = "CM",
+		["GU"] = "CM",
+		["TO"] = "CM",
+		["GC"] = "CN",
+		["TF"] = "CN",
+		["B"] = "CT",
+		["GI"] = "CT",
+		["L"] = "CT",
+		["T"] = "CT",
+		["BA"] = "EX",
+		["CC"] = "EX",
+		["C"] = "GA",
+		["LU"] = "GA",
+		["OR"] = "GA",
+		["PO"] = "GA",
+		["PM"] = "IB",
+		["MU"] = "MC",
+		["M"] = "MD",
+		["NA"] = "NC",
+		["VI"] = "PV",
+		["BI"] = "PV",
+		["SS"] = "PV",
+		["LO"] = "RI",
+		["A"] = "VC",
+		["CS"] = "VC",
+		["V"] = "VC",
+	}
+	
+	local comm = communities[province]
+    local data = frame:expandTemplate ({title='Flagg', args = { "xx", frame:expandTemplate ({title='Country name', args = { "ESP-" .. comm}}) } })
+    return data
+    
+    end
+
+local function constituent(args)
+	local loc = country(args)
+	
+	if loc == "GBR" then
+		return nil
+	else
+	    local labels = {
+	    	["ENG"] = "Constituent country",
+	    	["NIR"] = "Constituent country",
+	    	["SCT"] = "Constituent country",
+	    	["WLS"] = "Constituent country",
+	    	["NLD"] = "Constituent country",
+	    	["ABW"] = "Constituent country",
+	    	["CUW"] = "Constituent country",
+	    	["SXM"] = "Constituent country",
+	    	["GGY"] = "Crown dependency",
+	    	["IMN"] = "Crown dependency",
+	    	["JEY"] = "Crown dependency",
+	    	["AIA"] = "Overseas territory",
+	    	["BMU"] = "Overseas territory",
+	    	["IOT"] = "Overseas territory",
+	    	["VGB"] = "Overseas territory",
+	    	["CYM"] = "Overseas territory",
+	    	["FLK"] = "Overseas territory",
+	    	["GIB"] = "Overseas territory",
+	    	["MSR"] = "Overseas territory",
+	    	["PCN"] = "Overseas territory",
+	    	["SHN"] = "Overseas territory",
+	    	["SGS"] = "Overseas territory",
+	    	["TCA"] = "Overseas territory",
+	    }
+	    local label = labels[loc]
+	    local countryname = frame:expandTemplate ({title='Country name', args = { country(args)}})
+	    local data = frame:expandTemplate ({title='Flagg', args = { "xx", countryname, nodata = 1 }})
+	    return label, data
+	end
+end
+
+local function location(args)
+	
+	local infobox_args = {}
+	
+	infobox_args['title'] = 'Location'
+	infobox_args['bodystyle'] = 'display:inline-table;'
+	infobox_args['child'] = 'yes'
+	infobox_args['decat'] = 'yes'
+
+	------------- EUROPE &amp; ASIA --------------
+	if country(args) == "EUR" or country(args) == "ASIA" then
+		infobox_args['label1'] = 'Countries'
+		infobox_args['data1'] = args.countries
+		
+	------------- ÅLAND --------------	
+	elseif country(args) == "ALA" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Finland]]"
+		infobox_args['label2'] = 'Autonomous region'
+		infobox_args['data2'] = "[[Åland]]"
+
+	------------- AUSTRALIA --------------
+	elseif country(args) == "AUS" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Australia]]"
+	
+	local function lga(args)
+		local labels = {
+			SA = "[[Local government areas of South Australia|LGA(s)]]",
+			VIC = "[[Local government in Victoria|LGA(s)]]",
+			NSW = "[[Local government areas of New South Wales|LGA(s)]]",
+			QLD = "[[Local government areas of Queensland|LGA(s)]]",
+			NT = "[[Local government areas of the Northern Territory|LGA(s)]]",
+			WA = "[[Local government areas of Western Australia|LGA(s)]]",
+			TAS = "[[Local government areas of Tasmania|LGA(s)]]", 
+			ACT = "District(s)"
+		}
+	    local state = args.state or ''
+	    local label = labels[state] or "[[Local government in Australia|LGA(s)]]"
+	    return label, args.lga
+	end
+	
+	local function locations(args)
+	    local labels = {
+	    	highway = "Major settlements",
+	    	["rural road"] = "Major settlements",
+	    	freeway = "Major suburbs",
+	    	["city highway"] = "Major suburbs",
+	    	road = "Major suburbs",
+	    	street = "Suburb"
+	    }
+	    local type = args.type or ''
+	    local label = labels[type] or "Primary&lt;br&gt;destinations"
+	    return label, args.locations
+	end
+			
+		if args.state then
+			if args.state == "NT" or args.state == "ACT" or args.state == "JBT" then
+				infobox_args['label2'] = 'Territory'
+			else
+				infobox_args['label2'] = 'State'
+			end
+				infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+		else
+			infobox_args['label2'] = 'States'
+			infobox_args['data2'] = args.states
+		end
+		
+		infobox_args['label3'], infobox_args['data3'] = lga(args)
+		infobox_args['label4'], infobox_args['data4'] = locations(args)
+			
+	------------- BRAZIL --------------
+	elseif country(args) == "BRA" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Brazil]]"
+		
+		if args.state then
+			if args.state == "DF" then
+				infobox_args['label2'] = 'Federal district'
+			else
+				infobox_args['label2'] = 'State'
+			end
+				infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+		else
+			infobox_args['label2'] = 'States'
+			infobox_args['data2'] = args.states
+		end
+		
+	------------- CANADA --------------	
+	elseif country(args) == "CAN" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Canada]]"
+		
+		if args.province then
+			if args.province == "YK" or args.province == "NT" or args.province == "NU" then
+				infobox_args['label2'] = 'Territory'
+			else
+				infobox_args['label2'] = 'Province'
+			end
+				infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+		else
+			infobox_args['label2'] = 'Provinces'
+			infobox_args['data2'] = args.provinces
+		end
+		
+			if args.province == 'AB' then
+				infobox_args['label3'] = "Specialized and rural municipalities"
+				infobox_args['data3'] = args.rural_municipalities
+				infobox_args['label4'] = "Special areas"
+				infobox_args['data4'] = args.areas
+				infobox_args['label5'] = "Improvement districts"
+				infobox_args['data5'] = args.districts
+			elseif args.province == 'BC' then
+				infobox_args['label3'] = "Regional districts"
+				infobox_args['data3'] = args.districts or args.rural_municipalities
+			elseif args.province == 'MB' or args.province == 'SK' then
+				infobox_args['label3'] = "Rural municipalities"
+				infobox_args['data3'] = args.rural_municipalities
+			elseif args.province == 'NB' or args.province == 'PE' then
+				infobox_args['label3'] = "Counties"
+				infobox_args['data3'] = args.counties
+				infobox_args['label4'] = "Parishes"
+				infobox_args['data4'] = args.parishes
+				infobox_args['label5'] = "Communities"
+				infobox_args['data5'] = args.communities
+			elseif args.province == 'NS' then
+				infobox_args['label3'] = "Counties"
+				infobox_args['data3'] = args.counties
+			elseif args.province == 'ON' then
+				infobox_args['label3'] = "Municipalities"
+				infobox_args['data3'] = args.rural_municipalities
+				infobox_args['label4'] = "Counties"
+				infobox_args['data4'] = args.counties
+				infobox_args['label5'] = "Regions"
+				infobox_args['data5'] = args.regions
+				infobox_args['label6'] = "Districts"
+				infobox_args['data6'] = args.districts
+				infobox_args['label7'] = "Divisions"
+				infobox_args['data7'] = args.divisions
+			elseif args.province == 'QC' then
+				infobox_args['label3'] = "Regional county municipalities"
+				infobox_args['data3'] = args.rural_municipalities
+				infobox_args['label4'] = "Equivalent territories"
+				infobox_args['data4'] = args.territories
+			elseif args.province == 'NT' or args.province == 'NU' then
+				infobox_args['label3'] = "Regions"
+				infobox_args['data3'] = args.regions
+			end
+
+	------------- CHINA --------------	
+	elseif country(args) == "CHN" or country(args) == "HKG" or country(args) == "MAC" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[China]]"
+		
+		if country(args) == "HKG" then
+			infobox_args['label2'] = 'Special administrative region'
+			infobox_args['data2'] = "[[Hong Kong]]"
+			infobox_args['label3'] = 'Districts'
+			infobox_args['data3'] = args.districts
+		elseif country(args) == "MAC" then
+			infobox_args['label2'] = 'Special administrative region'
+			infobox_args['data2'] = "[[Macau]]"
+		else
+			if args.province then
+				infobox_args['label2'] = 'Province'
+				infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+				infobox_args['label3'] = 'Counties'
+				infobox_args['data3'] = args.counties
+			else
+				infobox_args['label2'] = 'Provinces'
+				infobox_args['data2'] = args.provinces
+				infobox_args['label3'] = 'Autonomous regions'
+				infobox_args['data3'] = args.regions
+			end
+		end
+		
+	------------- FRANCE --------------
+	elseif country(args) == "FRA" or country(args) == "GUF" or country(args) == "GLP" or country(args) == "MTQ" or country(args) == "MYT" or country(args) == "REU" then
+			
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[France]]"
+		
+		if country(args) == "GUF" then
+			infobox_args['label2'] = 'Overseas region'
+			infobox_args['data2'] = "[[French Guiana]]"
+			infobox_args['label3'] = 'Department'
+			infobox_args['data3'] = "[[Guyane]]"
+		elseif country(args) == "GLP" then
+			infobox_args['label2'] = 'Overseas region and department'
+			infobox_args['data2'] = "[[Guadeloupe]]"
+		elseif country(args) == "MTQ" then
+			infobox_args['label2'] = 'Overseas region and department'
+			infobox_args['data2'] = "[[Martinique]]"
+		elseif country(args) == "MYT" then
+			infobox_args['label2'] = 'Overseas region and department'
+			infobox_args['data2'] = "[[Mayotte]]"
+		elseif country(args) == "REU" then
+			infobox_args['label2'] = 'Overseas region'
+			infobox_args['data2'] = "[[Réunion]]"
+			infobox_args['label3'] = 'Department'
+			infobox_args['data3'] = "[[La Réunion]]"
+		else
+			infobox_args['label2'] = 'Regions'
+			infobox_args['data2'] = args.regions
+			infobox_args['label3'] = 'Departments'
+			infobox_args['data3'] = args.departments
+		end
+	
+	------------ GEORGIA -------------
+	elseif country(args) == "GEO" then
+		infobox_args['data1'] = "[[Georgia (country)|Georgia]]"
+		
+	------------- INDIA --------------
+	elseif country(args) == "IND" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[India]]"
+		infobox_args['label4'] = 'Districts'
+		infobox_args['data4'] = args.districts
+		
+		if args.state then
+			if args.state == "AN" or args.state == 'CH' or args.state == 'DH' or args.state == 'DL' or args.state == 'JK' or args.state == 'LA' or args.state == 'LD' or args.state == 'PY' then
+				infobox_args['label2'] = 'Union territory'
+			else
+				infobox_args['label2'] = 'State'
+			end
+				infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+		else
+			infobox_args['label2'] = 'States'
+			infobox_args['data2'] = args.states
+			infobox_args['label3'] = 'Union territories'
+			infobox_args['data3'] = args.territories
+		end
+		
+			
+	------------- MEXICO --------------
+	elseif country(args) == "MEX" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Mexico]]"
+		
+		if args.state then
+			if args.state == "CMX" then
+				infobox_args['label2'] = 'Autonomous city'
+			else
+				infobox_args['label2'] = 'State'
+			end
+			if args.state == "CHH" then
+				infobox_args['data2'] = '[[Chihuahua (state)|Chihuahua]]'
+			elseif args.state == "HID" then
+				infobox_args['data2'] = '[[Hidalgo (state)|Hidalgo]]'
+			elseif args.state == "MEX" then
+				infobox_args['data2'] = '[[State of Mexico|México]]'
+			else
+				infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+			end
+			infobox_args['label3'] = 'Municipalities'
+			infobox_args['data3'] = args.counties or args.municipalities
+		else
+			infobox_args['label2'] = 'States'
+			infobox_args['data2'] = args.states
+			infobox_args['label3'] = 'Municipalities'
+			infobox_args['data3'] = args.counties or args.municipalities
+		end
+
+	------------- NETHERLANDS --------------
+	elseif country(args) == "NLD" or country(args) == "ABW" or country(args) == "CUW" or country(args) == "SXM"then
+			
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Kingdom of the Netherlands]]"
+		infobox_args['label2'], infobox_args['data2'] = constituent(args)	
+		
+		if country(args) == "NLD" then
+			infobox_args['label3'] = 'Provinces'
+			infobox_args['data3'] = args.provinces
+		end
+		
+	------------- RUSSIA --------------
+	elseif country(args) == "RUS" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Russia]]"
+		infobox_args['label2'] = 'Oblasts'
+		infobox_args['data2'] = args.oblasts
+		infobox_args['label3'] = 'Republics'
+		infobox_args['data3'] = args.republics
+		infobox_args['label4'] = 'Autonomous okrugs'
+		infobox_args['data4'] = args.okrugs
+		infobox_args['label5'] = 'Krais'
+		infobox_args['data5'] = args.krais
+		infobox_args['label6'] = 'Federal cities'
+		infobox_args['data6'] = args.federal_cities
+		
+	------------- SPAIN --------------
+	elseif country(args) == "ESP" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Spain]]"
+		
+		local province = args.province
+		
+		if province and province ~= '' then
+			infobox_args['label2'] = 'Autonomous&lt;br&gt;community'
+			infobox_args['data2'] = spain(args)
+			if province == "O" or province == "S" or province == "PM" or province == "LO" or province == "M" or province == "MU" or province == "NA" then
+				return nil
+			else
+				infobox_args['label3'] = 'Province'
+				infobox_args['data3'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+			end
+		elseif args.community then
+			infobox_args['label2'] = 'Autonomous&lt;br&gt;community'
+			infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , frame:expandTemplate ({title='country name', args = {"ESP-" .. args.community} }) } })
+			infobox_args['label3'] = 'Provinces'
+			infobox_args['data3'] = args.provinces
+		else
+			infobox_args['label2'] = 'Autonomous&lt;br&gt;communities'
+			infobox_args['data2'] = args.communities
+			infobox_args['label3'] = 'Provinces'
+			infobox_args['data3'] = args.provinces
+			
+		end
+		
+			
+
+	------------- UNITED KINGDOM --------------
+	elseif country(args) == "GBR" or country(args) == "ENG" or country(args) == "NIR" or country(args) == "SCT" or country(args) == "WLS" or
+		country(args) == "GGY" or country(args) == "IMN" or country(args) == "JEY" or country(args) == "AIA" or country(args) == "BMU" or
+		country(args) == "IOT" or country(args) == "VGB" or country(args) == "CYM" or country(args) == "FLK" or country(args) == "GIB" or
+		country(args) == "MSR" or country(args) == "PCN" or country(args) == "SHN" or country(args) == "SGS" or country(args) == "TCA" then
+
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[United Kingdom]]"
+		infobox_args['label2'], infobox_args['data2'] = constituent(args)
+		
+		if country(args) ~= "ENG" then
+			infobox_args['label5'] = 'Counties'
+			infobox_args['data5'] = args.counties
+		end
+
+		if country(args) == "ENG" then
+			infobox_args['label3'] = 'Administrative areas'
+			infobox_args['data3'] = args.areas
+			infobox_args['label4'] = 'Counties'
+			infobox_args['data4'] = args.counties
+			infobox_args['label5'] = 'Boroughs'
+			infobox_args['data5'] = args.boroughs
+		elseif country(args) == "NIR" then
+			infobox_args['label3'] = 'Districts'
+			infobox_args['data3'] = args.districts
+		elseif country(args) == "SCT" then
+			infobox_args['label3'] = 'Council areas'
+			infobox_args['data3'] = args.areas
+		elseif country(args) == "WLS" then
+			infobox_args['label3'] = 'Counties'
+			infobox_args['data3'] = args.counties
+			infobox_args['label4'] = 'County boroughs'
+			infobox_args['data4'] = args.boroughs
+		elseif country(args) == "GGY" or country(args) == "JEY" or country(args) == "BMU" or country(args) == "MSR" then
+			infobox_args['label3'] = 'Parishes'
+			infobox_args['data3'] = args.parishes
+		elseif country(args) == "IMN" then
+			infobox_args['label3'] = 'Sheadings'
+			infobox_args['data3'] = args.sheadings
+		elseif country(args) == "AIA" or country(args) == "VGB" or country(args) == "CYM" or country(args) == "TCA" then
+			infobox_args['label3'] = 'Districts'
+			infobox_args['data3'] = args.districts
+		elseif country(args) == "SHN" then
+			infobox_args['label3'] = 'Island'
+			infobox_args['data3'] = args.island
+		end
+
+	------------- UNITED STATES --------------
+	elseif country(args) == "USA" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[United States]]"
+		
+		local function county(args)
+			local state = args.state
+			local stateName = frame:expandTemplate ({title='Country name', args = { "USA-" .. state}})
+			local country = country(args)
+			local countyName = args.county or args.parish or args.borough or args.municipality
+			
+			local county
+			if state == 'LA' then
+				county = 'Parish'
+			elseif state == 'AK' then
+				county = 'Borough'
+			elseif state == 'PR' then
+				county = 'Municipality'
+			else
+				county = 'County'
+			end
+			
+			return string.format("[[%s %s, %s|%s]]", countyName, county, stateName, countyName)
+		end
+
+		if args.state2 then
+			infobox_args['label2'] = 'States'
+			infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args) }}) .. ", " .. frame:expandTemplate ({title='Flagg', args = {"xx" , state2(args) }})
+		elseif args.state then
+			if args.state == "AS" or args.state == "GU" or args.state == "MP" or args.state == "PR" or args.state == "VI" then
+				infobox_args['label2'] = 'Territory'
+			elseif args.state == "DC" then
+				infobox_args['label2'] = 'Federal district'
+			else
+				infobox_args['label2'] = 'State'
+			end
+			if args.state == "GA" then
+				infobox_args['data2'] = '[[Georgia (U.S. state)|Georgia]]'
+			elseif args.state == "WA" then
+				infobox_args['data2'] = '[[Washington (state)|Washington]]'
+			elseif args.state == "NY" then
+				infobox_args['data2'] = '[[New York (state)|New York]]'
+			else
+				infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+			end
+		else
+			infobox_args['label2'] = 'States'
+			infobox_args['data2'] = args.states
+		end
+		
+		if args.county then
+			infobox_args['label3'] = 'County'
+			infobox_args['data3'] = county(args)
+		else
+			infobox_args['label3'] = 'Counties'
+			infobox_args['data3'] = args.counties
+		end
+		
+		if args.parish then
+			infobox_args['label4'] = 'Parish'
+			infobox_args['data4'] = county(args)
+		else
+			infobox_args['label4'] = 'Parishes'
+			infobox_args['data4'] = args.parishes
+		end
+		
+		if args.borough then
+			infobox_args['label5'] = 'Borough'
+			infobox_args['data5'] = county(args)
+		else
+			infobox_args['label5'] = 'Boroughs'
+			infobox_args['data5'] = args.boroughs
+		end
+		
+		if args.municipality then
+			infobox_args['label6'] = 'Municipality'
+			infobox_args['data6'] = county(args)
+		else
+			infobox_args['label6'] = 'Municipalities'
+			infobox_args['data6'] = args.municipalities
+		end
+		
+		if args.indep_city then
+			infobox_args['label6'] = 'Independent city'
+			infobox_args['data6'] = args.indep_city
+		else
+			infobox_args['label7'] = 'Independent cities'
+			infobox_args['data7'] = args.indep_cities
+		end
+		
+	else
+		
+	------------- ALL OTHER COUNTRIES --------------
+	if country(args) ~= nil then
+		local countryname = frame:expandTemplate ({title='Country name', args = { country(args)}})
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = frame:expandTemplate ({title='Flagg', args = { "xx", countryname, nodata = 1 }})
+	else
+		infobox_args['label1'] = 'Countries'
+		infobox_args['data1'] = args.countries
+	end
+	
+	infobox_args['label2'] = 'Island'
+	infobox_args['data2'] = args.island
+	infobox_args['label3'] = 'Communities'
+	infobox_args['data3'] = args.communities
+	infobox_args['label4'] = 'Regions'
+	infobox_args['data4'] = args.regions
+	infobox_args['label5'] = 'Provinces'
+	infobox_args['data5'] = args.provinces
+	infobox_args['label6'] = 'States'
+	infobox_args['data6'] = args.states
+	infobox_args['label7'] = 'Governorates'
+	infobox_args['data7'] = args.governorates
+	infobox_args['label8'] = 'Counties'
+	infobox_args['data8'] = args.counties
+	infobox_args['label9'] = 'Departments'
+	infobox_args['data9'] = args.departments
+	infobox_args['label10'] = 'Cantons'
+	infobox_args['data10'] = args.cantons
+	infobox_args['label11'] = 'Prefectures'
+	infobox_args['data11'] = args.prefectures
+	infobox_args['label12'] = 'Divisions'
+	infobox_args['data12'] = args.divisions
+	infobox_args['label13'] = 'Oblasts'
+	infobox_args['data13'] = args.oblasts
+	infobox_args['label14'] = 'Districts'
+	infobox_args['data14'] = args.districts
+	infobox_args['label15'] = 'Parishes'
+	infobox_args['data15'] = args.parishes
+	infobox_args['label16'] = 'Communes'
+	infobox_args['data16'] = args.communes
+	infobox_args['label17'] = 'Territories'
+	infobox_args['data17'] = args.territories
+	infobox_args['label18'] = args.label1
+	infobox_args['data18'] = args.location1
+	infobox_args['label19'] = args.label2
+	infobox_args['data19'] = args.location2
+	infobox_args['label20'] = args.label3
+	infobox_args['data20'] = args.location3
+	infobox_args['label21'] = args.label4
+	infobox_args['data21'] = args.location4
+	infobox_args['label22'] = args.label5
+	infobox_args['data22'] = args.location5
+	infobox_args['label23'] = 'Subregions'
+	infobox_args['data23'] = args.subregions
+	infobox_args['label24'] = 'Subcounties'
+	infobox_args['data24'] = args.subcounties
+	infobox_args['label25'] = 'Subprefectures'
+	infobox_args['data25'] = args.subprefectures
+	end
+	
+	if country(args) ~= "USA" then
+		infobox_args['label26'] = 'Municipalities'
+		infobox_args['data26'] = args.municipalities
+		infobox_args['label27'] = 'Major cities'
+		infobox_args['data27'] = args.cities
+		infobox_args['label28'] = 'Towns'
+		infobox_args['data28'] = args.towns
+		infobox_args['label29'] = 'Villages'
+		infobox_args['data29'] = args.villages
+		
+		if country(args) == "GBR" or country(args) == "ENG" or country(args) == "NIR" or country(args) == "SCT" or country(args) == "WLS" or
+			country(args) == "GGY" or country(args) == "IMN" or country(args) == "JEY" or country(args) == "AIA" or country(args) == "BMU" or
+			country(args) == "IOT" or country(args) == "VGB" or country(args) == "CYM" or country(args) == "FLK" or country(args) == "GIB" or
+			country(args) == "MSR" or country(args) == "PCN" or country(args) == "SHN" or country(args) == "SGS" or country(args) == "TCA" then
+				
+			infobox_args['label30'] = '[[Primary status|Primary&lt;br&gt;destinations]]'
+			infobox_args['data30'] = args.destinations
+		else
+			infobox_args['label30'] = 'Primary&lt;br&gt;destinations'
+			infobox_args['data30'] = args.destinations
+		end
+	
+	end
+
+	return frame:expandTemplate ({title='Infobox', args = infobox_args})
+	
+end
+
+local function params(args)
+
+	if country(args) or args.areas or args.borough or args.boroughs or args.cantons or args.cities or args.communes or args.communities or args.counties or
+	args.countries or args.county or args.departments or args.destinations or args.districts or args.divisions or args.federal_cities or args.governorates or
+	args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or 
+	args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.municipalities or args.municipality or
+	args.oblasts or args.okrugs or args.parish or args.parishes or args.prefectures or args.provinces or args.regions or args.republics or args.rural_municipalities or
+	args.sheadings or args.states or args.subcounties or args.subprefectures or args.subregions or args.territories or args.towns or args.villages then
+		return true
+	else
+		return false
+	end
+end
+
+
+function p.location(frame)
+	local args = getArgs(frame)
+	
+	if params(args) == false then
+		return nil
+	else
+		return location(args)
+	end
+end
+
+return p</text>
+      <sha1>bf7y5djm83ccfujslc45hfilb9r1fqn</sha1>
+    </revision>
+    <revision>
+      <id>1165243</id>
+      <parentid>1165242</parentid>
+      <timestamp>2025-05-19T20:37:26Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "[[China]]" to "[[:en:China|China]]"</comment>
+      <origin>1165243</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="24865" sha1="lu1dd2x0buzh7dmng4jl382nhnddy24" xml:space="preserve">local p = {}
+
+local format = mw.ustring.format
+local frame = mw.getCurrentFrame()
+local getArgs = require('Module:Arguments').getArgs
+
+local function country(args)
+	local state = args.state or args.province
+	local country
+	local countryModule = mw.loadData("Module:Road data/countrymask")
+	local country = args.country or countryModule[state]
+	
+	return country
+end
+
+local function state(args)
+	local state = args.state or args.province
+	local country = country(args)
+	
+	return frame:expandTemplate ({title='Country name', args = { country .. "-" .. state}})
+end
+
+local function state2(args)
+	local state = args.state2 or args.province2
+	local country = country(args)
+	
+	return frame:expandTemplate ({title='Country name', args = { country .. "-" .. state}})
+end
+
+local function spain(args)
+	local province = args.province or args.community
+	
+	local communities = {
+		["AL"] = "AN",
+		["CA"] = "AN",
+		["CO"] = "AN",
+		["GR"] = "AN",
+		["H"] = "AN",
+		["J"] = "AN",
+		["MA"] = "AN",
+		["SE"] = "AN",
+		["HU"] = "AR",
+		["TE"] = "AR",
+		["Z"] = "AR",
+		["O"] = "AS",
+		["S"] = "CB",
+		["AV"] = "CL",
+		["BU"] = "CL",
+		["LE"] = "CL",
+		["P"] = "CL",
+		["SA"] = "CL",
+		["SG"] = "CL",
+		["SO"] = "CL",
+		["VA"] = "CL",
+		["ZA"] = "CL",
+		["AB"] = "CM",
+		["CR"] = "CM",
+		["CU"] = "CM",
+		["GU"] = "CM",
+		["TO"] = "CM",
+		["GC"] = "CN",
+		["TF"] = "CN",
+		["B"] = "CT",
+		["GI"] = "CT",
+		["L"] = "CT",
+		["T"] = "CT",
+		["BA"] = "EX",
+		["CC"] = "EX",
+		["C"] = "GA",
+		["LU"] = "GA",
+		["OR"] = "GA",
+		["PO"] = "GA",
+		["PM"] = "IB",
+		["MU"] = "MC",
+		["M"] = "MD",
+		["NA"] = "NC",
+		["VI"] = "PV",
+		["BI"] = "PV",
+		["SS"] = "PV",
+		["LO"] = "RI",
+		["A"] = "VC",
+		["CS"] = "VC",
+		["V"] = "VC",
+	}
+	
+	local comm = communities[province]
+    local data = frame:expandTemplate ({title='Flagg', args = { "xx", frame:expandTemplate ({title='Country name', args = { "ESP-" .. comm}}) } })
+    return data
+    
+    end
+
+local function constituent(args)
+	local loc = country(args)
+	
+	if loc == "GBR" then
+		return nil
+	else
+	    local labels = {
+	    	["ENG"] = "Constituent country",
+	    	["NIR"] = "Constituent country",
+	    	["SCT"] = "Constituent country",
+	    	["WLS"] = "Constituent country",
+	    	["NLD"] = "Constituent country",
+	    	["ABW"] = "Constituent country",
+	    	["CUW"] = "Constituent country",
+	    	["SXM"] = "Constituent country",
+	    	["GGY"] = "Crown dependency",
+	    	["IMN"] = "Crown dependency",
+	    	["JEY"] = "Crown dependency",
+	    	["AIA"] = "Overseas territory",
+	    	["BMU"] = "Overseas territory",
+	    	["IOT"] = "Overseas territory",
+	    	["VGB"] = "Overseas territory",
+	    	["CYM"] = "Overseas territory",
+	    	["FLK"] = "Overseas territory",
+	    	["GIB"] = "Overseas territory",
+	    	["MSR"] = "Overseas territory",
+	    	["PCN"] = "Overseas territory",
+	    	["SHN"] = "Overseas territory",
+	    	["SGS"] = "Overseas territory",
+	    	["TCA"] = "Overseas territory",
+	    }
+	    local label = labels[loc]
+	    local countryname = frame:expandTemplate ({title='Country name', args = { country(args)}})
+	    local data = frame:expandTemplate ({title='Flagg', args = { "xx", countryname, nodata = 1 }})
+	    return label, data
+	end
+end
+
+local function location(args)
+	
+	local infobox_args = {}
+	
+	infobox_args['title'] = 'Location'
+	infobox_args['bodystyle'] = 'display:inline-table;'
+	infobox_args['child'] = 'yes'
+	infobox_args['decat'] = 'yes'
+
+	------------- EUROPE &amp; ASIA --------------
+	if country(args) == "EUR" or country(args) == "ASIA" then
+		infobox_args['label1'] = 'Countries'
+		infobox_args['data1'] = args.countries
+		
+	------------- ÅLAND --------------	
+	elseif country(args) == "ALA" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Finland]]"
+		infobox_args['label2'] = 'Autonomous region'
+		infobox_args['data2'] = "[[Åland]]"
+
+	------------- AUSTRALIA --------------
+	elseif country(args) == "AUS" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Australia]]"
+	
+	local function lga(args)
+		local labels = {
+			SA = "[[Local government areas of South Australia|LGA(s)]]",
+			VIC = "[[Local government in Victoria|LGA(s)]]",
+			NSW = "[[Local government areas of New South Wales|LGA(s)]]",
+			QLD = "[[Local government areas of Queensland|LGA(s)]]",
+			NT = "[[Local government areas of the Northern Territory|LGA(s)]]",
+			WA = "[[Local government areas of Western Australia|LGA(s)]]",
+			TAS = "[[Local government areas of Tasmania|LGA(s)]]", 
+			ACT = "District(s)"
+		}
+	    local state = args.state or ''
+	    local label = labels[state] or "[[Local government in Australia|LGA(s)]]"
+	    return label, args.lga
+	end
+	
+	local function locations(args)
+	    local labels = {
+	    	highway = "Major settlements",
+	    	["rural road"] = "Major settlements",
+	    	freeway = "Major suburbs",
+	    	["city highway"] = "Major suburbs",
+	    	road = "Major suburbs",
+	    	street = "Suburb"
+	    }
+	    local type = args.type or ''
+	    local label = labels[type] or "Primary&lt;br&gt;destinations"
+	    return label, args.locations
+	end
+			
+		if args.state then
+			if args.state == "NT" or args.state == "ACT" or args.state == "JBT" then
+				infobox_args['label2'] = 'Territory'
+			else
+				infobox_args['label2'] = 'State'
+			end
+				infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+		else
+			infobox_args['label2'] = 'States'
+			infobox_args['data2'] = args.states
+		end
+		
+		infobox_args['label3'], infobox_args['data3'] = lga(args)
+		infobox_args['label4'], infobox_args['data4'] = locations(args)
+			
+	------------- BRAZIL --------------
+	elseif country(args) == "BRA" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Brazil]]"
+		
+		if args.state then
+			if args.state == "DF" then
+				infobox_args['label2'] = 'Federal district'
+			else
+				infobox_args['label2'] = 'State'
+			end
+				infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+		else
+			infobox_args['label2'] = 'States'
+			infobox_args['data2'] = args.states
+		end
+		
+	------------- CANADA --------------	
+	elseif country(args) == "CAN" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Canada]]"
+		
+		if args.province then
+			if args.province == "YK" or args.province == "NT" or args.province == "NU" then
+				infobox_args['label2'] = 'Territory'
+			else
+				infobox_args['label2'] = 'Province'
+			end
+				infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+		else
+			infobox_args['label2'] = 'Provinces'
+			infobox_args['data2'] = args.provinces
+		end
+		
+			if args.province == 'AB' then
+				infobox_args['label3'] = "Specialized and rural municipalities"
+				infobox_args['data3'] = args.rural_municipalities
+				infobox_args['label4'] = "Special areas"
+				infobox_args['data4'] = args.areas
+				infobox_args['label5'] = "Improvement districts"
+				infobox_args['data5'] = args.districts
+			elseif args.province == 'BC' then
+				infobox_args['label3'] = "Regional districts"
+				infobox_args['data3'] = args.districts or args.rural_municipalities
+			elseif args.province == 'MB' or args.province == 'SK' then
+				infobox_args['label3'] = "Rural municipalities"
+				infobox_args['data3'] = args.rural_municipalities
+			elseif args.province == 'NB' or args.province == 'PE' then
+				infobox_args['label3'] = "Counties"
+				infobox_args['data3'] = args.counties
+				infobox_args['label4'] = "Parishes"
+				infobox_args['data4'] = args.parishes
+				infobox_args['label5'] = "Communities"
+				infobox_args['data5'] = args.communities
+			elseif args.province == 'NS' then
+				infobox_args['label3'] = "Counties"
+				infobox_args['data3'] = args.counties
+			elseif args.province == 'ON' then
+				infobox_args['label3'] = "Municipalities"
+				infobox_args['data3'] = args.rural_municipalities
+				infobox_args['label4'] = "Counties"
+				infobox_args['data4'] = args.counties
+				infobox_args['label5'] = "Regions"
+				infobox_args['data5'] = args.regions
+				infobox_args['label6'] = "Districts"
+				infobox_args['data6'] = args.districts
+				infobox_args['label7'] = "Divisions"
+				infobox_args['data7'] = args.divisions
+			elseif args.province == 'QC' then
+				infobox_args['label3'] = "Regional county municipalities"
+				infobox_args['data3'] = args.rural_municipalities
+				infobox_args['label4'] = "Equivalent territories"
+				infobox_args['data4'] = args.territories
+			elseif args.province == 'NT' or args.province == 'NU' then
+				infobox_args['label3'] = "Regions"
+				infobox_args['data3'] = args.regions
+			end
+
+	------------- CHINA --------------	
+	elseif country(args) == "CHN" or country(args) == "HKG" or country(args) == "MAC" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[:en:China|China]]"
+		
+		if country(args) == "HKG" then
+			infobox_args['label2'] = 'Special administrative region'
+			infobox_args['data2'] = "[[Hong Kong]]"
+			infobox_args['label3'] = 'Districts'
+			infobox_args['data3'] = args.districts
+		elseif country(args) == "MAC" then
+			infobox_args['label2'] = 'Special administrative region'
+			infobox_args['data2'] = "[[Macau]]"
+		else
+			if args.province then
+				infobox_args['label2'] = 'Province'
+				infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+				infobox_args['label3'] = 'Counties'
+				infobox_args['data3'] = args.counties
+			else
+				infobox_args['label2'] = 'Provinces'
+				infobox_args['data2'] = args.provinces
+				infobox_args['label3'] = 'Autonomous regions'
+				infobox_args['data3'] = args.regions
+			end
+		end
+		
+	------------- FRANCE --------------
+	elseif country(args) == "FRA" or country(args) == "GUF" or country(args) == "GLP" or country(args) == "MTQ" or country(args) == "MYT" or country(args) == "REU" then
+			
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[France]]"
+		
+		if country(args) == "GUF" then
+			infobox_args['label2'] = 'Overseas region'
+			infobox_args['data2'] = "[[French Guiana]]"
+			infobox_args['label3'] = 'Department'
+			infobox_args['data3'] = "[[Guyane]]"
+		elseif country(args) == "GLP" then
+			infobox_args['label2'] = 'Overseas region and department'
+			infobox_args['data2'] = "[[Guadeloupe]]"
+		elseif country(args) == "MTQ" then
+			infobox_args['label2'] = 'Overseas region and department'
+			infobox_args['data2'] = "[[Martinique]]"
+		elseif country(args) == "MYT" then
+			infobox_args['label2'] = 'Overseas region and department'
+			infobox_args['data2'] = "[[Mayotte]]"
+		elseif country(args) == "REU" then
+			infobox_args['label2'] = 'Overseas region'
+			infobox_args['data2'] = "[[Réunion]]"
+			infobox_args['label3'] = 'Department'
+			infobox_args['data3'] = "[[La Réunion]]"
+		else
+			infobox_args['label2'] = 'Regions'
+			infobox_args['data2'] = args.regions
+			infobox_args['label3'] = 'Departments'
+			infobox_args['data3'] = args.departments
+		end
+	
+	------------ GEORGIA -------------
+	elseif country(args) == "GEO" then
+		infobox_args['data1'] = "[[Georgia (country)|Georgia]]"
+		
+	------------- INDIA --------------
+	elseif country(args) == "IND" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[India]]"
+		infobox_args['label4'] = 'Districts'
+		infobox_args['data4'] = args.districts
+		
+		if args.state then
+			if args.state == "AN" or args.state == 'CH' or args.state == 'DH' or args.state == 'DL' or args.state == 'JK' or args.state == 'LA' or args.state == 'LD' or args.state == 'PY' then
+				infobox_args['label2'] = 'Union territory'
+			else
+				infobox_args['label2'] = 'State'
+			end
+				infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+		else
+			infobox_args['label2'] = 'States'
+			infobox_args['data2'] = args.states
+			infobox_args['label3'] = 'Union territories'
+			infobox_args['data3'] = args.territories
+		end
+		
+			
+	------------- MEXICO --------------
+	elseif country(args) == "MEX" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Mexico]]"
+		
+		if args.state then
+			if args.state == "CMX" then
+				infobox_args['label2'] = 'Autonomous city'
+			else
+				infobox_args['label2'] = 'State'
+			end
+			if args.state == "CHH" then
+				infobox_args['data2'] = '[[Chihuahua (state)|Chihuahua]]'
+			elseif args.state == "HID" then
+				infobox_args['data2'] = '[[Hidalgo (state)|Hidalgo]]'
+			elseif args.state == "MEX" then
+				infobox_args['data2'] = '[[State of Mexico|México]]'
+			else
+				infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+			end
+			infobox_args['label3'] = 'Municipalities'
+			infobox_args['data3'] = args.counties or args.municipalities
+		else
+			infobox_args['label2'] = 'States'
+			infobox_args['data2'] = args.states
+			infobox_args['label3'] = 'Municipalities'
+			infobox_args['data3'] = args.counties or args.municipalities
+		end
+
+	------------- NETHERLANDS --------------
+	elseif country(args) == "NLD" or country(args) == "ABW" or country(args) == "CUW" or country(args) == "SXM"then
+			
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Kingdom of the Netherlands]]"
+		infobox_args['label2'], infobox_args['data2'] = constituent(args)	
+		
+		if country(args) == "NLD" then
+			infobox_args['label3'] = 'Provinces'
+			infobox_args['data3'] = args.provinces
+		end
+		
+	------------- RUSSIA --------------
+	elseif country(args) == "RUS" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Russia]]"
+		infobox_args['label2'] = 'Oblasts'
+		infobox_args['data2'] = args.oblasts
+		infobox_args['label3'] = 'Republics'
+		infobox_args['data3'] = args.republics
+		infobox_args['label4'] = 'Autonomous okrugs'
+		infobox_args['data4'] = args.okrugs
+		infobox_args['label5'] = 'Krais'
+		infobox_args['data5'] = args.krais
+		infobox_args['label6'] = 'Federal cities'
+		infobox_args['data6'] = args.federal_cities
+		
+	------------- SPAIN --------------
+	elseif country(args) == "ESP" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Spain]]"
+		
+		local province = args.province
+		
+		if province and province ~= '' then
+			infobox_args['label2'] = 'Autonomous&lt;br&gt;community'
+			infobox_args['data2'] = spain(args)
+			if province == "O" or province == "S" or province == "PM" or province == "LO" or province == "M" or province == "MU" or province == "NA" then
+				return nil
+			else
+				infobox_args['label3'] = 'Province'
+				infobox_args['data3'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+			end
+		elseif args.community then
+			infobox_args['label2'] = 'Autonomous&lt;br&gt;community'
+			infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , frame:expandTemplate ({title='country name', args = {"ESP-" .. args.community} }) } })
+			infobox_args['label3'] = 'Provinces'
+			infobox_args['data3'] = args.provinces
+		else
+			infobox_args['label2'] = 'Autonomous&lt;br&gt;communities'
+			infobox_args['data2'] = args.communities
+			infobox_args['label3'] = 'Provinces'
+			infobox_args['data3'] = args.provinces
+			
+		end
+		
+			
+
+	------------- UNITED KINGDOM --------------
+	elseif country(args) == "GBR" or country(args) == "ENG" or country(args) == "NIR" or country(args) == "SCT" or country(args) == "WLS" or
+		country(args) == "GGY" or country(args) == "IMN" or country(args) == "JEY" or country(args) == "AIA" or country(args) == "BMU" or
+		country(args) == "IOT" or country(args) == "VGB" or country(args) == "CYM" or country(args) == "FLK" or country(args) == "GIB" or
+		country(args) == "MSR" or country(args) == "PCN" or country(args) == "SHN" or country(args) == "SGS" or country(args) == "TCA" then
+
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[United Kingdom]]"
+		infobox_args['label2'], infobox_args['data2'] = constituent(args)
+		
+		if country(args) ~= "ENG" then
+			infobox_args['label5'] = 'Counties'
+			infobox_args['data5'] = args.counties
+		end
+
+		if country(args) == "ENG" then
+			infobox_args['label3'] = 'Administrative areas'
+			infobox_args['data3'] = args.areas
+			infobox_args['label4'] = 'Counties'
+			infobox_args['data4'] = args.counties
+			infobox_args['label5'] = 'Boroughs'
+			infobox_args['data5'] = args.boroughs
+		elseif country(args) == "NIR" then
+			infobox_args['label3'] = 'Districts'
+			infobox_args['data3'] = args.districts
+		elseif country(args) == "SCT" then
+			infobox_args['label3'] = 'Council areas'
+			infobox_args['data3'] = args.areas
+		elseif country(args) == "WLS" then
+			infobox_args['label3'] = 'Counties'
+			infobox_args['data3'] = args.counties
+			infobox_args['label4'] = 'County boroughs'
+			infobox_args['data4'] = args.boroughs
+		elseif country(args) == "GGY" or country(args) == "JEY" or country(args) == "BMU" or country(args) == "MSR" then
+			infobox_args['label3'] = 'Parishes'
+			infobox_args['data3'] = args.parishes
+		elseif country(args) == "IMN" then
+			infobox_args['label3'] = 'Sheadings'
+			infobox_args['data3'] = args.sheadings
+		elseif country(args) == "AIA" or country(args) == "VGB" or country(args) == "CYM" or country(args) == "TCA" then
+			infobox_args['label3'] = 'Districts'
+			infobox_args['data3'] = args.districts
+		elseif country(args) == "SHN" then
+			infobox_args['label3'] = 'Island'
+			infobox_args['data3'] = args.island
+		end
+
+	------------- UNITED STATES --------------
+	elseif country(args) == "USA" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[United States]]"
+		
+		local function county(args)
+			local state = args.state
+			local stateName = frame:expandTemplate ({title='Country name', args = { "USA-" .. state}})
+			local country = country(args)
+			local countyName = args.county or args.parish or args.borough or args.municipality
+			
+			local county
+			if state == 'LA' then
+				county = 'Parish'
+			elseif state == 'AK' then
+				county = 'Borough'
+			elseif state == 'PR' then
+				county = 'Municipality'
+			else
+				county = 'County'
+			end
+			
+			return string.format("[[%s %s, %s|%s]]", countyName, county, stateName, countyName)
+		end
+
+		if args.state2 then
+			infobox_args['label2'] = 'States'
+			infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args) }}) .. ", " .. frame:expandTemplate ({title='Flagg', args = {"xx" , state2(args) }})
+		elseif args.state then
+			if args.state == "AS" or args.state == "GU" or args.state == "MP" or args.state == "PR" or args.state == "VI" then
+				infobox_args['label2'] = 'Territory'
+			elseif args.state == "DC" then
+				infobox_args['label2'] = 'Federal district'
+			else
+				infobox_args['label2'] = 'State'
+			end
+			if args.state == "GA" then
+				infobox_args['data2'] = '[[Georgia (U.S. state)|Georgia]]'
+			elseif args.state == "WA" then
+				infobox_args['data2'] = '[[Washington (state)|Washington]]'
+			elseif args.state == "NY" then
+				infobox_args['data2'] = '[[New York (state)|New York]]'
+			else
+				infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+			end
+		else
+			infobox_args['label2'] = 'States'
+			infobox_args['data2'] = args.states
+		end
+		
+		if args.county then
+			infobox_args['label3'] = 'County'
+			infobox_args['data3'] = county(args)
+		else
+			infobox_args['label3'] = 'Counties'
+			infobox_args['data3'] = args.counties
+		end
+		
+		if args.parish then
+			infobox_args['label4'] = 'Parish'
+			infobox_args['data4'] = county(args)
+		else
+			infobox_args['label4'] = 'Parishes'
+			infobox_args['data4'] = args.parishes
+		end
+		
+		if args.borough then
+			infobox_args['label5'] = 'Borough'
+			infobox_args['data5'] = county(args)
+		else
+			infobox_args['label5'] = 'Boroughs'
+			infobox_args['data5'] = args.boroughs
+		end
+		
+		if args.municipality then
+			infobox_args['label6'] = 'Municipality'
+			infobox_args['data6'] = county(args)
+		else
+			infobox_args['label6'] = 'Municipalities'
+			infobox_args['data6'] = args.municipalities
+		end
+		
+		if args.indep_city then
+			infobox_args['label6'] = 'Independent city'
+			infobox_args['data6'] = args.indep_city
+		else
+			infobox_args['label7'] = 'Independent cities'
+			infobox_args['data7'] = args.indep_cities
+		end
+		
+	else
+		
+	------------- ALL OTHER COUNTRIES --------------
+	if country(args) ~= nil then
+		local countryname = frame:expandTemplate ({title='Country name', args = { country(args)}})
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = frame:expandTemplate ({title='Flagg', args = { "xx", countryname, nodata = 1 }})
+	else
+		infobox_args['label1'] = 'Countries'
+		infobox_args['data1'] = args.countries
+	end
+	
+	infobox_args['label2'] = 'Island'
+	infobox_args['data2'] = args.island
+	infobox_args['label3'] = 'Communities'
+	infobox_args['data3'] = args.communities
+	infobox_args['label4'] = 'Regions'
+	infobox_args['data4'] = args.regions
+	infobox_args['label5'] = 'Provinces'
+	infobox_args['data5'] = args.provinces
+	infobox_args['label6'] = 'States'
+	infobox_args['data6'] = args.states
+	infobox_args['label7'] = 'Governorates'
+	infobox_args['data7'] = args.governorates
+	infobox_args['label8'] = 'Counties'
+	infobox_args['data8'] = args.counties
+	infobox_args['label9'] = 'Departments'
+	infobox_args['data9'] = args.departments
+	infobox_args['label10'] = 'Cantons'
+	infobox_args['data10'] = args.cantons
+	infobox_args['label11'] = 'Prefectures'
+	infobox_args['data11'] = args.prefectures
+	infobox_args['label12'] = 'Divisions'
+	infobox_args['data12'] = args.divisions
+	infobox_args['label13'] = 'Oblasts'
+	infobox_args['data13'] = args.oblasts
+	infobox_args['label14'] = 'Districts'
+	infobox_args['data14'] = args.districts
+	infobox_args['label15'] = 'Parishes'
+	infobox_args['data15'] = args.parishes
+	infobox_args['label16'] = 'Communes'
+	infobox_args['data16'] = args.communes
+	infobox_args['label17'] = 'Territories'
+	infobox_args['data17'] = args.territories
+	infobox_args['label18'] = args.label1
+	infobox_args['data18'] = args.location1
+	infobox_args['label19'] = args.label2
+	infobox_args['data19'] = args.location2
+	infobox_args['label20'] = args.label3
+	infobox_args['data20'] = args.location3
+	infobox_args['label21'] = args.label4
+	infobox_args['data21'] = args.location4
+	infobox_args['label22'] = args.label5
+	infobox_args['data22'] = args.location5
+	infobox_args['label23'] = 'Subregions'
+	infobox_args['data23'] = args.subregions
+	infobox_args['label24'] = 'Subcounties'
+	infobox_args['data24'] = args.subcounties
+	infobox_args['label25'] = 'Subprefectures'
+	infobox_args['data25'] = args.subprefectures
+	end
+	
+	if country(args) ~= "USA" then
+		infobox_args['label26'] = 'Municipalities'
+		infobox_args['data26'] = args.municipalities
+		infobox_args['label27'] = 'Major cities'
+		infobox_args['data27'] = args.cities
+		infobox_args['label28'] = 'Towns'
+		infobox_args['data28'] = args.towns
+		infobox_args['label29'] = 'Villages'
+		infobox_args['data29'] = args.villages
+		
+		if country(args) == "GBR" or country(args) == "ENG" or country(args) == "NIR" or country(args) == "SCT" or country(args) == "WLS" or
+			country(args) == "GGY" or country(args) == "IMN" or country(args) == "JEY" or country(args) == "AIA" or country(args) == "BMU" or
+			country(args) == "IOT" or country(args) == "VGB" or country(args) == "CYM" or country(args) == "FLK" or country(args) == "GIB" or
+			country(args) == "MSR" or country(args) == "PCN" or country(args) == "SHN" or country(args) == "SGS" or country(args) == "TCA" then
+				
+			infobox_args['label30'] = '[[Primary status|Primary&lt;br&gt;destinations]]'
+			infobox_args['data30'] = args.destinations
+		else
+			infobox_args['label30'] = 'Primary&lt;br&gt;destinations'
+			infobox_args['data30'] = args.destinations
+		end
+	
+	end
+
+	return frame:expandTemplate ({title='Infobox', args = infobox_args})
+	
+end
+
+local function params(args)
+
+	if country(args) or args.areas or args.borough or args.boroughs or args.cantons or args.cities or args.communes or args.communities or args.counties or
+	args.countries or args.county or args.departments or args.destinations or args.districts or args.divisions or args.federal_cities or args.governorates or
+	args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or 
+	args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.municipalities or args.municipality or
+	args.oblasts or args.okrugs or args.parish or args.parishes or args.prefectures or args.provinces or args.regions or args.republics or args.rural_municipalities or
+	args.sheadings or args.states or args.subcounties or args.subprefectures or args.subregions or args.territories or args.towns or args.villages then
+		return true
+	else
+		return false
+	end
+end
+
+
+function p.location(frame)
+	local args = getArgs(frame)
+	
+	if params(args) == false then
+		return nil
+	else
+		return location(args)
+	end
+end
+
+return p</text>
+      <sha1>lu1dd2x0buzh7dmng4jl382nhnddy24</sha1>
+    </revision>
+    <revision>
+      <id>17333</id>
+      <timestamp>2025-11-22T14:38:02Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Text replacement - "↵↵↵" to "
+"</comment>
+      <origin>17333</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="24863" sha1="qdurvbs2yn2riehyb5i0yttoqsyzaes" xml:space="preserve">local p = {}
+
+local format = mw.ustring.format
+local frame = mw.getCurrentFrame()
+local getArgs = require('Module:Arguments').getArgs
+
+local function country(args)
+	local state = args.state or args.province
+	local country
+	local countryModule = mw.loadData("Module:Road data/countrymask")
+	local country = args.country or countryModule[state]
+	
+	return country
+end
+
+local function state(args)
+	local state = args.state or args.province
+	local country = country(args)
+	
+	return frame:expandTemplate ({title='Country name', args = { country .. "-" .. state}})
+end
+
+local function state2(args)
+	local state = args.state2 or args.province2
+	local country = country(args)
+	
+	return frame:expandTemplate ({title='Country name', args = { country .. "-" .. state}})
+end
+
+local function spain(args)
+	local province = args.province or args.community
+	
+	local communities = {
+		["AL"] = "AN",
+		["CA"] = "AN",
+		["CO"] = "AN",
+		["GR"] = "AN",
+		["H"] = "AN",
+		["J"] = "AN",
+		["MA"] = "AN",
+		["SE"] = "AN",
+		["HU"] = "AR",
+		["TE"] = "AR",
+		["Z"] = "AR",
+		["O"] = "AS",
+		["S"] = "CB",
+		["AV"] = "CL",
+		["BU"] = "CL",
+		["LE"] = "CL",
+		["P"] = "CL",
+		["SA"] = "CL",
+		["SG"] = "CL",
+		["SO"] = "CL",
+		["VA"] = "CL",
+		["ZA"] = "CL",
+		["AB"] = "CM",
+		["CR"] = "CM",
+		["CU"] = "CM",
+		["GU"] = "CM",
+		["TO"] = "CM",
+		["GC"] = "CN",
+		["TF"] = "CN",
+		["B"] = "CT",
+		["GI"] = "CT",
+		["L"] = "CT",
+		["T"] = "CT",
+		["BA"] = "EX",
+		["CC"] = "EX",
+		["C"] = "GA",
+		["LU"] = "GA",
+		["OR"] = "GA",
+		["PO"] = "GA",
+		["PM"] = "IB",
+		["MU"] = "MC",
+		["M"] = "MD",
+		["NA"] = "NC",
+		["VI"] = "PV",
+		["BI"] = "PV",
+		["SS"] = "PV",
+		["LO"] = "RI",
+		["A"] = "VC",
+		["CS"] = "VC",
+		["V"] = "VC",
+	}
+	
+	local comm = communities[province]
+    local data = frame:expandTemplate ({title='Flagg', args = { "xx", frame:expandTemplate ({title='Country name', args = { "ESP-" .. comm}}) } })
+    return data
+    
+    end
+
+local function constituent(args)
+	local loc = country(args)
+	
+	if loc == "GBR" then
+		return nil
+	else
+	    local labels = {
+	    	["ENG"] = "Constituent country",
+	    	["NIR"] = "Constituent country",
+	    	["SCT"] = "Constituent country",
+	    	["WLS"] = "Constituent country",
+	    	["NLD"] = "Constituent country",
+	    	["ABW"] = "Constituent country",
+	    	["CUW"] = "Constituent country",
+	    	["SXM"] = "Constituent country",
+	    	["GGY"] = "Crown dependency",
+	    	["IMN"] = "Crown dependency",
+	    	["JEY"] = "Crown dependency",
+	    	["AIA"] = "Overseas territory",
+	    	["BMU"] = "Overseas territory",
+	    	["IOT"] = "Overseas territory",
+	    	["VGB"] = "Overseas territory",
+	    	["CYM"] = "Overseas territory",
+	    	["FLK"] = "Overseas territory",
+	    	["GIB"] = "Overseas territory",
+	    	["MSR"] = "Overseas territory",
+	    	["PCN"] = "Overseas territory",
+	    	["SHN"] = "Overseas territory",
+	    	["SGS"] = "Overseas territory",
+	    	["TCA"] = "Overseas territory",
+	    }
+	    local label = labels[loc]
+	    local countryname = frame:expandTemplate ({title='Country name', args = { country(args)}})
+	    local data = frame:expandTemplate ({title='Flagg', args = { "xx", countryname, nodata = 1 }})
+	    return label, data
+	end
+end
+
+local function location(args)
+	
+	local infobox_args = {}
+	
+	infobox_args['title'] = 'Location'
+	infobox_args['bodystyle'] = 'display:inline-table;'
+	infobox_args['child'] = 'yes'
+	infobox_args['decat'] = 'yes'
+
+	------------- EUROPE &amp; ASIA --------------
+	if country(args) == "EUR" or country(args) == "ASIA" then
+		infobox_args['label1'] = 'Countries'
+		infobox_args['data1'] = args.countries
+		
+	------------- ÅLAND --------------	
+	elseif country(args) == "ALA" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Finland]]"
+		infobox_args['label2'] = 'Autonomous region'
+		infobox_args['data2'] = "[[Åland]]"
+
+	------------- AUSTRALIA --------------
+	elseif country(args) == "AUS" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Australia]]"
+	
+	local function lga(args)
+		local labels = {
+			SA = "[[Local government areas of South Australia|LGA(s)]]",
+			VIC = "[[Local government in Victoria|LGA(s)]]",
+			NSW = "[[Local government areas of New South Wales|LGA(s)]]",
+			QLD = "[[Local government areas of Queensland|LGA(s)]]",
+			NT = "[[Local government areas of the Northern Territory|LGA(s)]]",
+			WA = "[[Local government areas of Western Australia|LGA(s)]]",
+			TAS = "[[Local government areas of Tasmania|LGA(s)]]", 
+			ACT = "District(s)"
+		}
+	    local state = args.state or ''
+	    local label = labels[state] or "[[Local government in Australia|LGA(s)]]"
+	    return label, args.lga
+	end
+	
+	local function locations(args)
+	    local labels = {
+	    	highway = "Major settlements",
+	    	["rural road"] = "Major settlements",
+	    	freeway = "Major suburbs",
+	    	["city highway"] = "Major suburbs",
+	    	road = "Major suburbs",
+	    	street = "Suburb"
+	    }
+	    local type = args.type or ''
+	    local label = labels[type] or "Primary&lt;br&gt;destinations"
+	    return label, args.locations
+	end
+			
+		if args.state then
+			if args.state == "NT" or args.state == "ACT" or args.state == "JBT" then
+				infobox_args['label2'] = 'Territory'
+			else
+				infobox_args['label2'] = 'State'
+			end
+				infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+		else
+			infobox_args['label2'] = 'States'
+			infobox_args['data2'] = args.states
+		end
+		
+		infobox_args['label3'], infobox_args['data3'] = lga(args)
+		infobox_args['label4'], infobox_args['data4'] = locations(args)
+			
+	------------- BRAZIL --------------
+	elseif country(args) == "BRA" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Brazil]]"
+		
+		if args.state then
+			if args.state == "DF" then
+				infobox_args['label2'] = 'Federal district'
+			else
+				infobox_args['label2'] = 'State'
+			end
+				infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+		else
+			infobox_args['label2'] = 'States'
+			infobox_args['data2'] = args.states
+		end
+		
+	------------- CANADA --------------	
+	elseif country(args) == "CAN" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Canada]]"
+		
+		if args.province then
+			if args.province == "YK" or args.province == "NT" or args.province == "NU" then
+				infobox_args['label2'] = 'Territory'
+			else
+				infobox_args['label2'] = 'Province'
+			end
+				infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+		else
+			infobox_args['label2'] = 'Provinces'
+			infobox_args['data2'] = args.provinces
+		end
+		
+			if args.province == 'AB' then
+				infobox_args['label3'] = "Specialized and rural municipalities"
+				infobox_args['data3'] = args.rural_municipalities
+				infobox_args['label4'] = "Special areas"
+				infobox_args['data4'] = args.areas
+				infobox_args['label5'] = "Improvement districts"
+				infobox_args['data5'] = args.districts
+			elseif args.province == 'BC' then
+				infobox_args['label3'] = "Regional districts"
+				infobox_args['data3'] = args.districts or args.rural_municipalities
+			elseif args.province == 'MB' or args.province == 'SK' then
+				infobox_args['label3'] = "Rural municipalities"
+				infobox_args['data3'] = args.rural_municipalities
+			elseif args.province == 'NB' or args.province == 'PE' then
+				infobox_args['label3'] = "Counties"
+				infobox_args['data3'] = args.counties
+				infobox_args['label4'] = "Parishes"
+				infobox_args['data4'] = args.parishes
+				infobox_args['label5'] = "Communities"
+				infobox_args['data5'] = args.communities
+			elseif args.province == 'NS' then
+				infobox_args['label3'] = "Counties"
+				infobox_args['data3'] = args.counties
+			elseif args.province == 'ON' then
+				infobox_args['label3'] = "Municipalities"
+				infobox_args['data3'] = args.rural_municipalities
+				infobox_args['label4'] = "Counties"
+				infobox_args['data4'] = args.counties
+				infobox_args['label5'] = "Regions"
+				infobox_args['data5'] = args.regions
+				infobox_args['label6'] = "Districts"
+				infobox_args['data6'] = args.districts
+				infobox_args['label7'] = "Divisions"
+				infobox_args['data7'] = args.divisions
+			elseif args.province == 'QC' then
+				infobox_args['label3'] = "Regional county municipalities"
+				infobox_args['data3'] = args.rural_municipalities
+				infobox_args['label4'] = "Equivalent territories"
+				infobox_args['data4'] = args.territories
+			elseif args.province == 'NT' or args.province == 'NU' then
+				infobox_args['label3'] = "Regions"
+				infobox_args['data3'] = args.regions
+			end
+
+	------------- CHINA --------------	
+	elseif country(args) == "CHN" or country(args) == "HKG" or country(args) == "MAC" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[:en:China|China]]"
+		
+		if country(args) == "HKG" then
+			infobox_args['label2'] = 'Special administrative region'
+			infobox_args['data2'] = "[[Hong Kong]]"
+			infobox_args['label3'] = 'Districts'
+			infobox_args['data3'] = args.districts
+		elseif country(args) == "MAC" then
+			infobox_args['label2'] = 'Special administrative region'
+			infobox_args['data2'] = "[[Macau]]"
+		else
+			if args.province then
+				infobox_args['label2'] = 'Province'
+				infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+				infobox_args['label3'] = 'Counties'
+				infobox_args['data3'] = args.counties
+			else
+				infobox_args['label2'] = 'Provinces'
+				infobox_args['data2'] = args.provinces
+				infobox_args['label3'] = 'Autonomous regions'
+				infobox_args['data3'] = args.regions
+			end
+		end
+		
+	------------- FRANCE --------------
+	elseif country(args) == "FRA" or country(args) == "GUF" or country(args) == "GLP" or country(args) == "MTQ" or country(args) == "MYT" or country(args) == "REU" then
+			
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[France]]"
+		
+		if country(args) == "GUF" then
+			infobox_args['label2'] = 'Overseas region'
+			infobox_args['data2'] = "[[French Guiana]]"
+			infobox_args['label3'] = 'Department'
+			infobox_args['data3'] = "[[Guyane]]"
+		elseif country(args) == "GLP" then
+			infobox_args['label2'] = 'Overseas region and department'
+			infobox_args['data2'] = "[[Guadeloupe]]"
+		elseif country(args) == "MTQ" then
+			infobox_args['label2'] = 'Overseas region and department'
+			infobox_args['data2'] = "[[Martinique]]"
+		elseif country(args) == "MYT" then
+			infobox_args['label2'] = 'Overseas region and department'
+			infobox_args['data2'] = "[[Mayotte]]"
+		elseif country(args) == "REU" then
+			infobox_args['label2'] = 'Overseas region'
+			infobox_args['data2'] = "[[Réunion]]"
+			infobox_args['label3'] = 'Department'
+			infobox_args['data3'] = "[[La Réunion]]"
+		else
+			infobox_args['label2'] = 'Regions'
+			infobox_args['data2'] = args.regions
+			infobox_args['label3'] = 'Departments'
+			infobox_args['data3'] = args.departments
+		end
+	
+	------------ GEORGIA -------------
+	elseif country(args) == "GEO" then
+		infobox_args['data1'] = "[[Georgia (country)|Georgia]]"
+		
+	------------- INDIA --------------
+	elseif country(args) == "IND" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[India]]"
+		infobox_args['label4'] = 'Districts'
+		infobox_args['data4'] = args.districts
+		
+		if args.state then
+			if args.state == "AN" or args.state == 'CH' or args.state == 'DH' or args.state == 'DL' or args.state == 'JK' or args.state == 'LA' or args.state == 'LD' or args.state == 'PY' then
+				infobox_args['label2'] = 'Union territory'
+			else
+				infobox_args['label2'] = 'State'
+			end
+				infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+		else
+			infobox_args['label2'] = 'States'
+			infobox_args['data2'] = args.states
+			infobox_args['label3'] = 'Union territories'
+			infobox_args['data3'] = args.territories
+		end
+		
+			
+	------------- MEXICO --------------
+	elseif country(args) == "MEX" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Mexico]]"
+		
+		if args.state then
+			if args.state == "CMX" then
+				infobox_args['label2'] = 'Autonomous city'
+			else
+				infobox_args['label2'] = 'State'
+			end
+			if args.state == "CHH" then
+				infobox_args['data2'] = '[[Chihuahua (state)|Chihuahua]]'
+			elseif args.state == "HID" then
+				infobox_args['data2'] = '[[Hidalgo (state)|Hidalgo]]'
+			elseif args.state == "MEX" then
+				infobox_args['data2'] = '[[State of Mexico|México]]'
+			else
+				infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+			end
+			infobox_args['label3'] = 'Municipalities'
+			infobox_args['data3'] = args.counties or args.municipalities
+		else
+			infobox_args['label2'] = 'States'
+			infobox_args['data2'] = args.states
+			infobox_args['label3'] = 'Municipalities'
+			infobox_args['data3'] = args.counties or args.municipalities
+		end
+
+	------------- NETHERLANDS --------------
+	elseif country(args) == "NLD" or country(args) == "ABW" or country(args) == "CUW" or country(args) == "SXM"then
+			
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Kingdom of the Netherlands]]"
+		infobox_args['label2'], infobox_args['data2'] = constituent(args)	
+		
+		if country(args) == "NLD" then
+			infobox_args['label3'] = 'Provinces'
+			infobox_args['data3'] = args.provinces
+		end
+		
+	------------- RUSSIA --------------
+	elseif country(args) == "RUS" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Russia]]"
+		infobox_args['label2'] = 'Oblasts'
+		infobox_args['data2'] = args.oblasts
+		infobox_args['label3'] = 'Republics'
+		infobox_args['data3'] = args.republics
+		infobox_args['label4'] = 'Autonomous okrugs'
+		infobox_args['data4'] = args.okrugs
+		infobox_args['label5'] = 'Krais'
+		infobox_args['data5'] = args.krais
+		infobox_args['label6'] = 'Federal cities'
+		infobox_args['data6'] = args.federal_cities
+		
+	------------- SPAIN --------------
+	elseif country(args) == "ESP" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[Spain]]"
+		
+		local province = args.province
+		
+		if province and province ~= '' then
+			infobox_args['label2'] = 'Autonomous&lt;br&gt;community'
+			infobox_args['data2'] = spain(args)
+			if province == "O" or province == "S" or province == "PM" or province == "LO" or province == "M" or province == "MU" or province == "NA" then
+				return nil
+			else
+				infobox_args['label3'] = 'Province'
+				infobox_args['data3'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+			end
+		elseif args.community then
+			infobox_args['label2'] = 'Autonomous&lt;br&gt;community'
+			infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , frame:expandTemplate ({title='country name', args = {"ESP-" .. args.community} }) } })
+			infobox_args['label3'] = 'Provinces'
+			infobox_args['data3'] = args.provinces
+		else
+			infobox_args['label2'] = 'Autonomous&lt;br&gt;communities'
+			infobox_args['data2'] = args.communities
+			infobox_args['label3'] = 'Provinces'
+			infobox_args['data3'] = args.provinces
+			
+		end
+		
+			
+
+	------------- UNITED KINGDOM --------------
+	elseif country(args) == "GBR" or country(args) == "ENG" or country(args) == "NIR" or country(args) == "SCT" or country(args) == "WLS" or
+		country(args) == "GGY" or country(args) == "IMN" or country(args) == "JEY" or country(args) == "AIA" or country(args) == "BMU" or
+		country(args) == "IOT" or country(args) == "VGB" or country(args) == "CYM" or country(args) == "FLK" or country(args) == "GIB" or
+		country(args) == "MSR" or country(args) == "PCN" or country(args) == "SHN" or country(args) == "SGS" or country(args) == "TCA" then
+
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[United Kingdom]]"
+		infobox_args['label2'], infobox_args['data2'] = constituent(args)
+		
+		if country(args) ~= "ENG" then
+			infobox_args['label5'] = 'Counties'
+			infobox_args['data5'] = args.counties
+		end
+
+		if country(args) == "ENG" then
+			infobox_args['label3'] = 'Administrative areas'
+			infobox_args['data3'] = args.areas
+			infobox_args['label4'] = 'Counties'
+			infobox_args['data4'] = args.counties
+			infobox_args['label5'] = 'Boroughs'
+			infobox_args['data5'] = args.boroughs
+		elseif country(args) == "NIR" then
+			infobox_args['label3'] = 'Districts'
+			infobox_args['data3'] = args.districts
+		elseif country(args) == "SCT" then
+			infobox_args['label3'] = 'Council areas'
+			infobox_args['data3'] = args.areas
+		elseif country(args) == "WLS" then
+			infobox_args['label3'] = 'Counties'
+			infobox_args['data3'] = args.counties
+			infobox_args['label4'] = 'County boroughs'
+			infobox_args['data4'] = args.boroughs
+		elseif country(args) == "GGY" or country(args) == "JEY" or country(args) == "BMU" or country(args) == "MSR" then
+			infobox_args['label3'] = 'Parishes'
+			infobox_args['data3'] = args.parishes
+		elseif country(args) == "IMN" then
+			infobox_args['label3'] = 'Sheadings'
+			infobox_args['data3'] = args.sheadings
+		elseif country(args) == "AIA" or country(args) == "VGB" or country(args) == "CYM" or country(args) == "TCA" then
+			infobox_args['label3'] = 'Districts'
+			infobox_args['data3'] = args.districts
+		elseif country(args) == "SHN" then
+			infobox_args['label3'] = 'Island'
+			infobox_args['data3'] = args.island
+		end
+
+	------------- UNITED STATES --------------
+	elseif country(args) == "USA" then
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = "[[United States]]"
+		
+		local function county(args)
+			local state = args.state
+			local stateName = frame:expandTemplate ({title='Country name', args = { "USA-" .. state}})
+			local country = country(args)
+			local countyName = args.county or args.parish or args.borough or args.municipality
+			
+			local county
+			if state == 'LA' then
+				county = 'Parish'
+			elseif state == 'AK' then
+				county = 'Borough'
+			elseif state == 'PR' then
+				county = 'Municipality'
+			else
+				county = 'County'
+			end
+			
+			return string.format("[[%s %s, %s|%s]]", countyName, county, stateName, countyName)
+		end
+
+		if args.state2 then
+			infobox_args['label2'] = 'States'
+			infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args) }}) .. ", " .. frame:expandTemplate ({title='Flagg', args = {"xx" , state2(args) }})
+		elseif args.state then
+			if args.state == "AS" or args.state == "GU" or args.state == "MP" or args.state == "PR" or args.state == "VI" then
+				infobox_args['label2'] = 'Territory'
+			elseif args.state == "DC" then
+				infobox_args['label2'] = 'Federal district'
+			else
+				infobox_args['label2'] = 'State'
+			end
+			if args.state == "GA" then
+				infobox_args['data2'] = '[[Georgia (U.S. state)|Georgia]]'
+			elseif args.state == "WA" then
+				infobox_args['data2'] = '[[Washington (state)|Washington]]'
+			elseif args.state == "NY" then
+				infobox_args['data2'] = '[[New York (state)|New York]]'
+			else
+				infobox_args['data2'] = frame:expandTemplate ({title='Flagg', args = {"xx" , state(args), nodata = 1 }})
+			end
+		else
+			infobox_args['label2'] = 'States'
+			infobox_args['data2'] = args.states
+		end
+		
+		if args.county then
+			infobox_args['label3'] = 'County'
+			infobox_args['data3'] = county(args)
+		else
+			infobox_args['label3'] = 'Counties'
+			infobox_args['data3'] = args.counties
+		end
+		
+		if args.parish then
+			infobox_args['label4'] = 'Parish'
+			infobox_args['data4'] = county(args)
+		else
+			infobox_args['label4'] = 'Parishes'
+			infobox_args['data4'] = args.parishes
+		end
+		
+		if args.borough then
+			infobox_args['label5'] = 'Borough'
+			infobox_args['data5'] = county(args)
+		else
+			infobox_args['label5'] = 'Boroughs'
+			infobox_args['data5'] = args.boroughs
+		end
+		
+		if args.municipality then
+			infobox_args['label6'] = 'Municipality'
+			infobox_args['data6'] = county(args)
+		else
+			infobox_args['label6'] = 'Municipalities'
+			infobox_args['data6'] = args.municipalities
+		end
+		
+		if args.indep_city then
+			infobox_args['label6'] = 'Independent city'
+			infobox_args['data6'] = args.indep_city
+		else
+			infobox_args['label7'] = 'Independent cities'
+			infobox_args['data7'] = args.indep_cities
+		end
+		
+	else
+		
+	------------- ALL OTHER COUNTRIES --------------
+	if country(args) ~= nil then
+		local countryname = frame:expandTemplate ({title='Country name', args = { country(args)}})
+		infobox_args['label1'] = 'Country'
+		infobox_args['data1'] = frame:expandTemplate ({title='Flagg', args = { "xx", countryname, nodata = 1 }})
+	else
+		infobox_args['label1'] = 'Countries'
+		infobox_args['data1'] = args.countries
+	end
+	
+	infobox_args['label2'] = 'Island'
+	infobox_args['data2'] = args.island
+	infobox_args['label3'] = 'Communities'
+	infobox_args['data3'] = args.communities
+	infobox_args['label4'] = 'Regions'
+	infobox_args['data4'] = args.regions
+	infobox_args['label5'] = 'Provinces'
+	infobox_args['data5'] = args.provinces
+	infobox_args['label6'] = 'States'
+	infobox_args['data6'] = args.states
+	infobox_args['label7'] = 'Governorates'
+	infobox_args['data7'] = args.governorates
+	infobox_args['label8'] = 'Counties'
+	infobox_args['data8'] = args.counties
+	infobox_args['label9'] = 'Departments'
+	infobox_args['data9'] = args.departments
+	infobox_args['label10'] = 'Cantons'
+	infobox_args['data10'] = args.cantons
+	infobox_args['label11'] = 'Prefectures'
+	infobox_args['data11'] = args.prefectures
+	infobox_args['label12'] = 'Divisions'
+	infobox_args['data12'] = args.divisions
+	infobox_args['label13'] = 'Oblasts'
+	infobox_args['data13'] = args.oblasts
+	infobox_args['label14'] = 'Districts'
+	infobox_args['data14'] = args.districts
+	infobox_args['label15'] = 'Parishes'
+	infobox_args['data15'] = args.parishes
+	infobox_args['label16'] = 'Communes'
+	infobox_args['data16'] = args.communes
+	infobox_args['label17'] = 'Territories'
+	infobox_args['data17'] = args.territories
+	infobox_args['label18'] = args.label1
+	infobox_args['data18'] = args.location1
+	infobox_args['label19'] = args.label2
+	infobox_args['data19'] = args.location2
+	infobox_args['label20'] = args.label3
+	infobox_args['data20'] = args.location3
+	infobox_args['label21'] = args.label4
+	infobox_args['data21'] = args.location4
+	infobox_args['label22'] = args.label5
+	infobox_args['data22'] = args.location5
+	infobox_args['label23'] = 'Subregions'
+	infobox_args['data23'] = args.subregions
+	infobox_args['label24'] = 'Subcounties'
+	infobox_args['data24'] = args.subcounties
+	infobox_args['label25'] = 'Subprefectures'
+	infobox_args['data25'] = args.subprefectures
+	end
+	
+	if country(args) ~= "USA" then
+		infobox_args['label26'] = 'Municipalities'
+		infobox_args['data26'] = args.municipalities
+		infobox_args['label27'] = 'Major cities'
+		infobox_args['data27'] = args.cities
+		infobox_args['label28'] = 'Towns'
+		infobox_args['data28'] = args.towns
+		infobox_args['label29'] = 'Villages'
+		infobox_args['data29'] = args.villages
+		
+		if country(args) == "GBR" or country(args) == "ENG" or country(args) == "NIR" or country(args) == "SCT" or country(args) == "WLS" or
+			country(args) == "GGY" or country(args) == "IMN" or country(args) == "JEY" or country(args) == "AIA" or country(args) == "BMU" or
+			country(args) == "IOT" or country(args) == "VGB" or country(args) == "CYM" or country(args) == "FLK" or country(args) == "GIB" or
+			country(args) == "MSR" or country(args) == "PCN" or country(args) == "SHN" or country(args) == "SGS" or country(args) == "TCA" then
+				
+			infobox_args['label30'] = '[[Primary status|Primary&lt;br&gt;destinations]]'
+			infobox_args['data30'] = args.destinations
+		else
+			infobox_args['label30'] = 'Primary&lt;br&gt;destinations'
+			infobox_args['data30'] = args.destinations
+		end
+	
+	end
+
+	return frame:expandTemplate ({title='Infobox', args = infobox_args})
+	
+end
+
+local function params(args)
+
+	if country(args) or args.areas or args.borough or args.boroughs or args.cantons or args.cities or args.communes or args.communities or args.counties or
+	args.countries or args.county or args.departments or args.destinations or args.districts or args.divisions or args.federal_cities or args.governorates or
+	args.indep_city or args.indep_cities or args.island or args.krais or args.label1 or args.label2 or args.label3 or args.label4 or args.label5 or args.lga or 
+	args.location1 or args.location2 or args.location3 or args.location4 or args.location5 or args.locations or args.municipalities or args.municipality or
+	args.oblasts or args.okrugs or args.parish or args.parishes or args.prefectures or args.provinces or args.regions or args.republics or args.rural_municipalities or
+	args.sheadings or args.states or args.subcounties or args.subprefectures or args.subregions or args.territories or args.towns or args.villages then
+		return true
+	else
+		return false
+	end
+end
+function p.location(frame)
+	local args = getArgs(frame)
+	
+	if params(args) == false then
+		return nil
+	else
+		return location(args)
+	end
+end
+
+return p</text>
+      <sha1>qdurvbs2yn2riehyb5i0yttoqsyzaes</sha1>
+    </revision>
+  </page>
+</mediawiki>

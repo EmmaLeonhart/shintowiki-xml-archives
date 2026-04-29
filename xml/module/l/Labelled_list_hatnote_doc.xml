@@ -1,0 +1,381 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Labelled list hatnote/doc</title>
+    <ns>828</ns>
+    <id>7604</id>
+    <revision>
+      <id>884975</id>
+      <timestamp>2024-08-29T22:05:07Z</timestamp>
+      <contributor>
+        <username>en&gt;Nickps</username>
+        <id>0</id>
+      </contributor>
+      <comment>Added the page to [[:Category:Module documentation pages]]</comment>
+      <origin>884975</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="3903" sha1="kjz397dppn5xh7vl3nrpgfmz2lcm6si" xml:space="preserve">{{module rating|protected}}
+{{used in system|in [[MediaWiki:Wantedpages-summary]]}}
+{{Lua|Module:Hatnote|Module:Hatnote list|Module:Arguments}}
+
+This module provides a handful of functions that make it easy to implement hatnotes that take the form of a label in front of a list of pages, e.g. {{hatnote|LABEL: [[A]], [[B]], and [[C]]}}
+ 
+== Usage ==
+
+===labelledList===
+Invoking the &lt;code&gt;labelledList()&lt;/code&gt; function is enough to implement most such templates:
+
+&lt;code&gt;&lt;nowiki&gt;{{#invoke:Labelled list hatnote|labelledList|Universal label}}&lt;/nowiki&gt;&lt;/code&gt;
+
+or
+
+&lt;code&gt;&lt;nowiki&gt;{{#invoke:Labelled list hatnote|labelledList|Singular label|Plural label}}&lt;/nowiki&gt;&lt;/code&gt;
+
+For example, providing "See also" instead of "Universal label" duplicates the functionality of {{tl|see also}}, while providing "Main article" and "Main articles" instead of "Singular label" and "Plural label" duplicates the (article namespace) functionality of {{tl|main}}.
+
+If third and fourth labels are provided, they'll be used in the case where any of the target pages are outside the article namespace, so e.g. {{tl|main}} can be implemented thus:
+
+&lt;code&gt;&lt;nowiki&gt;{{#invoke:Labelled list hatnote|labelledList|Main article|Main articles|Main page|Main pages}}&lt;/nowiki&gt;&lt;/code&gt;
+
+===preprocessDisplays===
+The &lt;code&gt;preprocessDisplays()&lt;/code&gt; function takes a raw list of arguments and combines in any display arguments. For example, {{tlx|see also|1|&lt;nowiki&gt;l1=One&lt;/nowiki&gt;}} initially has the arguments table &lt;code&gt;&lt;nowiki&gt;{'1', ['l1'] = 'One'}&lt;/nowiki&gt;&lt;/code&gt;; this table would combine those into the table &lt;code&gt;&lt;nowiki&gt;{'1|One'}&lt;/nowiki&gt;&lt;/code&gt;. It overrides manual piping (e.g. {{tlx|see also|&lt;nowiki&gt;1{{!}}2&lt;/nowiki&gt;|&lt;nowiki&gt;l1=One&lt;/nowiki&gt;}} → &lt;code&gt;&lt;nowiki&gt;{'1|One'}&lt;/nowiki&gt;&lt;/code&gt;) and compresses sparse arrays if a parameter is skipped or left empty.
+
+Example: &lt;syntaxhighlight lang="lua"&gt;
+local mLabelledList = require('Module:Labelled list hatnote')
+local pages = mLabelledList.preprocessDisplays(args)
+&lt;/syntaxhighlight&gt;
+
+===_labelledList===
+For modules that need to modify the functionality slightly while still using it, &lt;code&gt;_labelledList()&lt;/code&gt; provides some flexibility. It takes three parameters:
+# A pages list, preferably preprocessed and compressed by &lt;code&gt;preprocessDisplays&lt;/code&gt;
+# A labels table, where the first item is the singular or universal label, and the second either a plural label or a copy of the first.
+# An options table, preferably containing:
+#* a &lt;code&gt;template&lt;/code&gt; string with the full title of the template. Defaults to the title of this module.
+#* a &lt;code&gt;category&lt;/code&gt; string (or nil) as taken by &lt;code&gt;makeWikitextError&lt;/code&gt; from [[Module:Hatnote]], to optionally disable error categories
+#* a &lt;code&gt;selfref&lt;/code&gt; string (or nil) as taken by &lt;code&gt;_hatnote&lt;/code&gt; to enable the selfref option
+
+Example: &lt;syntaxhighlight lang="lua"&gt;
+local mLabelledList = require('Module:Labelled list hatnote')
+return mLabelledList._labelledList(pages, labels, options)
+&lt;/syntaxhighlight&gt;
+
+==Errors==
+This module causes templates based on it to produce an error message if no page names are provided as template parameters. Normally, these should lead back to "Errors" sections in the documentation of those templates. However, if those templates use a module with &lt;code&gt;_labelledList()&lt;/code&gt; and don't provide a &lt;code&gt;template&lt;/code&gt; item in their options table, that error defaults to leading back here. The error can be solved by providing at least one valid page-name parameter to the template in question; the problem in the template can be fixed by providing some value to the &lt;code&gt;template&lt;/code&gt; item of the &lt;code&gt;_labelledList()&lt;/code&gt; &lt;code&gt;options&lt;/code&gt; table.
+
+&lt;includeonly&gt;{{sandbox other||
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:Hatnote modules| ]]
+}}&lt;/includeonly&gt;&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>kjz397dppn5xh7vl3nrpgfmz2lcm6si</sha1>
+    </revision>
+    <revision>
+      <id>884976</id>
+      <parentid>884975</parentid>
+      <timestamp>2025-01-07T10:28:18Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: importing modules</comment>
+      <origin>884975</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="3903" sha1="kjz397dppn5xh7vl3nrpgfmz2lcm6si" xml:space="preserve">{{module rating|protected}}
+{{used in system|in [[MediaWiki:Wantedpages-summary]]}}
+{{Lua|Module:Hatnote|Module:Hatnote list|Module:Arguments}}
+
+This module provides a handful of functions that make it easy to implement hatnotes that take the form of a label in front of a list of pages, e.g. {{hatnote|LABEL: [[A]], [[B]], and [[C]]}}
+ 
+== Usage ==
+
+===labelledList===
+Invoking the &lt;code&gt;labelledList()&lt;/code&gt; function is enough to implement most such templates:
+
+&lt;code&gt;&lt;nowiki&gt;{{#invoke:Labelled list hatnote|labelledList|Universal label}}&lt;/nowiki&gt;&lt;/code&gt;
+
+or
+
+&lt;code&gt;&lt;nowiki&gt;{{#invoke:Labelled list hatnote|labelledList|Singular label|Plural label}}&lt;/nowiki&gt;&lt;/code&gt;
+
+For example, providing "See also" instead of "Universal label" duplicates the functionality of {{tl|see also}}, while providing "Main article" and "Main articles" instead of "Singular label" and "Plural label" duplicates the (article namespace) functionality of {{tl|main}}.
+
+If third and fourth labels are provided, they'll be used in the case where any of the target pages are outside the article namespace, so e.g. {{tl|main}} can be implemented thus:
+
+&lt;code&gt;&lt;nowiki&gt;{{#invoke:Labelled list hatnote|labelledList|Main article|Main articles|Main page|Main pages}}&lt;/nowiki&gt;&lt;/code&gt;
+
+===preprocessDisplays===
+The &lt;code&gt;preprocessDisplays()&lt;/code&gt; function takes a raw list of arguments and combines in any display arguments. For example, {{tlx|see also|1|&lt;nowiki&gt;l1=One&lt;/nowiki&gt;}} initially has the arguments table &lt;code&gt;&lt;nowiki&gt;{'1', ['l1'] = 'One'}&lt;/nowiki&gt;&lt;/code&gt;; this table would combine those into the table &lt;code&gt;&lt;nowiki&gt;{'1|One'}&lt;/nowiki&gt;&lt;/code&gt;. It overrides manual piping (e.g. {{tlx|see also|&lt;nowiki&gt;1{{!}}2&lt;/nowiki&gt;|&lt;nowiki&gt;l1=One&lt;/nowiki&gt;}} → &lt;code&gt;&lt;nowiki&gt;{'1|One'}&lt;/nowiki&gt;&lt;/code&gt;) and compresses sparse arrays if a parameter is skipped or left empty.
+
+Example: &lt;syntaxhighlight lang="lua"&gt;
+local mLabelledList = require('Module:Labelled list hatnote')
+local pages = mLabelledList.preprocessDisplays(args)
+&lt;/syntaxhighlight&gt;
+
+===_labelledList===
+For modules that need to modify the functionality slightly while still using it, &lt;code&gt;_labelledList()&lt;/code&gt; provides some flexibility. It takes three parameters:
+# A pages list, preferably preprocessed and compressed by &lt;code&gt;preprocessDisplays&lt;/code&gt;
+# A labels table, where the first item is the singular or universal label, and the second either a plural label or a copy of the first.
+# An options table, preferably containing:
+#* a &lt;code&gt;template&lt;/code&gt; string with the full title of the template. Defaults to the title of this module.
+#* a &lt;code&gt;category&lt;/code&gt; string (or nil) as taken by &lt;code&gt;makeWikitextError&lt;/code&gt; from [[Module:Hatnote]], to optionally disable error categories
+#* a &lt;code&gt;selfref&lt;/code&gt; string (or nil) as taken by &lt;code&gt;_hatnote&lt;/code&gt; to enable the selfref option
+
+Example: &lt;syntaxhighlight lang="lua"&gt;
+local mLabelledList = require('Module:Labelled list hatnote')
+return mLabelledList._labelledList(pages, labels, options)
+&lt;/syntaxhighlight&gt;
+
+==Errors==
+This module causes templates based on it to produce an error message if no page names are provided as template parameters. Normally, these should lead back to "Errors" sections in the documentation of those templates. However, if those templates use a module with &lt;code&gt;_labelledList()&lt;/code&gt; and don't provide a &lt;code&gt;template&lt;/code&gt; item in their options table, that error defaults to leading back here. The error can be solved by providing at least one valid page-name parameter to the template in question; the problem in the template can be fixed by providing some value to the &lt;code&gt;template&lt;/code&gt; item of the &lt;code&gt;_labelledList()&lt;/code&gt; &lt;code&gt;options&lt;/code&gt; table.
+
+&lt;includeonly&gt;{{sandbox other||
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:Hatnote modules| ]]
+}}&lt;/includeonly&gt;&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>kjz397dppn5xh7vl3nrpgfmz2lcm6si</sha1>
+    </revision>
+    <revision>
+      <id>884977</id>
+      <parentid>884976</parentid>
+      <timestamp>2025-05-19T03:56:29Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>884977</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="3909" sha1="jn7btw1xl9nyiqxysdo7bpmz1ht13ca" xml:space="preserve">{{module rating|protected}}
+{{used in system|in [[MediaWiki:Wantedpages-summary]]}}
+{{Lua|Module:Hatnote|Module:Hatnote list|Module:Arguments}}
+
+This module provides a handful of functions that make it easy to implement hatnotes that take the form of a label in front of a list of pages, e.g. {{hatnote|LABEL: [[:en:A|A]], [[B]], and [[C]]}}
+ 
+== Usage ==
+
+===labelledList===
+Invoking the &lt;code&gt;labelledList()&lt;/code&gt; function is enough to implement most such templates:
+
+&lt;code&gt;&lt;nowiki&gt;{{#invoke:Labelled list hatnote|labelledList|Universal label}}&lt;/nowiki&gt;&lt;/code&gt;
+
+or
+
+&lt;code&gt;&lt;nowiki&gt;{{#invoke:Labelled list hatnote|labelledList|Singular label|Plural label}}&lt;/nowiki&gt;&lt;/code&gt;
+
+For example, providing "See also" instead of "Universal label" duplicates the functionality of {{tl|see also}}, while providing "Main article" and "Main articles" instead of "Singular label" and "Plural label" duplicates the (article namespace) functionality of {{tl|main}}.
+
+If third and fourth labels are provided, they'll be used in the case where any of the target pages are outside the article namespace, so e.g. {{tl|main}} can be implemented thus:
+
+&lt;code&gt;&lt;nowiki&gt;{{#invoke:Labelled list hatnote|labelledList|Main article|Main articles|Main page|Main pages}}&lt;/nowiki&gt;&lt;/code&gt;
+
+===preprocessDisplays===
+The &lt;code&gt;preprocessDisplays()&lt;/code&gt; function takes a raw list of arguments and combines in any display arguments. For example, {{tlx|see also|1|&lt;nowiki&gt;l1=One&lt;/nowiki&gt;}} initially has the arguments table &lt;code&gt;&lt;nowiki&gt;{'1', ['l1'] = 'One'}&lt;/nowiki&gt;&lt;/code&gt;; this table would combine those into the table &lt;code&gt;&lt;nowiki&gt;{'1|One'}&lt;/nowiki&gt;&lt;/code&gt;. It overrides manual piping (e.g. {{tlx|see also|&lt;nowiki&gt;1{{!}}2&lt;/nowiki&gt;|&lt;nowiki&gt;l1=One&lt;/nowiki&gt;}} → &lt;code&gt;&lt;nowiki&gt;{'1|One'}&lt;/nowiki&gt;&lt;/code&gt;) and compresses sparse arrays if a parameter is skipped or left empty.
+
+Example: &lt;syntaxhighlight lang="lua"&gt;
+local mLabelledList = require('Module:Labelled list hatnote')
+local pages = mLabelledList.preprocessDisplays(args)
+&lt;/syntaxhighlight&gt;
+
+===_labelledList===
+For modules that need to modify the functionality slightly while still using it, &lt;code&gt;_labelledList()&lt;/code&gt; provides some flexibility. It takes three parameters:
+# A pages list, preferably preprocessed and compressed by &lt;code&gt;preprocessDisplays&lt;/code&gt;
+# A labels table, where the first item is the singular or universal label, and the second either a plural label or a copy of the first.
+# An options table, preferably containing:
+#* a &lt;code&gt;template&lt;/code&gt; string with the full title of the template. Defaults to the title of this module.
+#* a &lt;code&gt;category&lt;/code&gt; string (or nil) as taken by &lt;code&gt;makeWikitextError&lt;/code&gt; from [[Module:Hatnote]], to optionally disable error categories
+#* a &lt;code&gt;selfref&lt;/code&gt; string (or nil) as taken by &lt;code&gt;_hatnote&lt;/code&gt; to enable the selfref option
+
+Example: &lt;syntaxhighlight lang="lua"&gt;
+local mLabelledList = require('Module:Labelled list hatnote')
+return mLabelledList._labelledList(pages, labels, options)
+&lt;/syntaxhighlight&gt;
+
+==Errors==
+This module causes templates based on it to produce an error message if no page names are provided as template parameters. Normally, these should lead back to "Errors" sections in the documentation of those templates. However, if those templates use a module with &lt;code&gt;_labelledList()&lt;/code&gt; and don't provide a &lt;code&gt;template&lt;/code&gt; item in their options table, that error defaults to leading back here. The error can be solved by providing at least one valid page-name parameter to the template in question; the problem in the template can be fixed by providing some value to the &lt;code&gt;template&lt;/code&gt; item of the &lt;code&gt;_labelledList()&lt;/code&gt; &lt;code&gt;options&lt;/code&gt; table.
+
+&lt;includeonly&gt;{{sandbox other||
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:Hatnote modules| ]]
+}}&lt;/includeonly&gt;&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>jn7btw1xl9nyiqxysdo7bpmz1ht13ca</sha1>
+    </revision>
+    <revision>
+      <id>884978</id>
+      <parentid>884977</parentid>
+      <timestamp>2025-05-19T16:54:46Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>884978</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="3915" sha1="i299806apzuybywcc5p4djgavcnz022" xml:space="preserve">{{module rating|protected}}
+{{used in system|in [[MediaWiki:Wantedpages-summary]]}}
+{{Lua|Module:Hatnote|Module:Hatnote list|Module:Arguments}}
+
+This module provides a handful of functions that make it easy to implement hatnotes that take the form of a label in front of a list of pages, e.g. {{hatnote|LABEL: [[:en:A|A]], [[:en:B|B]], and [[C]]}}
+ 
+== Usage ==
+
+===labelledList===
+Invoking the &lt;code&gt;labelledList()&lt;/code&gt; function is enough to implement most such templates:
+
+&lt;code&gt;&lt;nowiki&gt;{{#invoke:Labelled list hatnote|labelledList|Universal label}}&lt;/nowiki&gt;&lt;/code&gt;
+
+or
+
+&lt;code&gt;&lt;nowiki&gt;{{#invoke:Labelled list hatnote|labelledList|Singular label|Plural label}}&lt;/nowiki&gt;&lt;/code&gt;
+
+For example, providing "See also" instead of "Universal label" duplicates the functionality of {{tl|see also}}, while providing "Main article" and "Main articles" instead of "Singular label" and "Plural label" duplicates the (article namespace) functionality of {{tl|main}}.
+
+If third and fourth labels are provided, they'll be used in the case where any of the target pages are outside the article namespace, so e.g. {{tl|main}} can be implemented thus:
+
+&lt;code&gt;&lt;nowiki&gt;{{#invoke:Labelled list hatnote|labelledList|Main article|Main articles|Main page|Main pages}}&lt;/nowiki&gt;&lt;/code&gt;
+
+===preprocessDisplays===
+The &lt;code&gt;preprocessDisplays()&lt;/code&gt; function takes a raw list of arguments and combines in any display arguments. For example, {{tlx|see also|1|&lt;nowiki&gt;l1=One&lt;/nowiki&gt;}} initially has the arguments table &lt;code&gt;&lt;nowiki&gt;{'1', ['l1'] = 'One'}&lt;/nowiki&gt;&lt;/code&gt;; this table would combine those into the table &lt;code&gt;&lt;nowiki&gt;{'1|One'}&lt;/nowiki&gt;&lt;/code&gt;. It overrides manual piping (e.g. {{tlx|see also|&lt;nowiki&gt;1{{!}}2&lt;/nowiki&gt;|&lt;nowiki&gt;l1=One&lt;/nowiki&gt;}} → &lt;code&gt;&lt;nowiki&gt;{'1|One'}&lt;/nowiki&gt;&lt;/code&gt;) and compresses sparse arrays if a parameter is skipped or left empty.
+
+Example: &lt;syntaxhighlight lang="lua"&gt;
+local mLabelledList = require('Module:Labelled list hatnote')
+local pages = mLabelledList.preprocessDisplays(args)
+&lt;/syntaxhighlight&gt;
+
+===_labelledList===
+For modules that need to modify the functionality slightly while still using it, &lt;code&gt;_labelledList()&lt;/code&gt; provides some flexibility. It takes three parameters:
+# A pages list, preferably preprocessed and compressed by &lt;code&gt;preprocessDisplays&lt;/code&gt;
+# A labels table, where the first item is the singular or universal label, and the second either a plural label or a copy of the first.
+# An options table, preferably containing:
+#* a &lt;code&gt;template&lt;/code&gt; string with the full title of the template. Defaults to the title of this module.
+#* a &lt;code&gt;category&lt;/code&gt; string (or nil) as taken by &lt;code&gt;makeWikitextError&lt;/code&gt; from [[Module:Hatnote]], to optionally disable error categories
+#* a &lt;code&gt;selfref&lt;/code&gt; string (or nil) as taken by &lt;code&gt;_hatnote&lt;/code&gt; to enable the selfref option
+
+Example: &lt;syntaxhighlight lang="lua"&gt;
+local mLabelledList = require('Module:Labelled list hatnote')
+return mLabelledList._labelledList(pages, labels, options)
+&lt;/syntaxhighlight&gt;
+
+==Errors==
+This module causes templates based on it to produce an error message if no page names are provided as template parameters. Normally, these should lead back to "Errors" sections in the documentation of those templates. However, if those templates use a module with &lt;code&gt;_labelledList()&lt;/code&gt; and don't provide a &lt;code&gt;template&lt;/code&gt; item in their options table, that error defaults to leading back here. The error can be solved by providing at least one valid page-name parameter to the template in question; the problem in the template can be fixed by providing some value to the &lt;code&gt;template&lt;/code&gt; item of the &lt;code&gt;_labelledList()&lt;/code&gt; &lt;code&gt;options&lt;/code&gt; table.
+
+&lt;includeonly&gt;{{sandbox other||
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:Hatnote modules| ]]
+}}&lt;/includeonly&gt;&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>i299806apzuybywcc5p4djgavcnz022</sha1>
+    </revision>
+    <revision>
+      <id>7605</id>
+      <timestamp>2025-05-19T16:54:58Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Bot: convert local link → enwiki interwiki</comment>
+      <origin>7605</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="3921" sha1="o06l7r4xv4q58i6fbs5ohg0dybqdpw4" xml:space="preserve">{{module rating|protected}}
+{{used in system|in [[MediaWiki:Wantedpages-summary]]}}
+{{Lua|Module:Hatnote|Module:Hatnote list|Module:Arguments}}
+
+This module provides a handful of functions that make it easy to implement hatnotes that take the form of a label in front of a list of pages, e.g. {{hatnote|LABEL: [[:en:A|A]], [[:en:B|B]], and [[:en:C|C]]}}
+ 
+== Usage ==
+
+===labelledList===
+Invoking the &lt;code&gt;labelledList()&lt;/code&gt; function is enough to implement most such templates:
+
+&lt;code&gt;&lt;nowiki&gt;{{#invoke:Labelled list hatnote|labelledList|Universal label}}&lt;/nowiki&gt;&lt;/code&gt;
+
+or
+
+&lt;code&gt;&lt;nowiki&gt;{{#invoke:Labelled list hatnote|labelledList|Singular label|Plural label}}&lt;/nowiki&gt;&lt;/code&gt;
+
+For example, providing "See also" instead of "Universal label" duplicates the functionality of {{tl|see also}}, while providing "Main article" and "Main articles" instead of "Singular label" and "Plural label" duplicates the (article namespace) functionality of {{tl|main}}.
+
+If third and fourth labels are provided, they'll be used in the case where any of the target pages are outside the article namespace, so e.g. {{tl|main}} can be implemented thus:
+
+&lt;code&gt;&lt;nowiki&gt;{{#invoke:Labelled list hatnote|labelledList|Main article|Main articles|Main page|Main pages}}&lt;/nowiki&gt;&lt;/code&gt;
+
+===preprocessDisplays===
+The &lt;code&gt;preprocessDisplays()&lt;/code&gt; function takes a raw list of arguments and combines in any display arguments. For example, {{tlx|see also|1|&lt;nowiki&gt;l1=One&lt;/nowiki&gt;}} initially has the arguments table &lt;code&gt;&lt;nowiki&gt;{'1', ['l1'] = 'One'}&lt;/nowiki&gt;&lt;/code&gt;; this table would combine those into the table &lt;code&gt;&lt;nowiki&gt;{'1|One'}&lt;/nowiki&gt;&lt;/code&gt;. It overrides manual piping (e.g. {{tlx|see also|&lt;nowiki&gt;1{{!}}2&lt;/nowiki&gt;|&lt;nowiki&gt;l1=One&lt;/nowiki&gt;}} → &lt;code&gt;&lt;nowiki&gt;{'1|One'}&lt;/nowiki&gt;&lt;/code&gt;) and compresses sparse arrays if a parameter is skipped or left empty.
+
+Example: &lt;syntaxhighlight lang="lua"&gt;
+local mLabelledList = require('Module:Labelled list hatnote')
+local pages = mLabelledList.preprocessDisplays(args)
+&lt;/syntaxhighlight&gt;
+
+===_labelledList===
+For modules that need to modify the functionality slightly while still using it, &lt;code&gt;_labelledList()&lt;/code&gt; provides some flexibility. It takes three parameters:
+# A pages list, preferably preprocessed and compressed by &lt;code&gt;preprocessDisplays&lt;/code&gt;
+# A labels table, where the first item is the singular or universal label, and the second either a plural label or a copy of the first.
+# An options table, preferably containing:
+#* a &lt;code&gt;template&lt;/code&gt; string with the full title of the template. Defaults to the title of this module.
+#* a &lt;code&gt;category&lt;/code&gt; string (or nil) as taken by &lt;code&gt;makeWikitextError&lt;/code&gt; from [[Module:Hatnote]], to optionally disable error categories
+#* a &lt;code&gt;selfref&lt;/code&gt; string (or nil) as taken by &lt;code&gt;_hatnote&lt;/code&gt; to enable the selfref option
+
+Example: &lt;syntaxhighlight lang="lua"&gt;
+local mLabelledList = require('Module:Labelled list hatnote')
+return mLabelledList._labelledList(pages, labels, options)
+&lt;/syntaxhighlight&gt;
+
+==Errors==
+This module causes templates based on it to produce an error message if no page names are provided as template parameters. Normally, these should lead back to "Errors" sections in the documentation of those templates. However, if those templates use a module with &lt;code&gt;_labelledList()&lt;/code&gt; and don't provide a &lt;code&gt;template&lt;/code&gt; item in their options table, that error defaults to leading back here. The error can be solved by providing at least one valid page-name parameter to the template in question; the problem in the template can be fixed by providing some value to the &lt;code&gt;template&lt;/code&gt; item of the &lt;code&gt;_labelledList()&lt;/code&gt; &lt;code&gt;options&lt;/code&gt; table.
+
+&lt;includeonly&gt;{{sandbox other||
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:Hatnote modules| ]]
+}}&lt;/includeonly&gt;&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>o06l7r4xv4q58i6fbs5ohg0dybqdpw4</sha1>
+    </revision>
+  </page>
+</mediawiki>

@@ -1,0 +1,855 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:IPAc-en</title>
+    <ns>828</ns>
+    <id>152632</id>
+    <revision>
+      <id>3562158</id>
+      <timestamp>2026-03-22T18:47:38Z</timestamp>
+      <contributor>
+        <username>en&gt;Nardog</username>
+        <id>0</id>
+      </contributor>
+      <comment>rv per talk</comment>
+      <origin>3562158</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4690" sha1="n18dhnoav7mce9k6g2cxv8uk1aacnlc" xml:space="preserve">-- This module implements [[Template:IPAc-en]].
+
+local data = mw.loadData('Module:IPAc-en/data')
+local p = {}
+
+-- Global container for tracking categories
+local categoryHandler = require('Module:Category handler').main
+local categories = {}
+
+-- Trims whitespace from a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- This implements [[Template:Nowrap]].
+local function makeNowrapSpan(s)
+	local span = mw.html.create('span')
+		:addClass('rt-commentedText') -- Works with [[MediaWiki:Gadget-ReferenceTooltips.js]]
+		:addClass('nowrap')
+		:wikitext(s)
+	return tostring(span)
+end
+
+local function makePronunciationText(id)
+	id = id and string.lower(trim(id))
+	if id and id ~= '' and data.pronunciation[id] then
+		return data.pronunciation[id].text
+	end
+end
+
+-- This adds a tooltip icon to a label. It implements [[Template:H:title]].
+local function makeTooltip(label, tooltip)
+	-- mw.html doesn't properly escape '|'
+	return string.format(
+		'&lt;span title="%s"&gt;%s&lt;/span&gt;',
+		mw.text.encode(tooltip, '|'),
+		label
+	)
+end
+
+local function formatPhonemeGroup(phonemes)
+	if #phonemes &gt; 0 then
+		local span = mw.html.create('span')
+			:css('border-bottom', '1px dotted')
+			:wikitext(table.concat(phonemes))
+		return tostring(span)
+	else
+		return ''
+	end
+end
+
+local function renderCategories()
+	local ret = ''
+	
+	if categoryHandler{ true } then
+		ret = {}
+		for cat in pairs(categories) do
+			table.insert(ret, string.format('[[Category:%s]]', cat))
+		end
+		table.sort(ret)
+		ret = table.concat(ret)
+	else
+		ret = ''
+	end
+	return ret
+end
+
+function p._main(args)
+	local ret = {}
+	local i = 0 -- Keeps track of numbered args
+
+	-- Pronunciation
+	do
+		local pron = {}
+		while true do
+			i = i + 1
+			local pronItem = makePronunciationText(args[i])
+			if pronItem then
+				pron[#pron + 1] = pronItem
+				pron[#pron + 1] = ' '
+			else
+				break
+			end
+		end
+		if #pron &gt; 0 then
+			ret[#ret + 1] = mw.getCurrentFrame():extensionTag({
+				name = 'templatestyles',
+				args = { src = 'Module:IPA/styles.css' }
+			})
+			ret[#ret + 1] = string.format(
+				'&lt;span class="IPA-label IPA-label-small"&gt;%s&lt;/span&gt;',
+				table.concat(pron)
+			)
+		end
+	end
+
+	-- Phonemes
+	do
+		-- Loop through the numbered args, separating them into phoneme groups
+		-- and separator strings (both called "words" for convenience). We only
+		-- underline the phoneme groups, not the separators.
+		local words = {}
+		words[#words + 1] = '/' -- Opening slash
+		i = i - 1 -- Set up i again as it was changed in the pronunciation loop
+		local id
+		repeat
+			local phonemes = {}
+			local isWordEnd = false
+			while not isWordEnd do
+				i = i + 1
+				id = args[i]
+				id = id and trim(id)
+				if not id then
+					isWordEnd = true
+					words[#words + 1] = formatPhonemeGroup(phonemes)
+				elseif id ~= '' then
+					local t = data.phonemes[id]
+					if not t then
+						-- We were passed an invalid id.
+						isWordEnd = true
+						categories["Ill-formatted IPAc-en transclusions"] = true
+						words[#words + 1] = formatPhonemeGroup(phonemes)
+						words[#words + 1] = makeTooltip(
+							string.format(
+								"&lt;strong class=\"error\"&gt;[invalid input: '%s']&lt;/strong&gt;",
+								id
+								),
+							'Unrecognized symbol'
+						)
+					elseif not t.label then
+						-- The data module contains bad data, so throw an error.
+						error(string.format(
+							"no label was found for id '%s'",
+							tostring(id)
+						))
+					elseif t.tooltip then
+						-- We are dealing with a regular phoneme.
+						phonemes[#phonemes + 1] = makeTooltip(
+							t.label,
+							t.tooltip
+						)
+					else
+						-- We are dealing with a separator.
+						isWordEnd = true
+						words[#words + 1] = formatPhonemeGroup(phonemes)
+						words[#words + 1] = t.label						
+					end
+				end
+			end
+		until not id
+		words[#words + 1] = '/' -- Closing slash
+
+		-- Wrap the words in a link to IPA help.
+		local span = mw.html.create('span')
+			-- Suppress Navigation popups and Page Previews (aka Hovercards)
+			:addClass('IPA nopopups noexcerpt')
+			:attr('lang', 'en-fonipa')
+			:wikitext(string.format(
+				'[[Help:IPA/English|%s]]',
+				table.concat(words)
+			))
+		
+		ret[#ret + 1] = tostring(span)
+	end
+	
+	-- Audio link
+	do
+		local file = args.audio and trim(args.audio)
+		if file and file ~= '' then
+			categories["Pages including recorded pronunciations"] = true
+			ret[#ret + 1] = mw.getCurrentFrame():expandTemplate{
+				title = 'Template:IPA audio link', args = { file } }
+		end
+	end
+	
+	-- Nowrap and categories
+	ret = makeNowrapSpan(table.concat(ret)) .. renderCategories()
+
+	-- Reset the categories table in case we are run again.
+	categories = {}
+
+	return ret
+end
+
+function p.main(frame)
+	return p._main(frame:getParent().args)
+end
+
+return p</text>
+      <sha1>n18dhnoav7mce9k6g2cxv8uk1aacnlc</sha1>
+    </revision>
+    <revision>
+      <id>3562159</id>
+      <parentid>3562158</parentid>
+      <timestamp>2026-03-22T18:47:38Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3562158</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4690" sha1="n18dhnoav7mce9k6g2cxv8uk1aacnlc" xml:space="preserve">-- This module implements [[Template:IPAc-en]].
+
+local data = mw.loadData('Module:IPAc-en/data')
+local p = {}
+
+-- Global container for tracking categories
+local categoryHandler = require('Module:Category handler').main
+local categories = {}
+
+-- Trims whitespace from a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- This implements [[Template:Nowrap]].
+local function makeNowrapSpan(s)
+	local span = mw.html.create('span')
+		:addClass('rt-commentedText') -- Works with [[MediaWiki:Gadget-ReferenceTooltips.js]]
+		:addClass('nowrap')
+		:wikitext(s)
+	return tostring(span)
+end
+
+local function makePronunciationText(id)
+	id = id and string.lower(trim(id))
+	if id and id ~= '' and data.pronunciation[id] then
+		return data.pronunciation[id].text
+	end
+end
+
+-- This adds a tooltip icon to a label. It implements [[Template:H:title]].
+local function makeTooltip(label, tooltip)
+	-- mw.html doesn't properly escape '|'
+	return string.format(
+		'&lt;span title="%s"&gt;%s&lt;/span&gt;',
+		mw.text.encode(tooltip, '|'),
+		label
+	)
+end
+
+local function formatPhonemeGroup(phonemes)
+	if #phonemes &gt; 0 then
+		local span = mw.html.create('span')
+			:css('border-bottom', '1px dotted')
+			:wikitext(table.concat(phonemes))
+		return tostring(span)
+	else
+		return ''
+	end
+end
+
+local function renderCategories()
+	local ret = ''
+	
+	if categoryHandler{ true } then
+		ret = {}
+		for cat in pairs(categories) do
+			table.insert(ret, string.format('[[Category:%s]]', cat))
+		end
+		table.sort(ret)
+		ret = table.concat(ret)
+	else
+		ret = ''
+	end
+	return ret
+end
+
+function p._main(args)
+	local ret = {}
+	local i = 0 -- Keeps track of numbered args
+
+	-- Pronunciation
+	do
+		local pron = {}
+		while true do
+			i = i + 1
+			local pronItem = makePronunciationText(args[i])
+			if pronItem then
+				pron[#pron + 1] = pronItem
+				pron[#pron + 1] = ' '
+			else
+				break
+			end
+		end
+		if #pron &gt; 0 then
+			ret[#ret + 1] = mw.getCurrentFrame():extensionTag({
+				name = 'templatestyles',
+				args = { src = 'Module:IPA/styles.css' }
+			})
+			ret[#ret + 1] = string.format(
+				'&lt;span class="IPA-label IPA-label-small"&gt;%s&lt;/span&gt;',
+				table.concat(pron)
+			)
+		end
+	end
+
+	-- Phonemes
+	do
+		-- Loop through the numbered args, separating them into phoneme groups
+		-- and separator strings (both called "words" for convenience). We only
+		-- underline the phoneme groups, not the separators.
+		local words = {}
+		words[#words + 1] = '/' -- Opening slash
+		i = i - 1 -- Set up i again as it was changed in the pronunciation loop
+		local id
+		repeat
+			local phonemes = {}
+			local isWordEnd = false
+			while not isWordEnd do
+				i = i + 1
+				id = args[i]
+				id = id and trim(id)
+				if not id then
+					isWordEnd = true
+					words[#words + 1] = formatPhonemeGroup(phonemes)
+				elseif id ~= '' then
+					local t = data.phonemes[id]
+					if not t then
+						-- We were passed an invalid id.
+						isWordEnd = true
+						categories["Ill-formatted IPAc-en transclusions"] = true
+						words[#words + 1] = formatPhonemeGroup(phonemes)
+						words[#words + 1] = makeTooltip(
+							string.format(
+								"&lt;strong class=\"error\"&gt;[invalid input: '%s']&lt;/strong&gt;",
+								id
+								),
+							'Unrecognized symbol'
+						)
+					elseif not t.label then
+						-- The data module contains bad data, so throw an error.
+						error(string.format(
+							"no label was found for id '%s'",
+							tostring(id)
+						))
+					elseif t.tooltip then
+						-- We are dealing with a regular phoneme.
+						phonemes[#phonemes + 1] = makeTooltip(
+							t.label,
+							t.tooltip
+						)
+					else
+						-- We are dealing with a separator.
+						isWordEnd = true
+						words[#words + 1] = formatPhonemeGroup(phonemes)
+						words[#words + 1] = t.label						
+					end
+				end
+			end
+		until not id
+		words[#words + 1] = '/' -- Closing slash
+
+		-- Wrap the words in a link to IPA help.
+		local span = mw.html.create('span')
+			-- Suppress Navigation popups and Page Previews (aka Hovercards)
+			:addClass('IPA nopopups noexcerpt')
+			:attr('lang', 'en-fonipa')
+			:wikitext(string.format(
+				'[[Help:IPA/English|%s]]',
+				table.concat(words)
+			))
+		
+		ret[#ret + 1] = tostring(span)
+	end
+	
+	-- Audio link
+	do
+		local file = args.audio and trim(args.audio)
+		if file and file ~= '' then
+			categories["Pages including recorded pronunciations"] = true
+			ret[#ret + 1] = mw.getCurrentFrame():expandTemplate{
+				title = 'Template:IPA audio link', args = { file } }
+		end
+	end
+	
+	-- Nowrap and categories
+	ret = makeNowrapSpan(table.concat(ret)) .. renderCategories()
+
+	-- Reset the categories table in case we are run again.
+	categories = {}
+
+	return ret
+end
+
+function p.main(frame)
+	return p._main(frame:getParent().args)
+end
+
+return p</text>
+      <sha1>n18dhnoav7mce9k6g2cxv8uk1aacnlc</sha1>
+    </revision>
+    <revision>
+      <id>3646144</id>
+      <parentid>3562159</parentid>
+      <timestamp>2026-04-24T16:30:32Z</timestamp>
+      <contributor>
+        <username>en&gt;Nardog</username>
+        <id>0</id>
+      </contributor>
+      <comment>rv per talk</comment>
+      <origin>3562158</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4690" sha1="n18dhnoav7mce9k6g2cxv8uk1aacnlc" xml:space="preserve">-- This module implements [[Template:IPAc-en]].
+
+local data = mw.loadData('Module:IPAc-en/data')
+local p = {}
+
+-- Global container for tracking categories
+local categoryHandler = require('Module:Category handler').main
+local categories = {}
+
+-- Trims whitespace from a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- This implements [[Template:Nowrap]].
+local function makeNowrapSpan(s)
+	local span = mw.html.create('span')
+		:addClass('rt-commentedText') -- Works with [[MediaWiki:Gadget-ReferenceTooltips.js]]
+		:addClass('nowrap')
+		:wikitext(s)
+	return tostring(span)
+end
+
+local function makePronunciationText(id)
+	id = id and string.lower(trim(id))
+	if id and id ~= '' and data.pronunciation[id] then
+		return data.pronunciation[id].text
+	end
+end
+
+-- This adds a tooltip icon to a label. It implements [[Template:H:title]].
+local function makeTooltip(label, tooltip)
+	-- mw.html doesn't properly escape '|'
+	return string.format(
+		'&lt;span title="%s"&gt;%s&lt;/span&gt;',
+		mw.text.encode(tooltip, '|'),
+		label
+	)
+end
+
+local function formatPhonemeGroup(phonemes)
+	if #phonemes &gt; 0 then
+		local span = mw.html.create('span')
+			:css('border-bottom', '1px dotted')
+			:wikitext(table.concat(phonemes))
+		return tostring(span)
+	else
+		return ''
+	end
+end
+
+local function renderCategories()
+	local ret = ''
+	
+	if categoryHandler{ true } then
+		ret = {}
+		for cat in pairs(categories) do
+			table.insert(ret, string.format('[[Category:%s]]', cat))
+		end
+		table.sort(ret)
+		ret = table.concat(ret)
+	else
+		ret = ''
+	end
+	return ret
+end
+
+function p._main(args)
+	local ret = {}
+	local i = 0 -- Keeps track of numbered args
+
+	-- Pronunciation
+	do
+		local pron = {}
+		while true do
+			i = i + 1
+			local pronItem = makePronunciationText(args[i])
+			if pronItem then
+				pron[#pron + 1] = pronItem
+				pron[#pron + 1] = ' '
+			else
+				break
+			end
+		end
+		if #pron &gt; 0 then
+			ret[#ret + 1] = mw.getCurrentFrame():extensionTag({
+				name = 'templatestyles',
+				args = { src = 'Module:IPA/styles.css' }
+			})
+			ret[#ret + 1] = string.format(
+				'&lt;span class="IPA-label IPA-label-small"&gt;%s&lt;/span&gt;',
+				table.concat(pron)
+			)
+		end
+	end
+
+	-- Phonemes
+	do
+		-- Loop through the numbered args, separating them into phoneme groups
+		-- and separator strings (both called "words" for convenience). We only
+		-- underline the phoneme groups, not the separators.
+		local words = {}
+		words[#words + 1] = '/' -- Opening slash
+		i = i - 1 -- Set up i again as it was changed in the pronunciation loop
+		local id
+		repeat
+			local phonemes = {}
+			local isWordEnd = false
+			while not isWordEnd do
+				i = i + 1
+				id = args[i]
+				id = id and trim(id)
+				if not id then
+					isWordEnd = true
+					words[#words + 1] = formatPhonemeGroup(phonemes)
+				elseif id ~= '' then
+					local t = data.phonemes[id]
+					if not t then
+						-- We were passed an invalid id.
+						isWordEnd = true
+						categories["Ill-formatted IPAc-en transclusions"] = true
+						words[#words + 1] = formatPhonemeGroup(phonemes)
+						words[#words + 1] = makeTooltip(
+							string.format(
+								"&lt;strong class=\"error\"&gt;[invalid input: '%s']&lt;/strong&gt;",
+								id
+								),
+							'Unrecognized symbol'
+						)
+					elseif not t.label then
+						-- The data module contains bad data, so throw an error.
+						error(string.format(
+							"no label was found for id '%s'",
+							tostring(id)
+						))
+					elseif t.tooltip then
+						-- We are dealing with a regular phoneme.
+						phonemes[#phonemes + 1] = makeTooltip(
+							t.label,
+							t.tooltip
+						)
+					else
+						-- We are dealing with a separator.
+						isWordEnd = true
+						words[#words + 1] = formatPhonemeGroup(phonemes)
+						words[#words + 1] = t.label						
+					end
+				end
+			end
+		until not id
+		words[#words + 1] = '/' -- Closing slash
+
+		-- Wrap the words in a link to IPA help.
+		local span = mw.html.create('span')
+			-- Suppress Navigation popups and Page Previews (aka Hovercards)
+			:addClass('IPA nopopups noexcerpt')
+			:attr('lang', 'en-fonipa')
+			:wikitext(string.format(
+				'[[Help:IPA/English|%s]]',
+				table.concat(words)
+			))
+		
+		ret[#ret + 1] = tostring(span)
+	end
+	
+	-- Audio link
+	do
+		local file = args.audio and trim(args.audio)
+		if file and file ~= '' then
+			categories["Pages including recorded pronunciations"] = true
+			ret[#ret + 1] = mw.getCurrentFrame():expandTemplate{
+				title = 'Template:IPA audio link', args = { file } }
+		end
+	end
+	
+	-- Nowrap and categories
+	ret = makeNowrapSpan(table.concat(ret)) .. renderCategories()
+
+	-- Reset the categories table in case we are run again.
+	categories = {}
+
+	return ret
+end
+
+function p.main(frame)
+	return p._main(frame:getParent().args)
+end
+
+return p</text>
+      <sha1>n18dhnoav7mce9k6g2cxv8uk1aacnlc</sha1>
+    </revision>
+    <revision>
+      <id>3646145</id>
+      <parentid>3646144</parentid>
+      <timestamp>2026-04-24T16:30:32Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: trying to do a last fix of these, they will be fixed and not bloat the site</comment>
+      <origin>3562158</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4690" sha1="n18dhnoav7mce9k6g2cxv8uk1aacnlc" xml:space="preserve">-- This module implements [[Template:IPAc-en]].
+
+local data = mw.loadData('Module:IPAc-en/data')
+local p = {}
+
+-- Global container for tracking categories
+local categoryHandler = require('Module:Category handler').main
+local categories = {}
+
+-- Trims whitespace from a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- This implements [[Template:Nowrap]].
+local function makeNowrapSpan(s)
+	local span = mw.html.create('span')
+		:addClass('rt-commentedText') -- Works with [[MediaWiki:Gadget-ReferenceTooltips.js]]
+		:addClass('nowrap')
+		:wikitext(s)
+	return tostring(span)
+end
+
+local function makePronunciationText(id)
+	id = id and string.lower(trim(id))
+	if id and id ~= '' and data.pronunciation[id] then
+		return data.pronunciation[id].text
+	end
+end
+
+-- This adds a tooltip icon to a label. It implements [[Template:H:title]].
+local function makeTooltip(label, tooltip)
+	-- mw.html doesn't properly escape '|'
+	return string.format(
+		'&lt;span title="%s"&gt;%s&lt;/span&gt;',
+		mw.text.encode(tooltip, '|'),
+		label
+	)
+end
+
+local function formatPhonemeGroup(phonemes)
+	if #phonemes &gt; 0 then
+		local span = mw.html.create('span')
+			:css('border-bottom', '1px dotted')
+			:wikitext(table.concat(phonemes))
+		return tostring(span)
+	else
+		return ''
+	end
+end
+
+local function renderCategories()
+	local ret = ''
+	
+	if categoryHandler{ true } then
+		ret = {}
+		for cat in pairs(categories) do
+			table.insert(ret, string.format('[[Category:%s]]', cat))
+		end
+		table.sort(ret)
+		ret = table.concat(ret)
+	else
+		ret = ''
+	end
+	return ret
+end
+
+function p._main(args)
+	local ret = {}
+	local i = 0 -- Keeps track of numbered args
+
+	-- Pronunciation
+	do
+		local pron = {}
+		while true do
+			i = i + 1
+			local pronItem = makePronunciationText(args[i])
+			if pronItem then
+				pron[#pron + 1] = pronItem
+				pron[#pron + 1] = ' '
+			else
+				break
+			end
+		end
+		if #pron &gt; 0 then
+			ret[#ret + 1] = mw.getCurrentFrame():extensionTag({
+				name = 'templatestyles',
+				args = { src = 'Module:IPA/styles.css' }
+			})
+			ret[#ret + 1] = string.format(
+				'&lt;span class="IPA-label IPA-label-small"&gt;%s&lt;/span&gt;',
+				table.concat(pron)
+			)
+		end
+	end
+
+	-- Phonemes
+	do
+		-- Loop through the numbered args, separating them into phoneme groups
+		-- and separator strings (both called "words" for convenience). We only
+		-- underline the phoneme groups, not the separators.
+		local words = {}
+		words[#words + 1] = '/' -- Opening slash
+		i = i - 1 -- Set up i again as it was changed in the pronunciation loop
+		local id
+		repeat
+			local phonemes = {}
+			local isWordEnd = false
+			while not isWordEnd do
+				i = i + 1
+				id = args[i]
+				id = id and trim(id)
+				if not id then
+					isWordEnd = true
+					words[#words + 1] = formatPhonemeGroup(phonemes)
+				elseif id ~= '' then
+					local t = data.phonemes[id]
+					if not t then
+						-- We were passed an invalid id.
+						isWordEnd = true
+						categories["Ill-formatted IPAc-en transclusions"] = true
+						words[#words + 1] = formatPhonemeGroup(phonemes)
+						words[#words + 1] = makeTooltip(
+							string.format(
+								"&lt;strong class=\"error\"&gt;[invalid input: '%s']&lt;/strong&gt;",
+								id
+								),
+							'Unrecognized symbol'
+						)
+					elseif not t.label then
+						-- The data module contains bad data, so throw an error.
+						error(string.format(
+							"no label was found for id '%s'",
+							tostring(id)
+						))
+					elseif t.tooltip then
+						-- We are dealing with a regular phoneme.
+						phonemes[#phonemes + 1] = makeTooltip(
+							t.label,
+							t.tooltip
+						)
+					else
+						-- We are dealing with a separator.
+						isWordEnd = true
+						words[#words + 1] = formatPhonemeGroup(phonemes)
+						words[#words + 1] = t.label						
+					end
+				end
+			end
+		until not id
+		words[#words + 1] = '/' -- Closing slash
+
+		-- Wrap the words in a link to IPA help.
+		local span = mw.html.create('span')
+			-- Suppress Navigation popups and Page Previews (aka Hovercards)
+			:addClass('IPA nopopups noexcerpt')
+			:attr('lang', 'en-fonipa')
+			:wikitext(string.format(
+				'[[Help:IPA/English|%s]]',
+				table.concat(words)
+			))
+		
+		ret[#ret + 1] = tostring(span)
+	end
+	
+	-- Audio link
+	do
+		local file = args.audio and trim(args.audio)
+		if file and file ~= '' then
+			categories["Pages including recorded pronunciations"] = true
+			ret[#ret + 1] = mw.getCurrentFrame():expandTemplate{
+				title = 'Template:IPA audio link', args = { file } }
+		end
+	end
+	
+	-- Nowrap and categories
+	ret = makeNowrapSpan(table.concat(ret)) .. renderCategories()
+
+	-- Reset the categories table in case we are run again.
+	categories = {}
+
+	return ret
+end
+
+function p.main(frame)
+	return p._main(frame:getParent().args)
+end
+
+return p</text>
+      <sha1>n18dhnoav7mce9k6g2cxv8uk1aacnlc</sha1>
+    </revision>
+  </page>
+</mediawiki>

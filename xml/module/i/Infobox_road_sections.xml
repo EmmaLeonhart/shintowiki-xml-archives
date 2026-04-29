@@ -1,0 +1,463 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Infobox road/sections</title>
+    <ns>828</ns>
+    <id>17335</id>
+    <revision>
+      <id>1165246</id>
+      <timestamp>2025-04-25T22:09:30Z</timestamp>
+      <contributor>
+        <username>en&gt;Jonesey95</username>
+        <id>0</id>
+      </contributor>
+      <comment>match lower section so that From/To is consistent, pending improvements to check for "direction" or replace these with "Terminus"</comment>
+      <origin>1165246</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5523" sha1="dn3r6ckaf9gvxln2767uktx5r563eod" xml:space="preserve">local p = {}
+
+local getArgs = require('Module:Arguments').getArgs
+local lengthModule = require("Module:Infobox road/length")
+local parserModule = require("Module:Road data/parser")
+local parser = parserModule.parser
+local frame = mw.getCurrentFrame()
+
+local function country(args)
+	local state = args.state or args.province
+	local country
+	local countryModule = mw.loadData("Module:Road data/countrymask")
+	local country = args.country or countryModule[state]
+	
+	return country
+end
+
+-- HEADER COLORS
+
+function p.headerStyle(args)
+	local deleted = args.decommissioned or args.deleted
+	local uc = args.header_type == "under construction" or args.header_type == "const" or args.header_type == "uc"
+	local minor = args.header_type == "minor"
+	local hist = args.header_type == "hist" or args.header_type == "historic" or args.header_type == "historical" or args.header_type == "scenic"
+	local color = parser(args, 'color')
+	
+	if freeway then
+		return "header-MUTCDblue"
+	elseif uc then
+		return "header-uc"
+	elseif minor then
+		return "header-minor"
+	elseif deleted and header == 'hist' or deleted and color == 'hist' then
+		return "header-deleted-hist"
+	elseif deleted then
+		return "header-deleted"
+	elseif hist then
+		return "header-hist"
+	elseif color then
+		return "header-" .. color
+	elseif args.state or args.province or args.country then
+		local country = country(args)
+		return "header-" .. country or "header-default"
+	else
+		return "header-default"
+	end
+end
+
+function p._section(args)
+	if args.section1 or args.length_km1 or args.length_mi1 or args.length_notes1 or args.direction_a1 or
+		args.terminus_a1 or args.junction1 or args.junctions1 or args.direction_b1 or args.terminus_b1 then
+	
+	local infobox_args = {
+		['child'] = "yes",
+		['decat'] = "yes",
+		['headerclass'] = p.headerStyle(args)
+	}
+	local i = 1
+	while (1) do
+		local num = i
+		local j = ((i - 1) * 5) + 1
+		local headern = "header" .. j
+		local lengthLabeln = "label" .. (j + 1)
+		local lengthDatan = "data" .. (j + 1)
+		local directionAn = "label" .. (j + 2)
+		local terminusAn = "data" .. (j + 2)
+		local jctClassn = "class" .. (j + 3)
+		local jctLabeln = "label" .. (j + 3)
+		local jctDatan = "data" .. (j + 3)
+		local directionBn = "label" .. (j + 4)
+		local terminusBn = "data" .. (j + 4)
+		
+		if args['section' .. i] or args["length_km" .. i] or args["length_mi" .. i] or args["length_notes" .. i] or args["direction_a" .. i] or
+			args["terminus_a" .. i] or args["junction" .. i] or args["junctions" .. i] or args["direction_b" .. i] or args["terminus_b" .. i] then
+				
+			if i == 1 then
+				infobox_args['title'] = args['section' .. i] or "Section " .. i
+			else
+				infobox_args[headern] = args['section' .. i] or "Section " .. i
+			end
+		end
+		
+		infobox_args[lengthLabeln] = "Length"
+		infobox_args[lengthDatan] = lengthModule._length(num, args)
+
+		local dir_a = args["direction_a" .. i] or args.direction_a or ''
+		if dir_a ~= '' then
+			infobox_args[directionAn] = dir_a .. "&amp;nbsp;end"
+		else
+			infobox_args[directionAn] = "From"
+		end
+
+		infobox_args[terminusAn] = args["terminus_a" .. i]
+		infobox_args[jctClassn] = "plainlist"
+		infobox_args[jctLabeln] = "Major intersections"
+		infobox_args[jctDatan] = args["junction" .. i] or args["junctions" .. i]
+
+		local dir_b = args["direction_b" .. i] or args.direction_b or ''
+		if dir_b ~= '' then
+			infobox_args[directionBn] = dir_b .. "&amp;nbsp;end"
+		else
+			infobox_args[directionBn] = "To"
+		end
+
+		infobox_args[terminusBn] = args["terminus_b" .. i]
+		
+		if i == 25 then
+			break
+		else
+			i = i + 1
+		end
+	end
+
+	return frame:expandTemplate ({title='Infobox', args = infobox_args})
+	
+	else return nil
+	end
+end
+
+function p.section(frame)
+	args = getArgs(frame)
+	return p._section(args)
+end
+
+local function loop(args)
+	local ring_road = args.ring_road or ''
+	if ring_road ~= '' then
+		return "[[Ring road]] around " .. ring_road
+	end
+	local beltway_city = args.beltway_city or ''
+	if beltway_city ~= '' then
+		return "[[Beltway]] around " .. beltway_city
+	end
+	local orbital = args.orbital or ''
+	if orbital ~= '' then
+		return "[[Orbital road|Orbital]] around " .. orbital
+	end
+	local loop = args.loop or ''
+	if loop ~= '' then
+		return "[[Loop road|Loop]] around " .. loop
+	end
+	local tloop = args.tloop or ''
+	if tloop == 'none' then
+		return "Tourist loop"
+	elseif tloop ~= '' then
+		return "Tourist loop around " .. tloop
+	end
+	return nil
+end
+
+function p._main(args)
+	
+	if args.terminus_a or args.junction or args.junctions or args.terminus_b or args.ring_road or args.beltway_city or
+		args.orbital or args.loop or args.tloop then
+	
+		local infobox_args = {
+			['child'] = "yes",
+			['decat'] = "yes",
+		}
+		
+		infobox_args['title'] = args.section0 or "Major junctions"
+		infobox_args['data1'] = loop(args)
+	
+		local dir_a = args.direction_a or ''
+		if dir_a ~= '' then
+			infobox_args['label2'] = dir_a .. "&amp;nbsp;end"
+		else
+			infobox_args['label2'] = "From"
+		end
+	
+		infobox_args['data2'] = args.terminus_a
+		infobox_args['class3'] = "plainlist"
+		infobox_args['label3'] = "&lt;span style='display:none;'&gt;Major intersections&lt;/span&gt;"
+		infobox_args['data3'] = args.junction or args.junctions
+	
+		local dir_b = args.direction_b or ''
+		if dir_b ~= '' then
+			infobox_args['label4'] = dir_b .. "&amp;nbsp;end"
+		else
+			infobox_args['label4'] = "To"
+		end
+	
+		infobox_args['data4'] = args.terminus_b
+	
+		return frame:expandTemplate ({title='Infobox', args = infobox_args})
+		
+	else
+		return nil
+	end
+end
+
+function p.main(frame)
+	args = getArgs(frame)
+	return p._main(args)
+end
+
+return p</text>
+      <sha1>dn3r6ckaf9gvxln2767uktx5r563eod</sha1>
+    </revision>
+    <revision>
+      <id>17336</id>
+      <timestamp>2025-04-25T22:09:31Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: fixing this template</comment>
+      <origin>17336</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5523" sha1="dn3r6ckaf9gvxln2767uktx5r563eod" xml:space="preserve">local p = {}
+
+local getArgs = require('Module:Arguments').getArgs
+local lengthModule = require("Module:Infobox road/length")
+local parserModule = require("Module:Road data/parser")
+local parser = parserModule.parser
+local frame = mw.getCurrentFrame()
+
+local function country(args)
+	local state = args.state or args.province
+	local country
+	local countryModule = mw.loadData("Module:Road data/countrymask")
+	local country = args.country or countryModule[state]
+	
+	return country
+end
+
+-- HEADER COLORS
+
+function p.headerStyle(args)
+	local deleted = args.decommissioned or args.deleted
+	local uc = args.header_type == "under construction" or args.header_type == "const" or args.header_type == "uc"
+	local minor = args.header_type == "minor"
+	local hist = args.header_type == "hist" or args.header_type == "historic" or args.header_type == "historical" or args.header_type == "scenic"
+	local color = parser(args, 'color')
+	
+	if freeway then
+		return "header-MUTCDblue"
+	elseif uc then
+		return "header-uc"
+	elseif minor then
+		return "header-minor"
+	elseif deleted and header == 'hist' or deleted and color == 'hist' then
+		return "header-deleted-hist"
+	elseif deleted then
+		return "header-deleted"
+	elseif hist then
+		return "header-hist"
+	elseif color then
+		return "header-" .. color
+	elseif args.state or args.province or args.country then
+		local country = country(args)
+		return "header-" .. country or "header-default"
+	else
+		return "header-default"
+	end
+end
+
+function p._section(args)
+	if args.section1 or args.length_km1 or args.length_mi1 or args.length_notes1 or args.direction_a1 or
+		args.terminus_a1 or args.junction1 or args.junctions1 or args.direction_b1 or args.terminus_b1 then
+	
+	local infobox_args = {
+		['child'] = "yes",
+		['decat'] = "yes",
+		['headerclass'] = p.headerStyle(args)
+	}
+	local i = 1
+	while (1) do
+		local num = i
+		local j = ((i - 1) * 5) + 1
+		local headern = "header" .. j
+		local lengthLabeln = "label" .. (j + 1)
+		local lengthDatan = "data" .. (j + 1)
+		local directionAn = "label" .. (j + 2)
+		local terminusAn = "data" .. (j + 2)
+		local jctClassn = "class" .. (j + 3)
+		local jctLabeln = "label" .. (j + 3)
+		local jctDatan = "data" .. (j + 3)
+		local directionBn = "label" .. (j + 4)
+		local terminusBn = "data" .. (j + 4)
+		
+		if args['section' .. i] or args["length_km" .. i] or args["length_mi" .. i] or args["length_notes" .. i] or args["direction_a" .. i] or
+			args["terminus_a" .. i] or args["junction" .. i] or args["junctions" .. i] or args["direction_b" .. i] or args["terminus_b" .. i] then
+				
+			if i == 1 then
+				infobox_args['title'] = args['section' .. i] or "Section " .. i
+			else
+				infobox_args[headern] = args['section' .. i] or "Section " .. i
+			end
+		end
+		
+		infobox_args[lengthLabeln] = "Length"
+		infobox_args[lengthDatan] = lengthModule._length(num, args)
+
+		local dir_a = args["direction_a" .. i] or args.direction_a or ''
+		if dir_a ~= '' then
+			infobox_args[directionAn] = dir_a .. "&amp;nbsp;end"
+		else
+			infobox_args[directionAn] = "From"
+		end
+
+		infobox_args[terminusAn] = args["terminus_a" .. i]
+		infobox_args[jctClassn] = "plainlist"
+		infobox_args[jctLabeln] = "Major intersections"
+		infobox_args[jctDatan] = args["junction" .. i] or args["junctions" .. i]
+
+		local dir_b = args["direction_b" .. i] or args.direction_b or ''
+		if dir_b ~= '' then
+			infobox_args[directionBn] = dir_b .. "&amp;nbsp;end"
+		else
+			infobox_args[directionBn] = "To"
+		end
+
+		infobox_args[terminusBn] = args["terminus_b" .. i]
+		
+		if i == 25 then
+			break
+		else
+			i = i + 1
+		end
+	end
+
+	return frame:expandTemplate ({title='Infobox', args = infobox_args})
+	
+	else return nil
+	end
+end
+
+function p.section(frame)
+	args = getArgs(frame)
+	return p._section(args)
+end
+
+local function loop(args)
+	local ring_road = args.ring_road or ''
+	if ring_road ~= '' then
+		return "[[Ring road]] around " .. ring_road
+	end
+	local beltway_city = args.beltway_city or ''
+	if beltway_city ~= '' then
+		return "[[Beltway]] around " .. beltway_city
+	end
+	local orbital = args.orbital or ''
+	if orbital ~= '' then
+		return "[[Orbital road|Orbital]] around " .. orbital
+	end
+	local loop = args.loop or ''
+	if loop ~= '' then
+		return "[[Loop road|Loop]] around " .. loop
+	end
+	local tloop = args.tloop or ''
+	if tloop == 'none' then
+		return "Tourist loop"
+	elseif tloop ~= '' then
+		return "Tourist loop around " .. tloop
+	end
+	return nil
+end
+
+function p._main(args)
+	
+	if args.terminus_a or args.junction or args.junctions or args.terminus_b or args.ring_road or args.beltway_city or
+		args.orbital or args.loop or args.tloop then
+	
+		local infobox_args = {
+			['child'] = "yes",
+			['decat'] = "yes",
+		}
+		
+		infobox_args['title'] = args.section0 or "Major junctions"
+		infobox_args['data1'] = loop(args)
+	
+		local dir_a = args.direction_a or ''
+		if dir_a ~= '' then
+			infobox_args['label2'] = dir_a .. "&amp;nbsp;end"
+		else
+			infobox_args['label2'] = "From"
+		end
+	
+		infobox_args['data2'] = args.terminus_a
+		infobox_args['class3'] = "plainlist"
+		infobox_args['label3'] = "&lt;span style='display:none;'&gt;Major intersections&lt;/span&gt;"
+		infobox_args['data3'] = args.junction or args.junctions
+	
+		local dir_b = args.direction_b or ''
+		if dir_b ~= '' then
+			infobox_args['label4'] = dir_b .. "&amp;nbsp;end"
+		else
+			infobox_args['label4'] = "To"
+		end
+	
+		infobox_args['data4'] = args.terminus_b
+	
+		return frame:expandTemplate ({title='Infobox', args = infobox_args})
+		
+	else
+		return nil
+	end
+end
+
+function p.main(frame)
+	args = getArgs(frame)
+	return p._main(args)
+end
+
+return p</text>
+      <sha1>dn3r6ckaf9gvxln2767uktx5r563eod</sha1>
+    </revision>
+  </page>
+</mediawiki>

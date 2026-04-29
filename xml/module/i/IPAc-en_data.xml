@@ -1,0 +1,299 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:IPAc-en/data</title>
+    <ns>828</ns>
+    <id>152633</id>
+    <revision>
+      <id>3562160</id>
+      <timestamp>2026-03-22T18:47:39Z</timestamp>
+      <contributor>
+        <username>en&gt;Mr. Stradivarius</username>
+        <id>0</id>
+      </contributor>
+      <comment>switch to main data modules</comment>
+      <origin>3562160</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1200" sha1="63ca8m7vp9oj803ii5e38i1pq69wf9e" xml:space="preserve">-- This module processes data for [[Module:IPAc-en]]. It is intended to be
+-- loaded with mw.loadData.
+
+local PRONUNCIATION_MODULE = 'Module:IPAc-en/pronunciation'
+local PHONEME_MODULE = 'Module:IPAc-en/phonemes'
+
+local function makeData(oldData)
+	local newData = {}
+	for i, old in ipairs(oldData) do
+		local new = {}
+		for k, v in pairs(old) do
+			if k ~= 'aliases' and k ~= 'code' then
+				new[k] = v
+			end
+		end
+		newData[old.code] = new
+		if old.aliases then
+			for i, alias in ipairs(old.aliases) do
+				newData[alias] = new
+			end			
+		end
+	end
+	return newData
+end
+
+local function main()
+	local pronunciation = makeData(require(PRONUNCIATION_MODULE))
+	local phonemes = makeData(require(PHONEME_MODULE))
+
+	-- Check that no pronunciation keys are also contained in the phonemes
+	-- data. This would cause silent, hard-to-debug errors if it went
+	-- unchecked, so  make it cause a big red error message instead.
+	for id in pairs(pronunciation) do
+		if phonemes[id] then
+			error(string.format(
+				"duplicate ID '%s' found in %s and %s",
+				id,
+				PRONUNCIATION_MODULE,
+				PHONEME_MODULE
+			))
+		end
+	end
+
+	return {
+		pronunciation = pronunciation,
+		phonemes = phonemes,
+	}
+end
+
+return main()</text>
+      <sha1>63ca8m7vp9oj803ii5e38i1pq69wf9e</sha1>
+    </revision>
+    <revision>
+      <id>3562161</id>
+      <parentid>3562160</parentid>
+      <timestamp>2026-03-22T18:47:39Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3562160</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1200" sha1="63ca8m7vp9oj803ii5e38i1pq69wf9e" xml:space="preserve">-- This module processes data for [[Module:IPAc-en]]. It is intended to be
+-- loaded with mw.loadData.
+
+local PRONUNCIATION_MODULE = 'Module:IPAc-en/pronunciation'
+local PHONEME_MODULE = 'Module:IPAc-en/phonemes'
+
+local function makeData(oldData)
+	local newData = {}
+	for i, old in ipairs(oldData) do
+		local new = {}
+		for k, v in pairs(old) do
+			if k ~= 'aliases' and k ~= 'code' then
+				new[k] = v
+			end
+		end
+		newData[old.code] = new
+		if old.aliases then
+			for i, alias in ipairs(old.aliases) do
+				newData[alias] = new
+			end			
+		end
+	end
+	return newData
+end
+
+local function main()
+	local pronunciation = makeData(require(PRONUNCIATION_MODULE))
+	local phonemes = makeData(require(PHONEME_MODULE))
+
+	-- Check that no pronunciation keys are also contained in the phonemes
+	-- data. This would cause silent, hard-to-debug errors if it went
+	-- unchecked, so  make it cause a big red error message instead.
+	for id in pairs(pronunciation) do
+		if phonemes[id] then
+			error(string.format(
+				"duplicate ID '%s' found in %s and %s",
+				id,
+				PRONUNCIATION_MODULE,
+				PHONEME_MODULE
+			))
+		end
+	end
+
+	return {
+		pronunciation = pronunciation,
+		phonemes = phonemes,
+	}
+end
+
+return main()</text>
+      <sha1>63ca8m7vp9oj803ii5e38i1pq69wf9e</sha1>
+    </revision>
+    <revision>
+      <id>3646146</id>
+      <parentid>3562161</parentid>
+      <timestamp>2026-04-24T16:30:32Z</timestamp>
+      <contributor>
+        <username>en&gt;Mr. Stradivarius</username>
+        <id>0</id>
+      </contributor>
+      <comment>switch to main data modules</comment>
+      <origin>3562160</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1200" sha1="63ca8m7vp9oj803ii5e38i1pq69wf9e" xml:space="preserve">-- This module processes data for [[Module:IPAc-en]]. It is intended to be
+-- loaded with mw.loadData.
+
+local PRONUNCIATION_MODULE = 'Module:IPAc-en/pronunciation'
+local PHONEME_MODULE = 'Module:IPAc-en/phonemes'
+
+local function makeData(oldData)
+	local newData = {}
+	for i, old in ipairs(oldData) do
+		local new = {}
+		for k, v in pairs(old) do
+			if k ~= 'aliases' and k ~= 'code' then
+				new[k] = v
+			end
+		end
+		newData[old.code] = new
+		if old.aliases then
+			for i, alias in ipairs(old.aliases) do
+				newData[alias] = new
+			end			
+		end
+	end
+	return newData
+end
+
+local function main()
+	local pronunciation = makeData(require(PRONUNCIATION_MODULE))
+	local phonemes = makeData(require(PHONEME_MODULE))
+
+	-- Check that no pronunciation keys are also contained in the phonemes
+	-- data. This would cause silent, hard-to-debug errors if it went
+	-- unchecked, so  make it cause a big red error message instead.
+	for id in pairs(pronunciation) do
+		if phonemes[id] then
+			error(string.format(
+				"duplicate ID '%s' found in %s and %s",
+				id,
+				PRONUNCIATION_MODULE,
+				PHONEME_MODULE
+			))
+		end
+	end
+
+	return {
+		pronunciation = pronunciation,
+		phonemes = phonemes,
+	}
+end
+
+return main()</text>
+      <sha1>63ca8m7vp9oj803ii5e38i1pq69wf9e</sha1>
+    </revision>
+    <revision>
+      <id>3646147</id>
+      <parentid>3646146</parentid>
+      <timestamp>2026-04-24T16:30:32Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: trying to do a last fix of these, they will be fixed and not bloat the site</comment>
+      <origin>3562160</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1200" sha1="63ca8m7vp9oj803ii5e38i1pq69wf9e" xml:space="preserve">-- This module processes data for [[Module:IPAc-en]]. It is intended to be
+-- loaded with mw.loadData.
+
+local PRONUNCIATION_MODULE = 'Module:IPAc-en/pronunciation'
+local PHONEME_MODULE = 'Module:IPAc-en/phonemes'
+
+local function makeData(oldData)
+	local newData = {}
+	for i, old in ipairs(oldData) do
+		local new = {}
+		for k, v in pairs(old) do
+			if k ~= 'aliases' and k ~= 'code' then
+				new[k] = v
+			end
+		end
+		newData[old.code] = new
+		if old.aliases then
+			for i, alias in ipairs(old.aliases) do
+				newData[alias] = new
+			end			
+		end
+	end
+	return newData
+end
+
+local function main()
+	local pronunciation = makeData(require(PRONUNCIATION_MODULE))
+	local phonemes = makeData(require(PHONEME_MODULE))
+
+	-- Check that no pronunciation keys are also contained in the phonemes
+	-- data. This would cause silent, hard-to-debug errors if it went
+	-- unchecked, so  make it cause a big red error message instead.
+	for id in pairs(pronunciation) do
+		if phonemes[id] then
+			error(string.format(
+				"duplicate ID '%s' found in %s and %s",
+				id,
+				PRONUNCIATION_MODULE,
+				PHONEME_MODULE
+			))
+		end
+	end
+
+	return {
+		pronunciation = pronunciation,
+		phonemes = phonemes,
+	}
+end
+
+return main()</text>
+      <sha1>63ca8m7vp9oj803ii5e38i1pq69wf9e</sha1>
+    </revision>
+  </page>
+</mediawiki>

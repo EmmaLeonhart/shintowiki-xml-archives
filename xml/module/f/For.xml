@@ -1,0 +1,2401 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:For</title>
+    <ns>828</ns>
+    <id>610</id>
+    <revision>
+      <id>513160</id>
+      <timestamp>2016-05-03T20:48:11Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Nihiltres</username>
+        <id>0</id>
+      </contributor>
+      <comment>A prototype</comment>
+      <origin>513160</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="851" sha1="hbaixcvuglo76a932c3634pl7vhbbrx" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list/sandbox') --remove "/sandbox" once forSeeTableToString is in main module
+local mHatnote = require('Module:Hatnote')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._for(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1] --cases with parameter 1 unspecified, i.e. using "other uses", should probably be flagged
+	local pages = {}
+	for k, v in pairs(args) do
+		if type(k) == 'number' and k &gt; 1 then
+			table.insert(pages, v)
+		end
+	end
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}})
+	)
+end
+
+return p</text>
+      <sha1>hbaixcvuglo76a932c3634pl7vhbbrx</sha1>
+    </revision>
+    <revision>
+      <id>513161</id>
+      <parentid>513160</parentid>
+      <timestamp>2016-05-03T20:57:01Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Nihiltres</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Simplified some stuff; result matches {{For}}'s terminating behaviour better</comment>
+      <origin>513161</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="823" sha1="a2fx75jvyalv5oubbaxa37qmq1ji4jp" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list/sandbox') --remove "/sandbox" once forSeeTableToString is in main module
+local mHatnote = require('Module:Hatnote')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._for(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1] --cases with parameter 1 unspecified, i.e. using "other uses", should probably be flagged
+	local pages = {}
+	for k, v in ipairs(args) do
+		if k &gt; 1 then table.insert(pages, v) end
+	end
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}})
+	)
+end
+
+return p</text>
+      <sha1>a2fx75jvyalv5oubbaxa37qmq1ji4jp</sha1>
+    </revision>
+    <revision>
+      <id>513162</id>
+      <parentid>513161</parentid>
+      <timestamp>2016-05-03T21:34:12Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Nihiltres</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Fixed capitalization error</comment>
+      <origin>513162</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="823" sha1="ftjjunmdzftb8o9me73rfjgew92wnpi" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list/sandbox') --remove "/sandbox" once forSeeTableToString is in main module
+local mHatnote = require('Module:Hatnote')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1] --cases with parameter 1 unspecified, i.e. using "other uses", should probably be flagged
+	local pages = {}
+	for k, v in ipairs(args) do
+		if k &gt; 1 then table.insert(pages, v) end
+	end
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}})
+	)
+end
+
+return p</text>
+      <sha1>ftjjunmdzftb8o9me73rfjgew92wnpi</sha1>
+    </revision>
+    <revision>
+      <id>513163</id>
+      <parentid>513162</parentid>
+      <timestamp>2016-05-05T17:39:57Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Nihiltres</username>
+        <id>0</id>
+      </contributor>
+      <comment>Removed "/sandbox" on call to [[Module:Hatnote list]]</comment>
+      <origin>513163</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="752" sha1="jvu2k3g885l7llu8aed7k5ntlt1f31e" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1] --cases with parameter 1 unspecified, i.e. using "other uses", should probably be flagged
+	local pages = {}
+	for k, v in ipairs(args) do
+		if k &gt; 1 then table.insert(pages, v) end
+	end
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}})
+	)
+end
+
+return p</text>
+      <sha1>jvu2k3g885l7llu8aed7k5ntlt1f31e</sha1>
+    </revision>
+    <revision>
+      <id>513164</id>
+      <parentid>513163</parentid>
+      <timestamp>2016-05-06T18:45:30Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Nihiltres</username>
+        <id>0</id>
+      </contributor>
+      <comment>Fixed issue with ipairs() running from 1</comment>
+      <origin>513164</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="807" sha1="anw8uqwlj2m4egpctypu1garhkpi8p9" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1] --cases with parameter 1 unspecified, i.e. using "other uses", should probably be flagged
+	local pages = {}
+	function two (a, b, c) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}})
+	)
+end
+
+return p</text>
+      <sha1>anw8uqwlj2m4egpctypu1garhkpi8p9</sha1>
+    </revision>
+    <revision>
+      <id>513165</id>
+      <parentid>513164</parentid>
+      <timestamp>2016-05-10T18:17:11Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Nihiltres</username>
+        <id>0</id>
+      </contributor>
+      <comment>Added tracking for args[1] == "other uses"</comment>
+      <origin>513165</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="879" sha1="7vfzn2dxno4ztitdqnghrzejrrtohp1" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1] --cases with parameter 1 unspecified should probably be flagged
+	if use == 'other uses' then
+		use = use .. '[[Category:Hatnotes using unusual parameters]]'
+	end
+	local pages = {}
+	function two (a, b, c) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}})
+	)
+end
+
+return p</text>
+      <sha1>7vfzn2dxno4ztitdqnghrzejrrtohp1</sha1>
+    </revision>
+    <revision>
+      <id>513166</id>
+      <parentid>513165</parentid>
+      <timestamp>2016-05-10T18:18:02Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Nihiltres</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Wrong category name</comment>
+      <origin>513166</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="888" sha1="faurxogsc0sacqadfczyp0730x454xe" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1] --cases with parameter 1 unspecified should probably be flagged
+	if use == 'other uses' then
+		use = use .. '[[Category:Hatnote templates using unusual parameters]]'
+	end
+	local pages = {}
+	function two (a, b, c) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}})
+	)
+end
+
+return p</text>
+      <sha1>faurxogsc0sacqadfczyp0730x454xe</sha1>
+    </revision>
+    <revision>
+      <id>513167</id>
+      <parentid>513166</parentid>
+      <timestamp>2016-06-19T15:05:07Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Nihiltres</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:For]]": [[WP:High-risk templates|High-risk Lua module]] ([Edit=Require template editor access] (indefinite) [Move=Require template editor access] (indefinite))</comment>
+      <origin>513166</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="888" sha1="faurxogsc0sacqadfczyp0730x454xe" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1] --cases with parameter 1 unspecified should probably be flagged
+	if use == 'other uses' then
+		use = use .. '[[Category:Hatnote templates using unusual parameters]]'
+	end
+	local pages = {}
+	function two (a, b, c) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}})
+	)
+end
+
+return p</text>
+      <sha1>faurxogsc0sacqadfczyp0730x454xe</sha1>
+    </revision>
+    <revision>
+      <id>513168</id>
+      <parentid>513167</parentid>
+      <timestamp>2016-06-19T16:20:06Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Nihiltres</username>
+        <id>0</id>
+      </contributor>
+      <comment>Added selfref functionality</comment>
+      <origin>513168</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="916" sha1="2sh4w1v21m90jj81zpewn8shhvfc9wv" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1] --cases with parameter 1 unspecified should probably be flagged
+	if use == 'other uses' then
+		use = use .. '[[Category:Hatnote templates using unusual parameters]]'
+	end
+	local pages = {}
+	function two (a, b, c) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	)
+end
+
+return p</text>
+      <sha1>2sh4w1v21m90jj81zpewn8shhvfc9wv</sha1>
+    </revision>
+    <revision>
+      <id>513169</id>
+      <parentid>513168</parentid>
+      <timestamp>2016-08-03T20:53:03Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Nihiltres</username>
+        <id>0</id>
+      </contributor>
+      <comment>Updated from sandbox: categorizes as unusual "other uses" by defaulting as well as typed-out "other uses"</comment>
+      <origin>513169</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="982" sha1="7cw7zffjg8qhj4fig5sqk2xg5uphgx0" xml:space="preserve">local mArguments --initialize lazily
+local yesno = require('Module:Yesno')
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	local category = ''
+	if (not use or use == 'other uses') and
+		(not args.category or yesno(args.category)) then
+			category = '[[Category:Hatnote templates using unusual parameters]]'
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. category
+end
+
+return p</text>
+      <sha1>7cw7zffjg8qhj4fig5sqk2xg5uphgx0</sha1>
+    </revision>
+    <revision>
+      <id>513170</id>
+      <parentid>513169</parentid>
+      <timestamp>2018-08-16T16:25:12Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Nihiltres</username>
+        <id>0</id>
+      </contributor>
+      <comment>Updated from sandbox: prints error if first parameter is empty (previously defaulted to "other uses"); exact-match "other uses" is still categorized</comment>
+      <origin>513170</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1101" sha1="srmkrwhq60pn7xsihj11bbl69b9dh96" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and yesNo(args.category) and
+			'[[Category:Hatnote templates using unusual parameters]]' or ''
+		)
+end
+
+return p</text>
+      <sha1>srmkrwhq60pn7xsihj11bbl69b9dh96</sha1>
+    </revision>
+    <revision>
+      <id>513171</id>
+      <parentid>513170</parentid>
+      <timestamp>2020-06-20T16:45:05Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Nihiltres</username>
+        <id>0</id>
+      </contributor>
+      <comment>Fixed bad handling of nil in "unusual parameters" check</comment>
+      <origin>513171</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1161" sha1="9pm07mvqlrdc1kwj9bb1m1doie9d4xo" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			'[[Category:Hatnote templates using unusual parameters]]' or ''
+		)
+end
+
+return p</text>
+      <sha1>9pm07mvqlrdc1kwj9bb1m1doie9d4xo</sha1>
+    </revision>
+    <revision>
+      <id>513149</id>
+      <timestamp>2020-11-02T22:29:56Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Andrybak</username>
+        <id>0</id>
+      </contributor>
+      <comment>don't add talk pages and pages in the user namespace to [[:Category:Hatnote templates with errors]] – this is similar to [[Special:Diff/953627233/986768317|Module:Other uses of]] and [[Special:Diff/967664662|Module:Hatnote]]</comment>
+      <origin>513149</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>513150</id>
+      <parentid>513149</parentid>
+      <timestamp>2024-06-28T09:37:54Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:For]]</comment>
+      <origin>513149</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>513151</id>
+      <parentid>513150</parentid>
+      <timestamp>2025-02-27T21:13:09Z</timestamp>
+      <contributor>
+        <username>en&gt;Andrybak</username>
+        <id>0</id>
+      </contributor>
+      <comment>don't add talk pages and pages in the user namespace to [[:Category:Hatnote templates with errors]] – this is similar to [[Special:Diff/953627233/986768317|Module:Other uses of]] and [[Special:Diff/967664662|Module:Hatnote]]</comment>
+      <origin>513149</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>513152</id>
+      <parentid>513151</parentid>
+      <timestamp>2025-02-27T21:13:10Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: importing all the coordinates module stuff with the timestamps removed in order to force updates</comment>
+      <origin>513149</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>513153</id>
+      <parentid>513152</parentid>
+      <timestamp>2025-02-27T21:15:50Z</timestamp>
+      <contributor>
+        <username>en&gt;Andrybak</username>
+        <id>0</id>
+      </contributor>
+      <comment>don't add talk pages and pages in the user namespace to [[:Category:Hatnote templates with errors]] – this is similar to [[Special:Diff/953627233/986768317|Module:Other uses of]] and [[Special:Diff/967664662|Module:Hatnote]]</comment>
+      <origin>513149</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>513154</id>
+      <parentid>513153</parentid>
+      <timestamp>2025-04-06T00:14:38Z</timestamp>
+      <contributor>
+        <username>en&gt;Andrybak</username>
+        <id>0</id>
+      </contributor>
+      <comment>don't add talk pages and pages in the user namespace to [[:Category:Hatnote templates with errors]] – this is similar to [[Special:Diff/953627233/986768317|Module:Other uses of]] and [[Special:Diff/967664662|Module:Hatnote]]</comment>
+      <origin>513149</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>513155</id>
+      <parentid>513154</parentid>
+      <timestamp>2025-04-27T22:11:18Z</timestamp>
+      <contributor>
+        <username>en&gt;Andrybak</username>
+        <id>0</id>
+      </contributor>
+      <comment>don't add talk pages and pages in the user namespace to [[:Category:Hatnote templates with errors]] – this is similar to [[Special:Diff/953627233/986768317|Module:Other uses of]] and [[Special:Diff/967664662|Module:Hatnote]]</comment>
+      <origin>513149</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>513156</id>
+      <parentid>513155</parentid>
+      <timestamp>2025-04-27T22:12:42Z</timestamp>
+      <contributor>
+        <username>en&gt;Andrybak</username>
+        <id>0</id>
+      </contributor>
+      <comment>don't add talk pages and pages in the user namespace to [[:Category:Hatnote templates with errors]] – this is similar to [[Special:Diff/953627233/986768317|Module:Other uses of]] and [[Special:Diff/967664662|Module:Hatnote]]</comment>
+      <origin>513149</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>513157</id>
+      <parentid>513156</parentid>
+      <timestamp>2025-04-27T22:13:36Z</timestamp>
+      <contributor>
+        <username>en&gt;Andrybak</username>
+        <id>0</id>
+      </contributor>
+      <comment>don't add talk pages and pages in the user namespace to [[:Category:Hatnote templates with errors]] – this is similar to [[Special:Diff/953627233/986768317|Module:Other uses of]] and [[Special:Diff/967664662|Module:Hatnote]]</comment>
+      <origin>513149</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>513158</id>
+      <parentid>513157</parentid>
+      <timestamp>2025-04-27T22:13:37Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: chat is this real</comment>
+      <origin>513149</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>513159</id>
+      <parentid>513158</parentid>
+      <timestamp>2025-04-27T22:17:18Z</timestamp>
+      <contributor>
+        <username>en&gt;Andrybak</username>
+        <id>0</id>
+      </contributor>
+      <comment>don't add talk pages and pages in the user namespace to [[:Category:Hatnote templates with errors]] – this is similar to [[Special:Diff/953627233/986768317|Module:Other uses of]] and [[Special:Diff/967664662|Module:Hatnote]]</comment>
+      <origin>513149</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>513172</id>
+      <parentid>513159</parentid>
+      <timestamp>2025-05-23T23:37:32Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>12 revisions imported from [[:wikipedia:Module:For]]</comment>
+      <origin>513149</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>513173</id>
+      <parentid>513172</parentid>
+      <timestamp>2025-07-07T21:44:19Z</timestamp>
+      <contributor>
+        <username>en&gt;Andrybak</username>
+        <id>0</id>
+      </contributor>
+      <comment>don't add talk pages and pages in the user namespace to [[:Category:Hatnote templates with errors]] – this is similar to [[Special:Diff/953627233/986768317|Module:Other uses of]] and [[Special:Diff/967664662|Module:Hatnote]]</comment>
+      <origin>513149</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>611</id>
+      <timestamp>2025-07-07T22:04:37Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: overwriting</comment>
+      <origin>611</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>3368407</id>
+      <parentid>611</parentid>
+      <timestamp>2026-03-02T18:55:01Z</timestamp>
+      <contributor>
+        <username>en&gt;Andrybak</username>
+        <id>0</id>
+      </contributor>
+      <comment>don't add talk pages and pages in the user namespace to [[:Category:Hatnote templates with errors]] – this is similar to [[Special:Diff/953627233/986768317|Module:Other uses of]] and [[Special:Diff/967664662|Module:Hatnote]]</comment>
+      <origin>611</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>3368408</id>
+      <parentid>3368407</parentid>
+      <timestamp>2026-03-02T18:55:01Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>611</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>3368881</id>
+      <parentid>3368408</parentid>
+      <timestamp>2026-03-02T18:57:29Z</timestamp>
+      <contributor>
+        <username>en&gt;Andrybak</username>
+        <id>0</id>
+      </contributor>
+      <comment>don't add talk pages and pages in the user namespace to [[:Category:Hatnote templates with errors]] – this is similar to [[Special:Diff/953627233/986768317|Module:Other uses of]] and [[Special:Diff/967664662|Module:Hatnote]]</comment>
+      <origin>611</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>3368882</id>
+      <parentid>3368881</parentid>
+      <timestamp>2026-03-02T18:57:29Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>611</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>3369355</id>
+      <parentid>3368882</parentid>
+      <timestamp>2026-03-02T19:03:58Z</timestamp>
+      <contributor>
+        <username>en&gt;Andrybak</username>
+        <id>0</id>
+      </contributor>
+      <comment>don't add talk pages and pages in the user namespace to [[:Category:Hatnote templates with errors]] – this is similar to [[Special:Diff/953627233/986768317|Module:Other uses of]] and [[Special:Diff/967664662|Module:Hatnote]]</comment>
+      <origin>611</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>3369356</id>
+      <parentid>3369355</parentid>
+      <timestamp>2026-03-02T19:03:58Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>611</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>3405069</id>
+      <parentid>3369356</parentid>
+      <timestamp>2026-03-12T18:09:47Z</timestamp>
+      <contributor>
+        <username>en&gt;Andrybak</username>
+        <id>0</id>
+      </contributor>
+      <comment>don't add talk pages and pages in the user namespace to [[:Category:Hatnote templates with errors]] – this is similar to [[Special:Diff/953627233/986768317|Module:Other uses of]] and [[Special:Diff/967664662|Module:Hatnote]]</comment>
+      <origin>611</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>3405070</id>
+      <parentid>3405069</parentid>
+      <timestamp>2026-03-12T18:09:47Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>611</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>3408664</id>
+      <parentid>3405070</parentid>
+      <timestamp>2026-03-12T20:38:38Z</timestamp>
+      <contributor>
+        <username>en&gt;Andrybak</username>
+        <id>0</id>
+      </contributor>
+      <comment>don't add talk pages and pages in the user namespace to [[:Category:Hatnote templates with errors]] – this is similar to [[Special:Diff/953627233/986768317|Module:Other uses of]] and [[Special:Diff/967664662|Module:Hatnote]]</comment>
+      <origin>611</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>3408665</id>
+      <parentid>3408664</parentid>
+      <timestamp>2026-03-12T20:38:39Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>611</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>3562531</id>
+      <parentid>3408665</parentid>
+      <timestamp>2026-03-22T18:48:38Z</timestamp>
+      <contributor>
+        <username>en&gt;Andrybak</username>
+        <id>0</id>
+      </contributor>
+      <comment>don't add talk pages and pages in the user namespace to [[:Category:Hatnote templates with errors]] – this is similar to [[Special:Diff/953627233/986768317|Module:Other uses of]] and [[Special:Diff/967664662|Module:Hatnote]]</comment>
+      <origin>611</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>3562532</id>
+      <parentid>3562531</parentid>
+      <timestamp>2026-03-22T18:48:39Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>611</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>3608042</id>
+      <parentid>3562532</parentid>
+      <timestamp>2026-04-18T21:23:08Z</timestamp>
+      <contributor>
+        <username>en&gt;Andrybak</username>
+        <id>0</id>
+      </contributor>
+      <comment>don't add talk pages and pages in the user namespace to [[:Category:Hatnote templates with errors]] – this is similar to [[Special:Diff/953627233/986768317|Module:Other uses of]] and [[Special:Diff/967664662|Module:Hatnote]]</comment>
+      <origin>611</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>3608043</id>
+      <parentid>3608042</parentid>
+      <timestamp>2026-04-18T21:23:08Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting to try to fix the lower alpha issue</comment>
+      <origin>611</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>3608495</id>
+      <parentid>3608043</parentid>
+      <timestamp>2026-04-18T21:27:19Z</timestamp>
+      <contributor>
+        <username>en&gt;Andrybak</username>
+        <id>0</id>
+      </contributor>
+      <comment>don't add talk pages and pages in the user namespace to [[:Category:Hatnote templates with errors]] – this is similar to [[Special:Diff/953627233/986768317|Module:Other uses of]] and [[Special:Diff/967664662|Module:Hatnote]]</comment>
+      <origin>611</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>3608496</id>
+      <parentid>3608495</parentid>
+      <timestamp>2026-04-18T21:27:19Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting to try to fix the lower alpha issue</comment>
+      <origin>611</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>3646446</id>
+      <parentid>3608496</parentid>
+      <timestamp>2026-04-24T16:31:16Z</timestamp>
+      <contributor>
+        <username>en&gt;Andrybak</username>
+        <id>0</id>
+      </contributor>
+      <comment>don't add talk pages and pages in the user namespace to [[:Category:Hatnote templates with errors]] – this is similar to [[Special:Diff/953627233/986768317|Module:Other uses of]] and [[Special:Diff/967664662|Module:Hatnote]]</comment>
+      <origin>611</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>3646447</id>
+      <parentid>3646446</parentid>
+      <timestamp>2026-04-24T16:31:16Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: trying to do a last fix of these, they will be fixed and not bloat the site</comment>
+      <origin>611</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>3646741</id>
+      <parentid>3646447</parentid>
+      <timestamp>2026-04-24T16:32:56Z</timestamp>
+      <contributor>
+        <username>en&gt;Andrybak</username>
+        <id>0</id>
+      </contributor>
+      <comment>don't add talk pages and pages in the user namespace to [[:Category:Hatnote templates with errors]] – this is similar to [[Special:Diff/953627233/986768317|Module:Other uses of]] and [[Special:Diff/967664662|Module:Hatnote]]</comment>
+      <origin>611</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+    <revision>
+      <id>3646742</id>
+      <parentid>3646741</parentid>
+      <timestamp>2026-04-24T16:32:56Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: en</comment>
+      <origin>611</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1346" sha1="5kir3llbyjasubdg18thlz8rxsxfwtw" xml:space="preserve">local mArguments --initialize lazily
+local mHatlist = require('Module:Hatnote list')
+local mHatnote = require('Module:Hatnote')
+local yesNo = require('Module:Yesno')
+local p = {}
+
+--Implements {{For}} from the frame
+--uses capitalized "For" to avoid collision with Lua reserved word "for"
+function p.For (frame)
+	mArguments = require('Module:Arguments')
+	return p._For(mArguments.getArgs(frame))
+end
+
+--Implements {{For}} but takes a manual arguments table
+function p._For (args)
+	local use = args[1]
+	if (not use) then
+		return mHatnote.makeWikitextError(
+			'no context parameter provided. Use {{other uses}} for "other uses" hatnotes.',
+			'Template:For#Errors',
+			args.category
+		)
+	end
+	local pages = {}
+	function two (a, b) return a, b, 1 end --lets us run ipairs from 2
+	for k, v in two(ipairs(args)) do table.insert(pages, v) end
+	local title = mw.title.getCurrentTitle()
+	local skipCat = title.isTalkPage or title.namespace == 2 --don't categorise talk pages and userspace
+	local oddCat = skipCat and '' or '[[Category:Hatnote templates using unusual parameters]]'
+	local category = yesNo(args.category)
+	return mHatnote._hatnote(
+		mHatlist.forSeeTableToString({{use = use, pages = pages}}),
+		{selfref = args.selfref}
+	) .. (
+			(use == 'other uses') and ((category == true) or (category == nil)) and
+			oddCat or ''
+		)
+end
+
+return p</text>
+      <sha1>5kir3llbyjasubdg18thlz8rxsxfwtw</sha1>
+    </revision>
+  </page>
+</mediawiki>

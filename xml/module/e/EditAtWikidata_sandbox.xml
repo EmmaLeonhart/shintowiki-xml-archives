@@ -1,0 +1,727 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:EditAtWikidata/sandbox</title>
+    <ns>828</ns>
+    <id>5913</id>
+    <revision>
+      <id>832333</id>
+      <timestamp>2022-03-13T04:13:40Z</timestamp>
+      <contributor>
+        <username>en&gt;Johnuniq</username>
+        <id>0</id>
+      </contributor>
+      <comment>fix omitted word</comment>
+      <origin>832333</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1727" sha1="hod1hfo0n331jsuhscew67pebepcmju" xml:space="preserve">-- Module to display an icon with a tooltip such as "Edit this at Wikidata".
+-- Icon is linked to the Wikidata entry for the article where this is placed.
+-- This message is only displayed if a local_parameter is not supplied
+-- i.e. when called from a template, it can be coded not to display the message.
+-- The qid of a Wikidata entry can optionally be supplied for testing outside the article.
+-- Usage:
+-- {{#invoke:EditAtWikidata|showMessage|local_parameter}}
+-- {{#invoke:EditAtWikidata|showMessage|qid=&lt;ArticleID&gt;|local_parameter}}
+
+local p = {}
+
+local i18n =
+{
+	["message"] = "Edit this at Wikidata"
+}
+
+local function trimToNil(text)
+	-- Return trimmed non-empty text, or nil.
+	if type(text) == 'string' then
+		return text:match('(%S.-)%s*$')
+	end
+end
+
+function p._showMessage(args)
+	local local_parm = trimToNil(args[1])
+	if local_parm then return "" end
+	-- Parameter qid=x specifies the Wikidata ID for the article.
+	-- This is not normally used except for testing outside the article.
+	local qid = trimToNil(args.qid) or mw.wikibase.getEntityIdForCurrentPage()
+	if qid and mw.wikibase.entityExists(qid) then
+		-- Parameter pid=x uses x as an anchor in the link to the Wikidata entry.
+		local anchor = trimToNil(args.pid)
+		-- Parameter nbsp replaces the leading space with &amp;nbsp;
+		local space = trimToNil(args.nbsp) and "&amp;nbsp;" or " "
+		return
+			space ..
+			"[[File:OOjs UI icon edit-ltr-progressive.svg|frameless|text-top|10px" ..
+			"|alt=" .. i18n.message ..
+			"|link=https://www.wikidata.org/wiki/" .. qid ..
+			(anchor and ("#" .. anchor) or "") ..
+			"|class=noprint" ..
+			"|" .. i18n.message ..
+			"]]"
+	end
+	return ""
+end
+
+function p.showMessage(frame)
+	return p._showMessage(frame.args)
+end
+
+return p</text>
+      <sha1>hod1hfo0n331jsuhscew67pebepcmju</sha1>
+    </revision>
+    <revision>
+      <id>832334</id>
+      <parentid>832333</parentid>
+      <timestamp>2024-12-31T06:41:05Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Mass importing wikipedia categories, not taking histories because these are unused ones and it is kind of obvious where they came from</comment>
+      <origin>832333</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1727" sha1="hod1hfo0n331jsuhscew67pebepcmju" xml:space="preserve">-- Module to display an icon with a tooltip such as "Edit this at Wikidata".
+-- Icon is linked to the Wikidata entry for the article where this is placed.
+-- This message is only displayed if a local_parameter is not supplied
+-- i.e. when called from a template, it can be coded not to display the message.
+-- The qid of a Wikidata entry can optionally be supplied for testing outside the article.
+-- Usage:
+-- {{#invoke:EditAtWikidata|showMessage|local_parameter}}
+-- {{#invoke:EditAtWikidata|showMessage|qid=&lt;ArticleID&gt;|local_parameter}}
+
+local p = {}
+
+local i18n =
+{
+	["message"] = "Edit this at Wikidata"
+}
+
+local function trimToNil(text)
+	-- Return trimmed non-empty text, or nil.
+	if type(text) == 'string' then
+		return text:match('(%S.-)%s*$')
+	end
+end
+
+function p._showMessage(args)
+	local local_parm = trimToNil(args[1])
+	if local_parm then return "" end
+	-- Parameter qid=x specifies the Wikidata ID for the article.
+	-- This is not normally used except for testing outside the article.
+	local qid = trimToNil(args.qid) or mw.wikibase.getEntityIdForCurrentPage()
+	if qid and mw.wikibase.entityExists(qid) then
+		-- Parameter pid=x uses x as an anchor in the link to the Wikidata entry.
+		local anchor = trimToNil(args.pid)
+		-- Parameter nbsp replaces the leading space with &amp;nbsp;
+		local space = trimToNil(args.nbsp) and "&amp;nbsp;" or " "
+		return
+			space ..
+			"[[File:OOjs UI icon edit-ltr-progressive.svg|frameless|text-top|10px" ..
+			"|alt=" .. i18n.message ..
+			"|link=https://www.wikidata.org/wiki/" .. qid ..
+			(anchor and ("#" .. anchor) or "") ..
+			"|class=noprint" ..
+			"|" .. i18n.message ..
+			"]]"
+	end
+	return ""
+end
+
+function p.showMessage(frame)
+	return p._showMessage(frame.args)
+end
+
+return p</text>
+      <sha1>hod1hfo0n331jsuhscew67pebepcmju</sha1>
+    </revision>
+    <revision>
+      <id>832335</id>
+      <parentid>832334</parentid>
+      <timestamp>2025-01-28T01:15:52Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Adding [[Category:second attempt at refreshing on January 27 2024]][[Category:{{subst:FULLPAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]] on using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>832335</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1884" sha1="dovxvwpnkfz4fq4ummixxigj44gc01t" xml:space="preserve">-- Module to display an icon with a tooltip such as "Edit this at Wikidata".
+-- Icon is linked to the Wikidata entry for the article where this is placed.
+-- This message is only displayed if a local_parameter is not supplied
+-- i.e. when called from a template, it can be coded not to display the message.
+-- The qid of a Wikidata entry can optionally be supplied for testing outside the article.
+-- Usage:
+-- {{#invoke:EditAtWikidata|showMessage|local_parameter}}
+-- {{#invoke:EditAtWikidata|showMessage|qid=&lt;ArticleID&gt;|local_parameter}}
+
+local p = {}
+
+local i18n =
+{
+	["message"] = "Edit this at Wikidata"
+}
+
+local function trimToNil(text)
+	-- Return trimmed non-empty text, or nil.
+	if type(text) == 'string' then
+		return text:match('(%S.-)%s*$')
+	end
+end
+
+function p._showMessage(args)
+	local local_parm = trimToNil(args[1])
+	if local_parm then return "" end
+	-- Parameter qid=x specifies the Wikidata ID for the article.
+	-- This is not normally used except for testing outside the article.
+	local qid = trimToNil(args.qid) or mw.wikibase.getEntityIdForCurrentPage()
+	if qid and mw.wikibase.entityExists(qid) then
+		-- Parameter pid=x uses x as an anchor in the link to the Wikidata entry.
+		local anchor = trimToNil(args.pid)
+		-- Parameter nbsp replaces the leading space with &amp;nbsp;
+		local space = trimToNil(args.nbsp) and "&amp;nbsp;" or " "
+		return
+			space ..
+			"[[File:OOjs UI icon edit-ltr-progressive.svg|frameless|text-top|10px" ..
+			"|alt=" .. i18n.message ..
+			"|link=https://www.wikidata.org/wiki/" .. qid ..
+			(anchor and ("#" .. anchor) or "") ..
+			"|class=noprint" ..
+			"|" .. i18n.message ..
+			"]]"
+	end
+	return ""
+end
+
+function p.showMessage(frame)
+	return p._showMessage(frame.args)
+end
+
+return p
+
+[[Category:second attempt at refreshing on January 27 2024]][[Category:{{subst:FULLPAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]]</text>
+      <sha1>dovxvwpnkfz4fq4ummixxigj44gc01t</sha1>
+    </revision>
+    <revision>
+      <id>832336</id>
+      <parentid>832335</parentid>
+      <timestamp>2025-02-18T22:59:44Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>linking to namespace</comment>
+      <origin>832336</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1949" sha1="ptyr0lbsaii1un2nctr3iizw2bprrwy" xml:space="preserve">-- Module to display an icon with a tooltip such as "Edit this at Wikidata".
+-- Icon is linked to the Wikidata entry for the article where this is placed.
+-- This message is only displayed if a local_parameter is not supplied
+-- i.e. when called from a template, it can be coded not to display the message.
+-- The qid of a Wikidata entry can optionally be supplied for testing outside the article.
+-- Usage:
+-- {{#invoke:EditAtWikidata|showMessage|local_parameter}}
+-- {{#invoke:EditAtWikidata|showMessage|qid=&lt;ArticleID&gt;|local_parameter}}
+
+local p = {}
+
+local i18n =
+{
+	["message"] = "Edit this at Wikidata"
+}
+
+local function trimToNil(text)
+	-- Return trimmed non-empty text, or nil.
+	if type(text) == 'string' then
+		return text:match('(%S.-)%s*$')
+	end
+end
+
+function p._showMessage(args)
+	local local_parm = trimToNil(args[1])
+	if local_parm then return "" end
+	-- Parameter qid=x specifies the Wikidata ID for the article.
+	-- This is not normally used except for testing outside the article.
+	local qid = trimToNil(args.qid) or mw.wikibase.getEntityIdForCurrentPage()
+	if qid and mw.wikibase.entityExists(qid) then
+		-- Parameter pid=x uses x as an anchor in the link to the Wikidata entry.
+		local anchor = trimToNil(args.pid)
+		-- Parameter nbsp replaces the leading space with &amp;nbsp;
+		local space = trimToNil(args.nbsp) and "&amp;nbsp;" or " "
+		return
+			space ..
+			"[[File:OOjs UI icon edit-ltr-progressive.svg|frameless|text-top|10px" ..
+			"|alt=" .. i18n.message ..
+			"|link=https://www.wikidata.org/wiki/" .. qid ..
+			(anchor and ("#" .. anchor) or "") ..
+			"|class=noprint" ..
+			"|" .. i18n.message ..
+			"]]"
+	end
+	return ""
+end
+
+function p.showMessage(frame)
+	return p._showMessage(frame.args)
+end
+
+return p
+
+[[Category:second attempt at refreshing on January 27 2024]][[Category:{{subst:FULLPAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]][[Category:Automatic wikipedia redirects in {{subst:NAMESPACE}}]]</text>
+      <sha1>ptyr0lbsaii1un2nctr3iizw2bprrwy</sha1>
+    </revision>
+    <revision>
+      <id>832337</id>
+      <parentid>832336</parentid>
+      <timestamp>2025-02-19T01:01:09Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <origin>832337</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2025" sha1="nhqrmcfo5t2qlyyzjvm4eaysase6k8h" xml:space="preserve">-- Module to display an icon with a tooltip such as "Edit this at Wikidata".
+-- Icon is linked to the Wikidata entry for the article where this is placed.
+-- This message is only displayed if a local_parameter is not supplied
+-- i.e. when called from a template, it can be coded not to display the message.
+-- The qid of a Wikidata entry can optionally be supplied for testing outside the article.
+-- Usage:
+-- {{#invoke:EditAtWikidata|showMessage|local_parameter}}
+-- {{#invoke:EditAtWikidata|showMessage|qid=&lt;ArticleID&gt;|local_parameter}}
+
+local p = {}
+
+local i18n =
+{
+	["message"] = "Edit this at Wikidata"
+}
+
+local function trimToNil(text)
+	-- Return trimmed non-empty text, or nil.
+	if type(text) == 'string' then
+		return text:match('(%S.-)%s*$')
+	end
+end
+
+function p._showMessage(args)
+	local local_parm = trimToNil(args[1])
+	if local_parm then return "" end
+	-- Parameter qid=x specifies the Wikidata ID for the article.
+	-- This is not normally used except for testing outside the article.
+	local qid = trimToNil(args.qid) or mw.wikibase.getEntityIdForCurrentPage()
+	if qid and mw.wikibase.entityExists(qid) then
+		-- Parameter pid=x uses x as an anchor in the link to the Wikidata entry.
+		local anchor = trimToNil(args.pid)
+		-- Parameter nbsp replaces the leading space with &amp;nbsp;
+		local space = trimToNil(args.nbsp) and "&amp;nbsp;" or " "
+		return
+			space ..
+			"[[File:OOjs UI icon edit-ltr-progressive.svg|frameless|text-top|10px" ..
+			"|alt=" .. i18n.message ..
+			"|link=https://www.wikidata.org/wiki/" .. qid ..
+			(anchor and ("#" .. anchor) or "") ..
+			"|class=noprint" ..
+			"|" .. i18n.message ..
+			"]]"
+	end
+	return ""
+end
+
+function p.showMessage(frame)
+	return p._showMessage(frame.args)
+end
+
+return p
+
+[[Category:second attempt at refreshing on January 27 2024]][[Category:{{subst:FULLPAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]][[Category:Automatic wikipedia redirects in {{subst:NAMESPACE}}]]
+[[Category:Automatic wikipedia redirects in namespace {{subst:NAMESPACE}}]]</text>
+      <sha1>nhqrmcfo5t2qlyyzjvm4eaysase6k8h</sha1>
+    </revision>
+    <revision>
+      <id>832338</id>
+      <parentid>832337</parentid>
+      <timestamp>2025-03-13T21:23:18Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "Category:{" to "Category:"</comment>
+      <origin>832338</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2024" sha1="qx47loxurnkqh5l314k8ekcosk6rl0l" xml:space="preserve">-- Module to display an icon with a tooltip such as "Edit this at Wikidata".
+-- Icon is linked to the Wikidata entry for the article where this is placed.
+-- This message is only displayed if a local_parameter is not supplied
+-- i.e. when called from a template, it can be coded not to display the message.
+-- The qid of a Wikidata entry can optionally be supplied for testing outside the article.
+-- Usage:
+-- {{#invoke:EditAtWikidata|showMessage|local_parameter}}
+-- {{#invoke:EditAtWikidata|showMessage|qid=&lt;ArticleID&gt;|local_parameter}}
+
+local p = {}
+
+local i18n =
+{
+	["message"] = "Edit this at Wikidata"
+}
+
+local function trimToNil(text)
+	-- Return trimmed non-empty text, or nil.
+	if type(text) == 'string' then
+		return text:match('(%S.-)%s*$')
+	end
+end
+
+function p._showMessage(args)
+	local local_parm = trimToNil(args[1])
+	if local_parm then return "" end
+	-- Parameter qid=x specifies the Wikidata ID for the article.
+	-- This is not normally used except for testing outside the article.
+	local qid = trimToNil(args.qid) or mw.wikibase.getEntityIdForCurrentPage()
+	if qid and mw.wikibase.entityExists(qid) then
+		-- Parameter pid=x uses x as an anchor in the link to the Wikidata entry.
+		local anchor = trimToNil(args.pid)
+		-- Parameter nbsp replaces the leading space with &amp;nbsp;
+		local space = trimToNil(args.nbsp) and "&amp;nbsp;" or " "
+		return
+			space ..
+			"[[File:OOjs UI icon edit-ltr-progressive.svg|frameless|text-top|10px" ..
+			"|alt=" .. i18n.message ..
+			"|link=https://www.wikidata.org/wiki/" .. qid ..
+			(anchor and ("#" .. anchor) or "") ..
+			"|class=noprint" ..
+			"|" .. i18n.message ..
+			"]]"
+	end
+	return ""
+end
+
+function p.showMessage(frame)
+	return p._showMessage(frame.args)
+end
+
+return p
+
+[[Category:second attempt at refreshing on January 27 2024]][[Category:{subst:FULLPAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]][[Category:Automatic wikipedia redirects in {{subst:NAMESPACE}}]]
+[[Category:Automatic wikipedia redirects in namespace {{subst:NAMESPACE}}]]</text>
+      <sha1>qx47loxurnkqh5l314k8ekcosk6rl0l</sha1>
+    </revision>
+    <revision>
+      <id>832339</id>
+      <parentid>832338</parentid>
+      <timestamp>2025-03-13T21:23:49Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "Category:{" to "Category:"</comment>
+      <origin>832339</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2023" sha1="j74abyjs2sonh680tbj89ios9o0y75w" xml:space="preserve">-- Module to display an icon with a tooltip such as "Edit this at Wikidata".
+-- Icon is linked to the Wikidata entry for the article where this is placed.
+-- This message is only displayed if a local_parameter is not supplied
+-- i.e. when called from a template, it can be coded not to display the message.
+-- The qid of a Wikidata entry can optionally be supplied for testing outside the article.
+-- Usage:
+-- {{#invoke:EditAtWikidata|showMessage|local_parameter}}
+-- {{#invoke:EditAtWikidata|showMessage|qid=&lt;ArticleID&gt;|local_parameter}}
+
+local p = {}
+
+local i18n =
+{
+	["message"] = "Edit this at Wikidata"
+}
+
+local function trimToNil(text)
+	-- Return trimmed non-empty text, or nil.
+	if type(text) == 'string' then
+		return text:match('(%S.-)%s*$')
+	end
+end
+
+function p._showMessage(args)
+	local local_parm = trimToNil(args[1])
+	if local_parm then return "" end
+	-- Parameter qid=x specifies the Wikidata ID for the article.
+	-- This is not normally used except for testing outside the article.
+	local qid = trimToNil(args.qid) or mw.wikibase.getEntityIdForCurrentPage()
+	if qid and mw.wikibase.entityExists(qid) then
+		-- Parameter pid=x uses x as an anchor in the link to the Wikidata entry.
+		local anchor = trimToNil(args.pid)
+		-- Parameter nbsp replaces the leading space with &amp;nbsp;
+		local space = trimToNil(args.nbsp) and "&amp;nbsp;" or " "
+		return
+			space ..
+			"[[File:OOjs UI icon edit-ltr-progressive.svg|frameless|text-top|10px" ..
+			"|alt=" .. i18n.message ..
+			"|link=https://www.wikidata.org/wiki/" .. qid ..
+			(anchor and ("#" .. anchor) or "") ..
+			"|class=noprint" ..
+			"|" .. i18n.message ..
+			"]]"
+	end
+	return ""
+end
+
+function p.showMessage(frame)
+	return p._showMessage(frame.args)
+end
+
+return p
+
+[[Category:second attempt at refreshing on January 27 2024]][[Category:subst:FULLPAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]][[Category:Automatic wikipedia redirects in {{subst:NAMESPACE}}]]
+[[Category:Automatic wikipedia redirects in namespace {{subst:NAMESPACE}}]]</text>
+      <sha1>j74abyjs2sonh680tbj89ios9o0y75w</sha1>
+    </revision>
+    <revision>
+      <id>832340</id>
+      <parentid>832339</parentid>
+      <timestamp>2025-04-06T02:27:28Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "[[Category:subst:FULLPAGENAME}}]]" to ""</comment>
+      <origin>832340</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1990" sha1="dqi4o8pk60ywbio3akulk5eq1ittkv3" xml:space="preserve">-- Module to display an icon with a tooltip such as "Edit this at Wikidata".
+-- Icon is linked to the Wikidata entry for the article where this is placed.
+-- This message is only displayed if a local_parameter is not supplied
+-- i.e. when called from a template, it can be coded not to display the message.
+-- The qid of a Wikidata entry can optionally be supplied for testing outside the article.
+-- Usage:
+-- {{#invoke:EditAtWikidata|showMessage|local_parameter}}
+-- {{#invoke:EditAtWikidata|showMessage|qid=&lt;ArticleID&gt;|local_parameter}}
+
+local p = {}
+
+local i18n =
+{
+	["message"] = "Edit this at Wikidata"
+}
+
+local function trimToNil(text)
+	-- Return trimmed non-empty text, or nil.
+	if type(text) == 'string' then
+		return text:match('(%S.-)%s*$')
+	end
+end
+
+function p._showMessage(args)
+	local local_parm = trimToNil(args[1])
+	if local_parm then return "" end
+	-- Parameter qid=x specifies the Wikidata ID for the article.
+	-- This is not normally used except for testing outside the article.
+	local qid = trimToNil(args.qid) or mw.wikibase.getEntityIdForCurrentPage()
+	if qid and mw.wikibase.entityExists(qid) then
+		-- Parameter pid=x uses x as an anchor in the link to the Wikidata entry.
+		local anchor = trimToNil(args.pid)
+		-- Parameter nbsp replaces the leading space with &amp;nbsp;
+		local space = trimToNil(args.nbsp) and "&amp;nbsp;" or " "
+		return
+			space ..
+			"[[File:OOjs UI icon edit-ltr-progressive.svg|frameless|text-top|10px" ..
+			"|alt=" .. i18n.message ..
+			"|link=https://www.wikidata.org/wiki/" .. qid ..
+			(anchor and ("#" .. anchor) or "") ..
+			"|class=noprint" ..
+			"|" .. i18n.message ..
+			"]]"
+	end
+	return ""
+end
+
+function p.showMessage(frame)
+	return p._showMessage(frame.args)
+end
+
+return p
+
+[[Category:second attempt at refreshing on January 27 2024]][[Category:second attempt at refreshing on January 27 2024]][[Category:Automatic wikipedia redirects in {{subst:NAMESPACE}}]]
+[[Category:Automatic wikipedia redirects in namespace {{subst:NAMESPACE}}]]</text>
+      <sha1>dqi4o8pk60ywbio3akulk5eq1ittkv3</sha1>
+    </revision>
+    <revision>
+      <id>832341</id>
+      <parentid>832340</parentid>
+      <timestamp>2025-04-24T05:35:40Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "second attempt at refreshing on January 27 2024" to "qq"</comment>
+      <origin>832341</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1900" sha1="pvg01uc97lhivuuqoqr8trhclozs13e" xml:space="preserve">-- Module to display an icon with a tooltip such as "Edit this at Wikidata".
+-- Icon is linked to the Wikidata entry for the article where this is placed.
+-- This message is only displayed if a local_parameter is not supplied
+-- i.e. when called from a template, it can be coded not to display the message.
+-- The qid of a Wikidata entry can optionally be supplied for testing outside the article.
+-- Usage:
+-- {{#invoke:EditAtWikidata|showMessage|local_parameter}}
+-- {{#invoke:EditAtWikidata|showMessage|qid=&lt;ArticleID&gt;|local_parameter}}
+
+local p = {}
+
+local i18n =
+{
+	["message"] = "Edit this at Wikidata"
+}
+
+local function trimToNil(text)
+	-- Return trimmed non-empty text, or nil.
+	if type(text) == 'string' then
+		return text:match('(%S.-)%s*$')
+	end
+end
+
+function p._showMessage(args)
+	local local_parm = trimToNil(args[1])
+	if local_parm then return "" end
+	-- Parameter qid=x specifies the Wikidata ID for the article.
+	-- This is not normally used except for testing outside the article.
+	local qid = trimToNil(args.qid) or mw.wikibase.getEntityIdForCurrentPage()
+	if qid and mw.wikibase.entityExists(qid) then
+		-- Parameter pid=x uses x as an anchor in the link to the Wikidata entry.
+		local anchor = trimToNil(args.pid)
+		-- Parameter nbsp replaces the leading space with &amp;nbsp;
+		local space = trimToNil(args.nbsp) and "&amp;nbsp;" or " "
+		return
+			space ..
+			"[[File:OOjs UI icon edit-ltr-progressive.svg|frameless|text-top|10px" ..
+			"|alt=" .. i18n.message ..
+			"|link=https://www.wikidata.org/wiki/" .. qid ..
+			(anchor and ("#" .. anchor) or "") ..
+			"|class=noprint" ..
+			"|" .. i18n.message ..
+			"]]"
+	end
+	return ""
+end
+
+function p.showMessage(frame)
+	return p._showMessage(frame.args)
+end
+
+return p
+
+[[Category:qq]][[Category:qq]][[Category:Automatic wikipedia redirects in {{subst:NAMESPACE}}]]
+[[Category:Automatic wikipedia redirects in namespace {{subst:NAMESPACE}}]]</text>
+      <sha1>pvg01uc97lhivuuqoqr8trhclozs13e</sha1>
+    </revision>
+    <revision>
+      <id>5914</id>
+      <timestamp>2025-04-29T10:47:12Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Text replacement - "[[Category:qq]]" to ""</comment>
+      <origin>5914</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1870" sha1="93cbmj8uvv8jg72i3c7s9gc2xlosupy" xml:space="preserve">-- Module to display an icon with a tooltip such as "Edit this at Wikidata".
+-- Icon is linked to the Wikidata entry for the article where this is placed.
+-- This message is only displayed if a local_parameter is not supplied
+-- i.e. when called from a template, it can be coded not to display the message.
+-- The qid of a Wikidata entry can optionally be supplied for testing outside the article.
+-- Usage:
+-- {{#invoke:EditAtWikidata|showMessage|local_parameter}}
+-- {{#invoke:EditAtWikidata|showMessage|qid=&lt;ArticleID&gt;|local_parameter}}
+
+local p = {}
+
+local i18n =
+{
+	["message"] = "Edit this at Wikidata"
+}
+
+local function trimToNil(text)
+	-- Return trimmed non-empty text, or nil.
+	if type(text) == 'string' then
+		return text:match('(%S.-)%s*$')
+	end
+end
+
+function p._showMessage(args)
+	local local_parm = trimToNil(args[1])
+	if local_parm then return "" end
+	-- Parameter qid=x specifies the Wikidata ID for the article.
+	-- This is not normally used except for testing outside the article.
+	local qid = trimToNil(args.qid) or mw.wikibase.getEntityIdForCurrentPage()
+	if qid and mw.wikibase.entityExists(qid) then
+		-- Parameter pid=x uses x as an anchor in the link to the Wikidata entry.
+		local anchor = trimToNil(args.pid)
+		-- Parameter nbsp replaces the leading space with &amp;nbsp;
+		local space = trimToNil(args.nbsp) and "&amp;nbsp;" or " "
+		return
+			space ..
+			"[[File:OOjs UI icon edit-ltr-progressive.svg|frameless|text-top|10px" ..
+			"|alt=" .. i18n.message ..
+			"|link=https://www.wikidata.org/wiki/" .. qid ..
+			(anchor and ("#" .. anchor) or "") ..
+			"|class=noprint" ..
+			"|" .. i18n.message ..
+			"]]"
+	end
+	return ""
+end
+
+function p.showMessage(frame)
+	return p._showMessage(frame.args)
+end
+
+return p
+
+[[Category:Automatic wikipedia redirects in {{subst:NAMESPACE}}]]
+[[Category:Automatic wikipedia redirects in namespace {{subst:NAMESPACE}}]]</text>
+      <sha1>93cbmj8uvv8jg72i3c7s9gc2xlosupy</sha1>
+    </revision>
+  </page>
+</mediawiki>

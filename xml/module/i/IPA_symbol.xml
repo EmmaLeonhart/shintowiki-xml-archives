@@ -1,0 +1,576 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:IPA symbol</title>
+    <ns>828</ns>
+    <id>152663</id>
+    <revision>
+      <id>3562323</id>
+      <timestamp>2026-03-22T18:47:58Z</timestamp>
+      <contributor>
+        <username>en&gt;Nardog</username>
+        <id>0</id>
+      </contributor>
+      <comment>fixed</comment>
+      <origin>3562323</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2885" sha1="gb8hatz11otj9sad852ri3vf35ucx3c" xml:space="preserve">local data = mw.loadData('Module:IPA symbol/data').data
+local p = {}
+
+local gsub = mw.ustring.gsub
+local len = mw.ustring.len
+local sub = mw.ustring.sub
+
+local function reverseLook(t, s)
+	local ret
+	for i = 1, len(s) - 1 do
+		-- Look for 2-char matches first
+		ret = t[sub(s, i, i + 1)] or t[sub(s, i, i)]
+		if ret then
+			return ret
+		end
+	end
+	ret = t[sub(s, -1)] -- Last character
+	if ret then
+		return ret
+	end
+end
+
+local function returnData(s, dataType)
+	for _, v in ipairs(data.univPatterns) do
+		s = gsub(s, v.pat, v.rep)
+	end
+	local key = s
+	for _, v in ipairs(data.keyPatterns) do
+		key = gsub(key, v.pat, v.rep)
+	end
+	local ret = data.sounds[key] or data.diacritics[key]
+		or reverseLook(data.diacritics, s)
+	if ret and dataType then
+		if ret[dataType] then
+			ret = ret[dataType]
+		else
+			error(string.format('Invalid data type "%s"', dataType))
+		end
+	end
+	return ret
+end
+
+local function returnErrorCat()
+	return require('Module:Category handler').main({ true }) and
+		'[[Category:International Phonetic Alphabet pages needing attention]]' or
+		''
+end
+
+local function returnError(s)
+	return string.format(
+		'&lt;span class="error"&gt;Error using {{[[Template:IPA symbol|IPA symbol]]}}: "%s" not found in list&lt;/span&gt;%s',
+		s, returnErrorCat())
+end
+
+function p._main(s, errorText, output)
+	return returnData(s, output or 'article') or errorText or returnError(s)
+end
+
+function p.main(frame)
+	local args = {}
+	for k, v in pairs(frame.args) do
+		args[k] = v ~= '' and v
+	end
+	if not args.symbol then
+		return '' -- Exit early
+	end
+	if args.errortext == 'blank' then
+		args.errortext = ''
+	end
+	return p._main(args.symbol, args.errortext, args.output)
+end
+
+function p._link(s, displayText, prefix, suffix, audio, addSpan, errorText)
+	local t = returnData(s)
+	if t then
+		s = string.format('%s[[:%s|%s]]%s',
+			prefix or '', t.article, displayText or s, suffix or '')
+		if addSpan ~= 'no' then
+			local span = mw.html.create('span'):addClass('IPA'):attr('lang', 'und-Latn-fonipa')
+			if prefix or suffix then
+				span:addClass('nowrap'):attr('title',
+					'Representation in the International Phonetic Alphabet (IPA)')
+			end
+			s = tostring(span:wikitext(s))
+		end
+		if audio then
+			audio = require('Module:Yesno')(audio, audio)
+			audio = audio == true and t.audio or audio
+			if audio ~= '' then
+				audio = ' ' .. mw.getCurrentFrame():expandTemplate{
+					title = 'Template:Audio',
+					args = { audio, '', help = 'no' }
+				}
+			end
+		else
+			audio = ''
+		end
+		return s .. audio
+	 else
+		return errorText or returnError(s)
+	end
+end
+
+function p.link(frame)
+	local args = {}
+	for k, v in pairs(frame.args) do
+		args[k] = v ~= '' and v
+	end
+	if not args.symbol then
+		return '' -- Exit early
+	end
+	if args.errortext == 'blank' then
+		args.errortext = ''
+	end
+	return p._link(args.symbol, args.text, args.prefix, args.suffix, args.audio,
+		args.span, args.errortext)
+end
+
+return p</text>
+      <sha1>gb8hatz11otj9sad852ri3vf35ucx3c</sha1>
+    </revision>
+    <revision>
+      <id>3562324</id>
+      <parentid>3562323</parentid>
+      <timestamp>2026-03-22T18:47:58Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3562323</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2885" sha1="gb8hatz11otj9sad852ri3vf35ucx3c" xml:space="preserve">local data = mw.loadData('Module:IPA symbol/data').data
+local p = {}
+
+local gsub = mw.ustring.gsub
+local len = mw.ustring.len
+local sub = mw.ustring.sub
+
+local function reverseLook(t, s)
+	local ret
+	for i = 1, len(s) - 1 do
+		-- Look for 2-char matches first
+		ret = t[sub(s, i, i + 1)] or t[sub(s, i, i)]
+		if ret then
+			return ret
+		end
+	end
+	ret = t[sub(s, -1)] -- Last character
+	if ret then
+		return ret
+	end
+end
+
+local function returnData(s, dataType)
+	for _, v in ipairs(data.univPatterns) do
+		s = gsub(s, v.pat, v.rep)
+	end
+	local key = s
+	for _, v in ipairs(data.keyPatterns) do
+		key = gsub(key, v.pat, v.rep)
+	end
+	local ret = data.sounds[key] or data.diacritics[key]
+		or reverseLook(data.diacritics, s)
+	if ret and dataType then
+		if ret[dataType] then
+			ret = ret[dataType]
+		else
+			error(string.format('Invalid data type "%s"', dataType))
+		end
+	end
+	return ret
+end
+
+local function returnErrorCat()
+	return require('Module:Category handler').main({ true }) and
+		'[[Category:International Phonetic Alphabet pages needing attention]]' or
+		''
+end
+
+local function returnError(s)
+	return string.format(
+		'&lt;span class="error"&gt;Error using {{[[Template:IPA symbol|IPA symbol]]}}: "%s" not found in list&lt;/span&gt;%s',
+		s, returnErrorCat())
+end
+
+function p._main(s, errorText, output)
+	return returnData(s, output or 'article') or errorText or returnError(s)
+end
+
+function p.main(frame)
+	local args = {}
+	for k, v in pairs(frame.args) do
+		args[k] = v ~= '' and v
+	end
+	if not args.symbol then
+		return '' -- Exit early
+	end
+	if args.errortext == 'blank' then
+		args.errortext = ''
+	end
+	return p._main(args.symbol, args.errortext, args.output)
+end
+
+function p._link(s, displayText, prefix, suffix, audio, addSpan, errorText)
+	local t = returnData(s)
+	if t then
+		s = string.format('%s[[:%s|%s]]%s',
+			prefix or '', t.article, displayText or s, suffix or '')
+		if addSpan ~= 'no' then
+			local span = mw.html.create('span'):addClass('IPA'):attr('lang', 'und-Latn-fonipa')
+			if prefix or suffix then
+				span:addClass('nowrap'):attr('title',
+					'Representation in the International Phonetic Alphabet (IPA)')
+			end
+			s = tostring(span:wikitext(s))
+		end
+		if audio then
+			audio = require('Module:Yesno')(audio, audio)
+			audio = audio == true and t.audio or audio
+			if audio ~= '' then
+				audio = ' ' .. mw.getCurrentFrame():expandTemplate{
+					title = 'Template:Audio',
+					args = { audio, '', help = 'no' }
+				}
+			end
+		else
+			audio = ''
+		end
+		return s .. audio
+	 else
+		return errorText or returnError(s)
+	end
+end
+
+function p.link(frame)
+	local args = {}
+	for k, v in pairs(frame.args) do
+		args[k] = v ~= '' and v
+	end
+	if not args.symbol then
+		return '' -- Exit early
+	end
+	if args.errortext == 'blank' then
+		args.errortext = ''
+	end
+	return p._link(args.symbol, args.text, args.prefix, args.suffix, args.audio,
+		args.span, args.errortext)
+end
+
+return p</text>
+      <sha1>gb8hatz11otj9sad852ri3vf35ucx3c</sha1>
+    </revision>
+    <revision>
+      <id>3646309</id>
+      <parentid>3562324</parentid>
+      <timestamp>2026-04-24T16:30:56Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:IPA symbol]]" ([Edit=Require extended confirmed access] (indefinite) [Move=Require extended confirmed access] (indefinite))</comment>
+      <origin>3562323</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2885" sha1="gb8hatz11otj9sad852ri3vf35ucx3c" xml:space="preserve">local data = mw.loadData('Module:IPA symbol/data').data
+local p = {}
+
+local gsub = mw.ustring.gsub
+local len = mw.ustring.len
+local sub = mw.ustring.sub
+
+local function reverseLook(t, s)
+	local ret
+	for i = 1, len(s) - 1 do
+		-- Look for 2-char matches first
+		ret = t[sub(s, i, i + 1)] or t[sub(s, i, i)]
+		if ret then
+			return ret
+		end
+	end
+	ret = t[sub(s, -1)] -- Last character
+	if ret then
+		return ret
+	end
+end
+
+local function returnData(s, dataType)
+	for _, v in ipairs(data.univPatterns) do
+		s = gsub(s, v.pat, v.rep)
+	end
+	local key = s
+	for _, v in ipairs(data.keyPatterns) do
+		key = gsub(key, v.pat, v.rep)
+	end
+	local ret = data.sounds[key] or data.diacritics[key]
+		or reverseLook(data.diacritics, s)
+	if ret and dataType then
+		if ret[dataType] then
+			ret = ret[dataType]
+		else
+			error(string.format('Invalid data type "%s"', dataType))
+		end
+	end
+	return ret
+end
+
+local function returnErrorCat()
+	return require('Module:Category handler').main({ true }) and
+		'[[Category:International Phonetic Alphabet pages needing attention]]' or
+		''
+end
+
+local function returnError(s)
+	return string.format(
+		'&lt;span class="error"&gt;Error using {{[[Template:IPA symbol|IPA symbol]]}}: "%s" not found in list&lt;/span&gt;%s',
+		s, returnErrorCat())
+end
+
+function p._main(s, errorText, output)
+	return returnData(s, output or 'article') or errorText or returnError(s)
+end
+
+function p.main(frame)
+	local args = {}
+	for k, v in pairs(frame.args) do
+		args[k] = v ~= '' and v
+	end
+	if not args.symbol then
+		return '' -- Exit early
+	end
+	if args.errortext == 'blank' then
+		args.errortext = ''
+	end
+	return p._main(args.symbol, args.errortext, args.output)
+end
+
+function p._link(s, displayText, prefix, suffix, audio, addSpan, errorText)
+	local t = returnData(s)
+	if t then
+		s = string.format('%s[[:%s|%s]]%s',
+			prefix or '', t.article, displayText or s, suffix or '')
+		if addSpan ~= 'no' then
+			local span = mw.html.create('span'):addClass('IPA'):attr('lang', 'und-Latn-fonipa')
+			if prefix or suffix then
+				span:addClass('nowrap'):attr('title',
+					'Representation in the International Phonetic Alphabet (IPA)')
+			end
+			s = tostring(span:wikitext(s))
+		end
+		if audio then
+			audio = require('Module:Yesno')(audio, audio)
+			audio = audio == true and t.audio or audio
+			if audio ~= '' then
+				audio = ' ' .. mw.getCurrentFrame():expandTemplate{
+					title = 'Template:Audio',
+					args = { audio, '', help = 'no' }
+				}
+			end
+		else
+			audio = ''
+		end
+		return s .. audio
+	 else
+		return errorText or returnError(s)
+	end
+end
+
+function p.link(frame)
+	local args = {}
+	for k, v in pairs(frame.args) do
+		args[k] = v ~= '' and v
+	end
+	if not args.symbol then
+		return '' -- Exit early
+	end
+	if args.errortext == 'blank' then
+		args.errortext = ''
+	end
+	return p._link(args.symbol, args.text, args.prefix, args.suffix, args.audio,
+		args.span, args.errortext)
+end
+
+return p</text>
+      <sha1>gb8hatz11otj9sad852ri3vf35ucx3c</sha1>
+    </revision>
+    <revision>
+      <id>3646310</id>
+      <parentid>3646309</parentid>
+      <timestamp>2026-04-24T16:30:56Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: trying to do a last fix of these, they will be fixed and not bloat the site</comment>
+      <origin>3562323</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2885" sha1="gb8hatz11otj9sad852ri3vf35ucx3c" xml:space="preserve">local data = mw.loadData('Module:IPA symbol/data').data
+local p = {}
+
+local gsub = mw.ustring.gsub
+local len = mw.ustring.len
+local sub = mw.ustring.sub
+
+local function reverseLook(t, s)
+	local ret
+	for i = 1, len(s) - 1 do
+		-- Look for 2-char matches first
+		ret = t[sub(s, i, i + 1)] or t[sub(s, i, i)]
+		if ret then
+			return ret
+		end
+	end
+	ret = t[sub(s, -1)] -- Last character
+	if ret then
+		return ret
+	end
+end
+
+local function returnData(s, dataType)
+	for _, v in ipairs(data.univPatterns) do
+		s = gsub(s, v.pat, v.rep)
+	end
+	local key = s
+	for _, v in ipairs(data.keyPatterns) do
+		key = gsub(key, v.pat, v.rep)
+	end
+	local ret = data.sounds[key] or data.diacritics[key]
+		or reverseLook(data.diacritics, s)
+	if ret and dataType then
+		if ret[dataType] then
+			ret = ret[dataType]
+		else
+			error(string.format('Invalid data type "%s"', dataType))
+		end
+	end
+	return ret
+end
+
+local function returnErrorCat()
+	return require('Module:Category handler').main({ true }) and
+		'[[Category:International Phonetic Alphabet pages needing attention]]' or
+		''
+end
+
+local function returnError(s)
+	return string.format(
+		'&lt;span class="error"&gt;Error using {{[[Template:IPA symbol|IPA symbol]]}}: "%s" not found in list&lt;/span&gt;%s',
+		s, returnErrorCat())
+end
+
+function p._main(s, errorText, output)
+	return returnData(s, output or 'article') or errorText or returnError(s)
+end
+
+function p.main(frame)
+	local args = {}
+	for k, v in pairs(frame.args) do
+		args[k] = v ~= '' and v
+	end
+	if not args.symbol then
+		return '' -- Exit early
+	end
+	if args.errortext == 'blank' then
+		args.errortext = ''
+	end
+	return p._main(args.symbol, args.errortext, args.output)
+end
+
+function p._link(s, displayText, prefix, suffix, audio, addSpan, errorText)
+	local t = returnData(s)
+	if t then
+		s = string.format('%s[[:%s|%s]]%s',
+			prefix or '', t.article, displayText or s, suffix or '')
+		if addSpan ~= 'no' then
+			local span = mw.html.create('span'):addClass('IPA'):attr('lang', 'und-Latn-fonipa')
+			if prefix or suffix then
+				span:addClass('nowrap'):attr('title',
+					'Representation in the International Phonetic Alphabet (IPA)')
+			end
+			s = tostring(span:wikitext(s))
+		end
+		if audio then
+			audio = require('Module:Yesno')(audio, audio)
+			audio = audio == true and t.audio or audio
+			if audio ~= '' then
+				audio = ' ' .. mw.getCurrentFrame():expandTemplate{
+					title = 'Template:Audio',
+					args = { audio, '', help = 'no' }
+				}
+			end
+		else
+			audio = ''
+		end
+		return s .. audio
+	 else
+		return errorText or returnError(s)
+	end
+end
+
+function p.link(frame)
+	local args = {}
+	for k, v in pairs(frame.args) do
+		args[k] = v ~= '' and v
+	end
+	if not args.symbol then
+		return '' -- Exit early
+	end
+	if args.errortext == 'blank' then
+		args.errortext = ''
+	end
+	return p._link(args.symbol, args.text, args.prefix, args.suffix, args.audio,
+		args.span, args.errortext)
+end
+
+return p</text>
+      <sha1>gb8hatz11otj9sad852ri3vf35ucx3c</sha1>
+    </revision>
+  </page>
+</mediawiki>

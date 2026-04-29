@@ -1,0 +1,332 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Gallery/sandbox</title>
+    <ns>828</ns>
+    <id>5915</id>
+    <revision>
+      <id>832344</id>
+      <timestamp>2023-04-03T15:02:08Z</timestamp>
+      <contributor>
+        <username>en&gt;Great Brightstar</username>
+        <id>0</id>
+      </contributor>
+      <origin>832344</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3712" sha1="a3bq6nvki3rv0m82i4on1on7jqdk9rp" xml:space="preserve">-- This module implements {{gallery}}
+
+local p = {}
+
+local templatestyles = 'Module:Gallery/sandbox/styles.css'
+local yesno = require('Module:Yesno')
+
+local function trim(s)
+	return mw.ustring.gsub(mw.ustring.gsub(s, '%s', ' '), '^%s*(.-)%s*$', '%1')
+end
+
+local tracking, preview
+
+local function checkarg(k,v)
+	if k and type(k) == 'string' then
+		if k == 'align' or k == 'state' or k == 'style' or k == 'title' or
+			k == 'width' or k == 'height' or k == 'lines' or k == 'whitebg' or
+			k == 'mode' or k == 'footer' or k == 'perrow' or k == 'noborder' or
+			k:match('^alt%d+$') or k:match('^%d+$') then
+			-- valid
+		elseif k == 'captionstyle' then
+			if not v:match('^text%-align%s*:%s*center[;%s]*$') then
+				table.insert(tracking, '[[Category:Pages using gallery with the captionstyle parameter]]')
+			end
+		else
+			-- invalid
+			local vlen = mw.ustring.len(k)
+			k = mw.ustring.sub(k, 1, (vlen &lt; 25) and vlen or 25) 
+			k = mw.ustring.gsub(k, '[^%w\-_ ]', '?')
+			table.insert(tracking, '[[Category:Pages using gallery with unknown parameters|' .. k .. ']]')
+			table.insert(preview, '"' .. k .. '"')
+		end
+	end
+end
+
+function p.gallery(frame)
+	-- If called via #invoke, use the args passed into the invoking template.
+	-- Otherwise, for testing purposes, assume args are being passed directly in.
+	local origArgs = (type(frame.getParent) == 'function') and frame:getParent().args or frame
+    
+    -- ParserFunctions considers the empty string to be false, so to preserve the previous 
+    -- behavior of {{gallery}}, change any empty arguments to nil, so Lua will consider
+    -- them false too.
+    local args = {}
+    tracking, preview = {}, {}
+    for k, v in pairs(origArgs) do
+    	if v ~= '' then
+    		args[k] = v
+    		checkarg(k,v)
+    	end
+	end
+	
+	if (args.mode or '') == 'packed' and (args.align or '') == '' then
+		args.align = 'center'
+	end
+
+	local tbl = mw.html.create('div')
+	tbl:addClass('mod-gallery-sb')
+    
+	if args.state then
+		tbl
+			:addClass('mod-gallery-collapsible')
+			:addClass('collapsible')
+			:addClass(args.state)
+	end
+	
+	if args.style then
+		tbl:cssText(args.style)
+	else
+		tbl:addClass('mod-gallery-default')
+	end
+	
+	if args.align then
+		tbl:addClass('mod-gallery-' .. args.align:lower())
+	end
+
+	if args.title then
+		tbl:tag('div')
+			:addClass('title')
+				:tag('div')
+					:wikitext(args.title)
+	end
+	
+	local gargs = {}
+	gargs['class'] = 'nochecker' .. (args.noborder and '' or ' bordered-images')
+	gargs['widths'] = tonumber(args.width) or 180
+	gargs['heights'] = tonumber(args.height) or 180
+	gargs['style'] = args.captionstyle
+	gargs['perrow'] = args.perrow
+	gargs['mode'] = args.mode
+	if yesno(args.whitebg or 'yes') then
+		gargs['class'] = gargs['class'] .. ' whitebg'
+	end
+	
+	local gallery = {}
+	
+	local imageCount = math.ceil(#args / 2)
+
+    for i = 1, imageCount do
+		local img = trim(args[i*2 - 1] or '')
+		local caption = trim(args[i*2] or '')
+		local alt = trim(args['alt' .. i] or '')
+		if img ~= '' then
+			table.insert(gallery, img .. (alt ~= '' and ('|alt=' .. alt) or '') .. '|' .. caption )
+		end
+	end
+	
+	tbl:tag('div')
+		:addClass('main')
+		:tag('div')
+			:wikitext(
+				frame:extensionTag{ name = 'gallery', content = '\n' .. table.concat(gallery,'\n'), args = gargs}
+				)
+    
+	if args.footer then
+		tbl:tag('div')
+			:addClass('footer')
+				:tag('div')
+					:wikitext(args.footer)
+	end
+
+	local trackstr = (#tracking &gt; 0) and table.concat(tracking, '') or ''
+	if #preview &gt; 0 then
+		trackstr = require('Module:If preview')._warning({
+			'Unknown parameters ' .. table.concat(preview, '; ') .. '.'
+		}) .. trackstr
+	end
+	
+	return frame:extensionTag{ name = 'templatestyles', args = { src = templatestyles} } .. tostring(tbl) .. trackstr
+end
+
+return p</text>
+      <sha1>a3bq6nvki3rv0m82i4on1on7jqdk9rp</sha1>
+    </revision>
+    <revision>
+      <id>5916</id>
+      <timestamp>2024-12-31T06:41:07Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: Mass importing wikipedia categories, not taking histories because these are unused ones and it is kind of obvious where they came from</comment>
+      <origin>5916</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3712" sha1="a3bq6nvki3rv0m82i4on1on7jqdk9rp" xml:space="preserve">-- This module implements {{gallery}}
+
+local p = {}
+
+local templatestyles = 'Module:Gallery/sandbox/styles.css'
+local yesno = require('Module:Yesno')
+
+local function trim(s)
+	return mw.ustring.gsub(mw.ustring.gsub(s, '%s', ' '), '^%s*(.-)%s*$', '%1')
+end
+
+local tracking, preview
+
+local function checkarg(k,v)
+	if k and type(k) == 'string' then
+		if k == 'align' or k == 'state' or k == 'style' or k == 'title' or
+			k == 'width' or k == 'height' or k == 'lines' or k == 'whitebg' or
+			k == 'mode' or k == 'footer' or k == 'perrow' or k == 'noborder' or
+			k:match('^alt%d+$') or k:match('^%d+$') then
+			-- valid
+		elseif k == 'captionstyle' then
+			if not v:match('^text%-align%s*:%s*center[;%s]*$') then
+				table.insert(tracking, '[[Category:Pages using gallery with the captionstyle parameter]]')
+			end
+		else
+			-- invalid
+			local vlen = mw.ustring.len(k)
+			k = mw.ustring.sub(k, 1, (vlen &lt; 25) and vlen or 25) 
+			k = mw.ustring.gsub(k, '[^%w\-_ ]', '?')
+			table.insert(tracking, '[[Category:Pages using gallery with unknown parameters|' .. k .. ']]')
+			table.insert(preview, '"' .. k .. '"')
+		end
+	end
+end
+
+function p.gallery(frame)
+	-- If called via #invoke, use the args passed into the invoking template.
+	-- Otherwise, for testing purposes, assume args are being passed directly in.
+	local origArgs = (type(frame.getParent) == 'function') and frame:getParent().args or frame
+    
+    -- ParserFunctions considers the empty string to be false, so to preserve the previous 
+    -- behavior of {{gallery}}, change any empty arguments to nil, so Lua will consider
+    -- them false too.
+    local args = {}
+    tracking, preview = {}, {}
+    for k, v in pairs(origArgs) do
+    	if v ~= '' then
+    		args[k] = v
+    		checkarg(k,v)
+    	end
+	end
+	
+	if (args.mode or '') == 'packed' and (args.align or '') == '' then
+		args.align = 'center'
+	end
+
+	local tbl = mw.html.create('div')
+	tbl:addClass('mod-gallery-sb')
+    
+	if args.state then
+		tbl
+			:addClass('mod-gallery-collapsible')
+			:addClass('collapsible')
+			:addClass(args.state)
+	end
+	
+	if args.style then
+		tbl:cssText(args.style)
+	else
+		tbl:addClass('mod-gallery-default')
+	end
+	
+	if args.align then
+		tbl:addClass('mod-gallery-' .. args.align:lower())
+	end
+
+	if args.title then
+		tbl:tag('div')
+			:addClass('title')
+				:tag('div')
+					:wikitext(args.title)
+	end
+	
+	local gargs = {}
+	gargs['class'] = 'nochecker' .. (args.noborder and '' or ' bordered-images')
+	gargs['widths'] = tonumber(args.width) or 180
+	gargs['heights'] = tonumber(args.height) or 180
+	gargs['style'] = args.captionstyle
+	gargs['perrow'] = args.perrow
+	gargs['mode'] = args.mode
+	if yesno(args.whitebg or 'yes') then
+		gargs['class'] = gargs['class'] .. ' whitebg'
+	end
+	
+	local gallery = {}
+	
+	local imageCount = math.ceil(#args / 2)
+
+    for i = 1, imageCount do
+		local img = trim(args[i*2 - 1] or '')
+		local caption = trim(args[i*2] or '')
+		local alt = trim(args['alt' .. i] or '')
+		if img ~= '' then
+			table.insert(gallery, img .. (alt ~= '' and ('|alt=' .. alt) or '') .. '|' .. caption )
+		end
+	end
+	
+	tbl:tag('div')
+		:addClass('main')
+		:tag('div')
+			:wikitext(
+				frame:extensionTag{ name = 'gallery', content = '\n' .. table.concat(gallery,'\n'), args = gargs}
+				)
+    
+	if args.footer then
+		tbl:tag('div')
+			:addClass('footer')
+				:tag('div')
+					:wikitext(args.footer)
+	end
+
+	local trackstr = (#tracking &gt; 0) and table.concat(tracking, '') or ''
+	if #preview &gt; 0 then
+		trackstr = require('Module:If preview')._warning({
+			'Unknown parameters ' .. table.concat(preview, '; ') .. '.'
+		}) .. trackstr
+	end
+	
+	return frame:extensionTag{ name = 'templatestyles', args = { src = templatestyles} } .. tostring(tbl) .. trackstr
+end
+
+return p</text>
+      <sha1>a3bq6nvki3rv0m82i4on1on7jqdk9rp</sha1>
+    </revision>
+  </page>
+</mediawiki>

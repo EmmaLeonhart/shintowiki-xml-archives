@@ -1,0 +1,1796 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:IPA</title>
+    <ns>828</ns>
+    <id>143926</id>
+    <revision>
+      <id>3367885</id>
+      <timestamp>2026-03-02T18:44:17Z</timestamp>
+      <contributor>
+        <username>en&gt;Nardog</username>
+        <id>0</id>
+      </contributor>
+      <comment>bugfixes</comment>
+      <origin>3367885</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7148" sha1="jjwbnypplmtwdskxyemswyct1tfbgxy" xml:space="preserve">require('strict')
+local p = {}
+
+local function multiFind(s, patterns, init)
+	local i, j = mw.ustring.find(s, patterns[1], init)
+	for n = 2, #patterns do
+		local i2, j2 = mw.ustring.find(s, patterns[n], init)
+		if i2 and (not i or i2 &lt; i) then
+			i, j = i2, j2
+		end
+	end
+	return i, j
+end
+
+local function wrapAtSpaces(s)
+	return mw.ustring.gsub(s, '(%s+)', '&lt;span class="wrap"&gt;%1&lt;/span&gt;')
+end
+
+local function wrapAtSpacesSafely(s)
+	local patterns = {
+		'%[%[[^%]|]-%s[^%]|]-|', -- Piped links
+		'&lt;/?[A-Za-z][^&gt;]-%s[^&gt;]-&gt;' -- HTML tags
+	}
+	s = mw.ustring.gsub(s, '%[%[([^%]|]-%s[^%]|]-)%]%]', '[[%1|%1]]') -- Pipe all links
+	local t = {}
+	local init
+	while true do
+		local i, j = multiFind(s, patterns, init)
+		if not i then
+			break
+		end
+		local pre = wrapAtSpaces(mw.ustring.sub(s, init, i - 1)) -- What precedes the match
+		table.insert(t, pre)
+		table.insert(t, mw.ustring.sub(s, i, j)) -- The match
+		init = j + 1
+	end
+	local post = wrapAtSpaces(mw.ustring.sub(s, init)) -- What follows the last match
+	table.insert(t, post)
+	return table.concat(t)
+end
+
+local function checkNamespace(isDebug)
+	return isDebug or require('Module:Category handler').main({ true })
+end
+
+local function renderCats(cats, isDebug)
+	if not cats[1] or not checkNamespace(isDebug) then
+		return ''
+	end
+	local t = {}
+	for _, v in ipairs(cats) do
+		table.insert(t, string.format(
+			'[[%sCategory:%s]]',
+			isDebug and ':' or '',
+			v
+		))
+	end
+	return table.concat(t)
+end
+
+local function resolveSynonym(s)
+	return mw.loadData('Module:Lang/ISO 639 synonyms')[s] or s
+end
+
+local function splitTag(s)
+	local langCode = s:gsub('%-.*', ''):lower()
+	langCode = resolveSynonym(langCode)
+	local regionCode = s:match('%-(.+)')
+	local isPrivate = regionCode and regionCode:sub(1, 2) == 'x-'
+	return langCode, regionCode, isPrivate
+end
+
+local function getLangName(code, link, raw)
+	return require('Module:Lang')._name_from_tag({
+		code,
+		link = link,
+		raw = raw,
+		-- Without linking, "{{IPA}}" gets expanded in some contexts
+		template = '[[Template:IPA|IPA]]'
+	})
+end
+
+local function linkLang(name, target, link)
+	return link == 'yes' and string.format(
+		'[[%s|%s]]',
+		target or name .. ' language',
+		name
+	) or name
+end
+
+function p._main(args)
+	local ret, cats = {}, {}
+	local isDebug = args.debug == 'yes'
+	local s, langCode, regionCode, isPrivate
+	
+	-- Guide-linking mode
+	if args[2] and args[2] ~= '' then
+		local data = mw.loadData('Module:IPA/data')
+		local isGeneric = args.generic == 'yes'
+		s = args[2]
+		langCode, regionCode, isPrivate = splitTag(args[1])
+		local langData = data.langs[langCode] or {}
+		if regionCode then
+			if not isPrivate then
+				regionCode = regionCode:upper()
+			end
+			if langData.dialects and langData.dialects[regionCode] then
+				-- Overwrite language data with the dialect's
+				local newLangData = {}
+				for k, v in pairs(langData) do
+					if k ~= 'dialects' then
+						newLangData[k] = v
+					end
+				end
+				local dialectData = langData.dialects[regionCode]
+				if dialectData.aliasOf then
+					-- Use the canonical region code
+					regionCode = dialectData.aliasOf
+					isPrivate = regionCode:sub(1, 2) == 'x-'
+					dialectData = langData.dialects[regionCode]
+				end
+				-- Lowercase IANA variant
+				if dialectData.isVariant then
+					regionCode = regionCode:lower()
+				end
+				for k, v in pairs(dialectData) do
+					newLangData[k] = v
+				end
+				langData = newLangData
+			else
+				isGeneric = true
+			end
+		end
+		
+		local fullLangCode = regionCode and langCode .. '-' .. regionCode
+			or langCode
+		local langName = langData.name
+			and linkLang(langData.name, langData.link, args.link)
+			or getLangName(fullLangCode, args.link)
+		if langName:sub(1, 5) == '&lt;span' then
+			-- Module:Lang has returned an error
+			return langName .. renderCats({ 'IPA template errors' }, isDebug)
+		end
+		if args.cat ~= 'no' then
+			local catLangName = langData.name
+				or getLangName(fullLangCode, nil, 'yes')
+			if catLangName:sub(1, 5) == '&lt;span' then
+				-- Module:Lang has returned an error, but it's not fatal
+				table.insert(cats, 'IPA template errors')
+				mw.addWarning(catLangName)
+			else
+				table.insert(cats, string.format('Pages with %s IPA', catLangName))
+			end
+		end
+		
+		-- Label
+		local label = args.label
+		if not label then
+			local labelCode = args[3] and args[3]:lower()
+				or langData.defaultLabelCode
+			if labelCode == '' then
+				label = ''
+			else
+				local langText
+				if langData.text then
+					langText = linkLang(
+						langData.text,
+						mw.ustring.match(langName, '^%[%[([^|%]]+)'),
+						args.link
+					)
+				else
+					langText = mw.ustring.gsub(
+						langName,
+						'^%[%[(([^|]+) languages)%]%]$',
+						'[[%1|%2]]'
+					)
+					langText = mw.ustring.gsub(
+						langText,
+						' languages(%]?%]?)$',
+						'%1'
+					)
+				end
+				if labelCode and data.labels[labelCode] then
+					label = data.labels[labelCode]:format(langText)
+				else
+					label = data.defaultLabel:format(langText)
+				end
+			end
+		end
+		if label and label ~= '' then
+			local span = mw.html.create('span')
+				:addClass('IPA-label')
+				:wikitext(label)
+			if args.small ~= 'no' then
+				span:addClass('IPA-label-small')
+				table.insert(ret, mw.getCurrentFrame():extensionTag({
+					name = 'templatestyles',
+					args = { src = 'Module:IPA/styles.css' }
+				}))
+			end
+			table.insert(ret, tostring(span) .. ' ')
+		end
+		
+		-- Brackets
+		s = (not isGeneric and langData.format or '&amp;#91;%s&amp;#93;'):format(s)
+		
+		-- Link to key
+		local key = not isGeneric and langData.key or data.defaultKey
+		s = string.format('[[%s|%s]]', key, s)
+	else
+		-- Basic mode
+		s = args[1]
+		if args.lang and args.lang ~= '' then
+			langCode, regionCode, isPrivate = splitTag(args.lang)
+		end
+		if args.cat ~= 'no' then
+			table.insert(cats, 'Pages with plain IPA')
+		end
+	end
+	
+	-- Transcription
+	do
+		local lang = (langCode or 'und') .. '-Latn'
+		if not isPrivate and regionCode then
+			lang = lang .. '-' .. regionCode
+		end
+		lang = lang .. '-fonipa'
+		local span = mw.html.create('span')
+			:addClass('IPA')
+			:addClass(args.class)
+			:attr('lang', lang)
+		-- wrap=all: Do nothing
+		-- wrap=none: Never break
+		-- Otherwise: Break at spaces only
+		if args.wrap ~= 'all' then
+			span:addClass('nowrap')
+			if args.wrap ~= 'none' then
+				s = wrapAtSpacesSafely(s)
+			end
+		end
+		if (not args[2] or args[2] == '') and args.tooltip ~= '' then
+			local tooltip = args.tooltip or
+				'Representation in the International Phonetic Alphabet (IPA)'
+			span:attr('title', tooltip)
+		end
+		s = tostring(span:wikitext(s))
+		table.insert(ret, s)
+	end
+	
+	-- Audio
+	local audio = args.audio ~= '' and args.audio or args[4] ~= '' and args[4]
+	if audio then
+		local button = mw.getCurrentFrame():expandTemplate({
+			title = 'Audio',
+			args = { audio, '' }
+		})
+		table.insert(ret, ' ' .. button)
+		table.insert(cats, 'Pages including recorded pronunciations')
+	end
+	
+	-- Categories
+	table.insert(ret, renderCats(cats, isDebug))
+	
+	return table.concat(ret)
+end
+
+function p.main(frame)
+	local args = frame:getParent().args
+	if not args[1] then
+		return ''
+	end
+	for i, v in ipairs(args) do
+		args[i] = mw.text.trim(v)
+	end
+	return p._main(args)
+end
+
+return p</text>
+      <sha1>jjwbnypplmtwdskxyemswyct1tfbgxy</sha1>
+    </revision>
+    <revision>
+      <id>3367886</id>
+      <parentid>3367885</parentid>
+      <timestamp>2026-03-02T18:44:17Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3367885</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7148" sha1="jjwbnypplmtwdskxyemswyct1tfbgxy" xml:space="preserve">require('strict')
+local p = {}
+
+local function multiFind(s, patterns, init)
+	local i, j = mw.ustring.find(s, patterns[1], init)
+	for n = 2, #patterns do
+		local i2, j2 = mw.ustring.find(s, patterns[n], init)
+		if i2 and (not i or i2 &lt; i) then
+			i, j = i2, j2
+		end
+	end
+	return i, j
+end
+
+local function wrapAtSpaces(s)
+	return mw.ustring.gsub(s, '(%s+)', '&lt;span class="wrap"&gt;%1&lt;/span&gt;')
+end
+
+local function wrapAtSpacesSafely(s)
+	local patterns = {
+		'%[%[[^%]|]-%s[^%]|]-|', -- Piped links
+		'&lt;/?[A-Za-z][^&gt;]-%s[^&gt;]-&gt;' -- HTML tags
+	}
+	s = mw.ustring.gsub(s, '%[%[([^%]|]-%s[^%]|]-)%]%]', '[[%1|%1]]') -- Pipe all links
+	local t = {}
+	local init
+	while true do
+		local i, j = multiFind(s, patterns, init)
+		if not i then
+			break
+		end
+		local pre = wrapAtSpaces(mw.ustring.sub(s, init, i - 1)) -- What precedes the match
+		table.insert(t, pre)
+		table.insert(t, mw.ustring.sub(s, i, j)) -- The match
+		init = j + 1
+	end
+	local post = wrapAtSpaces(mw.ustring.sub(s, init)) -- What follows the last match
+	table.insert(t, post)
+	return table.concat(t)
+end
+
+local function checkNamespace(isDebug)
+	return isDebug or require('Module:Category handler').main({ true })
+end
+
+local function renderCats(cats, isDebug)
+	if not cats[1] or not checkNamespace(isDebug) then
+		return ''
+	end
+	local t = {}
+	for _, v in ipairs(cats) do
+		table.insert(t, string.format(
+			'[[%sCategory:%s]]',
+			isDebug and ':' or '',
+			v
+		))
+	end
+	return table.concat(t)
+end
+
+local function resolveSynonym(s)
+	return mw.loadData('Module:Lang/ISO 639 synonyms')[s] or s
+end
+
+local function splitTag(s)
+	local langCode = s:gsub('%-.*', ''):lower()
+	langCode = resolveSynonym(langCode)
+	local regionCode = s:match('%-(.+)')
+	local isPrivate = regionCode and regionCode:sub(1, 2) == 'x-'
+	return langCode, regionCode, isPrivate
+end
+
+local function getLangName(code, link, raw)
+	return require('Module:Lang')._name_from_tag({
+		code,
+		link = link,
+		raw = raw,
+		-- Without linking, "{{IPA}}" gets expanded in some contexts
+		template = '[[Template:IPA|IPA]]'
+	})
+end
+
+local function linkLang(name, target, link)
+	return link == 'yes' and string.format(
+		'[[%s|%s]]',
+		target or name .. ' language',
+		name
+	) or name
+end
+
+function p._main(args)
+	local ret, cats = {}, {}
+	local isDebug = args.debug == 'yes'
+	local s, langCode, regionCode, isPrivate
+	
+	-- Guide-linking mode
+	if args[2] and args[2] ~= '' then
+		local data = mw.loadData('Module:IPA/data')
+		local isGeneric = args.generic == 'yes'
+		s = args[2]
+		langCode, regionCode, isPrivate = splitTag(args[1])
+		local langData = data.langs[langCode] or {}
+		if regionCode then
+			if not isPrivate then
+				regionCode = regionCode:upper()
+			end
+			if langData.dialects and langData.dialects[regionCode] then
+				-- Overwrite language data with the dialect's
+				local newLangData = {}
+				for k, v in pairs(langData) do
+					if k ~= 'dialects' then
+						newLangData[k] = v
+					end
+				end
+				local dialectData = langData.dialects[regionCode]
+				if dialectData.aliasOf then
+					-- Use the canonical region code
+					regionCode = dialectData.aliasOf
+					isPrivate = regionCode:sub(1, 2) == 'x-'
+					dialectData = langData.dialects[regionCode]
+				end
+				-- Lowercase IANA variant
+				if dialectData.isVariant then
+					regionCode = regionCode:lower()
+				end
+				for k, v in pairs(dialectData) do
+					newLangData[k] = v
+				end
+				langData = newLangData
+			else
+				isGeneric = true
+			end
+		end
+		
+		local fullLangCode = regionCode and langCode .. '-' .. regionCode
+			or langCode
+		local langName = langData.name
+			and linkLang(langData.name, langData.link, args.link)
+			or getLangName(fullLangCode, args.link)
+		if langName:sub(1, 5) == '&lt;span' then
+			-- Module:Lang has returned an error
+			return langName .. renderCats({ 'IPA template errors' }, isDebug)
+		end
+		if args.cat ~= 'no' then
+			local catLangName = langData.name
+				or getLangName(fullLangCode, nil, 'yes')
+			if catLangName:sub(1, 5) == '&lt;span' then
+				-- Module:Lang has returned an error, but it's not fatal
+				table.insert(cats, 'IPA template errors')
+				mw.addWarning(catLangName)
+			else
+				table.insert(cats, string.format('Pages with %s IPA', catLangName))
+			end
+		end
+		
+		-- Label
+		local label = args.label
+		if not label then
+			local labelCode = args[3] and args[3]:lower()
+				or langData.defaultLabelCode
+			if labelCode == '' then
+				label = ''
+			else
+				local langText
+				if langData.text then
+					langText = linkLang(
+						langData.text,
+						mw.ustring.match(langName, '^%[%[([^|%]]+)'),
+						args.link
+					)
+				else
+					langText = mw.ustring.gsub(
+						langName,
+						'^%[%[(([^|]+) languages)%]%]$',
+						'[[%1|%2]]'
+					)
+					langText = mw.ustring.gsub(
+						langText,
+						' languages(%]?%]?)$',
+						'%1'
+					)
+				end
+				if labelCode and data.labels[labelCode] then
+					label = data.labels[labelCode]:format(langText)
+				else
+					label = data.defaultLabel:format(langText)
+				end
+			end
+		end
+		if label and label ~= '' then
+			local span = mw.html.create('span')
+				:addClass('IPA-label')
+				:wikitext(label)
+			if args.small ~= 'no' then
+				span:addClass('IPA-label-small')
+				table.insert(ret, mw.getCurrentFrame():extensionTag({
+					name = 'templatestyles',
+					args = { src = 'Module:IPA/styles.css' }
+				}))
+			end
+			table.insert(ret, tostring(span) .. ' ')
+		end
+		
+		-- Brackets
+		s = (not isGeneric and langData.format or '&amp;#91;%s&amp;#93;'):format(s)
+		
+		-- Link to key
+		local key = not isGeneric and langData.key or data.defaultKey
+		s = string.format('[[%s|%s]]', key, s)
+	else
+		-- Basic mode
+		s = args[1]
+		if args.lang and args.lang ~= '' then
+			langCode, regionCode, isPrivate = splitTag(args.lang)
+		end
+		if args.cat ~= 'no' then
+			table.insert(cats, 'Pages with plain IPA')
+		end
+	end
+	
+	-- Transcription
+	do
+		local lang = (langCode or 'und') .. '-Latn'
+		if not isPrivate and regionCode then
+			lang = lang .. '-' .. regionCode
+		end
+		lang = lang .. '-fonipa'
+		local span = mw.html.create('span')
+			:addClass('IPA')
+			:addClass(args.class)
+			:attr('lang', lang)
+		-- wrap=all: Do nothing
+		-- wrap=none: Never break
+		-- Otherwise: Break at spaces only
+		if args.wrap ~= 'all' then
+			span:addClass('nowrap')
+			if args.wrap ~= 'none' then
+				s = wrapAtSpacesSafely(s)
+			end
+		end
+		if (not args[2] or args[2] == '') and args.tooltip ~= '' then
+			local tooltip = args.tooltip or
+				'Representation in the International Phonetic Alphabet (IPA)'
+			span:attr('title', tooltip)
+		end
+		s = tostring(span:wikitext(s))
+		table.insert(ret, s)
+	end
+	
+	-- Audio
+	local audio = args.audio ~= '' and args.audio or args[4] ~= '' and args[4]
+	if audio then
+		local button = mw.getCurrentFrame():expandTemplate({
+			title = 'Audio',
+			args = { audio, '' }
+		})
+		table.insert(ret, ' ' .. button)
+		table.insert(cats, 'Pages including recorded pronunciations')
+	end
+	
+	-- Categories
+	table.insert(ret, renderCats(cats, isDebug))
+	
+	return table.concat(ret)
+end
+
+function p.main(frame)
+	local args = frame:getParent().args
+	if not args[1] then
+		return ''
+	end
+	for i, v in ipairs(args) do
+		args[i] = mw.text.trim(v)
+	end
+	return p._main(args)
+end
+
+return p</text>
+      <sha1>jjwbnypplmtwdskxyemswyct1tfbgxy</sha1>
+    </revision>
+    <revision>
+      <id>3562385</id>
+      <parentid>3367886</parentid>
+      <timestamp>2026-03-22T18:48:09Z</timestamp>
+      <contributor>
+        <username>en&gt;Nardog</username>
+        <id>0</id>
+      </contributor>
+      <comment>bugfixes</comment>
+      <origin>3367885</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7148" sha1="jjwbnypplmtwdskxyemswyct1tfbgxy" xml:space="preserve">require('strict')
+local p = {}
+
+local function multiFind(s, patterns, init)
+	local i, j = mw.ustring.find(s, patterns[1], init)
+	for n = 2, #patterns do
+		local i2, j2 = mw.ustring.find(s, patterns[n], init)
+		if i2 and (not i or i2 &lt; i) then
+			i, j = i2, j2
+		end
+	end
+	return i, j
+end
+
+local function wrapAtSpaces(s)
+	return mw.ustring.gsub(s, '(%s+)', '&lt;span class="wrap"&gt;%1&lt;/span&gt;')
+end
+
+local function wrapAtSpacesSafely(s)
+	local patterns = {
+		'%[%[[^%]|]-%s[^%]|]-|', -- Piped links
+		'&lt;/?[A-Za-z][^&gt;]-%s[^&gt;]-&gt;' -- HTML tags
+	}
+	s = mw.ustring.gsub(s, '%[%[([^%]|]-%s[^%]|]-)%]%]', '[[%1|%1]]') -- Pipe all links
+	local t = {}
+	local init
+	while true do
+		local i, j = multiFind(s, patterns, init)
+		if not i then
+			break
+		end
+		local pre = wrapAtSpaces(mw.ustring.sub(s, init, i - 1)) -- What precedes the match
+		table.insert(t, pre)
+		table.insert(t, mw.ustring.sub(s, i, j)) -- The match
+		init = j + 1
+	end
+	local post = wrapAtSpaces(mw.ustring.sub(s, init)) -- What follows the last match
+	table.insert(t, post)
+	return table.concat(t)
+end
+
+local function checkNamespace(isDebug)
+	return isDebug or require('Module:Category handler').main({ true })
+end
+
+local function renderCats(cats, isDebug)
+	if not cats[1] or not checkNamespace(isDebug) then
+		return ''
+	end
+	local t = {}
+	for _, v in ipairs(cats) do
+		table.insert(t, string.format(
+			'[[%sCategory:%s]]',
+			isDebug and ':' or '',
+			v
+		))
+	end
+	return table.concat(t)
+end
+
+local function resolveSynonym(s)
+	return mw.loadData('Module:Lang/ISO 639 synonyms')[s] or s
+end
+
+local function splitTag(s)
+	local langCode = s:gsub('%-.*', ''):lower()
+	langCode = resolveSynonym(langCode)
+	local regionCode = s:match('%-(.+)')
+	local isPrivate = regionCode and regionCode:sub(1, 2) == 'x-'
+	return langCode, regionCode, isPrivate
+end
+
+local function getLangName(code, link, raw)
+	return require('Module:Lang')._name_from_tag({
+		code,
+		link = link,
+		raw = raw,
+		-- Without linking, "{{IPA}}" gets expanded in some contexts
+		template = '[[Template:IPA|IPA]]'
+	})
+end
+
+local function linkLang(name, target, link)
+	return link == 'yes' and string.format(
+		'[[%s|%s]]',
+		target or name .. ' language',
+		name
+	) or name
+end
+
+function p._main(args)
+	local ret, cats = {}, {}
+	local isDebug = args.debug == 'yes'
+	local s, langCode, regionCode, isPrivate
+	
+	-- Guide-linking mode
+	if args[2] and args[2] ~= '' then
+		local data = mw.loadData('Module:IPA/data')
+		local isGeneric = args.generic == 'yes'
+		s = args[2]
+		langCode, regionCode, isPrivate = splitTag(args[1])
+		local langData = data.langs[langCode] or {}
+		if regionCode then
+			if not isPrivate then
+				regionCode = regionCode:upper()
+			end
+			if langData.dialects and langData.dialects[regionCode] then
+				-- Overwrite language data with the dialect's
+				local newLangData = {}
+				for k, v in pairs(langData) do
+					if k ~= 'dialects' then
+						newLangData[k] = v
+					end
+				end
+				local dialectData = langData.dialects[regionCode]
+				if dialectData.aliasOf then
+					-- Use the canonical region code
+					regionCode = dialectData.aliasOf
+					isPrivate = regionCode:sub(1, 2) == 'x-'
+					dialectData = langData.dialects[regionCode]
+				end
+				-- Lowercase IANA variant
+				if dialectData.isVariant then
+					regionCode = regionCode:lower()
+				end
+				for k, v in pairs(dialectData) do
+					newLangData[k] = v
+				end
+				langData = newLangData
+			else
+				isGeneric = true
+			end
+		end
+		
+		local fullLangCode = regionCode and langCode .. '-' .. regionCode
+			or langCode
+		local langName = langData.name
+			and linkLang(langData.name, langData.link, args.link)
+			or getLangName(fullLangCode, args.link)
+		if langName:sub(1, 5) == '&lt;span' then
+			-- Module:Lang has returned an error
+			return langName .. renderCats({ 'IPA template errors' }, isDebug)
+		end
+		if args.cat ~= 'no' then
+			local catLangName = langData.name
+				or getLangName(fullLangCode, nil, 'yes')
+			if catLangName:sub(1, 5) == '&lt;span' then
+				-- Module:Lang has returned an error, but it's not fatal
+				table.insert(cats, 'IPA template errors')
+				mw.addWarning(catLangName)
+			else
+				table.insert(cats, string.format('Pages with %s IPA', catLangName))
+			end
+		end
+		
+		-- Label
+		local label = args.label
+		if not label then
+			local labelCode = args[3] and args[3]:lower()
+				or langData.defaultLabelCode
+			if labelCode == '' then
+				label = ''
+			else
+				local langText
+				if langData.text then
+					langText = linkLang(
+						langData.text,
+						mw.ustring.match(langName, '^%[%[([^|%]]+)'),
+						args.link
+					)
+				else
+					langText = mw.ustring.gsub(
+						langName,
+						'^%[%[(([^|]+) languages)%]%]$',
+						'[[%1|%2]]'
+					)
+					langText = mw.ustring.gsub(
+						langText,
+						' languages(%]?%]?)$',
+						'%1'
+					)
+				end
+				if labelCode and data.labels[labelCode] then
+					label = data.labels[labelCode]:format(langText)
+				else
+					label = data.defaultLabel:format(langText)
+				end
+			end
+		end
+		if label and label ~= '' then
+			local span = mw.html.create('span')
+				:addClass('IPA-label')
+				:wikitext(label)
+			if args.small ~= 'no' then
+				span:addClass('IPA-label-small')
+				table.insert(ret, mw.getCurrentFrame():extensionTag({
+					name = 'templatestyles',
+					args = { src = 'Module:IPA/styles.css' }
+				}))
+			end
+			table.insert(ret, tostring(span) .. ' ')
+		end
+		
+		-- Brackets
+		s = (not isGeneric and langData.format or '&amp;#91;%s&amp;#93;'):format(s)
+		
+		-- Link to key
+		local key = not isGeneric and langData.key or data.defaultKey
+		s = string.format('[[%s|%s]]', key, s)
+	else
+		-- Basic mode
+		s = args[1]
+		if args.lang and args.lang ~= '' then
+			langCode, regionCode, isPrivate = splitTag(args.lang)
+		end
+		if args.cat ~= 'no' then
+			table.insert(cats, 'Pages with plain IPA')
+		end
+	end
+	
+	-- Transcription
+	do
+		local lang = (langCode or 'und') .. '-Latn'
+		if not isPrivate and regionCode then
+			lang = lang .. '-' .. regionCode
+		end
+		lang = lang .. '-fonipa'
+		local span = mw.html.create('span')
+			:addClass('IPA')
+			:addClass(args.class)
+			:attr('lang', lang)
+		-- wrap=all: Do nothing
+		-- wrap=none: Never break
+		-- Otherwise: Break at spaces only
+		if args.wrap ~= 'all' then
+			span:addClass('nowrap')
+			if args.wrap ~= 'none' then
+				s = wrapAtSpacesSafely(s)
+			end
+		end
+		if (not args[2] or args[2] == '') and args.tooltip ~= '' then
+			local tooltip = args.tooltip or
+				'Representation in the International Phonetic Alphabet (IPA)'
+			span:attr('title', tooltip)
+		end
+		s = tostring(span:wikitext(s))
+		table.insert(ret, s)
+	end
+	
+	-- Audio
+	local audio = args.audio ~= '' and args.audio or args[4] ~= '' and args[4]
+	if audio then
+		local button = mw.getCurrentFrame():expandTemplate({
+			title = 'Audio',
+			args = { audio, '' }
+		})
+		table.insert(ret, ' ' .. button)
+		table.insert(cats, 'Pages including recorded pronunciations')
+	end
+	
+	-- Categories
+	table.insert(ret, renderCats(cats, isDebug))
+	
+	return table.concat(ret)
+end
+
+function p.main(frame)
+	local args = frame:getParent().args
+	if not args[1] then
+		return ''
+	end
+	for i, v in ipairs(args) do
+		args[i] = mw.text.trim(v)
+	end
+	return p._main(args)
+end
+
+return p</text>
+      <sha1>jjwbnypplmtwdskxyemswyct1tfbgxy</sha1>
+    </revision>
+    <revision>
+      <id>3562386</id>
+      <parentid>3562385</parentid>
+      <timestamp>2026-03-22T18:48:09Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3367885</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7148" sha1="jjwbnypplmtwdskxyemswyct1tfbgxy" xml:space="preserve">require('strict')
+local p = {}
+
+local function multiFind(s, patterns, init)
+	local i, j = mw.ustring.find(s, patterns[1], init)
+	for n = 2, #patterns do
+		local i2, j2 = mw.ustring.find(s, patterns[n], init)
+		if i2 and (not i or i2 &lt; i) then
+			i, j = i2, j2
+		end
+	end
+	return i, j
+end
+
+local function wrapAtSpaces(s)
+	return mw.ustring.gsub(s, '(%s+)', '&lt;span class="wrap"&gt;%1&lt;/span&gt;')
+end
+
+local function wrapAtSpacesSafely(s)
+	local patterns = {
+		'%[%[[^%]|]-%s[^%]|]-|', -- Piped links
+		'&lt;/?[A-Za-z][^&gt;]-%s[^&gt;]-&gt;' -- HTML tags
+	}
+	s = mw.ustring.gsub(s, '%[%[([^%]|]-%s[^%]|]-)%]%]', '[[%1|%1]]') -- Pipe all links
+	local t = {}
+	local init
+	while true do
+		local i, j = multiFind(s, patterns, init)
+		if not i then
+			break
+		end
+		local pre = wrapAtSpaces(mw.ustring.sub(s, init, i - 1)) -- What precedes the match
+		table.insert(t, pre)
+		table.insert(t, mw.ustring.sub(s, i, j)) -- The match
+		init = j + 1
+	end
+	local post = wrapAtSpaces(mw.ustring.sub(s, init)) -- What follows the last match
+	table.insert(t, post)
+	return table.concat(t)
+end
+
+local function checkNamespace(isDebug)
+	return isDebug or require('Module:Category handler').main({ true })
+end
+
+local function renderCats(cats, isDebug)
+	if not cats[1] or not checkNamespace(isDebug) then
+		return ''
+	end
+	local t = {}
+	for _, v in ipairs(cats) do
+		table.insert(t, string.format(
+			'[[%sCategory:%s]]',
+			isDebug and ':' or '',
+			v
+		))
+	end
+	return table.concat(t)
+end
+
+local function resolveSynonym(s)
+	return mw.loadData('Module:Lang/ISO 639 synonyms')[s] or s
+end
+
+local function splitTag(s)
+	local langCode = s:gsub('%-.*', ''):lower()
+	langCode = resolveSynonym(langCode)
+	local regionCode = s:match('%-(.+)')
+	local isPrivate = regionCode and regionCode:sub(1, 2) == 'x-'
+	return langCode, regionCode, isPrivate
+end
+
+local function getLangName(code, link, raw)
+	return require('Module:Lang')._name_from_tag({
+		code,
+		link = link,
+		raw = raw,
+		-- Without linking, "{{IPA}}" gets expanded in some contexts
+		template = '[[Template:IPA|IPA]]'
+	})
+end
+
+local function linkLang(name, target, link)
+	return link == 'yes' and string.format(
+		'[[%s|%s]]',
+		target or name .. ' language',
+		name
+	) or name
+end
+
+function p._main(args)
+	local ret, cats = {}, {}
+	local isDebug = args.debug == 'yes'
+	local s, langCode, regionCode, isPrivate
+	
+	-- Guide-linking mode
+	if args[2] and args[2] ~= '' then
+		local data = mw.loadData('Module:IPA/data')
+		local isGeneric = args.generic == 'yes'
+		s = args[2]
+		langCode, regionCode, isPrivate = splitTag(args[1])
+		local langData = data.langs[langCode] or {}
+		if regionCode then
+			if not isPrivate then
+				regionCode = regionCode:upper()
+			end
+			if langData.dialects and langData.dialects[regionCode] then
+				-- Overwrite language data with the dialect's
+				local newLangData = {}
+				for k, v in pairs(langData) do
+					if k ~= 'dialects' then
+						newLangData[k] = v
+					end
+				end
+				local dialectData = langData.dialects[regionCode]
+				if dialectData.aliasOf then
+					-- Use the canonical region code
+					regionCode = dialectData.aliasOf
+					isPrivate = regionCode:sub(1, 2) == 'x-'
+					dialectData = langData.dialects[regionCode]
+				end
+				-- Lowercase IANA variant
+				if dialectData.isVariant then
+					regionCode = regionCode:lower()
+				end
+				for k, v in pairs(dialectData) do
+					newLangData[k] = v
+				end
+				langData = newLangData
+			else
+				isGeneric = true
+			end
+		end
+		
+		local fullLangCode = regionCode and langCode .. '-' .. regionCode
+			or langCode
+		local langName = langData.name
+			and linkLang(langData.name, langData.link, args.link)
+			or getLangName(fullLangCode, args.link)
+		if langName:sub(1, 5) == '&lt;span' then
+			-- Module:Lang has returned an error
+			return langName .. renderCats({ 'IPA template errors' }, isDebug)
+		end
+		if args.cat ~= 'no' then
+			local catLangName = langData.name
+				or getLangName(fullLangCode, nil, 'yes')
+			if catLangName:sub(1, 5) == '&lt;span' then
+				-- Module:Lang has returned an error, but it's not fatal
+				table.insert(cats, 'IPA template errors')
+				mw.addWarning(catLangName)
+			else
+				table.insert(cats, string.format('Pages with %s IPA', catLangName))
+			end
+		end
+		
+		-- Label
+		local label = args.label
+		if not label then
+			local labelCode = args[3] and args[3]:lower()
+				or langData.defaultLabelCode
+			if labelCode == '' then
+				label = ''
+			else
+				local langText
+				if langData.text then
+					langText = linkLang(
+						langData.text,
+						mw.ustring.match(langName, '^%[%[([^|%]]+)'),
+						args.link
+					)
+				else
+					langText = mw.ustring.gsub(
+						langName,
+						'^%[%[(([^|]+) languages)%]%]$',
+						'[[%1|%2]]'
+					)
+					langText = mw.ustring.gsub(
+						langText,
+						' languages(%]?%]?)$',
+						'%1'
+					)
+				end
+				if labelCode and data.labels[labelCode] then
+					label = data.labels[labelCode]:format(langText)
+				else
+					label = data.defaultLabel:format(langText)
+				end
+			end
+		end
+		if label and label ~= '' then
+			local span = mw.html.create('span')
+				:addClass('IPA-label')
+				:wikitext(label)
+			if args.small ~= 'no' then
+				span:addClass('IPA-label-small')
+				table.insert(ret, mw.getCurrentFrame():extensionTag({
+					name = 'templatestyles',
+					args = { src = 'Module:IPA/styles.css' }
+				}))
+			end
+			table.insert(ret, tostring(span) .. ' ')
+		end
+		
+		-- Brackets
+		s = (not isGeneric and langData.format or '&amp;#91;%s&amp;#93;'):format(s)
+		
+		-- Link to key
+		local key = not isGeneric and langData.key or data.defaultKey
+		s = string.format('[[%s|%s]]', key, s)
+	else
+		-- Basic mode
+		s = args[1]
+		if args.lang and args.lang ~= '' then
+			langCode, regionCode, isPrivate = splitTag(args.lang)
+		end
+		if args.cat ~= 'no' then
+			table.insert(cats, 'Pages with plain IPA')
+		end
+	end
+	
+	-- Transcription
+	do
+		local lang = (langCode or 'und') .. '-Latn'
+		if not isPrivate and regionCode then
+			lang = lang .. '-' .. regionCode
+		end
+		lang = lang .. '-fonipa'
+		local span = mw.html.create('span')
+			:addClass('IPA')
+			:addClass(args.class)
+			:attr('lang', lang)
+		-- wrap=all: Do nothing
+		-- wrap=none: Never break
+		-- Otherwise: Break at spaces only
+		if args.wrap ~= 'all' then
+			span:addClass('nowrap')
+			if args.wrap ~= 'none' then
+				s = wrapAtSpacesSafely(s)
+			end
+		end
+		if (not args[2] or args[2] == '') and args.tooltip ~= '' then
+			local tooltip = args.tooltip or
+				'Representation in the International Phonetic Alphabet (IPA)'
+			span:attr('title', tooltip)
+		end
+		s = tostring(span:wikitext(s))
+		table.insert(ret, s)
+	end
+	
+	-- Audio
+	local audio = args.audio ~= '' and args.audio or args[4] ~= '' and args[4]
+	if audio then
+		local button = mw.getCurrentFrame():expandTemplate({
+			title = 'Audio',
+			args = { audio, '' }
+		})
+		table.insert(ret, ' ' .. button)
+		table.insert(cats, 'Pages including recorded pronunciations')
+	end
+	
+	-- Categories
+	table.insert(ret, renderCats(cats, isDebug))
+	
+	return table.concat(ret)
+end
+
+function p.main(frame)
+	local args = frame:getParent().args
+	if not args[1] then
+		return ''
+	end
+	for i, v in ipairs(args) do
+		args[i] = mw.text.trim(v)
+	end
+	return p._main(args)
+end
+
+return p</text>
+      <sha1>jjwbnypplmtwdskxyemswyct1tfbgxy</sha1>
+    </revision>
+    <revision>
+      <id>3646374</id>
+      <parentid>3562386</parentid>
+      <timestamp>2026-04-24T16:31:10Z</timestamp>
+      <contributor>
+        <username>en&gt;Nardog</username>
+        <id>0</id>
+      </contributor>
+      <comment>bugfixes</comment>
+      <origin>3367885</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7148" sha1="jjwbnypplmtwdskxyemswyct1tfbgxy" xml:space="preserve">require('strict')
+local p = {}
+
+local function multiFind(s, patterns, init)
+	local i, j = mw.ustring.find(s, patterns[1], init)
+	for n = 2, #patterns do
+		local i2, j2 = mw.ustring.find(s, patterns[n], init)
+		if i2 and (not i or i2 &lt; i) then
+			i, j = i2, j2
+		end
+	end
+	return i, j
+end
+
+local function wrapAtSpaces(s)
+	return mw.ustring.gsub(s, '(%s+)', '&lt;span class="wrap"&gt;%1&lt;/span&gt;')
+end
+
+local function wrapAtSpacesSafely(s)
+	local patterns = {
+		'%[%[[^%]|]-%s[^%]|]-|', -- Piped links
+		'&lt;/?[A-Za-z][^&gt;]-%s[^&gt;]-&gt;' -- HTML tags
+	}
+	s = mw.ustring.gsub(s, '%[%[([^%]|]-%s[^%]|]-)%]%]', '[[%1|%1]]') -- Pipe all links
+	local t = {}
+	local init
+	while true do
+		local i, j = multiFind(s, patterns, init)
+		if not i then
+			break
+		end
+		local pre = wrapAtSpaces(mw.ustring.sub(s, init, i - 1)) -- What precedes the match
+		table.insert(t, pre)
+		table.insert(t, mw.ustring.sub(s, i, j)) -- The match
+		init = j + 1
+	end
+	local post = wrapAtSpaces(mw.ustring.sub(s, init)) -- What follows the last match
+	table.insert(t, post)
+	return table.concat(t)
+end
+
+local function checkNamespace(isDebug)
+	return isDebug or require('Module:Category handler').main({ true })
+end
+
+local function renderCats(cats, isDebug)
+	if not cats[1] or not checkNamespace(isDebug) then
+		return ''
+	end
+	local t = {}
+	for _, v in ipairs(cats) do
+		table.insert(t, string.format(
+			'[[%sCategory:%s]]',
+			isDebug and ':' or '',
+			v
+		))
+	end
+	return table.concat(t)
+end
+
+local function resolveSynonym(s)
+	return mw.loadData('Module:Lang/ISO 639 synonyms')[s] or s
+end
+
+local function splitTag(s)
+	local langCode = s:gsub('%-.*', ''):lower()
+	langCode = resolveSynonym(langCode)
+	local regionCode = s:match('%-(.+)')
+	local isPrivate = regionCode and regionCode:sub(1, 2) == 'x-'
+	return langCode, regionCode, isPrivate
+end
+
+local function getLangName(code, link, raw)
+	return require('Module:Lang')._name_from_tag({
+		code,
+		link = link,
+		raw = raw,
+		-- Without linking, "{{IPA}}" gets expanded in some contexts
+		template = '[[Template:IPA|IPA]]'
+	})
+end
+
+local function linkLang(name, target, link)
+	return link == 'yes' and string.format(
+		'[[%s|%s]]',
+		target or name .. ' language',
+		name
+	) or name
+end
+
+function p._main(args)
+	local ret, cats = {}, {}
+	local isDebug = args.debug == 'yes'
+	local s, langCode, regionCode, isPrivate
+	
+	-- Guide-linking mode
+	if args[2] and args[2] ~= '' then
+		local data = mw.loadData('Module:IPA/data')
+		local isGeneric = args.generic == 'yes'
+		s = args[2]
+		langCode, regionCode, isPrivate = splitTag(args[1])
+		local langData = data.langs[langCode] or {}
+		if regionCode then
+			if not isPrivate then
+				regionCode = regionCode:upper()
+			end
+			if langData.dialects and langData.dialects[regionCode] then
+				-- Overwrite language data with the dialect's
+				local newLangData = {}
+				for k, v in pairs(langData) do
+					if k ~= 'dialects' then
+						newLangData[k] = v
+					end
+				end
+				local dialectData = langData.dialects[regionCode]
+				if dialectData.aliasOf then
+					-- Use the canonical region code
+					regionCode = dialectData.aliasOf
+					isPrivate = regionCode:sub(1, 2) == 'x-'
+					dialectData = langData.dialects[regionCode]
+				end
+				-- Lowercase IANA variant
+				if dialectData.isVariant then
+					regionCode = regionCode:lower()
+				end
+				for k, v in pairs(dialectData) do
+					newLangData[k] = v
+				end
+				langData = newLangData
+			else
+				isGeneric = true
+			end
+		end
+		
+		local fullLangCode = regionCode and langCode .. '-' .. regionCode
+			or langCode
+		local langName = langData.name
+			and linkLang(langData.name, langData.link, args.link)
+			or getLangName(fullLangCode, args.link)
+		if langName:sub(1, 5) == '&lt;span' then
+			-- Module:Lang has returned an error
+			return langName .. renderCats({ 'IPA template errors' }, isDebug)
+		end
+		if args.cat ~= 'no' then
+			local catLangName = langData.name
+				or getLangName(fullLangCode, nil, 'yes')
+			if catLangName:sub(1, 5) == '&lt;span' then
+				-- Module:Lang has returned an error, but it's not fatal
+				table.insert(cats, 'IPA template errors')
+				mw.addWarning(catLangName)
+			else
+				table.insert(cats, string.format('Pages with %s IPA', catLangName))
+			end
+		end
+		
+		-- Label
+		local label = args.label
+		if not label then
+			local labelCode = args[3] and args[3]:lower()
+				or langData.defaultLabelCode
+			if labelCode == '' then
+				label = ''
+			else
+				local langText
+				if langData.text then
+					langText = linkLang(
+						langData.text,
+						mw.ustring.match(langName, '^%[%[([^|%]]+)'),
+						args.link
+					)
+				else
+					langText = mw.ustring.gsub(
+						langName,
+						'^%[%[(([^|]+) languages)%]%]$',
+						'[[%1|%2]]'
+					)
+					langText = mw.ustring.gsub(
+						langText,
+						' languages(%]?%]?)$',
+						'%1'
+					)
+				end
+				if labelCode and data.labels[labelCode] then
+					label = data.labels[labelCode]:format(langText)
+				else
+					label = data.defaultLabel:format(langText)
+				end
+			end
+		end
+		if label and label ~= '' then
+			local span = mw.html.create('span')
+				:addClass('IPA-label')
+				:wikitext(label)
+			if args.small ~= 'no' then
+				span:addClass('IPA-label-small')
+				table.insert(ret, mw.getCurrentFrame():extensionTag({
+					name = 'templatestyles',
+					args = { src = 'Module:IPA/styles.css' }
+				}))
+			end
+			table.insert(ret, tostring(span) .. ' ')
+		end
+		
+		-- Brackets
+		s = (not isGeneric and langData.format or '&amp;#91;%s&amp;#93;'):format(s)
+		
+		-- Link to key
+		local key = not isGeneric and langData.key or data.defaultKey
+		s = string.format('[[%s|%s]]', key, s)
+	else
+		-- Basic mode
+		s = args[1]
+		if args.lang and args.lang ~= '' then
+			langCode, regionCode, isPrivate = splitTag(args.lang)
+		end
+		if args.cat ~= 'no' then
+			table.insert(cats, 'Pages with plain IPA')
+		end
+	end
+	
+	-- Transcription
+	do
+		local lang = (langCode or 'und') .. '-Latn'
+		if not isPrivate and regionCode then
+			lang = lang .. '-' .. regionCode
+		end
+		lang = lang .. '-fonipa'
+		local span = mw.html.create('span')
+			:addClass('IPA')
+			:addClass(args.class)
+			:attr('lang', lang)
+		-- wrap=all: Do nothing
+		-- wrap=none: Never break
+		-- Otherwise: Break at spaces only
+		if args.wrap ~= 'all' then
+			span:addClass('nowrap')
+			if args.wrap ~= 'none' then
+				s = wrapAtSpacesSafely(s)
+			end
+		end
+		if (not args[2] or args[2] == '') and args.tooltip ~= '' then
+			local tooltip = args.tooltip or
+				'Representation in the International Phonetic Alphabet (IPA)'
+			span:attr('title', tooltip)
+		end
+		s = tostring(span:wikitext(s))
+		table.insert(ret, s)
+	end
+	
+	-- Audio
+	local audio = args.audio ~= '' and args.audio or args[4] ~= '' and args[4]
+	if audio then
+		local button = mw.getCurrentFrame():expandTemplate({
+			title = 'Audio',
+			args = { audio, '' }
+		})
+		table.insert(ret, ' ' .. button)
+		table.insert(cats, 'Pages including recorded pronunciations')
+	end
+	
+	-- Categories
+	table.insert(ret, renderCats(cats, isDebug))
+	
+	return table.concat(ret)
+end
+
+function p.main(frame)
+	local args = frame:getParent().args
+	if not args[1] then
+		return ''
+	end
+	for i, v in ipairs(args) do
+		args[i] = mw.text.trim(v)
+	end
+	return p._main(args)
+end
+
+return p</text>
+      <sha1>jjwbnypplmtwdskxyemswyct1tfbgxy</sha1>
+    </revision>
+    <revision>
+      <id>3646375</id>
+      <parentid>3646374</parentid>
+      <timestamp>2026-04-24T16:31:10Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: trying to do a last fix of these, they will be fixed and not bloat the site</comment>
+      <origin>3367885</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7148" sha1="jjwbnypplmtwdskxyemswyct1tfbgxy" xml:space="preserve">require('strict')
+local p = {}
+
+local function multiFind(s, patterns, init)
+	local i, j = mw.ustring.find(s, patterns[1], init)
+	for n = 2, #patterns do
+		local i2, j2 = mw.ustring.find(s, patterns[n], init)
+		if i2 and (not i or i2 &lt; i) then
+			i, j = i2, j2
+		end
+	end
+	return i, j
+end
+
+local function wrapAtSpaces(s)
+	return mw.ustring.gsub(s, '(%s+)', '&lt;span class="wrap"&gt;%1&lt;/span&gt;')
+end
+
+local function wrapAtSpacesSafely(s)
+	local patterns = {
+		'%[%[[^%]|]-%s[^%]|]-|', -- Piped links
+		'&lt;/?[A-Za-z][^&gt;]-%s[^&gt;]-&gt;' -- HTML tags
+	}
+	s = mw.ustring.gsub(s, '%[%[([^%]|]-%s[^%]|]-)%]%]', '[[%1|%1]]') -- Pipe all links
+	local t = {}
+	local init
+	while true do
+		local i, j = multiFind(s, patterns, init)
+		if not i then
+			break
+		end
+		local pre = wrapAtSpaces(mw.ustring.sub(s, init, i - 1)) -- What precedes the match
+		table.insert(t, pre)
+		table.insert(t, mw.ustring.sub(s, i, j)) -- The match
+		init = j + 1
+	end
+	local post = wrapAtSpaces(mw.ustring.sub(s, init)) -- What follows the last match
+	table.insert(t, post)
+	return table.concat(t)
+end
+
+local function checkNamespace(isDebug)
+	return isDebug or require('Module:Category handler').main({ true })
+end
+
+local function renderCats(cats, isDebug)
+	if not cats[1] or not checkNamespace(isDebug) then
+		return ''
+	end
+	local t = {}
+	for _, v in ipairs(cats) do
+		table.insert(t, string.format(
+			'[[%sCategory:%s]]',
+			isDebug and ':' or '',
+			v
+		))
+	end
+	return table.concat(t)
+end
+
+local function resolveSynonym(s)
+	return mw.loadData('Module:Lang/ISO 639 synonyms')[s] or s
+end
+
+local function splitTag(s)
+	local langCode = s:gsub('%-.*', ''):lower()
+	langCode = resolveSynonym(langCode)
+	local regionCode = s:match('%-(.+)')
+	local isPrivate = regionCode and regionCode:sub(1, 2) == 'x-'
+	return langCode, regionCode, isPrivate
+end
+
+local function getLangName(code, link, raw)
+	return require('Module:Lang')._name_from_tag({
+		code,
+		link = link,
+		raw = raw,
+		-- Without linking, "{{IPA}}" gets expanded in some contexts
+		template = '[[Template:IPA|IPA]]'
+	})
+end
+
+local function linkLang(name, target, link)
+	return link == 'yes' and string.format(
+		'[[%s|%s]]',
+		target or name .. ' language',
+		name
+	) or name
+end
+
+function p._main(args)
+	local ret, cats = {}, {}
+	local isDebug = args.debug == 'yes'
+	local s, langCode, regionCode, isPrivate
+	
+	-- Guide-linking mode
+	if args[2] and args[2] ~= '' then
+		local data = mw.loadData('Module:IPA/data')
+		local isGeneric = args.generic == 'yes'
+		s = args[2]
+		langCode, regionCode, isPrivate = splitTag(args[1])
+		local langData = data.langs[langCode] or {}
+		if regionCode then
+			if not isPrivate then
+				regionCode = regionCode:upper()
+			end
+			if langData.dialects and langData.dialects[regionCode] then
+				-- Overwrite language data with the dialect's
+				local newLangData = {}
+				for k, v in pairs(langData) do
+					if k ~= 'dialects' then
+						newLangData[k] = v
+					end
+				end
+				local dialectData = langData.dialects[regionCode]
+				if dialectData.aliasOf then
+					-- Use the canonical region code
+					regionCode = dialectData.aliasOf
+					isPrivate = regionCode:sub(1, 2) == 'x-'
+					dialectData = langData.dialects[regionCode]
+				end
+				-- Lowercase IANA variant
+				if dialectData.isVariant then
+					regionCode = regionCode:lower()
+				end
+				for k, v in pairs(dialectData) do
+					newLangData[k] = v
+				end
+				langData = newLangData
+			else
+				isGeneric = true
+			end
+		end
+		
+		local fullLangCode = regionCode and langCode .. '-' .. regionCode
+			or langCode
+		local langName = langData.name
+			and linkLang(langData.name, langData.link, args.link)
+			or getLangName(fullLangCode, args.link)
+		if langName:sub(1, 5) == '&lt;span' then
+			-- Module:Lang has returned an error
+			return langName .. renderCats({ 'IPA template errors' }, isDebug)
+		end
+		if args.cat ~= 'no' then
+			local catLangName = langData.name
+				or getLangName(fullLangCode, nil, 'yes')
+			if catLangName:sub(1, 5) == '&lt;span' then
+				-- Module:Lang has returned an error, but it's not fatal
+				table.insert(cats, 'IPA template errors')
+				mw.addWarning(catLangName)
+			else
+				table.insert(cats, string.format('Pages with %s IPA', catLangName))
+			end
+		end
+		
+		-- Label
+		local label = args.label
+		if not label then
+			local labelCode = args[3] and args[3]:lower()
+				or langData.defaultLabelCode
+			if labelCode == '' then
+				label = ''
+			else
+				local langText
+				if langData.text then
+					langText = linkLang(
+						langData.text,
+						mw.ustring.match(langName, '^%[%[([^|%]]+)'),
+						args.link
+					)
+				else
+					langText = mw.ustring.gsub(
+						langName,
+						'^%[%[(([^|]+) languages)%]%]$',
+						'[[%1|%2]]'
+					)
+					langText = mw.ustring.gsub(
+						langText,
+						' languages(%]?%]?)$',
+						'%1'
+					)
+				end
+				if labelCode and data.labels[labelCode] then
+					label = data.labels[labelCode]:format(langText)
+				else
+					label = data.defaultLabel:format(langText)
+				end
+			end
+		end
+		if label and label ~= '' then
+			local span = mw.html.create('span')
+				:addClass('IPA-label')
+				:wikitext(label)
+			if args.small ~= 'no' then
+				span:addClass('IPA-label-small')
+				table.insert(ret, mw.getCurrentFrame():extensionTag({
+					name = 'templatestyles',
+					args = { src = 'Module:IPA/styles.css' }
+				}))
+			end
+			table.insert(ret, tostring(span) .. ' ')
+		end
+		
+		-- Brackets
+		s = (not isGeneric and langData.format or '&amp;#91;%s&amp;#93;'):format(s)
+		
+		-- Link to key
+		local key = not isGeneric and langData.key or data.defaultKey
+		s = string.format('[[%s|%s]]', key, s)
+	else
+		-- Basic mode
+		s = args[1]
+		if args.lang and args.lang ~= '' then
+			langCode, regionCode, isPrivate = splitTag(args.lang)
+		end
+		if args.cat ~= 'no' then
+			table.insert(cats, 'Pages with plain IPA')
+		end
+	end
+	
+	-- Transcription
+	do
+		local lang = (langCode or 'und') .. '-Latn'
+		if not isPrivate and regionCode then
+			lang = lang .. '-' .. regionCode
+		end
+		lang = lang .. '-fonipa'
+		local span = mw.html.create('span')
+			:addClass('IPA')
+			:addClass(args.class)
+			:attr('lang', lang)
+		-- wrap=all: Do nothing
+		-- wrap=none: Never break
+		-- Otherwise: Break at spaces only
+		if args.wrap ~= 'all' then
+			span:addClass('nowrap')
+			if args.wrap ~= 'none' then
+				s = wrapAtSpacesSafely(s)
+			end
+		end
+		if (not args[2] or args[2] == '') and args.tooltip ~= '' then
+			local tooltip = args.tooltip or
+				'Representation in the International Phonetic Alphabet (IPA)'
+			span:attr('title', tooltip)
+		end
+		s = tostring(span:wikitext(s))
+		table.insert(ret, s)
+	end
+	
+	-- Audio
+	local audio = args.audio ~= '' and args.audio or args[4] ~= '' and args[4]
+	if audio then
+		local button = mw.getCurrentFrame():expandTemplate({
+			title = 'Audio',
+			args = { audio, '' }
+		})
+		table.insert(ret, ' ' .. button)
+		table.insert(cats, 'Pages including recorded pronunciations')
+	end
+	
+	-- Categories
+	table.insert(ret, renderCats(cats, isDebug))
+	
+	return table.concat(ret)
+end
+
+function p.main(frame)
+	local args = frame:getParent().args
+	if not args[1] then
+		return ''
+	end
+	for i, v in ipairs(args) do
+		args[i] = mw.text.trim(v)
+	end
+	return p._main(args)
+end
+
+return p</text>
+      <sha1>jjwbnypplmtwdskxyemswyct1tfbgxy</sha1>
+    </revision>
+  </page>
+</mediawiki>

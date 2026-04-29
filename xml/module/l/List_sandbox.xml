@@ -1,0 +1,482 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:List/sandbox</title>
+    <ns>828</ns>
+    <id>14236</id>
+    <revision>
+      <id>1155601</id>
+      <timestamp>2025-04-06T21:21:57Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Gonnym</username>
+        <id>0</id>
+      </contributor>
+      <origin>1155601</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5643" sha1="80u633hue68752ie9c34bo23bvxg416" xml:space="preserve">local libUtil = require('libraryUtil')
+local checkType = libUtil.checkType
+local mTableTools = require('Module:TableTools')
+
+local p = {}
+
+local listTypes = {
+	['bulleted'] = true,
+	['unbulleted'] = true,
+	['horizontal'] = true,
+	['ordered'] = true,
+	['horizontal_ordered'] = true
+}
+
+function p.makeListData(listType, args)
+	-- Constructs a data table to be passed to p.renderList.
+	local data = {}
+
+	-- Classes and TemplateStyles
+	data.classes = {}
+	data.templatestyles = ''
+	if listType == 'horizontal' or listType == 'horizontal_ordered' then
+		table.insert(data.classes, 'hlist')
+		data.templatestyles = mw.getCurrentFrame():extensionTag{
+			name = 'templatestyles', args = { src = 'Hlist/styles.css' }
+		}
+	elseif listType == 'unbulleted' then
+		table.insert(data.classes, 'plainlist')
+		data.templatestyles = mw.getCurrentFrame():extensionTag{
+			name = 'templatestyles', args = { src = 'Plainlist/styles.css' }
+		}
+	end
+	table.insert(data.classes, args.class)
+
+	-- Main div style
+	data.style = args.style
+
+	-- Indent for horizontal lists
+	if listType == 'horizontal' or listType == 'horizontal_ordered' then
+		local indent = tonumber(args.indent)
+		indent = indent and indent * 1.6 or 0
+		if indent &gt; 0 then
+			data.marginLeft = indent .. 'em'
+		end
+	end
+	
+	-- List style types for ordered lists
+	-- This could be "1, 2, 3", "a, b, c", or a number of others. The list style
+	-- type is either set by the "type" attribute or the "list-style-type" CSS
+	-- property.
+	if listType == 'ordered' or listType == 'horizontal_ordered' then 
+		data.listStyleType = args.list_style_type or args['list-style-type']
+		data.type = args['type']
+
+		-- Detect invalid type attributes and attempt to convert them to
+		-- list-style-type CSS properties.
+		if data.type 
+			and not data.listStyleType
+			and not tostring(data.type):find('^%s*[1AaIi]%s*$')
+		then
+			data.listStyleType = data.type
+			data.type = nil
+		end
+	end
+	
+	-- List tag type
+	if listType == 'ordered' or listType == 'horizontal_ordered' then
+		data.listTag = 'ol'
+	else
+		data.listTag = 'ul'
+	end
+
+	-- Start number for ordered lists
+	data.start = args.start
+	if listType == 'horizontal_ordered' then
+		-- Apply fix to get start numbers working with horizontal ordered lists.
+		local startNum = tonumber(data.start)
+		if startNum then
+			data.counterReset = 'listitem ' .. tostring(startNum - 1)
+		end
+	end
+
+	-- List style
+	 -- ul_style and ol_style are included for backwards compatibility. No
+	 -- distinction is made for ordered or unordered lists.
+	data.listStyle = args.list_style
+
+	-- List items
+	-- li_style is included for backwards compatibility. item_style was included
+	-- to be easier to understand for non-coders.
+	data.itemStyle = args.item_style or args.li_style
+	data.items = {}
+	for _, num in ipairs(mTableTools.numKeys(args)) do
+		local item = {}
+		item.content = args[num]
+		item.style = args['item' .. tostring(num) .. '_style']
+			or args['item_style' .. tostring(num)]
+		item.value = args['item' .. tostring(num) .. '_value']
+			or args['item_value' .. tostring(num)]
+		table.insert(data.items, item)
+	end
+	
+	return data
+end
+
+function p.renderList(data)
+	-- Renders the list HTML.
+	
+	-- Return the blank string if there are no list items.
+	if type(data.items) ~= 'table' or #data.items &lt; 1 then
+		return ''
+	end
+	
+	-- Render the main div tag.
+	local root = mw.html.create('div')
+	for _, class in ipairs(data.classes or {}) do
+		root:addClass(class)
+	end
+	root:css{['margin-left'] = data.marginLeft}
+	if data.style then
+		root:cssText(data.style)
+	end
+
+	-- Render the list tag.
+	local list = root:tag(data.listTag or 'ul')
+	list
+		:attr{start = data.start, type = data.type}
+		:css{
+			['counter-reset'] = data.counterReset,
+			['list-style-type'] = data.listStyleType
+		}
+	if data.listStyle then
+		list:cssText(data.listStyle)
+	end
+
+	-- Render the list items
+	for _, t in ipairs(data.items or {}) do
+		local item = list:tag('li')
+		if data.itemStyle then
+			item:cssText(data.itemStyle)
+		end
+		if t.style then
+			item:cssText(t.style)
+		end
+		item
+			:attr{value = t.value}
+			:wikitext(t.content)
+	end
+
+	return data.templatestyles .. tostring(root)
+end
+
+function p.renderTrackingCategories(args)
+	local isDeprecated = false -- Tracks deprecated parameters.
+	for k, v in pairs(args) do
+		k = tostring(k)
+		if k:find('^item_style%d+$') or k:find('^item_value%d+$') then
+			isDeprecated = true
+			break
+		end
+	end
+	local ret = ''
+	if isDeprecated then
+		ret = ret .. '[[Category:List templates with deprecated parameters]]'
+	end
+	return ret
+end
+
+function p.makeList(listType, args)
+	if not listType or not listTypes[listType] then
+		error(string.format(
+			"bad argument #1 to 'makeList' ('%s' is not a valid list type)",
+			tostring(listType)
+		), 2)
+	end
+	checkType('makeList', 2, args, 'table')
+	local data = p.makeListData(listType, args)
+	local list = p.renderList(data)
+	local trackingCategories = p.renderTrackingCategories(args)
+	return list .. trackingCategories
+end
+
+for listType in pairs(listTypes) do
+	p[listType] = function (frame)
+		local mArguments = require('Module:Arguments')
+		local origArgs = mArguments.getArgs(frame, {
+			frameOnly = ((frame and frame.args and frame.args.frameonly or '') ~= ''),
+			valueFunc = function (key, value)
+			if not value or not mw.ustring.find(value, '%S') then return nil end
+			if mw.ustring.find(value, '^%s*[%*#;:]') then
+				return value
+			else
+				return value:match('^%s*(.-)%s*$')
+			end
+			return nil
+		end
+		})
+		-- Copy all the arguments to a new table, for faster indexing.
+		local args = {}
+		for k, v in pairs(origArgs) do
+			args[k] = v
+		end
+		return p.makeList(listType, args)
+	end
+end
+
+return p</text>
+      <sha1>80u633hue68752ie9c34bo23bvxg416</sha1>
+    </revision>
+    <revision>
+      <id>14237</id>
+      <timestamp>2025-04-11T15:55:05Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported from [[:wikipedia:Module:List/sandbox]]: Mass importing wikipedia</comment>
+      <origin>14237</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5643" sha1="80u633hue68752ie9c34bo23bvxg416" xml:space="preserve">local libUtil = require('libraryUtil')
+local checkType = libUtil.checkType
+local mTableTools = require('Module:TableTools')
+
+local p = {}
+
+local listTypes = {
+	['bulleted'] = true,
+	['unbulleted'] = true,
+	['horizontal'] = true,
+	['ordered'] = true,
+	['horizontal_ordered'] = true
+}
+
+function p.makeListData(listType, args)
+	-- Constructs a data table to be passed to p.renderList.
+	local data = {}
+
+	-- Classes and TemplateStyles
+	data.classes = {}
+	data.templatestyles = ''
+	if listType == 'horizontal' or listType == 'horizontal_ordered' then
+		table.insert(data.classes, 'hlist')
+		data.templatestyles = mw.getCurrentFrame():extensionTag{
+			name = 'templatestyles', args = { src = 'Hlist/styles.css' }
+		}
+	elseif listType == 'unbulleted' then
+		table.insert(data.classes, 'plainlist')
+		data.templatestyles = mw.getCurrentFrame():extensionTag{
+			name = 'templatestyles', args = { src = 'Plainlist/styles.css' }
+		}
+	end
+	table.insert(data.classes, args.class)
+
+	-- Main div style
+	data.style = args.style
+
+	-- Indent for horizontal lists
+	if listType == 'horizontal' or listType == 'horizontal_ordered' then
+		local indent = tonumber(args.indent)
+		indent = indent and indent * 1.6 or 0
+		if indent &gt; 0 then
+			data.marginLeft = indent .. 'em'
+		end
+	end
+	
+	-- List style types for ordered lists
+	-- This could be "1, 2, 3", "a, b, c", or a number of others. The list style
+	-- type is either set by the "type" attribute or the "list-style-type" CSS
+	-- property.
+	if listType == 'ordered' or listType == 'horizontal_ordered' then 
+		data.listStyleType = args.list_style_type or args['list-style-type']
+		data.type = args['type']
+
+		-- Detect invalid type attributes and attempt to convert them to
+		-- list-style-type CSS properties.
+		if data.type 
+			and not data.listStyleType
+			and not tostring(data.type):find('^%s*[1AaIi]%s*$')
+		then
+			data.listStyleType = data.type
+			data.type = nil
+		end
+	end
+	
+	-- List tag type
+	if listType == 'ordered' or listType == 'horizontal_ordered' then
+		data.listTag = 'ol'
+	else
+		data.listTag = 'ul'
+	end
+
+	-- Start number for ordered lists
+	data.start = args.start
+	if listType == 'horizontal_ordered' then
+		-- Apply fix to get start numbers working with horizontal ordered lists.
+		local startNum = tonumber(data.start)
+		if startNum then
+			data.counterReset = 'listitem ' .. tostring(startNum - 1)
+		end
+	end
+
+	-- List style
+	 -- ul_style and ol_style are included for backwards compatibility. No
+	 -- distinction is made for ordered or unordered lists.
+	data.listStyle = args.list_style
+
+	-- List items
+	-- li_style is included for backwards compatibility. item_style was included
+	-- to be easier to understand for non-coders.
+	data.itemStyle = args.item_style or args.li_style
+	data.items = {}
+	for _, num in ipairs(mTableTools.numKeys(args)) do
+		local item = {}
+		item.content = args[num]
+		item.style = args['item' .. tostring(num) .. '_style']
+			or args['item_style' .. tostring(num)]
+		item.value = args['item' .. tostring(num) .. '_value']
+			or args['item_value' .. tostring(num)]
+		table.insert(data.items, item)
+	end
+	
+	return data
+end
+
+function p.renderList(data)
+	-- Renders the list HTML.
+	
+	-- Return the blank string if there are no list items.
+	if type(data.items) ~= 'table' or #data.items &lt; 1 then
+		return ''
+	end
+	
+	-- Render the main div tag.
+	local root = mw.html.create('div')
+	for _, class in ipairs(data.classes or {}) do
+		root:addClass(class)
+	end
+	root:css{['margin-left'] = data.marginLeft}
+	if data.style then
+		root:cssText(data.style)
+	end
+
+	-- Render the list tag.
+	local list = root:tag(data.listTag or 'ul')
+	list
+		:attr{start = data.start, type = data.type}
+		:css{
+			['counter-reset'] = data.counterReset,
+			['list-style-type'] = data.listStyleType
+		}
+	if data.listStyle then
+		list:cssText(data.listStyle)
+	end
+
+	-- Render the list items
+	for _, t in ipairs(data.items or {}) do
+		local item = list:tag('li')
+		if data.itemStyle then
+			item:cssText(data.itemStyle)
+		end
+		if t.style then
+			item:cssText(t.style)
+		end
+		item
+			:attr{value = t.value}
+			:wikitext(t.content)
+	end
+
+	return data.templatestyles .. tostring(root)
+end
+
+function p.renderTrackingCategories(args)
+	local isDeprecated = false -- Tracks deprecated parameters.
+	for k, v in pairs(args) do
+		k = tostring(k)
+		if k:find('^item_style%d+$') or k:find('^item_value%d+$') then
+			isDeprecated = true
+			break
+		end
+	end
+	local ret = ''
+	if isDeprecated then
+		ret = ret .. '[[Category:List templates with deprecated parameters]]'
+	end
+	return ret
+end
+
+function p.makeList(listType, args)
+	if not listType or not listTypes[listType] then
+		error(string.format(
+			"bad argument #1 to 'makeList' ('%s' is not a valid list type)",
+			tostring(listType)
+		), 2)
+	end
+	checkType('makeList', 2, args, 'table')
+	local data = p.makeListData(listType, args)
+	local list = p.renderList(data)
+	local trackingCategories = p.renderTrackingCategories(args)
+	return list .. trackingCategories
+end
+
+for listType in pairs(listTypes) do
+	p[listType] = function (frame)
+		local mArguments = require('Module:Arguments')
+		local origArgs = mArguments.getArgs(frame, {
+			frameOnly = ((frame and frame.args and frame.args.frameonly or '') ~= ''),
+			valueFunc = function (key, value)
+			if not value or not mw.ustring.find(value, '%S') then return nil end
+			if mw.ustring.find(value, '^%s*[%*#;:]') then
+				return value
+			else
+				return value:match('^%s*(.-)%s*$')
+			end
+			return nil
+		end
+		})
+		-- Copy all the arguments to a new table, for faster indexing.
+		local args = {}
+		for k, v in pairs(origArgs) do
+			args[k] = v
+		end
+		return p.makeList(listType, args)
+	end
+end
+
+return p</text>
+      <sha1>80u633hue68752ie9c34bo23bvxg416</sha1>
+    </revision>
+  </page>
+</mediawiki>

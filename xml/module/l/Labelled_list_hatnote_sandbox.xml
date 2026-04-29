@@ -1,0 +1,819 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Labelled list hatnote/sandbox</title>
+    <ns>828</ns>
+    <id>5918</id>
+    <revision>
+      <id>832350</id>
+      <timestamp>2022-09-06T20:05:21Z</timestamp>
+      <contributor>
+        <username>en&gt;Nihiltres</username>
+        <id>0</id>
+      </contributor>
+      <comment>Added invocation-level passthrough of options.labelForm; makes module more flexible</comment>
+      <origin>832350</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4677" sha1="nciu4v3pkkgffm2x27zyl6cyifowkz0" xml:space="preserve">--------------------------------------------------------------------------------
+--                               Labelled list                                --
+--                                                                            --
+-- This module does the core work of creating a hatnote composed of a list    --
+-- prefixed by a colon-terminated label, i.e. "LABEL: [andList of pages]",    --
+-- for {{see also}} and similar templates.                                    --
+--------------------------------------------------------------------------------
+
+local mHatnote = require('Module:Hatnote')
+local mHatlist = require('Module:Hatnote list')
+local mArguments --initialize lazily
+local yesno --initialize lazily
+local p = {}
+
+-- Defaults global to this module
+local defaults = {
+	label = 'See also', --Final fallback for label argument
+	labelForm = '%s: %s',
+	prefixes = {'label', 'label ', 'l'},
+	template = 'Module:Labelled list hatnote'
+}
+
+-- Localizable message strings
+local msg = {
+	errorSuffix = '#Errors',
+	noInputWarning = 'no page names specified',
+	noOutputWarning =
+		"'''[[%s]] — no output: none of the target pages exist.'''"
+}
+
+-- Helper function that pre-combines display parameters into page arguments.
+-- Also compresses sparse arrays, as a desirable side-effect.
+function p.preprocessDisplays (args, prefixes)
+	-- Prefixes specify which parameters, in order, to check for display options
+	-- They each have numbers auto-appended, e.g. 'label1', 'label 1', &amp; 'l1'
+	prefixes = prefixes or defaults.prefixes
+	local indices = {}
+	local sparsePages = {}
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			indices[#indices + 1] = k
+			local display
+			for i = 1, #prefixes do
+				display = args[prefixes[i] .. k]
+				if display then break end
+			end
+			sparsePages[k] = display and
+				string.format('%s|%s', string.gsub(v, '|.*$', ''), display) or v
+		end
+	end
+	table.sort(indices)
+	local pages = {}
+	for k, v in ipairs(indices) do pages[#pages + 1] = sparsePages[v] end
+	return pages
+end
+
+--Helper function to get a page target from a processed page string
+--e.g. "Page|Label" → "Page" or "Target" → "Target"
+local function getTarget(pagename)
+ 	local pipe = string.find(pagename, '|')
+	return string.sub(pagename, 0, pipe and pipe - 1 or nil)
+end
+
+-- Produces a labelled pages-list hatnote.
+-- The main frame (template definition) takes 1 or 2 arguments, for a singular
+-- and (optionally) plural label respectively:
+-- * {{#invoke:Labelled list hatnote|labelledList|Singular label|Plural label}}
+-- The resulting template takes pagename &amp; label parameters normally.
+function p.labelledList (frame)
+	mArguments = require('Module:Arguments')
+	yesno = require('Module:Yesno')
+	local labels = {frame.args[1] or defaults.label}
+	labels[2] = frame.args[2] or labels[1]
+	labels[3] = frame.args[3] --no defaulting
+	labels[4] = frame.args[4] --no defaulting
+	local template = frame:getParent():getTitle()
+	local args = mArguments.getArgs(frame, {parentOnly = true})
+	local pages = p.preprocessDisplays(args)
+	local options = {
+		category = yesno(args.category),
+		extraclasses = frame.args.extraclasses,
+		ifexists = yesno(frame.args.ifexists),
+		labelForm = frame.args.labelForm,
+		namespace = frame.args.namespace or args.namespace,
+		selfref = yesno(frame.args.selfref or args.selfref),
+		template = template
+	}
+	return p._labelledList(pages, labels, options)
+end
+
+function p._labelledList (pages, labels, options)
+	if options.ifexists then
+		for k = #pages, 1, -1 do --iterate backwards to allow smooth removals
+			local v = pages[k]
+			local title = mw.title.new(getTarget(v), namespace)
+			if (v == '') or title == nil or not title.exists then
+				table.remove(pages, k)
+			end
+		end
+	end
+	labels = labels or {}
+	label = (#pages == 1 and labels[1] or labels[2]) or defaults.label
+	for k, v in pairs(pages) do 
+		if mHatnote.findNamespaceId(v) ~= 0 then
+			label =
+				(
+					#pages == 1 and
+					(labels[3] or labels[1] or defaults.label) or
+					(labels[4] or labels[2] or defaults.label)
+				) or defaults.label
+		end
+	end
+	if #pages == 0 then
+		if options.ifexists then
+			mw.addWarning(
+				string.format(
+					msg.noOutputWarning, options.template or defaults.template
+				)
+			)
+			return ''
+		else
+			return mHatnote.makeWikitextError(
+				msg.noInputWarning,
+				(options.template or defaults.template) .. msg.errorSuffix,
+				options.category
+			)
+		end
+	end
+	local text = string.format(
+		options.labelForm or defaults.labelForm,
+		label,
+		mHatlist.andList(pages, true)
+	)
+	local hnOptions = {
+		extraclasses = options.extraclasses,
+		selfref = options.selfref
+	}
+	return mHatnote._hatnote(text, hnOptions)
+end
+
+return p</text>
+      <sha1>nciu4v3pkkgffm2x27zyl6cyifowkz0</sha1>
+    </revision>
+    <revision>
+      <id>832351</id>
+      <parentid>832350</parentid>
+      <timestamp>2024-12-31T06:41:08Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Mass importing wikipedia categories, not taking histories because these are unused ones and it is kind of obvious where they came from</comment>
+      <origin>832350</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4677" sha1="nciu4v3pkkgffm2x27zyl6cyifowkz0" xml:space="preserve">--------------------------------------------------------------------------------
+--                               Labelled list                                --
+--                                                                            --
+-- This module does the core work of creating a hatnote composed of a list    --
+-- prefixed by a colon-terminated label, i.e. "LABEL: [andList of pages]",    --
+-- for {{see also}} and similar templates.                                    --
+--------------------------------------------------------------------------------
+
+local mHatnote = require('Module:Hatnote')
+local mHatlist = require('Module:Hatnote list')
+local mArguments --initialize lazily
+local yesno --initialize lazily
+local p = {}
+
+-- Defaults global to this module
+local defaults = {
+	label = 'See also', --Final fallback for label argument
+	labelForm = '%s: %s',
+	prefixes = {'label', 'label ', 'l'},
+	template = 'Module:Labelled list hatnote'
+}
+
+-- Localizable message strings
+local msg = {
+	errorSuffix = '#Errors',
+	noInputWarning = 'no page names specified',
+	noOutputWarning =
+		"'''[[%s]] — no output: none of the target pages exist.'''"
+}
+
+-- Helper function that pre-combines display parameters into page arguments.
+-- Also compresses sparse arrays, as a desirable side-effect.
+function p.preprocessDisplays (args, prefixes)
+	-- Prefixes specify which parameters, in order, to check for display options
+	-- They each have numbers auto-appended, e.g. 'label1', 'label 1', &amp; 'l1'
+	prefixes = prefixes or defaults.prefixes
+	local indices = {}
+	local sparsePages = {}
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			indices[#indices + 1] = k
+			local display
+			for i = 1, #prefixes do
+				display = args[prefixes[i] .. k]
+				if display then break end
+			end
+			sparsePages[k] = display and
+				string.format('%s|%s', string.gsub(v, '|.*$', ''), display) or v
+		end
+	end
+	table.sort(indices)
+	local pages = {}
+	for k, v in ipairs(indices) do pages[#pages + 1] = sparsePages[v] end
+	return pages
+end
+
+--Helper function to get a page target from a processed page string
+--e.g. "Page|Label" → "Page" or "Target" → "Target"
+local function getTarget(pagename)
+ 	local pipe = string.find(pagename, '|')
+	return string.sub(pagename, 0, pipe and pipe - 1 or nil)
+end
+
+-- Produces a labelled pages-list hatnote.
+-- The main frame (template definition) takes 1 or 2 arguments, for a singular
+-- and (optionally) plural label respectively:
+-- * {{#invoke:Labelled list hatnote|labelledList|Singular label|Plural label}}
+-- The resulting template takes pagename &amp; label parameters normally.
+function p.labelledList (frame)
+	mArguments = require('Module:Arguments')
+	yesno = require('Module:Yesno')
+	local labels = {frame.args[1] or defaults.label}
+	labels[2] = frame.args[2] or labels[1]
+	labels[3] = frame.args[3] --no defaulting
+	labels[4] = frame.args[4] --no defaulting
+	local template = frame:getParent():getTitle()
+	local args = mArguments.getArgs(frame, {parentOnly = true})
+	local pages = p.preprocessDisplays(args)
+	local options = {
+		category = yesno(args.category),
+		extraclasses = frame.args.extraclasses,
+		ifexists = yesno(frame.args.ifexists),
+		labelForm = frame.args.labelForm,
+		namespace = frame.args.namespace or args.namespace,
+		selfref = yesno(frame.args.selfref or args.selfref),
+		template = template
+	}
+	return p._labelledList(pages, labels, options)
+end
+
+function p._labelledList (pages, labels, options)
+	if options.ifexists then
+		for k = #pages, 1, -1 do --iterate backwards to allow smooth removals
+			local v = pages[k]
+			local title = mw.title.new(getTarget(v), namespace)
+			if (v == '') or title == nil or not title.exists then
+				table.remove(pages, k)
+			end
+		end
+	end
+	labels = labels or {}
+	label = (#pages == 1 and labels[1] or labels[2]) or defaults.label
+	for k, v in pairs(pages) do 
+		if mHatnote.findNamespaceId(v) ~= 0 then
+			label =
+				(
+					#pages == 1 and
+					(labels[3] or labels[1] or defaults.label) or
+					(labels[4] or labels[2] or defaults.label)
+				) or defaults.label
+		end
+	end
+	if #pages == 0 then
+		if options.ifexists then
+			mw.addWarning(
+				string.format(
+					msg.noOutputWarning, options.template or defaults.template
+				)
+			)
+			return ''
+		else
+			return mHatnote.makeWikitextError(
+				msg.noInputWarning,
+				(options.template or defaults.template) .. msg.errorSuffix,
+				options.category
+			)
+		end
+	end
+	local text = string.format(
+		options.labelForm or defaults.labelForm,
+		label,
+		mHatlist.andList(pages, true)
+	)
+	local hnOptions = {
+		extraclasses = options.extraclasses,
+		selfref = options.selfref
+	}
+	return mHatnote._hatnote(text, hnOptions)
+end
+
+return p</text>
+      <sha1>nciu4v3pkkgffm2x27zyl6cyifowkz0</sha1>
+    </revision>
+    <revision>
+      <id>832352</id>
+      <parentid>832351</parentid>
+      <timestamp>2025-01-28T01:15:50Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Adding [[Category:second attempt at refreshing on January 27 2024]][[Category:{{subst:FULLPAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]] on using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>832352</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4834" sha1="63khrpaxvsduu3bk2srg6iu3x1v9gam" xml:space="preserve">--------------------------------------------------------------------------------
+--                               Labelled list                                --
+--                                                                            --
+-- This module does the core work of creating a hatnote composed of a list    --
+-- prefixed by a colon-terminated label, i.e. "LABEL: [andList of pages]",    --
+-- for {{see also}} and similar templates.                                    --
+--------------------------------------------------------------------------------
+
+local mHatnote = require('Module:Hatnote')
+local mHatlist = require('Module:Hatnote list')
+local mArguments --initialize lazily
+local yesno --initialize lazily
+local p = {}
+
+-- Defaults global to this module
+local defaults = {
+	label = 'See also', --Final fallback for label argument
+	labelForm = '%s: %s',
+	prefixes = {'label', 'label ', 'l'},
+	template = 'Module:Labelled list hatnote'
+}
+
+-- Localizable message strings
+local msg = {
+	errorSuffix = '#Errors',
+	noInputWarning = 'no page names specified',
+	noOutputWarning =
+		"'''[[%s]] — no output: none of the target pages exist.'''"
+}
+
+-- Helper function that pre-combines display parameters into page arguments.
+-- Also compresses sparse arrays, as a desirable side-effect.
+function p.preprocessDisplays (args, prefixes)
+	-- Prefixes specify which parameters, in order, to check for display options
+	-- They each have numbers auto-appended, e.g. 'label1', 'label 1', &amp; 'l1'
+	prefixes = prefixes or defaults.prefixes
+	local indices = {}
+	local sparsePages = {}
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			indices[#indices + 1] = k
+			local display
+			for i = 1, #prefixes do
+				display = args[prefixes[i] .. k]
+				if display then break end
+			end
+			sparsePages[k] = display and
+				string.format('%s|%s', string.gsub(v, '|.*$', ''), display) or v
+		end
+	end
+	table.sort(indices)
+	local pages = {}
+	for k, v in ipairs(indices) do pages[#pages + 1] = sparsePages[v] end
+	return pages
+end
+
+--Helper function to get a page target from a processed page string
+--e.g. "Page|Label" → "Page" or "Target" → "Target"
+local function getTarget(pagename)
+ 	local pipe = string.find(pagename, '|')
+	return string.sub(pagename, 0, pipe and pipe - 1 or nil)
+end
+
+-- Produces a labelled pages-list hatnote.
+-- The main frame (template definition) takes 1 or 2 arguments, for a singular
+-- and (optionally) plural label respectively:
+-- * {{#invoke:Labelled list hatnote|labelledList|Singular label|Plural label}}
+-- The resulting template takes pagename &amp; label parameters normally.
+function p.labelledList (frame)
+	mArguments = require('Module:Arguments')
+	yesno = require('Module:Yesno')
+	local labels = {frame.args[1] or defaults.label}
+	labels[2] = frame.args[2] or labels[1]
+	labels[3] = frame.args[3] --no defaulting
+	labels[4] = frame.args[4] --no defaulting
+	local template = frame:getParent():getTitle()
+	local args = mArguments.getArgs(frame, {parentOnly = true})
+	local pages = p.preprocessDisplays(args)
+	local options = {
+		category = yesno(args.category),
+		extraclasses = frame.args.extraclasses,
+		ifexists = yesno(frame.args.ifexists),
+		labelForm = frame.args.labelForm,
+		namespace = frame.args.namespace or args.namespace,
+		selfref = yesno(frame.args.selfref or args.selfref),
+		template = template
+	}
+	return p._labelledList(pages, labels, options)
+end
+
+function p._labelledList (pages, labels, options)
+	if options.ifexists then
+		for k = #pages, 1, -1 do --iterate backwards to allow smooth removals
+			local v = pages[k]
+			local title = mw.title.new(getTarget(v), namespace)
+			if (v == '') or title == nil or not title.exists then
+				table.remove(pages, k)
+			end
+		end
+	end
+	labels = labels or {}
+	label = (#pages == 1 and labels[1] or labels[2]) or defaults.label
+	for k, v in pairs(pages) do 
+		if mHatnote.findNamespaceId(v) ~= 0 then
+			label =
+				(
+					#pages == 1 and
+					(labels[3] or labels[1] or defaults.label) or
+					(labels[4] or labels[2] or defaults.label)
+				) or defaults.label
+		end
+	end
+	if #pages == 0 then
+		if options.ifexists then
+			mw.addWarning(
+				string.format(
+					msg.noOutputWarning, options.template or defaults.template
+				)
+			)
+			return ''
+		else
+			return mHatnote.makeWikitextError(
+				msg.noInputWarning,
+				(options.template or defaults.template) .. msg.errorSuffix,
+				options.category
+			)
+		end
+	end
+	local text = string.format(
+		options.labelForm or defaults.labelForm,
+		label,
+		mHatlist.andList(pages, true)
+	)
+	local hnOptions = {
+		extraclasses = options.extraclasses,
+		selfref = options.selfref
+	}
+	return mHatnote._hatnote(text, hnOptions)
+end
+
+return p
+
+[[Category:second attempt at refreshing on January 27 2024]][[Category:{{subst:FULLPAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]]</text>
+      <sha1>63khrpaxvsduu3bk2srg6iu3x1v9gam</sha1>
+    </revision>
+    <revision>
+      <id>832353</id>
+      <parentid>832352</parentid>
+      <timestamp>2025-03-11T04:23:05Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <origin>832353</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4811" sha1="fyvna0v1hbqmkwrm7no2s1ehh7vyd2y" xml:space="preserve">--------------------------------------------------------------------------------
+--                               Labelled list                                --
+--                                                                            --
+-- This module does the core work of creating a hatnote composed of a list    --
+-- prefixed by a colon-terminated label, i.e. "LABEL: [andList of pages]",    --
+-- for {{see also}} and similar templates.                                    --
+--------------------------------------------------------------------------------
+
+local mHatnote = require('Module:Hatnote')
+local mHatlist = require('Module:Hatnote list')
+local mArguments --initialize lazily
+local yesno --initialize lazily
+local p = {}
+
+-- Defaults global to this module
+local defaults = {
+	label = 'See also', --Final fallback for label argument
+	labelForm = '%s: %s',
+	prefixes = {'label', 'label ', 'l'},
+	template = 'Module:Labelled list hatnote'
+}
+
+-- Localizable message strings
+local msg = {
+	errorSuffix = '#Errors',
+	noInputWarning = 'no page names specified',
+	noOutputWarning =
+		"'''[[%s]] — no output: none of the target pages exist.'''"
+}
+
+-- Helper function that pre-combines display parameters into page arguments.
+-- Also compresses sparse arrays, as a desirable side-effect.
+function p.preprocessDisplays (args, prefixes)
+	-- Prefixes specify which parameters, in order, to check for display options
+	-- They each have numbers auto-appended, e.g. 'label1', 'label 1', &amp; 'l1'
+	prefixes = prefixes or defaults.prefixes
+	local indices = {}
+	local sparsePages = {}
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			indices[#indices + 1] = k
+			local display
+			for i = 1, #prefixes do
+				display = args[prefixes[i] .. k]
+				if display then break end
+			end
+			sparsePages[k] = display and
+				string.format('%s|%s', string.gsub(v, '|.*$', ''), display) or v
+		end
+	end
+	table.sort(indices)
+	local pages = {}
+	for k, v in ipairs(indices) do pages[#pages + 1] = sparsePages[v] end
+	return pages
+end
+
+--Helper function to get a page target from a processed page string
+--e.g. "Page|Label" → "Page" or "Target" → "Target"
+local function getTarget(pagename)
+ 	local pipe = string.find(pagename, '|')
+	return string.sub(pagename, 0, pipe and pipe - 1 or nil)
+end
+
+-- Produces a labelled pages-list hatnote.
+-- The main frame (template definition) takes 1 or 2 arguments, for a singular
+-- and (optionally) plural label respectively:
+-- * {{#invoke:Labelled list hatnote|labelledList|Singular label|Plural label}}
+-- The resulting template takes pagename &amp; label parameters normally.
+function p.labelledList (frame)
+	mArguments = require('Module:Arguments')
+	yesno = require('Module:Yesno')
+	local labels = {frame.args[1] or defaults.label}
+	labels[2] = frame.args[2] or labels[1]
+	labels[3] = frame.args[3] --no defaulting
+	labels[4] = frame.args[4] --no defaulting
+	local template = frame:getParent():getTitle()
+	local args = mArguments.getArgs(frame, {parentOnly = true})
+	local pages = p.preprocessDisplays(args)
+	local options = {
+		category = yesno(args.category),
+		extraclasses = frame.args.extraclasses,
+		ifexists = yesno(frame.args.ifexists),
+		labelForm = frame.args.labelForm,
+		namespace = frame.args.namespace or args.namespace,
+		selfref = yesno(frame.args.selfref or args.selfref),
+		template = template
+	}
+	return p._labelledList(pages, labels, options)
+end
+
+function p._labelledList (pages, labels, options)
+	if options.ifexists then
+		for k = #pages, 1, -1 do --iterate backwards to allow smooth removals
+			local v = pages[k]
+			local title = mw.title.new(getTarget(v), namespace)
+			if (v == '') or title == nil or not title.exists then
+				table.remove(pages, k)
+			end
+		end
+	end
+	labels = labels or {}
+	label = (#pages == 1 and labels[1] or labels[2]) or defaults.label
+	for k, v in pairs(pages) do 
+		if mHatnote.findNamespaceId(v) ~= 0 then
+			label =
+				(
+					#pages == 1 and
+					(labels[3] or labels[1] or defaults.label) or
+					(labels[4] or labels[2] or defaults.label)
+				) or defaults.label
+		end
+	end
+	if #pages == 0 then
+		if options.ifexists then
+			mw.addWarning(
+				string.format(
+					msg.noOutputWarning, options.template or defaults.template
+				)
+			)
+			return ''
+		else
+			return mHatnote.makeWikitextError(
+				msg.noInputWarning,
+				(options.template or defaults.template) .. msg.errorSuffix,
+				options.category
+			)
+		end
+	end
+	local text = string.format(
+		options.labelForm or defaults.labelForm,
+		label,
+		mHatlist.andList(pages, true)
+	)
+	local hnOptions = {
+		extraclasses = options.extraclasses,
+		selfref = options.selfref
+	}
+	return mHatnote._hatnote(text, hnOptions)
+end
+
+return p
+
+[[Category:Automatic wikipedia redirects L]][[Category:Automatic wikipedia redirects L]][[Category:Automatic wikipedia redirects L]]</text>
+      <sha1>fyvna0v1hbqmkwrm7no2s1ehh7vyd2y</sha1>
+    </revision>
+    <revision>
+      <id>5919</id>
+      <timestamp>2025-05-18T19:06:31Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Bot: remove deleted category Automatic wikipedia redirects L</comment>
+      <origin>5919</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4677" sha1="nciu4v3pkkgffm2x27zyl6cyifowkz0" xml:space="preserve">--------------------------------------------------------------------------------
+--                               Labelled list                                --
+--                                                                            --
+-- This module does the core work of creating a hatnote composed of a list    --
+-- prefixed by a colon-terminated label, i.e. "LABEL: [andList of pages]",    --
+-- for {{see also}} and similar templates.                                    --
+--------------------------------------------------------------------------------
+
+local mHatnote = require('Module:Hatnote')
+local mHatlist = require('Module:Hatnote list')
+local mArguments --initialize lazily
+local yesno --initialize lazily
+local p = {}
+
+-- Defaults global to this module
+local defaults = {
+	label = 'See also', --Final fallback for label argument
+	labelForm = '%s: %s',
+	prefixes = {'label', 'label ', 'l'},
+	template = 'Module:Labelled list hatnote'
+}
+
+-- Localizable message strings
+local msg = {
+	errorSuffix = '#Errors',
+	noInputWarning = 'no page names specified',
+	noOutputWarning =
+		"'''[[%s]] — no output: none of the target pages exist.'''"
+}
+
+-- Helper function that pre-combines display parameters into page arguments.
+-- Also compresses sparse arrays, as a desirable side-effect.
+function p.preprocessDisplays (args, prefixes)
+	-- Prefixes specify which parameters, in order, to check for display options
+	-- They each have numbers auto-appended, e.g. 'label1', 'label 1', &amp; 'l1'
+	prefixes = prefixes or defaults.prefixes
+	local indices = {}
+	local sparsePages = {}
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			indices[#indices + 1] = k
+			local display
+			for i = 1, #prefixes do
+				display = args[prefixes[i] .. k]
+				if display then break end
+			end
+			sparsePages[k] = display and
+				string.format('%s|%s', string.gsub(v, '|.*$', ''), display) or v
+		end
+	end
+	table.sort(indices)
+	local pages = {}
+	for k, v in ipairs(indices) do pages[#pages + 1] = sparsePages[v] end
+	return pages
+end
+
+--Helper function to get a page target from a processed page string
+--e.g. "Page|Label" → "Page" or "Target" → "Target"
+local function getTarget(pagename)
+ 	local pipe = string.find(pagename, '|')
+	return string.sub(pagename, 0, pipe and pipe - 1 or nil)
+end
+
+-- Produces a labelled pages-list hatnote.
+-- The main frame (template definition) takes 1 or 2 arguments, for a singular
+-- and (optionally) plural label respectively:
+-- * {{#invoke:Labelled list hatnote|labelledList|Singular label|Plural label}}
+-- The resulting template takes pagename &amp; label parameters normally.
+function p.labelledList (frame)
+	mArguments = require('Module:Arguments')
+	yesno = require('Module:Yesno')
+	local labels = {frame.args[1] or defaults.label}
+	labels[2] = frame.args[2] or labels[1]
+	labels[3] = frame.args[3] --no defaulting
+	labels[4] = frame.args[4] --no defaulting
+	local template = frame:getParent():getTitle()
+	local args = mArguments.getArgs(frame, {parentOnly = true})
+	local pages = p.preprocessDisplays(args)
+	local options = {
+		category = yesno(args.category),
+		extraclasses = frame.args.extraclasses,
+		ifexists = yesno(frame.args.ifexists),
+		labelForm = frame.args.labelForm,
+		namespace = frame.args.namespace or args.namespace,
+		selfref = yesno(frame.args.selfref or args.selfref),
+		template = template
+	}
+	return p._labelledList(pages, labels, options)
+end
+
+function p._labelledList (pages, labels, options)
+	if options.ifexists then
+		for k = #pages, 1, -1 do --iterate backwards to allow smooth removals
+			local v = pages[k]
+			local title = mw.title.new(getTarget(v), namespace)
+			if (v == '') or title == nil or not title.exists then
+				table.remove(pages, k)
+			end
+		end
+	end
+	labels = labels or {}
+	label = (#pages == 1 and labels[1] or labels[2]) or defaults.label
+	for k, v in pairs(pages) do 
+		if mHatnote.findNamespaceId(v) ~= 0 then
+			label =
+				(
+					#pages == 1 and
+					(labels[3] or labels[1] or defaults.label) or
+					(labels[4] or labels[2] or defaults.label)
+				) or defaults.label
+		end
+	end
+	if #pages == 0 then
+		if options.ifexists then
+			mw.addWarning(
+				string.format(
+					msg.noOutputWarning, options.template or defaults.template
+				)
+			)
+			return ''
+		else
+			return mHatnote.makeWikitextError(
+				msg.noInputWarning,
+				(options.template or defaults.template) .. msg.errorSuffix,
+				options.category
+			)
+		end
+	end
+	local text = string.format(
+		options.labelForm or defaults.labelForm,
+		label,
+		mHatlist.andList(pages, true)
+	)
+	local hnOptions = {
+		extraclasses = options.extraclasses,
+		selfref = options.selfref
+	}
+	return mHatnote._hatnote(text, hnOptions)
+end
+
+return p</text>
+      <sha1>nciu4v3pkkgffm2x27zyl6cyifowkz0</sha1>
+    </revision>
+  </page>
+</mediawiki>

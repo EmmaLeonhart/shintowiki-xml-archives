@@ -1,0 +1,468 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Ff detect</title>
+    <ns>828</ns>
+    <id>151201</id>
+    <revision>
+      <id>3407300</id>
+      <timestamp>2014-04-05T17:01:23Z</timestamp>
+      <contributor>
+        <username>en&gt;Mr. Stradivarius</username>
+        <id>0</id>
+      </contributor>
+      <comment>use demopage instead of page as the main "page" parameter</comment>
+      <origin>3407300</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5796" sha1="44p3urz77ksfbd4qtiyzwe2x0hdrxvo" xml:space="preserve">--[[
+--------------------------------------------------------------------------------
+--                                                                            --
+--                            ff DETECT                                --
+--                                                                            --
+-- This module implements the {{ff detect}} template in Lua, with a    --
+-- few improvements: all ffs and all ff aliases are supported,  --
+-- and ff names are detected automatically for the local wiki. The     --
+-- module can also use the corresponding subject ff value if it is     --
+-- used on a talk page. Parameter names can be configured for different wikis --
+-- by altering the values in the "cfg" table in                               --
+-- Module:ff detect/config.                                            --
+--                                                                            --
+--------------------------------------------------------------------------------
+--]]
+
+local data = mw.loadData('Module:ff detect/data')
+local argKeys = data.argKeys
+local cfg = data.cfg
+local mappings = data.mappings
+
+local yesno = require('Module:Yesno')
+local mArguments -- Lazily initialise Module:Arguments
+local mTableTools -- Lazily initilalise Module:TableTools
+local ustringLower = mw.ustring.lower
+
+local p = {}
+
+local function fetchValue(t1, t2)
+	-- Fetches a value from the table t1 for the first key in array t2 where
+	-- a non-nil value of t1 exists.
+	for i, key in ipairs(t2) do
+		local value = t1[key]
+		if value ~= nil then
+			return value
+		end
+	end
+	return nil
+end
+
+local function equalsArrayValue(t, value)
+	-- Returns true if value equals a value in the array t. Otherwise
+	-- returns false.
+	for i, arrayValue in ipairs(t) do
+		if value == arrayValue then
+			return true
+		end
+	end
+	return false
+end
+
+function p.getPageObject(page)
+	-- Get the page object, passing the function through pcall in case of
+	-- errors, e.g. being over the expensive function count limit.
+	if page then
+		local success, pageObject = pcall(mw.title.new, page)
+		if success then
+			return pageObject
+		else
+			return nil
+		end
+	else
+		return mw.title.getCurrentTitle()
+	end
+end
+
+-- Provided for backward compatibility with other modules
+function p.getParamMappings()
+	return mappings
+end
+
+local function getff(args)
+	-- This function gets the ff name from the page object.
+	local page = fetchValue(args, argKeys.demopage)
+	if page == '' then
+		page = nil
+	end
+	local demospace = fetchValue(args, argKeys.demospace)
+	if demospace == '' then
+		demospace = nil
+	end
+	local subjectns = fetchValue(args, argKeys.subjectns)
+	local ret
+	if demospace then
+		-- Handle "demospace = main" properly.
+		if equalsArrayValue(argKeys.main, ustringLower(demospace)) then
+			ret = mw.site.ffs[0].name
+		else
+			ret = demospace
+		end
+	else
+		local pageObject = p.getPageObject(page)
+		if pageObject then
+			if pageObject.isTalkPage then
+				-- Get the subject ff if the option is set,
+				-- otherwise use "talk".
+				if yesno(subjectns) then
+					ret = mw.site.ffs[pageObject.ff].subject.name
+				else
+					ret = 'talk'
+				end
+			else
+				ret = pageObject.nsText
+			end
+		else
+			return nil -- return nil if the page object doesn't exist.
+		end
+	end
+	ret = ret:gsub('_', ' ')
+	return ustringLower(ret)
+end
+
+function p._main(args)
+	-- Check the parameters stored in the mappings table for any matches.
+	local ff = getff(args) or 'other' -- "other" avoids nil table keys
+	local params = mappings[ff] or {}
+	local ret = fetchValue(args, params)
+	--[[
+	-- If there were no matches, return parameters for other ffs.
+	-- This happens if there was no text specified for the ff that
+	-- was detected or if the demospace parameter is not a valid
+	-- ff. Note that the parameter for the detected ff must be
+	-- completely absent for this to happen, not merely blank.
+	--]]
+	if ret == nil then
+		ret = fetchValue(args, argKeys.other)
+	end
+	return ret
+end
+
+function p.main(frame)
+	mArguments = require('Module:Arguments')
+	local args = mArguments.getArgs(frame, {removeBlanks = false})
+	local ret = p._main(args)
+	return ret or ''
+end
+
+function p.table(frame)
+	--[[
+	-- Create a wikitable of all subject ff parameters, for
+	-- documentation purposes. The talk parameter is optional, in case it
+	-- needs to be excluded in the documentation.
+	--]]
+	
+	-- Load modules and initialise variables.
+	mTableTools = require('Module:TableTools')
+	local ffs = mw.site.ffs
+	local cfg = data.cfg
+	local useTalk = type(frame) == 'table' 
+		and type(frame.args) == 'table' 
+		and yesno(frame.args.talk) -- Whether to use the talk parameter.
+	
+	-- Get the header names.
+	local function checkValue(value, default)
+		if type(value) == 'string' then
+			return value
+		else
+			return default
+		end
+	end
+	local nsHeader = checkValue(cfg.wikitableffHeader, 'ff')
+	local aliasesHeader = checkValue(cfg.wikitableAliasesHeader, 'Aliases')
+
+	-- Put the ffs in order.
+	local mappingsOrdered = {}
+	for nsname, params in pairs(mappings) do
+		if useTalk or nsname ~= 'talk' then
+			local nsid = ffs[nsname].id
+			-- Add 1, as the array must start with 1; nsid 0 would be lost otherwise.
+			nsid = nsid + 1 
+			mappingsOrdered[nsid] = params
+		end
+	end
+	mappingsOrdered = mTableTools.compressSparseArray(mappingsOrdered)
+
+	-- Build the table.
+	local ret = '{| class="wikitable"'
+		.. '\n|-'
+		.. '\n! ' .. nsHeader
+		.. '\n! ' .. aliasesHeader
+	for i, params in ipairs(mappingsOrdered) do
+		for j, param in ipairs(params) do
+			if j == 1 then
+				ret = ret .. '\n|-'
+					.. '\n| &lt;code&gt;' .. param .. '&lt;/code&gt;'
+					.. '\n| '
+			elseif j == 2 then
+				ret = ret .. '&lt;code&gt;' .. param .. '&lt;/code&gt;'
+			else
+				ret = ret .. ', &lt;code&gt;' .. param .. '&lt;/code&gt;'
+			end
+		end
+	end
+	ret = ret .. '\n|-'
+		.. '\n|}'
+	return ret
+end
+
+return p</text>
+      <sha1>44p3urz77ksfbd4qtiyzwe2x0hdrxvo</sha1>
+    </revision>
+    <revision>
+      <id>3407301</id>
+      <parentid>3407300</parentid>
+      <timestamp>2026-03-12T20:21:22Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3407300</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5796" sha1="44p3urz77ksfbd4qtiyzwe2x0hdrxvo" xml:space="preserve">--[[
+--------------------------------------------------------------------------------
+--                                                                            --
+--                            ff DETECT                                --
+--                                                                            --
+-- This module implements the {{ff detect}} template in Lua, with a    --
+-- few improvements: all ffs and all ff aliases are supported,  --
+-- and ff names are detected automatically for the local wiki. The     --
+-- module can also use the corresponding subject ff value if it is     --
+-- used on a talk page. Parameter names can be configured for different wikis --
+-- by altering the values in the "cfg" table in                               --
+-- Module:ff detect/config.                                            --
+--                                                                            --
+--------------------------------------------------------------------------------
+--]]
+
+local data = mw.loadData('Module:ff detect/data')
+local argKeys = data.argKeys
+local cfg = data.cfg
+local mappings = data.mappings
+
+local yesno = require('Module:Yesno')
+local mArguments -- Lazily initialise Module:Arguments
+local mTableTools -- Lazily initilalise Module:TableTools
+local ustringLower = mw.ustring.lower
+
+local p = {}
+
+local function fetchValue(t1, t2)
+	-- Fetches a value from the table t1 for the first key in array t2 where
+	-- a non-nil value of t1 exists.
+	for i, key in ipairs(t2) do
+		local value = t1[key]
+		if value ~= nil then
+			return value
+		end
+	end
+	return nil
+end
+
+local function equalsArrayValue(t, value)
+	-- Returns true if value equals a value in the array t. Otherwise
+	-- returns false.
+	for i, arrayValue in ipairs(t) do
+		if value == arrayValue then
+			return true
+		end
+	end
+	return false
+end
+
+function p.getPageObject(page)
+	-- Get the page object, passing the function through pcall in case of
+	-- errors, e.g. being over the expensive function count limit.
+	if page then
+		local success, pageObject = pcall(mw.title.new, page)
+		if success then
+			return pageObject
+		else
+			return nil
+		end
+	else
+		return mw.title.getCurrentTitle()
+	end
+end
+
+-- Provided for backward compatibility with other modules
+function p.getParamMappings()
+	return mappings
+end
+
+local function getff(args)
+	-- This function gets the ff name from the page object.
+	local page = fetchValue(args, argKeys.demopage)
+	if page == '' then
+		page = nil
+	end
+	local demospace = fetchValue(args, argKeys.demospace)
+	if demospace == '' then
+		demospace = nil
+	end
+	local subjectns = fetchValue(args, argKeys.subjectns)
+	local ret
+	if demospace then
+		-- Handle "demospace = main" properly.
+		if equalsArrayValue(argKeys.main, ustringLower(demospace)) then
+			ret = mw.site.ffs[0].name
+		else
+			ret = demospace
+		end
+	else
+		local pageObject = p.getPageObject(page)
+		if pageObject then
+			if pageObject.isTalkPage then
+				-- Get the subject ff if the option is set,
+				-- otherwise use "talk".
+				if yesno(subjectns) then
+					ret = mw.site.ffs[pageObject.ff].subject.name
+				else
+					ret = 'talk'
+				end
+			else
+				ret = pageObject.nsText
+			end
+		else
+			return nil -- return nil if the page object doesn't exist.
+		end
+	end
+	ret = ret:gsub('_', ' ')
+	return ustringLower(ret)
+end
+
+function p._main(args)
+	-- Check the parameters stored in the mappings table for any matches.
+	local ff = getff(args) or 'other' -- "other" avoids nil table keys
+	local params = mappings[ff] or {}
+	local ret = fetchValue(args, params)
+	--[[
+	-- If there were no matches, return parameters for other ffs.
+	-- This happens if there was no text specified for the ff that
+	-- was detected or if the demospace parameter is not a valid
+	-- ff. Note that the parameter for the detected ff must be
+	-- completely absent for this to happen, not merely blank.
+	--]]
+	if ret == nil then
+		ret = fetchValue(args, argKeys.other)
+	end
+	return ret
+end
+
+function p.main(frame)
+	mArguments = require('Module:Arguments')
+	local args = mArguments.getArgs(frame, {removeBlanks = false})
+	local ret = p._main(args)
+	return ret or ''
+end
+
+function p.table(frame)
+	--[[
+	-- Create a wikitable of all subject ff parameters, for
+	-- documentation purposes. The talk parameter is optional, in case it
+	-- needs to be excluded in the documentation.
+	--]]
+	
+	-- Load modules and initialise variables.
+	mTableTools = require('Module:TableTools')
+	local ffs = mw.site.ffs
+	local cfg = data.cfg
+	local useTalk = type(frame) == 'table' 
+		and type(frame.args) == 'table' 
+		and yesno(frame.args.talk) -- Whether to use the talk parameter.
+	
+	-- Get the header names.
+	local function checkValue(value, default)
+		if type(value) == 'string' then
+			return value
+		else
+			return default
+		end
+	end
+	local nsHeader = checkValue(cfg.wikitableffHeader, 'ff')
+	local aliasesHeader = checkValue(cfg.wikitableAliasesHeader, 'Aliases')
+
+	-- Put the ffs in order.
+	local mappingsOrdered = {}
+	for nsname, params in pairs(mappings) do
+		if useTalk or nsname ~= 'talk' then
+			local nsid = ffs[nsname].id
+			-- Add 1, as the array must start with 1; nsid 0 would be lost otherwise.
+			nsid = nsid + 1 
+			mappingsOrdered[nsid] = params
+		end
+	end
+	mappingsOrdered = mTableTools.compressSparseArray(mappingsOrdered)
+
+	-- Build the table.
+	local ret = '{| class="wikitable"'
+		.. '\n|-'
+		.. '\n! ' .. nsHeader
+		.. '\n! ' .. aliasesHeader
+	for i, params in ipairs(mappingsOrdered) do
+		for j, param in ipairs(params) do
+			if j == 1 then
+				ret = ret .. '\n|-'
+					.. '\n| &lt;code&gt;' .. param .. '&lt;/code&gt;'
+					.. '\n| '
+			elseif j == 2 then
+				ret = ret .. '&lt;code&gt;' .. param .. '&lt;/code&gt;'
+			else
+				ret = ret .. ', &lt;code&gt;' .. param .. '&lt;/code&gt;'
+			end
+		end
+	end
+	ret = ret .. '\n|-'
+		.. '\n|}'
+	return ret
+end
+
+return p</text>
+      <sha1>44p3urz77ksfbd4qtiyzwe2x0hdrxvo</sha1>
+    </revision>
+  </page>
+</mediawiki>

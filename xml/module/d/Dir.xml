@@ -1,0 +1,329 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Dir</title>
+    <ns>828</ns>
+    <id>56326</id>
+    <revision>
+      <id>2938486</id>
+      <timestamp>2023-07-15T22:41:28Z</timestamp>
+      <contributor>
+        <username>d&gt;Tacsipacsi</username>
+        <id>0</id>
+      </contributor>
+      <comment>Undid revision 1935159027 by [[Special:Contributions/177.232.91.83|177.232.91.83]] ([[User talk:177.232.91.83|talk]]): test edit</comment>
+      <origin>2938486</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5612" sha1="n6dnippb8dl8nupbrxgqviac0hno50v" xml:space="preserve">-- This module implements [[Template:Dir]].
+
+-- local rtlOverrides = mw.loadData('Module:Dir/RTL overrides') -- !!! mw.loadData() is currently broken, it does NOT load anything
+local rtlOverrides = require('Module:Dir/RTL overrides')
+local p = {}
+
+local function trim(s)
+    if s and s ~= '' then s = tostring(s):match('^%s*(.-)%s*$') end
+    if s == '' then return nil end
+    return s
+end
+
+function p.rtlLangs(isRTL)
+    if isRTL == nil then isRTL = true end
+    return rtlOverrides[isRTL] or {}
+end
+
+function p.isRTL(code)
+    if type(code) ~= 'string' then return nil end
+    local v = rtlOverrides[code] -- very fast and not limited in the number of supported languages
+    if v ~= nil then return v end -- return it if mapped, otherwise use MediaWiki library:
+    local success, ret = pcall(function ()
+        return mw.language.new(code):isRTL() -- expensive and limited to 20 languages per MediaWiki instance
+    end)
+    return success and ret
+end
+
+function p.select(code, rtl, ltr)
+    if p.isRTL(code) then
+        return rtl
+    else
+        return ltr
+    end
+end
+
+-- Used via a template {{Dir|language-code|wikitext if rtl|wikitext if ltr}}
+-- which just calls {{#invoke:Dir|main}}, the 3 parameters are automatically trimmed:
+-- Parameter 1 takes the default value from {{Int:Lang}} if it's empty or not specified.
+-- Parameter 2 can be named rtl, may be explicitly empty, otherwise takes the default value 'rtl' only if it's not specified.
+-- Parameter 3 can be named ltr, may be explicitly empty, otherwise takes the default value 'ltr' only if it's not specified.
+function p.main(frame)
+    local args = frame:getParent().args -- Parameters used to transclude Template:Dir
+    local code = trim(args[1]) or frame:callParserFunction('Int', 'Lang')
+    local rtl = trim(args.rtl or args[2] or 'rtl')
+    local ltr = trim(args.ltr or args[3] or 'ltr')
+    return p.select(code, rtl, ltr)
+end
+
+setmetatable(p, { quickTests = function ()
+    local rtlLangs = p.rtlLangs(true)
+    local ltrLangs = p.rtlLangs(false)
+
+    -- Basic check of data format
+    local function checkLangs(name, langs)
+        for k, lang in pairs(langs) do
+            assert(type(k) == 'number' and k == math.floor(k)
+                and type(lang) == 'string' and #lang &gt;= 2 and #lang &lt;= 16
+                and lang:find('^[a-z][%-0-9a-z]*[0-9a-z]$') == 1,
+                ": Invalid sequence of language codes, " .. name .. "['" .. k .. "'] = '" .. lang .. "'")
+        end
+        return true
+    end
+    local ok, msg
+    ok, msg = pcall(checkLangs, 'rtlLangs', rtlLangs)
+    if not ok then return false, msg end
+    ok, msg = pcall(checkLangs, 'ltrLangs', ltrLangs)
+    if not ok then return false, msg end
+
+    -- Build inverse maps of languages having each direction
+    local isrtl, isltr = {}, {}
+    for _, lang in ipairs(rtlLangs) do isrtl[lang] = true end
+    for _, lang in ipairs(ltrLangs) do isltr[lang] = true end
+    -- Check conflicts using the two inverse maps
+    for _, lang in ipairs(rtlLangs) do
+        if isltr[lang] then return false, ": Direction conflict for '" .. lang .. "'" end
+    end
+    for _, lang in ipairs(ltrLangs) do
+        if isrtl[lang] then return false, ": Direction conflict for '" .. lang .. "'" end
+    end
+
+    -- Log missing languages (allows filling the tables above) according to MediaWiki internal data
+    local knownLangs, isKnownLang = mw.language.fetchLanguageNames(), {}
+    for lang, _ in pairs(knownLangs) do
+         isKnownLang[lang] = true
+         if rtlOverrides[lang] == nil then -- only if we still don't have data for this language
+             -- Note: we cannot check more than 20 languages at once, then MediaWiki raises an error.
+             -- So this test only runs on the Lua console, where you can update the tables at top.
+             -- This also means we cannot compare what MediaWiki returns with the direction we map here for all languages.
+             ok, value = pcall(function() return tostring(mw.language.new(lang):isRTL()) end)
+             mw.log("Warning: missing direction for language '" .. lang .. "', MediaWiki returns '" .. value .. "'")
+         end
+    end
+
+    -- utility: reverse order iterator on sequences
+    local function revipairs(t)
+        return function(t, i)
+            i = i - 1
+            local v = t[i]
+            if v == nil then return nil end
+            return i, v
+        end, t, #t + 1
+    end
+    -- Sort and deduplicate language code values (by scanning backward) for data cleanup
+    -- Also log languages having a direction mapping in this module but still not known by MediaWiki
+    table.sort(rtlLangs)
+    table.sort(ltrLangs)
+    for i, lang in revipairs(rtlLangs) do
+        if rtlLangs[i - 1] == rtlLangs[i] then table.remove(rtlLangs, i) end
+        if isKnownLang[lang] == nil then
+             mw.log("RTL language '" .. lang .. "' still not known by Mediawiki (could be a missing alias or variant)")
+        end
+    end
+    for i, lang in revipairs(ltrLangs) do
+        if ltrLangs[i - 1] == ltrLangs[i] then table.remove(ltrLangs, i) end
+        if isKnownLang[lang] == nil then
+             mw.log("LTR language '" .. lang .. "' still not known by Mediawiki (could be a missing alias or variant)")
+        end
+    end
+
+    -- Final presentation of current lists, sorted and deduplicated
+    mw.log("----")
+    mw.log("local rtlLangs = { '" .. table.concat(rtlLangs, "', '") .. "' }")
+    mw.log("local ltrLangs = { '" .. table.concat(ltrLangs, "', '") .. "' }")
+    return true
+end })
+--[==[ Enter this to run tests in the Lua console:
+=getmetatable(p).quickTests()
+--]==]
+
+return p</text>
+      <sha1>n6dnippb8dl8nupbrxgqviac0hno50v</sha1>
+    </revision>
+    <revision>
+      <id>56327</id>
+      <timestamp>2025-08-11T09:31:23Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: importing wikidata q template</comment>
+      <origin>56327</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5612" sha1="n6dnippb8dl8nupbrxgqviac0hno50v" xml:space="preserve">-- This module implements [[Template:Dir]].
+
+-- local rtlOverrides = mw.loadData('Module:Dir/RTL overrides') -- !!! mw.loadData() is currently broken, it does NOT load anything
+local rtlOverrides = require('Module:Dir/RTL overrides')
+local p = {}
+
+local function trim(s)
+    if s and s ~= '' then s = tostring(s):match('^%s*(.-)%s*$') end
+    if s == '' then return nil end
+    return s
+end
+
+function p.rtlLangs(isRTL)
+    if isRTL == nil then isRTL = true end
+    return rtlOverrides[isRTL] or {}
+end
+
+function p.isRTL(code)
+    if type(code) ~= 'string' then return nil end
+    local v = rtlOverrides[code] -- very fast and not limited in the number of supported languages
+    if v ~= nil then return v end -- return it if mapped, otherwise use MediaWiki library:
+    local success, ret = pcall(function ()
+        return mw.language.new(code):isRTL() -- expensive and limited to 20 languages per MediaWiki instance
+    end)
+    return success and ret
+end
+
+function p.select(code, rtl, ltr)
+    if p.isRTL(code) then
+        return rtl
+    else
+        return ltr
+    end
+end
+
+-- Used via a template {{Dir|language-code|wikitext if rtl|wikitext if ltr}}
+-- which just calls {{#invoke:Dir|main}}, the 3 parameters are automatically trimmed:
+-- Parameter 1 takes the default value from {{Int:Lang}} if it's empty or not specified.
+-- Parameter 2 can be named rtl, may be explicitly empty, otherwise takes the default value 'rtl' only if it's not specified.
+-- Parameter 3 can be named ltr, may be explicitly empty, otherwise takes the default value 'ltr' only if it's not specified.
+function p.main(frame)
+    local args = frame:getParent().args -- Parameters used to transclude Template:Dir
+    local code = trim(args[1]) or frame:callParserFunction('Int', 'Lang')
+    local rtl = trim(args.rtl or args[2] or 'rtl')
+    local ltr = trim(args.ltr or args[3] or 'ltr')
+    return p.select(code, rtl, ltr)
+end
+
+setmetatable(p, { quickTests = function ()
+    local rtlLangs = p.rtlLangs(true)
+    local ltrLangs = p.rtlLangs(false)
+
+    -- Basic check of data format
+    local function checkLangs(name, langs)
+        for k, lang in pairs(langs) do
+            assert(type(k) == 'number' and k == math.floor(k)
+                and type(lang) == 'string' and #lang &gt;= 2 and #lang &lt;= 16
+                and lang:find('^[a-z][%-0-9a-z]*[0-9a-z]$') == 1,
+                ": Invalid sequence of language codes, " .. name .. "['" .. k .. "'] = '" .. lang .. "'")
+        end
+        return true
+    end
+    local ok, msg
+    ok, msg = pcall(checkLangs, 'rtlLangs', rtlLangs)
+    if not ok then return false, msg end
+    ok, msg = pcall(checkLangs, 'ltrLangs', ltrLangs)
+    if not ok then return false, msg end
+
+    -- Build inverse maps of languages having each direction
+    local isrtl, isltr = {}, {}
+    for _, lang in ipairs(rtlLangs) do isrtl[lang] = true end
+    for _, lang in ipairs(ltrLangs) do isltr[lang] = true end
+    -- Check conflicts using the two inverse maps
+    for _, lang in ipairs(rtlLangs) do
+        if isltr[lang] then return false, ": Direction conflict for '" .. lang .. "'" end
+    end
+    for _, lang in ipairs(ltrLangs) do
+        if isrtl[lang] then return false, ": Direction conflict for '" .. lang .. "'" end
+    end
+
+    -- Log missing languages (allows filling the tables above) according to MediaWiki internal data
+    local knownLangs, isKnownLang = mw.language.fetchLanguageNames(), {}
+    for lang, _ in pairs(knownLangs) do
+         isKnownLang[lang] = true
+         if rtlOverrides[lang] == nil then -- only if we still don't have data for this language
+             -- Note: we cannot check more than 20 languages at once, then MediaWiki raises an error.
+             -- So this test only runs on the Lua console, where you can update the tables at top.
+             -- This also means we cannot compare what MediaWiki returns with the direction we map here for all languages.
+             ok, value = pcall(function() return tostring(mw.language.new(lang):isRTL()) end)
+             mw.log("Warning: missing direction for language '" .. lang .. "', MediaWiki returns '" .. value .. "'")
+         end
+    end
+
+    -- utility: reverse order iterator on sequences
+    local function revipairs(t)
+        return function(t, i)
+            i = i - 1
+            local v = t[i]
+            if v == nil then return nil end
+            return i, v
+        end, t, #t + 1
+    end
+    -- Sort and deduplicate language code values (by scanning backward) for data cleanup
+    -- Also log languages having a direction mapping in this module but still not known by MediaWiki
+    table.sort(rtlLangs)
+    table.sort(ltrLangs)
+    for i, lang in revipairs(rtlLangs) do
+        if rtlLangs[i - 1] == rtlLangs[i] then table.remove(rtlLangs, i) end
+        if isKnownLang[lang] == nil then
+             mw.log("RTL language '" .. lang .. "' still not known by Mediawiki (could be a missing alias or variant)")
+        end
+    end
+    for i, lang in revipairs(ltrLangs) do
+        if ltrLangs[i - 1] == ltrLangs[i] then table.remove(ltrLangs, i) end
+        if isKnownLang[lang] == nil then
+             mw.log("LTR language '" .. lang .. "' still not known by Mediawiki (could be a missing alias or variant)")
+        end
+    end
+
+    -- Final presentation of current lists, sorted and deduplicated
+    mw.log("----")
+    mw.log("local rtlLangs = { '" .. table.concat(rtlLangs, "', '") .. "' }")
+    mw.log("local ltrLangs = { '" .. table.concat(ltrLangs, "', '") .. "' }")
+    return true
+end })
+--[==[ Enter this to run tests in the Lua console:
+=getmetatable(p).quickTests()
+--]==]
+
+return p</text>
+      <sha1>n6dnippb8dl8nupbrxgqviac0hno50v</sha1>
+    </revision>
+  </page>
+</mediawiki>

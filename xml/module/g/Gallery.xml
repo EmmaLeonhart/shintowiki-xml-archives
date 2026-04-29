@@ -1,0 +1,840 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Gallery</title>
+    <ns>828</ns>
+    <id>720</id>
+    <revision>
+      <id>520515</id>
+      <timestamp>2023-09-14T14:44:54Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Trappist the monk</username>
+        <id>0</id>
+      </contributor>
+      <comment>line 29: changed invalid escape sequence '\-' to '%-';</comment>
+      <origin>520515</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3685" sha1="lxdmo7lws1zy9vts5cvjjirayv17lht" xml:space="preserve">-- This module implements {{gallery}}
+
+local p = {}
+
+local templatestyles = 'Module:Gallery/styles.css'
+local yesno = require('Module:Yesno')
+
+local function trim(s)
+	return mw.ustring.gsub(mw.ustring.gsub(s, '%s', ' '), '^%s*(.-)%s*$', '%1')
+end
+
+local tracking, preview
+
+local function checkarg(k,v)
+	if k and type(k) == 'string' then
+		if k == 'align' or k == 'state' or k == 'style' or k == 'title' or
+			k == 'width' or k == 'height' or k == 'whitebg' or
+			k == 'mode' or k == 'footer' or k == 'perrow' or k == 'noborder' or
+			k:match('^alt%d+$') or k:match('^%d+$') then
+			-- valid
+		elseif k == 'captionstyle' then
+			if not v:match('^text%-align%s*:%s*center[;%s]*$') then
+				table.insert(tracking, '[[Category:Pages using gallery with the captionstyle parameter]]')
+			end
+		else
+			-- invalid
+			local vlen = mw.ustring.len(k)
+			k = mw.ustring.sub(k, 1, (vlen &lt; 25) and vlen or 25) 
+			k = mw.ustring.gsub(k, '[^%w%-_ ]', '?')
+			table.insert(tracking, '[[Category:Pages using gallery with unknown parameters|' .. k .. ']]')
+			table.insert(preview, '"' .. k .. '"')
+		end
+	end
+end
+
+function p.gallery(frame)
+	-- If called via #invoke, use the args passed into the invoking template.
+	-- Otherwise, for testing purposes, assume args are being passed directly in.
+	local origArgs = (type(frame.getParent) == 'function') and frame:getParent().args or frame
+    
+    -- ParserFunctions considers the empty string to be false, so to preserve the previous 
+    -- behavior of {{gallery}}, change any empty arguments to nil, so Lua will consider
+    -- them false too.
+    local args = {}
+    tracking, preview = {}, {}
+    for k, v in pairs(origArgs) do
+    	if v ~= '' then
+    		args[k] = v
+    		checkarg(k,v)
+    	end
+	end
+	
+	if (args.mode or '') == 'packed' and (args.align or '') == '' then
+		args.align = 'center'
+	end
+
+	local tbl = mw.html.create('div')
+	tbl:addClass('mod-gallery')
+    
+	if args.state then
+		tbl
+			:addClass('mod-gallery-collapsible')
+			:addClass('collapsible')
+			:addClass(args.state)
+	end
+	
+	if args.style then
+		tbl:cssText(args.style)
+	else
+		tbl:addClass('mod-gallery-default')
+	end
+	
+	if args.align then
+		tbl:addClass('mod-gallery-' .. args.align:lower())
+	end
+
+	if args.title then
+		tbl:tag('div')
+			:addClass('title')
+				:tag('div')
+					:wikitext(args.title)
+	end
+	
+	local gargs = {}
+	gargs['class'] = 'nochecker' .. (args.noborder and '' or ' bordered-images')
+	gargs['widths'] = tonumber(args.width) or 180
+	gargs['heights'] = tonumber(args.height) or 180
+	gargs['style'] = args.captionstyle
+	gargs['perrow'] = args.perrow
+	gargs['mode'] = args.mode
+	if yesno(args.whitebg or 'yes') then
+		gargs['class'] = gargs['class'] .. ' whitebg'
+	end
+	
+	local gallery = {}
+	
+	local imageCount = math.ceil(#args / 2)
+
+    for i = 1, imageCount do
+		local img = trim(args[i*2 - 1] or '')
+		local caption = trim(args[i*2] or '')
+		local alt = trim(args['alt' .. i] or '')
+		if img ~= '' then
+			table.insert(gallery, img .. (alt ~= '' and ('|alt=' .. alt) or '') .. '|' .. caption )
+		end
+	end
+	
+	tbl:tag('div')
+		:addClass('main')
+		:tag('div')
+			:wikitext(
+				frame:extensionTag{ name = 'gallery', content = '\n' .. table.concat(gallery,'\n'), args = gargs}
+				)
+    
+	if args.footer then
+		tbl:tag('div')
+			:addClass('footer')
+				:tag('div')
+					:wikitext(args.footer)
+	end
+
+	local trackstr = (#tracking &gt; 0) and table.concat(tracking, '') or ''
+	if #preview &gt; 0 then
+		trackstr = require('Module:If preview')._warning({
+			'Unknown parameters ' .. table.concat(preview, '; ') .. '.'
+		}) .. trackstr
+	end
+	
+	return frame:extensionTag{ name = 'templatestyles', args = { src = templatestyles} } .. tostring(tbl) .. trackstr
+end
+
+return p</text>
+      <sha1>lxdmo7lws1zy9vts5cvjjirayv17lht</sha1>
+    </revision>
+    <revision>
+      <id>721</id>
+      <timestamp>2024-06-28T09:52:08Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported from [[:wikipedia:Module:Gallery]]</comment>
+      <origin>721</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3685" sha1="lxdmo7lws1zy9vts5cvjjirayv17lht" xml:space="preserve">-- This module implements {{gallery}}
+
+local p = {}
+
+local templatestyles = 'Module:Gallery/styles.css'
+local yesno = require('Module:Yesno')
+
+local function trim(s)
+	return mw.ustring.gsub(mw.ustring.gsub(s, '%s', ' '), '^%s*(.-)%s*$', '%1')
+end
+
+local tracking, preview
+
+local function checkarg(k,v)
+	if k and type(k) == 'string' then
+		if k == 'align' or k == 'state' or k == 'style' or k == 'title' or
+			k == 'width' or k == 'height' or k == 'whitebg' or
+			k == 'mode' or k == 'footer' or k == 'perrow' or k == 'noborder' or
+			k:match('^alt%d+$') or k:match('^%d+$') then
+			-- valid
+		elseif k == 'captionstyle' then
+			if not v:match('^text%-align%s*:%s*center[;%s]*$') then
+				table.insert(tracking, '[[Category:Pages using gallery with the captionstyle parameter]]')
+			end
+		else
+			-- invalid
+			local vlen = mw.ustring.len(k)
+			k = mw.ustring.sub(k, 1, (vlen &lt; 25) and vlen or 25) 
+			k = mw.ustring.gsub(k, '[^%w%-_ ]', '?')
+			table.insert(tracking, '[[Category:Pages using gallery with unknown parameters|' .. k .. ']]')
+			table.insert(preview, '"' .. k .. '"')
+		end
+	end
+end
+
+function p.gallery(frame)
+	-- If called via #invoke, use the args passed into the invoking template.
+	-- Otherwise, for testing purposes, assume args are being passed directly in.
+	local origArgs = (type(frame.getParent) == 'function') and frame:getParent().args or frame
+    
+    -- ParserFunctions considers the empty string to be false, so to preserve the previous 
+    -- behavior of {{gallery}}, change any empty arguments to nil, so Lua will consider
+    -- them false too.
+    local args = {}
+    tracking, preview = {}, {}
+    for k, v in pairs(origArgs) do
+    	if v ~= '' then
+    		args[k] = v
+    		checkarg(k,v)
+    	end
+	end
+	
+	if (args.mode or '') == 'packed' and (args.align or '') == '' then
+		args.align = 'center'
+	end
+
+	local tbl = mw.html.create('div')
+	tbl:addClass('mod-gallery')
+    
+	if args.state then
+		tbl
+			:addClass('mod-gallery-collapsible')
+			:addClass('collapsible')
+			:addClass(args.state)
+	end
+	
+	if args.style then
+		tbl:cssText(args.style)
+	else
+		tbl:addClass('mod-gallery-default')
+	end
+	
+	if args.align then
+		tbl:addClass('mod-gallery-' .. args.align:lower())
+	end
+
+	if args.title then
+		tbl:tag('div')
+			:addClass('title')
+				:tag('div')
+					:wikitext(args.title)
+	end
+	
+	local gargs = {}
+	gargs['class'] = 'nochecker' .. (args.noborder and '' or ' bordered-images')
+	gargs['widths'] = tonumber(args.width) or 180
+	gargs['heights'] = tonumber(args.height) or 180
+	gargs['style'] = args.captionstyle
+	gargs['perrow'] = args.perrow
+	gargs['mode'] = args.mode
+	if yesno(args.whitebg or 'yes') then
+		gargs['class'] = gargs['class'] .. ' whitebg'
+	end
+	
+	local gallery = {}
+	
+	local imageCount = math.ceil(#args / 2)
+
+    for i = 1, imageCount do
+		local img = trim(args[i*2 - 1] or '')
+		local caption = trim(args[i*2] or '')
+		local alt = trim(args['alt' .. i] or '')
+		if img ~= '' then
+			table.insert(gallery, img .. (alt ~= '' and ('|alt=' .. alt) or '') .. '|' .. caption )
+		end
+	end
+	
+	tbl:tag('div')
+		:addClass('main')
+		:tag('div')
+			:wikitext(
+				frame:extensionTag{ name = 'gallery', content = '\n' .. table.concat(gallery,'\n'), args = gargs}
+				)
+    
+	if args.footer then
+		tbl:tag('div')
+			:addClass('footer')
+				:tag('div')
+					:wikitext(args.footer)
+	end
+
+	local trackstr = (#tracking &gt; 0) and table.concat(tracking, '') or ''
+	if #preview &gt; 0 then
+		trackstr = require('Module:If preview')._warning({
+			'Unknown parameters ' .. table.concat(preview, '; ') .. '.'
+		}) .. trackstr
+	end
+	
+	return frame:extensionTag{ name = 'templatestyles', args = { src = templatestyles} } .. tostring(tbl) .. trackstr
+end
+
+return p</text>
+      <sha1>lxdmo7lws1zy9vts5cvjjirayv17lht</sha1>
+    </revision>
+    <revision>
+      <id>3562509</id>
+      <parentid>721</parentid>
+      <timestamp>2026-03-22T18:48:34Z</timestamp>
+      <contributor>
+        <username>en&gt;Arthurfragoso</username>
+        <id>0</id>
+      </contributor>
+      <comment>Returning to the new version + fixes tested in the sandbox and in a local mediawiki. The problem was because the parser was interpreting the pipe as part of the url in the reported case.</comment>
+      <origin>3562509</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7713" sha1="0bm0t7fkwgtb7ttjw7i336x6hjgczei" xml:space="preserve">-- This module implements {{gallery}} by wrapping the &lt;gallery&gt; core extension tag.
+
+local p = {}
+
+local templatestyles = 'Module:Gallery/styles.css'
+local yesno = require('Module:Yesno')
+local plaintextModule = require('Module:Plain text')
+
+local function plaintext(text)
+	-- stips out external links without labels,
+	-- and then passes to the Plain_text module to clean the rest
+    return plaintextModule.main({ args = {
+    	text:gsub("([^%[])%[([^%[%]%s]+)%]", '%1')
+    	, encode = "no" } })
+end
+
+local function trim(s)
+	return mw.ustring.gsub(mw.ustring.gsub(s or '', '%s', ' '), '^%s*(.-)%s*$', '%1')
+end
+
+local tracking, preview
+
+local function isImage(file)
+    local file = trim(file):lower() -- Case insensitive check
+
+    -- Check if it starts with "File:", "Image:", or "Media:"
+    local prefix = file:match("^(%a+):")
+    if prefix and (prefix == "file" or prefix == "image" or prefix == "media") then
+        return true
+    end
+    
+    local valid_extensions = {
+        "apng", "djvu", "flac", "gif", "jfi", "jfif", "jif", "jpe", "jpeg", "jpg",
+        "m1a", "m1v", "m2a", "m2v", "mid", "mp1", "mp2", "mp3", "mpa", "mpe", "mpeg", "mpg",
+        "mpv", "oga", "ogg", "ogv", "opus", "pdf", "png", "stl", "svg", "svgz", "tif", "tiff",
+        "wav", "wave", "webm", "webp", "xcf"
+    }
+    
+    -- Extract file extension, of 3 or 4 characters only
+    local ext = file:match("%.(%w%w%w%w?)$")
+    
+    -- Check if the extension is in the valid list
+    if ext then
+        for _, valid_ext in ipairs(valid_extensions) do
+            if ext == valid_ext then
+            	table.insert(tracking, '[[Category:Pages using gallery without a media namespace prefix]]')
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local function checkarg(k,v)
+	if k and type(k) == 'string' then
+		if k == 'align' or k == 'state' or k == 'style' or k == 'title' or
+			k == 'width' or k == 'height' or k == 'whitebg' or
+			k == 'mode' or k == 'footer' or k == 'perrow' or k == 'noborder' or
+			k:match('^alt%d+$') or k:match('^class%d+$') or k:match('^%d+$') then
+			-- valid
+		elseif k == 'captionstyle' then
+			if not v:match('^text%-align%s*:%s*center[;%s]*$') then
+				table.insert(tracking, '[[Category:Pages using gallery with the captionstyle parameter]]')
+			end
+		else
+			-- invalid
+			local vlen = mw.ustring.len(k)
+			k = mw.ustring.sub(k, 1, (vlen &lt; 25) and vlen or 25)
+			k = mw.ustring.gsub(k, '[^%w%-_ ]', '?')
+			table.insert(tracking, '[[Category:Pages using gallery with unknown parameters|' .. k .. ']]')
+			table.insert(preview, '"' .. k .. '"')
+		end
+	end
+end
+
+function p.gallery(frame)
+	-- If called via #invoke, use the args passed into the invoking template.
+	-- Otherwise, for testing purposes, assume args are being passed directly in.
+	local origArgs = (type(frame.getParent) == 'function') and frame:getParent().args or frame
+
+    -- ParserFunctions considers the empty string to be false, so to preserve the previous
+    -- behavior of {{gallery}}, change any empty arguments to nil, so Lua will consider
+    -- them false too.
+    local args = {}
+    tracking, preview = {}, {}
+    for k, v in pairs(origArgs) do
+    	if v ~= '' then
+    		args[k] = v
+    		checkarg(k,v)
+    	end
+	end
+	
+	if (args.mode or '') == 'packed' and (args.align or '') == '' then
+		args.align = 'center'
+	end
+
+	if (args.align or '') == 'centre' then
+		args.align = 'center'
+	end
+
+	local tbl = mw.html.create('div')
+	tbl:addClass('mod-gallery')
+
+	if args.state then
+		tbl
+			:addClass('mod-gallery-collapsible')
+			:addClass('collapsible')
+			:addClass(args.state)
+	end
+	
+	if args.style then
+		tbl:cssText(args.style)
+	else
+		tbl:addClass('mod-gallery-default')
+	end
+	
+	if args.align then
+		tbl:addClass('mod-gallery-' .. args.align:lower())
+	end
+
+	if args.title then
+		tbl:tag('div')
+			:addClass('title')
+				:tag('div')
+					:wikitext(args.title)
+	end
+	
+	local gargs = {}
+	gargs['class'] = 'nochecker' .. (args.noborder and '' or ' bordered-images')
+	gargs['widths'] = tonumber(args.width) or 180
+	gargs['heights'] = tonumber(args.height) or 180
+	gargs['style'] = args.captionstyle
+	gargs['perrow'] = args.perrow
+	gargs['mode'] = args.mode
+	if yesno(args.whitebg or 'yes') then
+		gargs['class'] = gargs['class'] .. ' whitebg'
+	end
+	
+	local virtualgallery = {}
+	local gallery = {}
+	
+	local imageCount = 0
+
+	local zwsp = string.char(0xE2, 0x80, 0x8B) -- U+200B Zero Width Space
+	local zwnj = string.char(0xE2, 0x80, 0x8C) -- U+200C Zero Width Non-Joiner
+	
+	-- create a coding to identify classes
+	-- using unicode non-printing characters
+	-- this is a workaround until we get the class arg in the &lt;gallery&gt; tag
+	-- https://phabricator.wikimedia.org/T344784
+ 
+	local skininvert    = zwsp .. zwsp .. zwsp;
+	local bgtransparent = zwsp .. zwsp .. zwnj;
+	
+	for i = 1, #args do
+	    local currentfield = trim(args[i]) or ''
+	
+	    if currentfield == '' then
+	        -- Skip empty fields
+	    elseif isImage(currentfield) then
+	        imageCount = imageCount + 1
+	        virtualgallery[imageCount] = { currentfield }
+	    elseif imageCount &gt; 0 and virtualgallery[imageCount][2] == nil then
+	    	-- In case of multiple captions, use the first and ignore the laters
+	        virtualgallery[imageCount][2] = currentfield
+	    end
+	end
+	
+	local altCount = 0;
+	
+	-- Run through virtualgallery and builds gallery
+	for n = 1, #virtualgallery do
+	    local img = virtualgallery[n][1]
+	    local caption = virtualgallery[n][2] or ''
+	    local alt = trim(args['alt' .. n] or '')
+	    local class = trim(args['class' .. n] or '')
+	    
+	    -- we count alt text only before any modification
+	    if alt ~= '' then
+	    	altCount = altCount + 1
+	    else
+	    	-- if alt is empty, we use the caption as a alt text.
+	    	-- It is necessary because we add classes codes in the next step,
+	    	-- we do not want to let the alt empty with just the non-printing characters.
+	    	alt = (caption ~= '') and plaintext(caption) or ''
+	    end
+
+	    -- we attach the non-printing code to the end of the alt text
+	    if mw.ustring.find(class, 'skin%-invert') then -- this matches both skin-invert and skin-invert-image
+	    	alt = alt .. skininvert
+	    end
+	    
+	    -- as it is possible to combine multiple classes, we use find instead of ==
+	    if mw.ustring.find(class, 'bg%-transparent') then
+	    	alt = alt .. bgtransparent
+	    end
+	    
+	    -- Some space between the arguments and the pipe to prevent unexpected behaviors.
+	    -- for example: in some cases the parser interpret the pipe as part of urls
+	    table.insert(gallery, img .. 
+	    	(alt ~= '' and (' |alt=' .. alt) or '') ..
+	    	(caption ~= '' and (' |' .. caption) or ''))
+	end
+	
+	-- For tracking and verifying during migration to the new algorimth.
+	-- It can be removed once everything is verified
+	if math.ceil(#args / 2) &gt; imageCount then
+		if altCount &gt; 0 then
+			table.insert(tracking, '[[Category:Pages using gallery with potential alt text mismatch]]')
+		--else
+		--	table.insert(tracking, '[[Category:Pages using gallery with extra empty fields]]')
+		end
+	end
+	
+	tbl:tag('div')
+		:addClass('main')
+		:tag('div')
+			:wikitext(
+				frame:extensionTag{ name = 'gallery', content = '\n' .. table.concat(gallery,'\n'), args = gargs}
+				)
+
+	if args.footer then
+		tbl:tag('div')
+			:addClass('footer')
+				:tag('div')
+					:wikitext(args.footer)
+	end
+
+	local trackstr = (#tracking &gt; 0) and table.concat(tracking, '') or ''
+	if #preview &gt; 0 then
+		trackstr = require('Module:If preview')._warning({
+			'Unknown parameters ' .. table.concat(preview, '; ') .. '.'
+		}) .. trackstr
+	end
+	
+	return frame:extensionTag{ name = 'templatestyles', args = { src = templatestyles} } .. tostring(tbl) .. trackstr
+end
+
+return p</text>
+      <sha1>0bm0t7fkwgtb7ttjw7i336x6hjgczei</sha1>
+    </revision>
+    <revision>
+      <id>3562510</id>
+      <parentid>3562509</parentid>
+      <timestamp>2026-03-22T18:48:35Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3562509</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7713" sha1="0bm0t7fkwgtb7ttjw7i336x6hjgczei" xml:space="preserve">-- This module implements {{gallery}} by wrapping the &lt;gallery&gt; core extension tag.
+
+local p = {}
+
+local templatestyles = 'Module:Gallery/styles.css'
+local yesno = require('Module:Yesno')
+local plaintextModule = require('Module:Plain text')
+
+local function plaintext(text)
+	-- stips out external links without labels,
+	-- and then passes to the Plain_text module to clean the rest
+    return plaintextModule.main({ args = {
+    	text:gsub("([^%[])%[([^%[%]%s]+)%]", '%1')
+    	, encode = "no" } })
+end
+
+local function trim(s)
+	return mw.ustring.gsub(mw.ustring.gsub(s or '', '%s', ' '), '^%s*(.-)%s*$', '%1')
+end
+
+local tracking, preview
+
+local function isImage(file)
+    local file = trim(file):lower() -- Case insensitive check
+
+    -- Check if it starts with "File:", "Image:", or "Media:"
+    local prefix = file:match("^(%a+):")
+    if prefix and (prefix == "file" or prefix == "image" or prefix == "media") then
+        return true
+    end
+    
+    local valid_extensions = {
+        "apng", "djvu", "flac", "gif", "jfi", "jfif", "jif", "jpe", "jpeg", "jpg",
+        "m1a", "m1v", "m2a", "m2v", "mid", "mp1", "mp2", "mp3", "mpa", "mpe", "mpeg", "mpg",
+        "mpv", "oga", "ogg", "ogv", "opus", "pdf", "png", "stl", "svg", "svgz", "tif", "tiff",
+        "wav", "wave", "webm", "webp", "xcf"
+    }
+    
+    -- Extract file extension, of 3 or 4 characters only
+    local ext = file:match("%.(%w%w%w%w?)$")
+    
+    -- Check if the extension is in the valid list
+    if ext then
+        for _, valid_ext in ipairs(valid_extensions) do
+            if ext == valid_ext then
+            	table.insert(tracking, '[[Category:Pages using gallery without a media namespace prefix]]')
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local function checkarg(k,v)
+	if k and type(k) == 'string' then
+		if k == 'align' or k == 'state' or k == 'style' or k == 'title' or
+			k == 'width' or k == 'height' or k == 'whitebg' or
+			k == 'mode' or k == 'footer' or k == 'perrow' or k == 'noborder' or
+			k:match('^alt%d+$') or k:match('^class%d+$') or k:match('^%d+$') then
+			-- valid
+		elseif k == 'captionstyle' then
+			if not v:match('^text%-align%s*:%s*center[;%s]*$') then
+				table.insert(tracking, '[[Category:Pages using gallery with the captionstyle parameter]]')
+			end
+		else
+			-- invalid
+			local vlen = mw.ustring.len(k)
+			k = mw.ustring.sub(k, 1, (vlen &lt; 25) and vlen or 25)
+			k = mw.ustring.gsub(k, '[^%w%-_ ]', '?')
+			table.insert(tracking, '[[Category:Pages using gallery with unknown parameters|' .. k .. ']]')
+			table.insert(preview, '"' .. k .. '"')
+		end
+	end
+end
+
+function p.gallery(frame)
+	-- If called via #invoke, use the args passed into the invoking template.
+	-- Otherwise, for testing purposes, assume args are being passed directly in.
+	local origArgs = (type(frame.getParent) == 'function') and frame:getParent().args or frame
+
+    -- ParserFunctions considers the empty string to be false, so to preserve the previous
+    -- behavior of {{gallery}}, change any empty arguments to nil, so Lua will consider
+    -- them false too.
+    local args = {}
+    tracking, preview = {}, {}
+    for k, v in pairs(origArgs) do
+    	if v ~= '' then
+    		args[k] = v
+    		checkarg(k,v)
+    	end
+	end
+	
+	if (args.mode or '') == 'packed' and (args.align or '') == '' then
+		args.align = 'center'
+	end
+
+	if (args.align or '') == 'centre' then
+		args.align = 'center'
+	end
+
+	local tbl = mw.html.create('div')
+	tbl:addClass('mod-gallery')
+
+	if args.state then
+		tbl
+			:addClass('mod-gallery-collapsible')
+			:addClass('collapsible')
+			:addClass(args.state)
+	end
+	
+	if args.style then
+		tbl:cssText(args.style)
+	else
+		tbl:addClass('mod-gallery-default')
+	end
+	
+	if args.align then
+		tbl:addClass('mod-gallery-' .. args.align:lower())
+	end
+
+	if args.title then
+		tbl:tag('div')
+			:addClass('title')
+				:tag('div')
+					:wikitext(args.title)
+	end
+	
+	local gargs = {}
+	gargs['class'] = 'nochecker' .. (args.noborder and '' or ' bordered-images')
+	gargs['widths'] = tonumber(args.width) or 180
+	gargs['heights'] = tonumber(args.height) or 180
+	gargs['style'] = args.captionstyle
+	gargs['perrow'] = args.perrow
+	gargs['mode'] = args.mode
+	if yesno(args.whitebg or 'yes') then
+		gargs['class'] = gargs['class'] .. ' whitebg'
+	end
+	
+	local virtualgallery = {}
+	local gallery = {}
+	
+	local imageCount = 0
+
+	local zwsp = string.char(0xE2, 0x80, 0x8B) -- U+200B Zero Width Space
+	local zwnj = string.char(0xE2, 0x80, 0x8C) -- U+200C Zero Width Non-Joiner
+	
+	-- create a coding to identify classes
+	-- using unicode non-printing characters
+	-- this is a workaround until we get the class arg in the &lt;gallery&gt; tag
+	-- https://phabricator.wikimedia.org/T344784
+ 
+	local skininvert    = zwsp .. zwsp .. zwsp;
+	local bgtransparent = zwsp .. zwsp .. zwnj;
+	
+	for i = 1, #args do
+	    local currentfield = trim(args[i]) or ''
+	
+	    if currentfield == '' then
+	        -- Skip empty fields
+	    elseif isImage(currentfield) then
+	        imageCount = imageCount + 1
+	        virtualgallery[imageCount] = { currentfield }
+	    elseif imageCount &gt; 0 and virtualgallery[imageCount][2] == nil then
+	    	-- In case of multiple captions, use the first and ignore the laters
+	        virtualgallery[imageCount][2] = currentfield
+	    end
+	end
+	
+	local altCount = 0;
+	
+	-- Run through virtualgallery and builds gallery
+	for n = 1, #virtualgallery do
+	    local img = virtualgallery[n][1]
+	    local caption = virtualgallery[n][2] or ''
+	    local alt = trim(args['alt' .. n] or '')
+	    local class = trim(args['class' .. n] or '')
+	    
+	    -- we count alt text only before any modification
+	    if alt ~= '' then
+	    	altCount = altCount + 1
+	    else
+	    	-- if alt is empty, we use the caption as a alt text.
+	    	-- It is necessary because we add classes codes in the next step,
+	    	-- we do not want to let the alt empty with just the non-printing characters.
+	    	alt = (caption ~= '') and plaintext(caption) or ''
+	    end
+
+	    -- we attach the non-printing code to the end of the alt text
+	    if mw.ustring.find(class, 'skin%-invert') then -- this matches both skin-invert and skin-invert-image
+	    	alt = alt .. skininvert
+	    end
+	    
+	    -- as it is possible to combine multiple classes, we use find instead of ==
+	    if mw.ustring.find(class, 'bg%-transparent') then
+	    	alt = alt .. bgtransparent
+	    end
+	    
+	    -- Some space between the arguments and the pipe to prevent unexpected behaviors.
+	    -- for example: in some cases the parser interpret the pipe as part of urls
+	    table.insert(gallery, img .. 
+	    	(alt ~= '' and (' |alt=' .. alt) or '') ..
+	    	(caption ~= '' and (' |' .. caption) or ''))
+	end
+	
+	-- For tracking and verifying during migration to the new algorimth.
+	-- It can be removed once everything is verified
+	if math.ceil(#args / 2) &gt; imageCount then
+		if altCount &gt; 0 then
+			table.insert(tracking, '[[Category:Pages using gallery with potential alt text mismatch]]')
+		--else
+		--	table.insert(tracking, '[[Category:Pages using gallery with extra empty fields]]')
+		end
+	end
+	
+	tbl:tag('div')
+		:addClass('main')
+		:tag('div')
+			:wikitext(
+				frame:extensionTag{ name = 'gallery', content = '\n' .. table.concat(gallery,'\n'), args = gargs}
+				)
+
+	if args.footer then
+		tbl:tag('div')
+			:addClass('footer')
+				:tag('div')
+					:wikitext(args.footer)
+	end
+
+	local trackstr = (#tracking &gt; 0) and table.concat(tracking, '') or ''
+	if #preview &gt; 0 then
+		trackstr = require('Module:If preview')._warning({
+			'Unknown parameters ' .. table.concat(preview, '; ') .. '.'
+		}) .. trackstr
+	end
+	
+	return frame:extensionTag{ name = 'templatestyles', args = { src = templatestyles} } .. tostring(tbl) .. trackstr
+end
+
+return p</text>
+      <sha1>0bm0t7fkwgtb7ttjw7i336x6hjgczei</sha1>
+    </revision>
+  </page>
+</mediawiki>

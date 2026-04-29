@@ -1,0 +1,2785 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:For loop</title>
+    <ns>828</ns>
+    <id>288</id>
+    <revision>
+      <id>474386</id>
+      <timestamp>2020-05-22T07:38:08Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Johnuniq</username>
+        <id>0</id>
+      </contributor>
+      <comment>require [[Module:Template invocation]] only if required (see [[Template talk:Post-nominals#Use of Module:Template_invocation]]); clean whitespace, variables</comment>
+      <origin>474386</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2867" sha1="97htb8pbha3ivt9w9d0odbcxo0moteq" xml:space="preserve">-- This module implements {{for loop}}.
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local p = {}
+
+function p.main(frame)
+	local args = getArgs(frame, {
+		trim = false,
+		removeBlanks = false
+	})
+	return p._main(args)
+end
+
+function p._main(args)
+	local template = args['call'] or 'void'
+	local calltemplates = yesno(args.substall or "", true) or not mw.isSubsting()
+	local variableParam = args.pv
+	variableParam = tonumber(variableParam) or variableParam or 1 -- fix for positional parameters
+	local variableValPrefix = args.prefix or ''
+	local variableValPostfix = args.postfix or ''
+	local sep = args[1] or ''
+	local constantArgs = p.getConstants(args)
+	local variableVals = p.getVariableVals(args)
+
+	local result = ''
+	local addSeparator = false;
+	for _, v in ipairs(variableVals) do
+		v = mw.text.trim(v)
+		if #v &gt; 0 or not yesno(args.skipBlanks) then
+			if addSeparator then
+				result = result .. sep
+			end
+			addSeparator = true;
+			local targs = constantArgs
+			targs[variableParam] = variableValPrefix .. v .. variableValPostfix
+			if calltemplates then
+				local output = p.callTemplate(template, targs)
+				if #mw.text.trim(output) == 0 then
+					addSeparator = false
+				end
+				result = result .. output
+			else
+				local makeTemplate = require('Module:Template invocation').invocation
+				result = result .. makeTemplate(template, targs)
+			end
+		end
+	end
+	return result
+end
+
+function p.getConstants(args)
+	local constantArgNums = p.getArgNums(args, 'pc', 'n')
+	local constantArgs = {}
+	for _, num in ipairs(constantArgNums) do
+		local keyArg = 'pc' .. tostring(num) .. 'n'
+		local valArg = 'pc' .. tostring(num) .. 'v'
+		local key = args[keyArg]
+		key = tonumber(key) or key
+		local value = args[valArg]
+		constantArgs[key] = value
+	end
+	return constantArgs
+end
+
+function p.getVariableVals(args)
+	local variableVals = {}
+	if args.start or args.stop or args.by then
+		if args[2] then
+			error("Both start/stop/by and numbered parameters specified")
+		end
+		local start = tonumber(args.start or 1)
+		local stop = tonumber(args.stop or 1)
+		local by = tonumber(args.by or 1)
+		for i = start, stop, by do
+			variableVals [#variableVals + 1] = i
+		end
+	else
+		for i, v in ipairs(args) do
+			if i ~= 1 then
+				variableVals[i - 1] = v
+			end
+		end
+	end
+	return variableVals
+end
+
+function p.getArgNums(args, prefix, suffix)
+	-- Returns a table containing the numbers of the arguments that exist
+	-- for the specified prefix and suffix.
+	local nums = {}
+	local pattern = '^' .. prefix .. '([1-9]%d*)' .. suffix .. '$'
+	for k, _ in pairs(args) do
+		local num = tostring(k):match(pattern)
+		if num then
+			nums[#nums + 1] = tonumber(num)
+		end
+	end
+	table.sort(nums)
+	return nums
+end
+
+function p.callTemplate(template, targs)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = targs}
+end
+
+return p</text>
+      <sha1>97htb8pbha3ivt9w9d0odbcxo0moteq</sha1>
+    </revision>
+    <revision>
+      <id>474387</id>
+      <parentid>474386</parentid>
+      <timestamp>2024-06-25T13:14:20Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:For_loop]]: importing template</comment>
+      <origin>474386</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2867" sha1="97htb8pbha3ivt9w9d0odbcxo0moteq" xml:space="preserve">-- This module implements {{for loop}}.
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local p = {}
+
+function p.main(frame)
+	local args = getArgs(frame, {
+		trim = false,
+		removeBlanks = false
+	})
+	return p._main(args)
+end
+
+function p._main(args)
+	local template = args['call'] or 'void'
+	local calltemplates = yesno(args.substall or "", true) or not mw.isSubsting()
+	local variableParam = args.pv
+	variableParam = tonumber(variableParam) or variableParam or 1 -- fix for positional parameters
+	local variableValPrefix = args.prefix or ''
+	local variableValPostfix = args.postfix or ''
+	local sep = args[1] or ''
+	local constantArgs = p.getConstants(args)
+	local variableVals = p.getVariableVals(args)
+
+	local result = ''
+	local addSeparator = false;
+	for _, v in ipairs(variableVals) do
+		v = mw.text.trim(v)
+		if #v &gt; 0 or not yesno(args.skipBlanks) then
+			if addSeparator then
+				result = result .. sep
+			end
+			addSeparator = true;
+			local targs = constantArgs
+			targs[variableParam] = variableValPrefix .. v .. variableValPostfix
+			if calltemplates then
+				local output = p.callTemplate(template, targs)
+				if #mw.text.trim(output) == 0 then
+					addSeparator = false
+				end
+				result = result .. output
+			else
+				local makeTemplate = require('Module:Template invocation').invocation
+				result = result .. makeTemplate(template, targs)
+			end
+		end
+	end
+	return result
+end
+
+function p.getConstants(args)
+	local constantArgNums = p.getArgNums(args, 'pc', 'n')
+	local constantArgs = {}
+	for _, num in ipairs(constantArgNums) do
+		local keyArg = 'pc' .. tostring(num) .. 'n'
+		local valArg = 'pc' .. tostring(num) .. 'v'
+		local key = args[keyArg]
+		key = tonumber(key) or key
+		local value = args[valArg]
+		constantArgs[key] = value
+	end
+	return constantArgs
+end
+
+function p.getVariableVals(args)
+	local variableVals = {}
+	if args.start or args.stop or args.by then
+		if args[2] then
+			error("Both start/stop/by and numbered parameters specified")
+		end
+		local start = tonumber(args.start or 1)
+		local stop = tonumber(args.stop or 1)
+		local by = tonumber(args.by or 1)
+		for i = start, stop, by do
+			variableVals [#variableVals + 1] = i
+		end
+	else
+		for i, v in ipairs(args) do
+			if i ~= 1 then
+				variableVals[i - 1] = v
+			end
+		end
+	end
+	return variableVals
+end
+
+function p.getArgNums(args, prefix, suffix)
+	-- Returns a table containing the numbers of the arguments that exist
+	-- for the specified prefix and suffix.
+	local nums = {}
+	local pattern = '^' .. prefix .. '([1-9]%d*)' .. suffix .. '$'
+	for k, _ in pairs(args) do
+		local num = tostring(k):match(pattern)
+		if num then
+			nums[#nums + 1] = tonumber(num)
+		end
+	end
+	table.sort(nums)
+	return nums
+end
+
+function p.callTemplate(template, targs)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = targs}
+end
+
+return p</text>
+      <sha1>97htb8pbha3ivt9w9d0odbcxo0moteq</sha1>
+    </revision>
+    <revision>
+      <id>474388</id>
+      <parentid>474387</parentid>
+      <timestamp>2025-03-06T08:37:08Z</timestamp>
+      <contributor>
+        <username>en&gt;Johnuniq</username>
+        <id>0</id>
+      </contributor>
+      <comment>require [[Module:Template invocation]] only if required (see [[Template talk:Post-nominals#Use of Module:Template_invocation]]); clean whitespace, variables</comment>
+      <origin>474386</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2867" sha1="97htb8pbha3ivt9w9d0odbcxo0moteq" xml:space="preserve">-- This module implements {{for loop}}.
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local p = {}
+
+function p.main(frame)
+	local args = getArgs(frame, {
+		trim = false,
+		removeBlanks = false
+	})
+	return p._main(args)
+end
+
+function p._main(args)
+	local template = args['call'] or 'void'
+	local calltemplates = yesno(args.substall or "", true) or not mw.isSubsting()
+	local variableParam = args.pv
+	variableParam = tonumber(variableParam) or variableParam or 1 -- fix for positional parameters
+	local variableValPrefix = args.prefix or ''
+	local variableValPostfix = args.postfix or ''
+	local sep = args[1] or ''
+	local constantArgs = p.getConstants(args)
+	local variableVals = p.getVariableVals(args)
+
+	local result = ''
+	local addSeparator = false;
+	for _, v in ipairs(variableVals) do
+		v = mw.text.trim(v)
+		if #v &gt; 0 or not yesno(args.skipBlanks) then
+			if addSeparator then
+				result = result .. sep
+			end
+			addSeparator = true;
+			local targs = constantArgs
+			targs[variableParam] = variableValPrefix .. v .. variableValPostfix
+			if calltemplates then
+				local output = p.callTemplate(template, targs)
+				if #mw.text.trim(output) == 0 then
+					addSeparator = false
+				end
+				result = result .. output
+			else
+				local makeTemplate = require('Module:Template invocation').invocation
+				result = result .. makeTemplate(template, targs)
+			end
+		end
+	end
+	return result
+end
+
+function p.getConstants(args)
+	local constantArgNums = p.getArgNums(args, 'pc', 'n')
+	local constantArgs = {}
+	for _, num in ipairs(constantArgNums) do
+		local keyArg = 'pc' .. tostring(num) .. 'n'
+		local valArg = 'pc' .. tostring(num) .. 'v'
+		local key = args[keyArg]
+		key = tonumber(key) or key
+		local value = args[valArg]
+		constantArgs[key] = value
+	end
+	return constantArgs
+end
+
+function p.getVariableVals(args)
+	local variableVals = {}
+	if args.start or args.stop or args.by then
+		if args[2] then
+			error("Both start/stop/by and numbered parameters specified")
+		end
+		local start = tonumber(args.start or 1)
+		local stop = tonumber(args.stop or 1)
+		local by = tonumber(args.by or 1)
+		for i = start, stop, by do
+			variableVals [#variableVals + 1] = i
+		end
+	else
+		for i, v in ipairs(args) do
+			if i ~= 1 then
+				variableVals[i - 1] = v
+			end
+		end
+	end
+	return variableVals
+end
+
+function p.getArgNums(args, prefix, suffix)
+	-- Returns a table containing the numbers of the arguments that exist
+	-- for the specified prefix and suffix.
+	local nums = {}
+	local pattern = '^' .. prefix .. '([1-9]%d*)' .. suffix .. '$'
+	for k, _ in pairs(args) do
+		local num = tostring(k):match(pattern)
+		if num then
+			nums[#nums + 1] = tonumber(num)
+		end
+	end
+	table.sort(nums)
+	return nums
+end
+
+function p.callTemplate(template, targs)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = targs}
+end
+
+return p</text>
+      <sha1>97htb8pbha3ivt9w9d0odbcxo0moteq</sha1>
+    </revision>
+    <revision>
+      <id>289</id>
+      <timestamp>2025-03-06T08:38:18Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: importing the refn stuff to try to fix the Okinawa article</comment>
+      <origin>289</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2867" sha1="97htb8pbha3ivt9w9d0odbcxo0moteq" xml:space="preserve">-- This module implements {{for loop}}.
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local p = {}
+
+function p.main(frame)
+	local args = getArgs(frame, {
+		trim = false,
+		removeBlanks = false
+	})
+	return p._main(args)
+end
+
+function p._main(args)
+	local template = args['call'] or 'void'
+	local calltemplates = yesno(args.substall or "", true) or not mw.isSubsting()
+	local variableParam = args.pv
+	variableParam = tonumber(variableParam) or variableParam or 1 -- fix for positional parameters
+	local variableValPrefix = args.prefix or ''
+	local variableValPostfix = args.postfix or ''
+	local sep = args[1] or ''
+	local constantArgs = p.getConstants(args)
+	local variableVals = p.getVariableVals(args)
+
+	local result = ''
+	local addSeparator = false;
+	for _, v in ipairs(variableVals) do
+		v = mw.text.trim(v)
+		if #v &gt; 0 or not yesno(args.skipBlanks) then
+			if addSeparator then
+				result = result .. sep
+			end
+			addSeparator = true;
+			local targs = constantArgs
+			targs[variableParam] = variableValPrefix .. v .. variableValPostfix
+			if calltemplates then
+				local output = p.callTemplate(template, targs)
+				if #mw.text.trim(output) == 0 then
+					addSeparator = false
+				end
+				result = result .. output
+			else
+				local makeTemplate = require('Module:Template invocation').invocation
+				result = result .. makeTemplate(template, targs)
+			end
+		end
+	end
+	return result
+end
+
+function p.getConstants(args)
+	local constantArgNums = p.getArgNums(args, 'pc', 'n')
+	local constantArgs = {}
+	for _, num in ipairs(constantArgNums) do
+		local keyArg = 'pc' .. tostring(num) .. 'n'
+		local valArg = 'pc' .. tostring(num) .. 'v'
+		local key = args[keyArg]
+		key = tonumber(key) or key
+		local value = args[valArg]
+		constantArgs[key] = value
+	end
+	return constantArgs
+end
+
+function p.getVariableVals(args)
+	local variableVals = {}
+	if args.start or args.stop or args.by then
+		if args[2] then
+			error("Both start/stop/by and numbered parameters specified")
+		end
+		local start = tonumber(args.start or 1)
+		local stop = tonumber(args.stop or 1)
+		local by = tonumber(args.by or 1)
+		for i = start, stop, by do
+			variableVals [#variableVals + 1] = i
+		end
+	else
+		for i, v in ipairs(args) do
+			if i ~= 1 then
+				variableVals[i - 1] = v
+			end
+		end
+	end
+	return variableVals
+end
+
+function p.getArgNums(args, prefix, suffix)
+	-- Returns a table containing the numbers of the arguments that exist
+	-- for the specified prefix and suffix.
+	local nums = {}
+	local pattern = '^' .. prefix .. '([1-9]%d*)' .. suffix .. '$'
+	for k, _ in pairs(args) do
+		local num = tostring(k):match(pattern)
+		if num then
+			nums[#nums + 1] = tonumber(num)
+		end
+	end
+	table.sort(nums)
+	return nums
+end
+
+function p.callTemplate(template, targs)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = targs}
+end
+
+return p</text>
+      <sha1>97htb8pbha3ivt9w9d0odbcxo0moteq</sha1>
+    </revision>
+    <revision>
+      <id>3303291</id>
+      <parentid>289</parentid>
+      <timestamp>2026-02-26T20:09:47Z</timestamp>
+      <contributor>
+        <username>Ahecht</username>
+        <id>54</id>
+      </contributor>
+      <comment>add templatemain function for direct invocation</comment>
+      <origin>3303291</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2963" sha1="3vczdtsoi79wslpamhz4wcf4ti3y68c" xml:space="preserve">-- This module implements {{for loop}}.
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local p = {}
+
+function p.templatemain(frame)
+	return p.main(frame:newChild{title = "Template:For_loop"})
+end
+
+function p.main(frame)
+	local args = getArgs(frame, {
+		trim = false,
+		removeBlanks = false
+	})
+	return p._main(args)
+end
+
+function p._main(args)
+	local template = args['call'] or 'void'
+	local calltemplates = yesno(args.substall or "", true) or not mw.isSubsting()
+	local variableParam = args.pv
+	variableParam = tonumber(variableParam) or variableParam or 1 -- fix for positional parameters
+	local variableValPrefix = args.prefix or ''
+	local variableValPostfix = args.postfix or ''
+	local sep = args[1] or ''
+	local constantArgs = p.getConstants(args)
+	local variableVals = p.getVariableVals(args)
+
+	local result = ''
+	local addSeparator = false;
+	for _, v in ipairs(variableVals) do
+		v = mw.text.trim(v)
+		if #v &gt; 0 or not yesno(args.skipBlanks) then
+			if addSeparator then
+				result = result .. sep
+			end
+			addSeparator = true;
+			local targs = constantArgs
+			targs[variableParam] = variableValPrefix .. v .. variableValPostfix
+			if calltemplates then
+				local output = p.callTemplate(template, targs)
+				if #mw.text.trim(output) == 0 then
+					addSeparator = false
+				end
+				result = result .. output
+			else
+				local makeTemplate = require('Module:Template invocation').invocation
+				result = result .. makeTemplate(template, targs)
+			end
+		end
+	end
+	return result
+end
+
+function p.getConstants(args)
+	local constantArgNums = p.getArgNums(args, 'pc', 'n')
+	local constantArgs = {}
+	for _, num in ipairs(constantArgNums) do
+		local keyArg = 'pc' .. tostring(num) .. 'n'
+		local valArg = 'pc' .. tostring(num) .. 'v'
+		local key = args[keyArg]
+		key = tonumber(key) or key
+		local value = args[valArg]
+		constantArgs[key] = value
+	end
+	return constantArgs
+end
+
+function p.getVariableVals(args)
+	local variableVals = {}
+	if args.start or args.stop or args.by then
+		if args[2] then
+			error("Both start/stop/by and numbered parameters specified")
+		end
+		local start = tonumber(args.start or 1)
+		local stop = tonumber(args.stop or 1)
+		local by = tonumber(args.by or 1)
+		for i = start, stop, by do
+			variableVals [#variableVals + 1] = i
+		end
+	else
+		for i, v in ipairs(args) do
+			if i ~= 1 then
+				variableVals[i - 1] = v
+			end
+		end
+	end
+	return variableVals
+end
+
+function p.getArgNums(args, prefix, suffix)
+	-- Returns a table containing the numbers of the arguments that exist
+	-- for the specified prefix and suffix.
+	local nums = {}
+	local pattern = '^' .. prefix .. '([1-9]%d*)' .. suffix .. '$'
+	for k, _ in pairs(args) do
+		local num = tostring(k):match(pattern)
+		if num then
+			nums[#nums + 1] = tonumber(num)
+		end
+	end
+	table.sort(nums)
+	return nums
+end
+
+function p.callTemplate(template, targs)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = targs}
+end
+
+return p</text>
+      <sha1>3vczdtsoi79wslpamhz4wcf4ti3y68c</sha1>
+    </revision>
+    <revision>
+      <id>3303292</id>
+      <parentid>3303291</parentid>
+      <timestamp>2026-02-26T20:09:47Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: reimporting these to fix older errors</comment>
+      <origin>3303291</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2963" sha1="3vczdtsoi79wslpamhz4wcf4ti3y68c" xml:space="preserve">-- This module implements {{for loop}}.
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local p = {}
+
+function p.templatemain(frame)
+	return p.main(frame:newChild{title = "Template:For_loop"})
+end
+
+function p.main(frame)
+	local args = getArgs(frame, {
+		trim = false,
+		removeBlanks = false
+	})
+	return p._main(args)
+end
+
+function p._main(args)
+	local template = args['call'] or 'void'
+	local calltemplates = yesno(args.substall or "", true) or not mw.isSubsting()
+	local variableParam = args.pv
+	variableParam = tonumber(variableParam) or variableParam or 1 -- fix for positional parameters
+	local variableValPrefix = args.prefix or ''
+	local variableValPostfix = args.postfix or ''
+	local sep = args[1] or ''
+	local constantArgs = p.getConstants(args)
+	local variableVals = p.getVariableVals(args)
+
+	local result = ''
+	local addSeparator = false;
+	for _, v in ipairs(variableVals) do
+		v = mw.text.trim(v)
+		if #v &gt; 0 or not yesno(args.skipBlanks) then
+			if addSeparator then
+				result = result .. sep
+			end
+			addSeparator = true;
+			local targs = constantArgs
+			targs[variableParam] = variableValPrefix .. v .. variableValPostfix
+			if calltemplates then
+				local output = p.callTemplate(template, targs)
+				if #mw.text.trim(output) == 0 then
+					addSeparator = false
+				end
+				result = result .. output
+			else
+				local makeTemplate = require('Module:Template invocation').invocation
+				result = result .. makeTemplate(template, targs)
+			end
+		end
+	end
+	return result
+end
+
+function p.getConstants(args)
+	local constantArgNums = p.getArgNums(args, 'pc', 'n')
+	local constantArgs = {}
+	for _, num in ipairs(constantArgNums) do
+		local keyArg = 'pc' .. tostring(num) .. 'n'
+		local valArg = 'pc' .. tostring(num) .. 'v'
+		local key = args[keyArg]
+		key = tonumber(key) or key
+		local value = args[valArg]
+		constantArgs[key] = value
+	end
+	return constantArgs
+end
+
+function p.getVariableVals(args)
+	local variableVals = {}
+	if args.start or args.stop or args.by then
+		if args[2] then
+			error("Both start/stop/by and numbered parameters specified")
+		end
+		local start = tonumber(args.start or 1)
+		local stop = tonumber(args.stop or 1)
+		local by = tonumber(args.by or 1)
+		for i = start, stop, by do
+			variableVals [#variableVals + 1] = i
+		end
+	else
+		for i, v in ipairs(args) do
+			if i ~= 1 then
+				variableVals[i - 1] = v
+			end
+		end
+	end
+	return variableVals
+end
+
+function p.getArgNums(args, prefix, suffix)
+	-- Returns a table containing the numbers of the arguments that exist
+	-- for the specified prefix and suffix.
+	local nums = {}
+	local pattern = '^' .. prefix .. '([1-9]%d*)' .. suffix .. '$'
+	for k, _ in pairs(args) do
+		local num = tostring(k):match(pattern)
+		if num then
+			nums[#nums + 1] = tonumber(num)
+		end
+	end
+	table.sort(nums)
+	return nums
+end
+
+function p.callTemplate(template, targs)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = targs}
+end
+
+return p</text>
+      <sha1>3vczdtsoi79wslpamhz4wcf4ti3y68c</sha1>
+    </revision>
+    <revision>
+      <id>3304641</id>
+      <parentid>3303292</parentid>
+      <timestamp>2026-02-26T20:19:06Z</timestamp>
+      <contributor>
+        <username>Ahecht</username>
+        <id>54</id>
+      </contributor>
+      <comment>add templatemain function for direct invocation</comment>
+      <origin>3303291</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2963" sha1="3vczdtsoi79wslpamhz4wcf4ti3y68c" xml:space="preserve">-- This module implements {{for loop}}.
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local p = {}
+
+function p.templatemain(frame)
+	return p.main(frame:newChild{title = "Template:For_loop"})
+end
+
+function p.main(frame)
+	local args = getArgs(frame, {
+		trim = false,
+		removeBlanks = false
+	})
+	return p._main(args)
+end
+
+function p._main(args)
+	local template = args['call'] or 'void'
+	local calltemplates = yesno(args.substall or "", true) or not mw.isSubsting()
+	local variableParam = args.pv
+	variableParam = tonumber(variableParam) or variableParam or 1 -- fix for positional parameters
+	local variableValPrefix = args.prefix or ''
+	local variableValPostfix = args.postfix or ''
+	local sep = args[1] or ''
+	local constantArgs = p.getConstants(args)
+	local variableVals = p.getVariableVals(args)
+
+	local result = ''
+	local addSeparator = false;
+	for _, v in ipairs(variableVals) do
+		v = mw.text.trim(v)
+		if #v &gt; 0 or not yesno(args.skipBlanks) then
+			if addSeparator then
+				result = result .. sep
+			end
+			addSeparator = true;
+			local targs = constantArgs
+			targs[variableParam] = variableValPrefix .. v .. variableValPostfix
+			if calltemplates then
+				local output = p.callTemplate(template, targs)
+				if #mw.text.trim(output) == 0 then
+					addSeparator = false
+				end
+				result = result .. output
+			else
+				local makeTemplate = require('Module:Template invocation').invocation
+				result = result .. makeTemplate(template, targs)
+			end
+		end
+	end
+	return result
+end
+
+function p.getConstants(args)
+	local constantArgNums = p.getArgNums(args, 'pc', 'n')
+	local constantArgs = {}
+	for _, num in ipairs(constantArgNums) do
+		local keyArg = 'pc' .. tostring(num) .. 'n'
+		local valArg = 'pc' .. tostring(num) .. 'v'
+		local key = args[keyArg]
+		key = tonumber(key) or key
+		local value = args[valArg]
+		constantArgs[key] = value
+	end
+	return constantArgs
+end
+
+function p.getVariableVals(args)
+	local variableVals = {}
+	if args.start or args.stop or args.by then
+		if args[2] then
+			error("Both start/stop/by and numbered parameters specified")
+		end
+		local start = tonumber(args.start or 1)
+		local stop = tonumber(args.stop or 1)
+		local by = tonumber(args.by or 1)
+		for i = start, stop, by do
+			variableVals [#variableVals + 1] = i
+		end
+	else
+		for i, v in ipairs(args) do
+			if i ~= 1 then
+				variableVals[i - 1] = v
+			end
+		end
+	end
+	return variableVals
+end
+
+function p.getArgNums(args, prefix, suffix)
+	-- Returns a table containing the numbers of the arguments that exist
+	-- for the specified prefix and suffix.
+	local nums = {}
+	local pattern = '^' .. prefix .. '([1-9]%d*)' .. suffix .. '$'
+	for k, _ in pairs(args) do
+		local num = tostring(k):match(pattern)
+		if num then
+			nums[#nums + 1] = tonumber(num)
+		end
+	end
+	table.sort(nums)
+	return nums
+end
+
+function p.callTemplate(template, targs)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = targs}
+end
+
+return p</text>
+      <sha1>3vczdtsoi79wslpamhz4wcf4ti3y68c</sha1>
+    </revision>
+    <revision>
+      <id>3304642</id>
+      <parentid>3304641</parentid>
+      <timestamp>2026-02-26T20:19:07Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: importing this file, and also doing a full refresh import of all dependencies, because I am concerned this is one with a lot of broken dependencies. Intended end result is the template [[Template:Talk page header]] which is gonna be highly customized to our usage later on</comment>
+      <origin>3303291</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2963" sha1="3vczdtsoi79wslpamhz4wcf4ti3y68c" xml:space="preserve">-- This module implements {{for loop}}.
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local p = {}
+
+function p.templatemain(frame)
+	return p.main(frame:newChild{title = "Template:For_loop"})
+end
+
+function p.main(frame)
+	local args = getArgs(frame, {
+		trim = false,
+		removeBlanks = false
+	})
+	return p._main(args)
+end
+
+function p._main(args)
+	local template = args['call'] or 'void'
+	local calltemplates = yesno(args.substall or "", true) or not mw.isSubsting()
+	local variableParam = args.pv
+	variableParam = tonumber(variableParam) or variableParam or 1 -- fix for positional parameters
+	local variableValPrefix = args.prefix or ''
+	local variableValPostfix = args.postfix or ''
+	local sep = args[1] or ''
+	local constantArgs = p.getConstants(args)
+	local variableVals = p.getVariableVals(args)
+
+	local result = ''
+	local addSeparator = false;
+	for _, v in ipairs(variableVals) do
+		v = mw.text.trim(v)
+		if #v &gt; 0 or not yesno(args.skipBlanks) then
+			if addSeparator then
+				result = result .. sep
+			end
+			addSeparator = true;
+			local targs = constantArgs
+			targs[variableParam] = variableValPrefix .. v .. variableValPostfix
+			if calltemplates then
+				local output = p.callTemplate(template, targs)
+				if #mw.text.trim(output) == 0 then
+					addSeparator = false
+				end
+				result = result .. output
+			else
+				local makeTemplate = require('Module:Template invocation').invocation
+				result = result .. makeTemplate(template, targs)
+			end
+		end
+	end
+	return result
+end
+
+function p.getConstants(args)
+	local constantArgNums = p.getArgNums(args, 'pc', 'n')
+	local constantArgs = {}
+	for _, num in ipairs(constantArgNums) do
+		local keyArg = 'pc' .. tostring(num) .. 'n'
+		local valArg = 'pc' .. tostring(num) .. 'v'
+		local key = args[keyArg]
+		key = tonumber(key) or key
+		local value = args[valArg]
+		constantArgs[key] = value
+	end
+	return constantArgs
+end
+
+function p.getVariableVals(args)
+	local variableVals = {}
+	if args.start or args.stop or args.by then
+		if args[2] then
+			error("Both start/stop/by and numbered parameters specified")
+		end
+		local start = tonumber(args.start or 1)
+		local stop = tonumber(args.stop or 1)
+		local by = tonumber(args.by or 1)
+		for i = start, stop, by do
+			variableVals [#variableVals + 1] = i
+		end
+	else
+		for i, v in ipairs(args) do
+			if i ~= 1 then
+				variableVals[i - 1] = v
+			end
+		end
+	end
+	return variableVals
+end
+
+function p.getArgNums(args, prefix, suffix)
+	-- Returns a table containing the numbers of the arguments that exist
+	-- for the specified prefix and suffix.
+	local nums = {}
+	local pattern = '^' .. prefix .. '([1-9]%d*)' .. suffix .. '$'
+	for k, _ in pairs(args) do
+		local num = tostring(k):match(pattern)
+		if num then
+			nums[#nums + 1] = tonumber(num)
+		end
+	end
+	table.sort(nums)
+	return nums
+end
+
+function p.callTemplate(template, targs)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = targs}
+end
+
+return p</text>
+      <sha1>3vczdtsoi79wslpamhz4wcf4ti3y68c</sha1>
+    </revision>
+    <revision>
+      <id>3368287</id>
+      <parentid>3304642</parentid>
+      <timestamp>2026-03-02T18:54:45Z</timestamp>
+      <contributor>
+        <username>Ahecht</username>
+        <id>54</id>
+      </contributor>
+      <comment>add templatemain function for direct invocation</comment>
+      <origin>3303291</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2963" sha1="3vczdtsoi79wslpamhz4wcf4ti3y68c" xml:space="preserve">-- This module implements {{for loop}}.
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local p = {}
+
+function p.templatemain(frame)
+	return p.main(frame:newChild{title = "Template:For_loop"})
+end
+
+function p.main(frame)
+	local args = getArgs(frame, {
+		trim = false,
+		removeBlanks = false
+	})
+	return p._main(args)
+end
+
+function p._main(args)
+	local template = args['call'] or 'void'
+	local calltemplates = yesno(args.substall or "", true) or not mw.isSubsting()
+	local variableParam = args.pv
+	variableParam = tonumber(variableParam) or variableParam or 1 -- fix for positional parameters
+	local variableValPrefix = args.prefix or ''
+	local variableValPostfix = args.postfix or ''
+	local sep = args[1] or ''
+	local constantArgs = p.getConstants(args)
+	local variableVals = p.getVariableVals(args)
+
+	local result = ''
+	local addSeparator = false;
+	for _, v in ipairs(variableVals) do
+		v = mw.text.trim(v)
+		if #v &gt; 0 or not yesno(args.skipBlanks) then
+			if addSeparator then
+				result = result .. sep
+			end
+			addSeparator = true;
+			local targs = constantArgs
+			targs[variableParam] = variableValPrefix .. v .. variableValPostfix
+			if calltemplates then
+				local output = p.callTemplate(template, targs)
+				if #mw.text.trim(output) == 0 then
+					addSeparator = false
+				end
+				result = result .. output
+			else
+				local makeTemplate = require('Module:Template invocation').invocation
+				result = result .. makeTemplate(template, targs)
+			end
+		end
+	end
+	return result
+end
+
+function p.getConstants(args)
+	local constantArgNums = p.getArgNums(args, 'pc', 'n')
+	local constantArgs = {}
+	for _, num in ipairs(constantArgNums) do
+		local keyArg = 'pc' .. tostring(num) .. 'n'
+		local valArg = 'pc' .. tostring(num) .. 'v'
+		local key = args[keyArg]
+		key = tonumber(key) or key
+		local value = args[valArg]
+		constantArgs[key] = value
+	end
+	return constantArgs
+end
+
+function p.getVariableVals(args)
+	local variableVals = {}
+	if args.start or args.stop or args.by then
+		if args[2] then
+			error("Both start/stop/by and numbered parameters specified")
+		end
+		local start = tonumber(args.start or 1)
+		local stop = tonumber(args.stop or 1)
+		local by = tonumber(args.by or 1)
+		for i = start, stop, by do
+			variableVals [#variableVals + 1] = i
+		end
+	else
+		for i, v in ipairs(args) do
+			if i ~= 1 then
+				variableVals[i - 1] = v
+			end
+		end
+	end
+	return variableVals
+end
+
+function p.getArgNums(args, prefix, suffix)
+	-- Returns a table containing the numbers of the arguments that exist
+	-- for the specified prefix and suffix.
+	local nums = {}
+	local pattern = '^' .. prefix .. '([1-9]%d*)' .. suffix .. '$'
+	for k, _ in pairs(args) do
+		local num = tostring(k):match(pattern)
+		if num then
+			nums[#nums + 1] = tonumber(num)
+		end
+	end
+	table.sort(nums)
+	return nums
+end
+
+function p.callTemplate(template, targs)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = targs}
+end
+
+return p</text>
+      <sha1>3vczdtsoi79wslpamhz4wcf4ti3y68c</sha1>
+    </revision>
+    <revision>
+      <id>3368288</id>
+      <parentid>3368287</parentid>
+      <timestamp>2026-03-02T18:54:45Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3303291</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2963" sha1="3vczdtsoi79wslpamhz4wcf4ti3y68c" xml:space="preserve">-- This module implements {{for loop}}.
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local p = {}
+
+function p.templatemain(frame)
+	return p.main(frame:newChild{title = "Template:For_loop"})
+end
+
+function p.main(frame)
+	local args = getArgs(frame, {
+		trim = false,
+		removeBlanks = false
+	})
+	return p._main(args)
+end
+
+function p._main(args)
+	local template = args['call'] or 'void'
+	local calltemplates = yesno(args.substall or "", true) or not mw.isSubsting()
+	local variableParam = args.pv
+	variableParam = tonumber(variableParam) or variableParam or 1 -- fix for positional parameters
+	local variableValPrefix = args.prefix or ''
+	local variableValPostfix = args.postfix or ''
+	local sep = args[1] or ''
+	local constantArgs = p.getConstants(args)
+	local variableVals = p.getVariableVals(args)
+
+	local result = ''
+	local addSeparator = false;
+	for _, v in ipairs(variableVals) do
+		v = mw.text.trim(v)
+		if #v &gt; 0 or not yesno(args.skipBlanks) then
+			if addSeparator then
+				result = result .. sep
+			end
+			addSeparator = true;
+			local targs = constantArgs
+			targs[variableParam] = variableValPrefix .. v .. variableValPostfix
+			if calltemplates then
+				local output = p.callTemplate(template, targs)
+				if #mw.text.trim(output) == 0 then
+					addSeparator = false
+				end
+				result = result .. output
+			else
+				local makeTemplate = require('Module:Template invocation').invocation
+				result = result .. makeTemplate(template, targs)
+			end
+		end
+	end
+	return result
+end
+
+function p.getConstants(args)
+	local constantArgNums = p.getArgNums(args, 'pc', 'n')
+	local constantArgs = {}
+	for _, num in ipairs(constantArgNums) do
+		local keyArg = 'pc' .. tostring(num) .. 'n'
+		local valArg = 'pc' .. tostring(num) .. 'v'
+		local key = args[keyArg]
+		key = tonumber(key) or key
+		local value = args[valArg]
+		constantArgs[key] = value
+	end
+	return constantArgs
+end
+
+function p.getVariableVals(args)
+	local variableVals = {}
+	if args.start or args.stop or args.by then
+		if args[2] then
+			error("Both start/stop/by and numbered parameters specified")
+		end
+		local start = tonumber(args.start or 1)
+		local stop = tonumber(args.stop or 1)
+		local by = tonumber(args.by or 1)
+		for i = start, stop, by do
+			variableVals [#variableVals + 1] = i
+		end
+	else
+		for i, v in ipairs(args) do
+			if i ~= 1 then
+				variableVals[i - 1] = v
+			end
+		end
+	end
+	return variableVals
+end
+
+function p.getArgNums(args, prefix, suffix)
+	-- Returns a table containing the numbers of the arguments that exist
+	-- for the specified prefix and suffix.
+	local nums = {}
+	local pattern = '^' .. prefix .. '([1-9]%d*)' .. suffix .. '$'
+	for k, _ in pairs(args) do
+		local num = tostring(k):match(pattern)
+		if num then
+			nums[#nums + 1] = tonumber(num)
+		end
+	end
+	table.sort(nums)
+	return nums
+end
+
+function p.callTemplate(template, targs)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = targs}
+end
+
+return p</text>
+      <sha1>3vczdtsoi79wslpamhz4wcf4ti3y68c</sha1>
+    </revision>
+    <revision>
+      <id>3368761</id>
+      <parentid>3368288</parentid>
+      <timestamp>2026-03-02T18:57:00Z</timestamp>
+      <contributor>
+        <username>Ahecht</username>
+        <id>54</id>
+      </contributor>
+      <comment>add templatemain function for direct invocation</comment>
+      <origin>3303291</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2963" sha1="3vczdtsoi79wslpamhz4wcf4ti3y68c" xml:space="preserve">-- This module implements {{for loop}}.
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local p = {}
+
+function p.templatemain(frame)
+	return p.main(frame:newChild{title = "Template:For_loop"})
+end
+
+function p.main(frame)
+	local args = getArgs(frame, {
+		trim = false,
+		removeBlanks = false
+	})
+	return p._main(args)
+end
+
+function p._main(args)
+	local template = args['call'] or 'void'
+	local calltemplates = yesno(args.substall or "", true) or not mw.isSubsting()
+	local variableParam = args.pv
+	variableParam = tonumber(variableParam) or variableParam or 1 -- fix for positional parameters
+	local variableValPrefix = args.prefix or ''
+	local variableValPostfix = args.postfix or ''
+	local sep = args[1] or ''
+	local constantArgs = p.getConstants(args)
+	local variableVals = p.getVariableVals(args)
+
+	local result = ''
+	local addSeparator = false;
+	for _, v in ipairs(variableVals) do
+		v = mw.text.trim(v)
+		if #v &gt; 0 or not yesno(args.skipBlanks) then
+			if addSeparator then
+				result = result .. sep
+			end
+			addSeparator = true;
+			local targs = constantArgs
+			targs[variableParam] = variableValPrefix .. v .. variableValPostfix
+			if calltemplates then
+				local output = p.callTemplate(template, targs)
+				if #mw.text.trim(output) == 0 then
+					addSeparator = false
+				end
+				result = result .. output
+			else
+				local makeTemplate = require('Module:Template invocation').invocation
+				result = result .. makeTemplate(template, targs)
+			end
+		end
+	end
+	return result
+end
+
+function p.getConstants(args)
+	local constantArgNums = p.getArgNums(args, 'pc', 'n')
+	local constantArgs = {}
+	for _, num in ipairs(constantArgNums) do
+		local keyArg = 'pc' .. tostring(num) .. 'n'
+		local valArg = 'pc' .. tostring(num) .. 'v'
+		local key = args[keyArg]
+		key = tonumber(key) or key
+		local value = args[valArg]
+		constantArgs[key] = value
+	end
+	return constantArgs
+end
+
+function p.getVariableVals(args)
+	local variableVals = {}
+	if args.start or args.stop or args.by then
+		if args[2] then
+			error("Both start/stop/by and numbered parameters specified")
+		end
+		local start = tonumber(args.start or 1)
+		local stop = tonumber(args.stop or 1)
+		local by = tonumber(args.by or 1)
+		for i = start, stop, by do
+			variableVals [#variableVals + 1] = i
+		end
+	else
+		for i, v in ipairs(args) do
+			if i ~= 1 then
+				variableVals[i - 1] = v
+			end
+		end
+	end
+	return variableVals
+end
+
+function p.getArgNums(args, prefix, suffix)
+	-- Returns a table containing the numbers of the arguments that exist
+	-- for the specified prefix and suffix.
+	local nums = {}
+	local pattern = '^' .. prefix .. '([1-9]%d*)' .. suffix .. '$'
+	for k, _ in pairs(args) do
+		local num = tostring(k):match(pattern)
+		if num then
+			nums[#nums + 1] = tonumber(num)
+		end
+	end
+	table.sort(nums)
+	return nums
+end
+
+function p.callTemplate(template, targs)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = targs}
+end
+
+return p</text>
+      <sha1>3vczdtsoi79wslpamhz4wcf4ti3y68c</sha1>
+    </revision>
+    <revision>
+      <id>3368762</id>
+      <parentid>3368761</parentid>
+      <timestamp>2026-03-02T18:57:01Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3303291</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2963" sha1="3vczdtsoi79wslpamhz4wcf4ti3y68c" xml:space="preserve">-- This module implements {{for loop}}.
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local p = {}
+
+function p.templatemain(frame)
+	return p.main(frame:newChild{title = "Template:For_loop"})
+end
+
+function p.main(frame)
+	local args = getArgs(frame, {
+		trim = false,
+		removeBlanks = false
+	})
+	return p._main(args)
+end
+
+function p._main(args)
+	local template = args['call'] or 'void'
+	local calltemplates = yesno(args.substall or "", true) or not mw.isSubsting()
+	local variableParam = args.pv
+	variableParam = tonumber(variableParam) or variableParam or 1 -- fix for positional parameters
+	local variableValPrefix = args.prefix or ''
+	local variableValPostfix = args.postfix or ''
+	local sep = args[1] or ''
+	local constantArgs = p.getConstants(args)
+	local variableVals = p.getVariableVals(args)
+
+	local result = ''
+	local addSeparator = false;
+	for _, v in ipairs(variableVals) do
+		v = mw.text.trim(v)
+		if #v &gt; 0 or not yesno(args.skipBlanks) then
+			if addSeparator then
+				result = result .. sep
+			end
+			addSeparator = true;
+			local targs = constantArgs
+			targs[variableParam] = variableValPrefix .. v .. variableValPostfix
+			if calltemplates then
+				local output = p.callTemplate(template, targs)
+				if #mw.text.trim(output) == 0 then
+					addSeparator = false
+				end
+				result = result .. output
+			else
+				local makeTemplate = require('Module:Template invocation').invocation
+				result = result .. makeTemplate(template, targs)
+			end
+		end
+	end
+	return result
+end
+
+function p.getConstants(args)
+	local constantArgNums = p.getArgNums(args, 'pc', 'n')
+	local constantArgs = {}
+	for _, num in ipairs(constantArgNums) do
+		local keyArg = 'pc' .. tostring(num) .. 'n'
+		local valArg = 'pc' .. tostring(num) .. 'v'
+		local key = args[keyArg]
+		key = tonumber(key) or key
+		local value = args[valArg]
+		constantArgs[key] = value
+	end
+	return constantArgs
+end
+
+function p.getVariableVals(args)
+	local variableVals = {}
+	if args.start or args.stop or args.by then
+		if args[2] then
+			error("Both start/stop/by and numbered parameters specified")
+		end
+		local start = tonumber(args.start or 1)
+		local stop = tonumber(args.stop or 1)
+		local by = tonumber(args.by or 1)
+		for i = start, stop, by do
+			variableVals [#variableVals + 1] = i
+		end
+	else
+		for i, v in ipairs(args) do
+			if i ~= 1 then
+				variableVals[i - 1] = v
+			end
+		end
+	end
+	return variableVals
+end
+
+function p.getArgNums(args, prefix, suffix)
+	-- Returns a table containing the numbers of the arguments that exist
+	-- for the specified prefix and suffix.
+	local nums = {}
+	local pattern = '^' .. prefix .. '([1-9]%d*)' .. suffix .. '$'
+	for k, _ in pairs(args) do
+		local num = tostring(k):match(pattern)
+		if num then
+			nums[#nums + 1] = tonumber(num)
+		end
+	end
+	table.sort(nums)
+	return nums
+end
+
+function p.callTemplate(template, targs)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = targs}
+end
+
+return p</text>
+      <sha1>3vczdtsoi79wslpamhz4wcf4ti3y68c</sha1>
+    </revision>
+    <revision>
+      <id>3369235</id>
+      <parentid>3368762</parentid>
+      <timestamp>2026-03-02T19:03:43Z</timestamp>
+      <contributor>
+        <username>Ahecht</username>
+        <id>54</id>
+      </contributor>
+      <comment>add templatemain function for direct invocation</comment>
+      <origin>3303291</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2963" sha1="3vczdtsoi79wslpamhz4wcf4ti3y68c" xml:space="preserve">-- This module implements {{for loop}}.
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local p = {}
+
+function p.templatemain(frame)
+	return p.main(frame:newChild{title = "Template:For_loop"})
+end
+
+function p.main(frame)
+	local args = getArgs(frame, {
+		trim = false,
+		removeBlanks = false
+	})
+	return p._main(args)
+end
+
+function p._main(args)
+	local template = args['call'] or 'void'
+	local calltemplates = yesno(args.substall or "", true) or not mw.isSubsting()
+	local variableParam = args.pv
+	variableParam = tonumber(variableParam) or variableParam or 1 -- fix for positional parameters
+	local variableValPrefix = args.prefix or ''
+	local variableValPostfix = args.postfix or ''
+	local sep = args[1] or ''
+	local constantArgs = p.getConstants(args)
+	local variableVals = p.getVariableVals(args)
+
+	local result = ''
+	local addSeparator = false;
+	for _, v in ipairs(variableVals) do
+		v = mw.text.trim(v)
+		if #v &gt; 0 or not yesno(args.skipBlanks) then
+			if addSeparator then
+				result = result .. sep
+			end
+			addSeparator = true;
+			local targs = constantArgs
+			targs[variableParam] = variableValPrefix .. v .. variableValPostfix
+			if calltemplates then
+				local output = p.callTemplate(template, targs)
+				if #mw.text.trim(output) == 0 then
+					addSeparator = false
+				end
+				result = result .. output
+			else
+				local makeTemplate = require('Module:Template invocation').invocation
+				result = result .. makeTemplate(template, targs)
+			end
+		end
+	end
+	return result
+end
+
+function p.getConstants(args)
+	local constantArgNums = p.getArgNums(args, 'pc', 'n')
+	local constantArgs = {}
+	for _, num in ipairs(constantArgNums) do
+		local keyArg = 'pc' .. tostring(num) .. 'n'
+		local valArg = 'pc' .. tostring(num) .. 'v'
+		local key = args[keyArg]
+		key = tonumber(key) or key
+		local value = args[valArg]
+		constantArgs[key] = value
+	end
+	return constantArgs
+end
+
+function p.getVariableVals(args)
+	local variableVals = {}
+	if args.start or args.stop or args.by then
+		if args[2] then
+			error("Both start/stop/by and numbered parameters specified")
+		end
+		local start = tonumber(args.start or 1)
+		local stop = tonumber(args.stop or 1)
+		local by = tonumber(args.by or 1)
+		for i = start, stop, by do
+			variableVals [#variableVals + 1] = i
+		end
+	else
+		for i, v in ipairs(args) do
+			if i ~= 1 then
+				variableVals[i - 1] = v
+			end
+		end
+	end
+	return variableVals
+end
+
+function p.getArgNums(args, prefix, suffix)
+	-- Returns a table containing the numbers of the arguments that exist
+	-- for the specified prefix and suffix.
+	local nums = {}
+	local pattern = '^' .. prefix .. '([1-9]%d*)' .. suffix .. '$'
+	for k, _ in pairs(args) do
+		local num = tostring(k):match(pattern)
+		if num then
+			nums[#nums + 1] = tonumber(num)
+		end
+	end
+	table.sort(nums)
+	return nums
+end
+
+function p.callTemplate(template, targs)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = targs}
+end
+
+return p</text>
+      <sha1>3vczdtsoi79wslpamhz4wcf4ti3y68c</sha1>
+    </revision>
+    <revision>
+      <id>3369236</id>
+      <parentid>3369235</parentid>
+      <timestamp>2026-03-02T19:03:43Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3303291</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2963" sha1="3vczdtsoi79wslpamhz4wcf4ti3y68c" xml:space="preserve">-- This module implements {{for loop}}.
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local p = {}
+
+function p.templatemain(frame)
+	return p.main(frame:newChild{title = "Template:For_loop"})
+end
+
+function p.main(frame)
+	local args = getArgs(frame, {
+		trim = false,
+		removeBlanks = false
+	})
+	return p._main(args)
+end
+
+function p._main(args)
+	local template = args['call'] or 'void'
+	local calltemplates = yesno(args.substall or "", true) or not mw.isSubsting()
+	local variableParam = args.pv
+	variableParam = tonumber(variableParam) or variableParam or 1 -- fix for positional parameters
+	local variableValPrefix = args.prefix or ''
+	local variableValPostfix = args.postfix or ''
+	local sep = args[1] or ''
+	local constantArgs = p.getConstants(args)
+	local variableVals = p.getVariableVals(args)
+
+	local result = ''
+	local addSeparator = false;
+	for _, v in ipairs(variableVals) do
+		v = mw.text.trim(v)
+		if #v &gt; 0 or not yesno(args.skipBlanks) then
+			if addSeparator then
+				result = result .. sep
+			end
+			addSeparator = true;
+			local targs = constantArgs
+			targs[variableParam] = variableValPrefix .. v .. variableValPostfix
+			if calltemplates then
+				local output = p.callTemplate(template, targs)
+				if #mw.text.trim(output) == 0 then
+					addSeparator = false
+				end
+				result = result .. output
+			else
+				local makeTemplate = require('Module:Template invocation').invocation
+				result = result .. makeTemplate(template, targs)
+			end
+		end
+	end
+	return result
+end
+
+function p.getConstants(args)
+	local constantArgNums = p.getArgNums(args, 'pc', 'n')
+	local constantArgs = {}
+	for _, num in ipairs(constantArgNums) do
+		local keyArg = 'pc' .. tostring(num) .. 'n'
+		local valArg = 'pc' .. tostring(num) .. 'v'
+		local key = args[keyArg]
+		key = tonumber(key) or key
+		local value = args[valArg]
+		constantArgs[key] = value
+	end
+	return constantArgs
+end
+
+function p.getVariableVals(args)
+	local variableVals = {}
+	if args.start or args.stop or args.by then
+		if args[2] then
+			error("Both start/stop/by and numbered parameters specified")
+		end
+		local start = tonumber(args.start or 1)
+		local stop = tonumber(args.stop or 1)
+		local by = tonumber(args.by or 1)
+		for i = start, stop, by do
+			variableVals [#variableVals + 1] = i
+		end
+	else
+		for i, v in ipairs(args) do
+			if i ~= 1 then
+				variableVals[i - 1] = v
+			end
+		end
+	end
+	return variableVals
+end
+
+function p.getArgNums(args, prefix, suffix)
+	-- Returns a table containing the numbers of the arguments that exist
+	-- for the specified prefix and suffix.
+	local nums = {}
+	local pattern = '^' .. prefix .. '([1-9]%d*)' .. suffix .. '$'
+	for k, _ in pairs(args) do
+		local num = tostring(k):match(pattern)
+		if num then
+			nums[#nums + 1] = tonumber(num)
+		end
+	end
+	table.sort(nums)
+	return nums
+end
+
+function p.callTemplate(template, targs)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = targs}
+end
+
+return p</text>
+      <sha1>3vczdtsoi79wslpamhz4wcf4ti3y68c</sha1>
+    </revision>
+    <revision>
+      <id>3562705</id>
+      <parentid>3369236</parentid>
+      <timestamp>2026-03-22T19:01:30Z</timestamp>
+      <contributor>
+        <username>Ahecht</username>
+        <id>54</id>
+      </contributor>
+      <comment>add templatemain function for direct invocation</comment>
+      <origin>3303291</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2963" sha1="3vczdtsoi79wslpamhz4wcf4ti3y68c" xml:space="preserve">-- This module implements {{for loop}}.
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local p = {}
+
+function p.templatemain(frame)
+	return p.main(frame:newChild{title = "Template:For_loop"})
+end
+
+function p.main(frame)
+	local args = getArgs(frame, {
+		trim = false,
+		removeBlanks = false
+	})
+	return p._main(args)
+end
+
+function p._main(args)
+	local template = args['call'] or 'void'
+	local calltemplates = yesno(args.substall or "", true) or not mw.isSubsting()
+	local variableParam = args.pv
+	variableParam = tonumber(variableParam) or variableParam or 1 -- fix for positional parameters
+	local variableValPrefix = args.prefix or ''
+	local variableValPostfix = args.postfix or ''
+	local sep = args[1] or ''
+	local constantArgs = p.getConstants(args)
+	local variableVals = p.getVariableVals(args)
+
+	local result = ''
+	local addSeparator = false;
+	for _, v in ipairs(variableVals) do
+		v = mw.text.trim(v)
+		if #v &gt; 0 or not yesno(args.skipBlanks) then
+			if addSeparator then
+				result = result .. sep
+			end
+			addSeparator = true;
+			local targs = constantArgs
+			targs[variableParam] = variableValPrefix .. v .. variableValPostfix
+			if calltemplates then
+				local output = p.callTemplate(template, targs)
+				if #mw.text.trim(output) == 0 then
+					addSeparator = false
+				end
+				result = result .. output
+			else
+				local makeTemplate = require('Module:Template invocation').invocation
+				result = result .. makeTemplate(template, targs)
+			end
+		end
+	end
+	return result
+end
+
+function p.getConstants(args)
+	local constantArgNums = p.getArgNums(args, 'pc', 'n')
+	local constantArgs = {}
+	for _, num in ipairs(constantArgNums) do
+		local keyArg = 'pc' .. tostring(num) .. 'n'
+		local valArg = 'pc' .. tostring(num) .. 'v'
+		local key = args[keyArg]
+		key = tonumber(key) or key
+		local value = args[valArg]
+		constantArgs[key] = value
+	end
+	return constantArgs
+end
+
+function p.getVariableVals(args)
+	local variableVals = {}
+	if args.start or args.stop or args.by then
+		if args[2] then
+			error("Both start/stop/by and numbered parameters specified")
+		end
+		local start = tonumber(args.start or 1)
+		local stop = tonumber(args.stop or 1)
+		local by = tonumber(args.by or 1)
+		for i = start, stop, by do
+			variableVals [#variableVals + 1] = i
+		end
+	else
+		for i, v in ipairs(args) do
+			if i ~= 1 then
+				variableVals[i - 1] = v
+			end
+		end
+	end
+	return variableVals
+end
+
+function p.getArgNums(args, prefix, suffix)
+	-- Returns a table containing the numbers of the arguments that exist
+	-- for the specified prefix and suffix.
+	local nums = {}
+	local pattern = '^' .. prefix .. '([1-9]%d*)' .. suffix .. '$'
+	for k, _ in pairs(args) do
+		local num = tostring(k):match(pattern)
+		if num then
+			nums[#nums + 1] = tonumber(num)
+		end
+	end
+	table.sort(nums)
+	return nums
+end
+
+function p.callTemplate(template, targs)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = targs}
+end
+
+return p</text>
+      <sha1>3vczdtsoi79wslpamhz4wcf4ti3y68c</sha1>
+    </revision>
+    <revision>
+      <id>3562706</id>
+      <parentid>3562705</parentid>
+      <timestamp>2026-03-22T19:01:30Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3303291</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2963" sha1="3vczdtsoi79wslpamhz4wcf4ti3y68c" xml:space="preserve">-- This module implements {{for loop}}.
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local p = {}
+
+function p.templatemain(frame)
+	return p.main(frame:newChild{title = "Template:For_loop"})
+end
+
+function p.main(frame)
+	local args = getArgs(frame, {
+		trim = false,
+		removeBlanks = false
+	})
+	return p._main(args)
+end
+
+function p._main(args)
+	local template = args['call'] or 'void'
+	local calltemplates = yesno(args.substall or "", true) or not mw.isSubsting()
+	local variableParam = args.pv
+	variableParam = tonumber(variableParam) or variableParam or 1 -- fix for positional parameters
+	local variableValPrefix = args.prefix or ''
+	local variableValPostfix = args.postfix or ''
+	local sep = args[1] or ''
+	local constantArgs = p.getConstants(args)
+	local variableVals = p.getVariableVals(args)
+
+	local result = ''
+	local addSeparator = false;
+	for _, v in ipairs(variableVals) do
+		v = mw.text.trim(v)
+		if #v &gt; 0 or not yesno(args.skipBlanks) then
+			if addSeparator then
+				result = result .. sep
+			end
+			addSeparator = true;
+			local targs = constantArgs
+			targs[variableParam] = variableValPrefix .. v .. variableValPostfix
+			if calltemplates then
+				local output = p.callTemplate(template, targs)
+				if #mw.text.trim(output) == 0 then
+					addSeparator = false
+				end
+				result = result .. output
+			else
+				local makeTemplate = require('Module:Template invocation').invocation
+				result = result .. makeTemplate(template, targs)
+			end
+		end
+	end
+	return result
+end
+
+function p.getConstants(args)
+	local constantArgNums = p.getArgNums(args, 'pc', 'n')
+	local constantArgs = {}
+	for _, num in ipairs(constantArgNums) do
+		local keyArg = 'pc' .. tostring(num) .. 'n'
+		local valArg = 'pc' .. tostring(num) .. 'v'
+		local key = args[keyArg]
+		key = tonumber(key) or key
+		local value = args[valArg]
+		constantArgs[key] = value
+	end
+	return constantArgs
+end
+
+function p.getVariableVals(args)
+	local variableVals = {}
+	if args.start or args.stop or args.by then
+		if args[2] then
+			error("Both start/stop/by and numbered parameters specified")
+		end
+		local start = tonumber(args.start or 1)
+		local stop = tonumber(args.stop or 1)
+		local by = tonumber(args.by or 1)
+		for i = start, stop, by do
+			variableVals [#variableVals + 1] = i
+		end
+	else
+		for i, v in ipairs(args) do
+			if i ~= 1 then
+				variableVals[i - 1] = v
+			end
+		end
+	end
+	return variableVals
+end
+
+function p.getArgNums(args, prefix, suffix)
+	-- Returns a table containing the numbers of the arguments that exist
+	-- for the specified prefix and suffix.
+	local nums = {}
+	local pattern = '^' .. prefix .. '([1-9]%d*)' .. suffix .. '$'
+	for k, _ in pairs(args) do
+		local num = tostring(k):match(pattern)
+		if num then
+			nums[#nums + 1] = tonumber(num)
+		end
+	end
+	table.sort(nums)
+	return nums
+end
+
+function p.callTemplate(template, targs)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = targs}
+end
+
+return p</text>
+      <sha1>3vczdtsoi79wslpamhz4wcf4ti3y68c</sha1>
+    </revision>
+    <revision>
+      <id>3608034</id>
+      <parentid>3562706</parentid>
+      <timestamp>2026-04-18T21:23:07Z</timestamp>
+      <contributor>
+        <username>Ahecht</username>
+        <id>54</id>
+      </contributor>
+      <comment>add templatemain function for direct invocation</comment>
+      <origin>3303291</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2963" sha1="3vczdtsoi79wslpamhz4wcf4ti3y68c" xml:space="preserve">-- This module implements {{for loop}}.
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local p = {}
+
+function p.templatemain(frame)
+	return p.main(frame:newChild{title = "Template:For_loop"})
+end
+
+function p.main(frame)
+	local args = getArgs(frame, {
+		trim = false,
+		removeBlanks = false
+	})
+	return p._main(args)
+end
+
+function p._main(args)
+	local template = args['call'] or 'void'
+	local calltemplates = yesno(args.substall or "", true) or not mw.isSubsting()
+	local variableParam = args.pv
+	variableParam = tonumber(variableParam) or variableParam or 1 -- fix for positional parameters
+	local variableValPrefix = args.prefix or ''
+	local variableValPostfix = args.postfix or ''
+	local sep = args[1] or ''
+	local constantArgs = p.getConstants(args)
+	local variableVals = p.getVariableVals(args)
+
+	local result = ''
+	local addSeparator = false;
+	for _, v in ipairs(variableVals) do
+		v = mw.text.trim(v)
+		if #v &gt; 0 or not yesno(args.skipBlanks) then
+			if addSeparator then
+				result = result .. sep
+			end
+			addSeparator = true;
+			local targs = constantArgs
+			targs[variableParam] = variableValPrefix .. v .. variableValPostfix
+			if calltemplates then
+				local output = p.callTemplate(template, targs)
+				if #mw.text.trim(output) == 0 then
+					addSeparator = false
+				end
+				result = result .. output
+			else
+				local makeTemplate = require('Module:Template invocation').invocation
+				result = result .. makeTemplate(template, targs)
+			end
+		end
+	end
+	return result
+end
+
+function p.getConstants(args)
+	local constantArgNums = p.getArgNums(args, 'pc', 'n')
+	local constantArgs = {}
+	for _, num in ipairs(constantArgNums) do
+		local keyArg = 'pc' .. tostring(num) .. 'n'
+		local valArg = 'pc' .. tostring(num) .. 'v'
+		local key = args[keyArg]
+		key = tonumber(key) or key
+		local value = args[valArg]
+		constantArgs[key] = value
+	end
+	return constantArgs
+end
+
+function p.getVariableVals(args)
+	local variableVals = {}
+	if args.start or args.stop or args.by then
+		if args[2] then
+			error("Both start/stop/by and numbered parameters specified")
+		end
+		local start = tonumber(args.start or 1)
+		local stop = tonumber(args.stop or 1)
+		local by = tonumber(args.by or 1)
+		for i = start, stop, by do
+			variableVals [#variableVals + 1] = i
+		end
+	else
+		for i, v in ipairs(args) do
+			if i ~= 1 then
+				variableVals[i - 1] = v
+			end
+		end
+	end
+	return variableVals
+end
+
+function p.getArgNums(args, prefix, suffix)
+	-- Returns a table containing the numbers of the arguments that exist
+	-- for the specified prefix and suffix.
+	local nums = {}
+	local pattern = '^' .. prefix .. '([1-9]%d*)' .. suffix .. '$'
+	for k, _ in pairs(args) do
+		local num = tostring(k):match(pattern)
+		if num then
+			nums[#nums + 1] = tonumber(num)
+		end
+	end
+	table.sort(nums)
+	return nums
+end
+
+function p.callTemplate(template, targs)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = targs}
+end
+
+return p</text>
+      <sha1>3vczdtsoi79wslpamhz4wcf4ti3y68c</sha1>
+    </revision>
+    <revision>
+      <id>3608035</id>
+      <parentid>3608034</parentid>
+      <timestamp>2026-04-18T21:23:07Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting to try to fix the lower alpha issue</comment>
+      <origin>3303291</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2963" sha1="3vczdtsoi79wslpamhz4wcf4ti3y68c" xml:space="preserve">-- This module implements {{for loop}}.
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local p = {}
+
+function p.templatemain(frame)
+	return p.main(frame:newChild{title = "Template:For_loop"})
+end
+
+function p.main(frame)
+	local args = getArgs(frame, {
+		trim = false,
+		removeBlanks = false
+	})
+	return p._main(args)
+end
+
+function p._main(args)
+	local template = args['call'] or 'void'
+	local calltemplates = yesno(args.substall or "", true) or not mw.isSubsting()
+	local variableParam = args.pv
+	variableParam = tonumber(variableParam) or variableParam or 1 -- fix for positional parameters
+	local variableValPrefix = args.prefix or ''
+	local variableValPostfix = args.postfix or ''
+	local sep = args[1] or ''
+	local constantArgs = p.getConstants(args)
+	local variableVals = p.getVariableVals(args)
+
+	local result = ''
+	local addSeparator = false;
+	for _, v in ipairs(variableVals) do
+		v = mw.text.trim(v)
+		if #v &gt; 0 or not yesno(args.skipBlanks) then
+			if addSeparator then
+				result = result .. sep
+			end
+			addSeparator = true;
+			local targs = constantArgs
+			targs[variableParam] = variableValPrefix .. v .. variableValPostfix
+			if calltemplates then
+				local output = p.callTemplate(template, targs)
+				if #mw.text.trim(output) == 0 then
+					addSeparator = false
+				end
+				result = result .. output
+			else
+				local makeTemplate = require('Module:Template invocation').invocation
+				result = result .. makeTemplate(template, targs)
+			end
+		end
+	end
+	return result
+end
+
+function p.getConstants(args)
+	local constantArgNums = p.getArgNums(args, 'pc', 'n')
+	local constantArgs = {}
+	for _, num in ipairs(constantArgNums) do
+		local keyArg = 'pc' .. tostring(num) .. 'n'
+		local valArg = 'pc' .. tostring(num) .. 'v'
+		local key = args[keyArg]
+		key = tonumber(key) or key
+		local value = args[valArg]
+		constantArgs[key] = value
+	end
+	return constantArgs
+end
+
+function p.getVariableVals(args)
+	local variableVals = {}
+	if args.start or args.stop or args.by then
+		if args[2] then
+			error("Both start/stop/by and numbered parameters specified")
+		end
+		local start = tonumber(args.start or 1)
+		local stop = tonumber(args.stop or 1)
+		local by = tonumber(args.by or 1)
+		for i = start, stop, by do
+			variableVals [#variableVals + 1] = i
+		end
+	else
+		for i, v in ipairs(args) do
+			if i ~= 1 then
+				variableVals[i - 1] = v
+			end
+		end
+	end
+	return variableVals
+end
+
+function p.getArgNums(args, prefix, suffix)
+	-- Returns a table containing the numbers of the arguments that exist
+	-- for the specified prefix and suffix.
+	local nums = {}
+	local pattern = '^' .. prefix .. '([1-9]%d*)' .. suffix .. '$'
+	for k, _ in pairs(args) do
+		local num = tostring(k):match(pattern)
+		if num then
+			nums[#nums + 1] = tonumber(num)
+		end
+	end
+	table.sort(nums)
+	return nums
+end
+
+function p.callTemplate(template, targs)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = targs}
+end
+
+return p</text>
+      <sha1>3vczdtsoi79wslpamhz4wcf4ti3y68c</sha1>
+    </revision>
+    <revision>
+      <id>3608274</id>
+      <parentid>3608035</parentid>
+      <timestamp>2026-04-18T21:24:06Z</timestamp>
+      <contributor>
+        <username>Ahecht</username>
+        <id>54</id>
+      </contributor>
+      <comment>add templatemain function for direct invocation</comment>
+      <origin>3303291</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2963" sha1="3vczdtsoi79wslpamhz4wcf4ti3y68c" xml:space="preserve">-- This module implements {{for loop}}.
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local p = {}
+
+function p.templatemain(frame)
+	return p.main(frame:newChild{title = "Template:For_loop"})
+end
+
+function p.main(frame)
+	local args = getArgs(frame, {
+		trim = false,
+		removeBlanks = false
+	})
+	return p._main(args)
+end
+
+function p._main(args)
+	local template = args['call'] or 'void'
+	local calltemplates = yesno(args.substall or "", true) or not mw.isSubsting()
+	local variableParam = args.pv
+	variableParam = tonumber(variableParam) or variableParam or 1 -- fix for positional parameters
+	local variableValPrefix = args.prefix or ''
+	local variableValPostfix = args.postfix or ''
+	local sep = args[1] or ''
+	local constantArgs = p.getConstants(args)
+	local variableVals = p.getVariableVals(args)
+
+	local result = ''
+	local addSeparator = false;
+	for _, v in ipairs(variableVals) do
+		v = mw.text.trim(v)
+		if #v &gt; 0 or not yesno(args.skipBlanks) then
+			if addSeparator then
+				result = result .. sep
+			end
+			addSeparator = true;
+			local targs = constantArgs
+			targs[variableParam] = variableValPrefix .. v .. variableValPostfix
+			if calltemplates then
+				local output = p.callTemplate(template, targs)
+				if #mw.text.trim(output) == 0 then
+					addSeparator = false
+				end
+				result = result .. output
+			else
+				local makeTemplate = require('Module:Template invocation').invocation
+				result = result .. makeTemplate(template, targs)
+			end
+		end
+	end
+	return result
+end
+
+function p.getConstants(args)
+	local constantArgNums = p.getArgNums(args, 'pc', 'n')
+	local constantArgs = {}
+	for _, num in ipairs(constantArgNums) do
+		local keyArg = 'pc' .. tostring(num) .. 'n'
+		local valArg = 'pc' .. tostring(num) .. 'v'
+		local key = args[keyArg]
+		key = tonumber(key) or key
+		local value = args[valArg]
+		constantArgs[key] = value
+	end
+	return constantArgs
+end
+
+function p.getVariableVals(args)
+	local variableVals = {}
+	if args.start or args.stop or args.by then
+		if args[2] then
+			error("Both start/stop/by and numbered parameters specified")
+		end
+		local start = tonumber(args.start or 1)
+		local stop = tonumber(args.stop or 1)
+		local by = tonumber(args.by or 1)
+		for i = start, stop, by do
+			variableVals [#variableVals + 1] = i
+		end
+	else
+		for i, v in ipairs(args) do
+			if i ~= 1 then
+				variableVals[i - 1] = v
+			end
+		end
+	end
+	return variableVals
+end
+
+function p.getArgNums(args, prefix, suffix)
+	-- Returns a table containing the numbers of the arguments that exist
+	-- for the specified prefix and suffix.
+	local nums = {}
+	local pattern = '^' .. prefix .. '([1-9]%d*)' .. suffix .. '$'
+	for k, _ in pairs(args) do
+		local num = tostring(k):match(pattern)
+		if num then
+			nums[#nums + 1] = tonumber(num)
+		end
+	end
+	table.sort(nums)
+	return nums
+end
+
+function p.callTemplate(template, targs)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = targs}
+end
+
+return p</text>
+      <sha1>3vczdtsoi79wslpamhz4wcf4ti3y68c</sha1>
+    </revision>
+    <revision>
+      <id>3608275</id>
+      <parentid>3608274</parentid>
+      <timestamp>2026-04-18T21:24:06Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting to try to fix the lower alpha issue</comment>
+      <origin>3303291</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2963" sha1="3vczdtsoi79wslpamhz4wcf4ti3y68c" xml:space="preserve">-- This module implements {{for loop}}.
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local p = {}
+
+function p.templatemain(frame)
+	return p.main(frame:newChild{title = "Template:For_loop"})
+end
+
+function p.main(frame)
+	local args = getArgs(frame, {
+		trim = false,
+		removeBlanks = false
+	})
+	return p._main(args)
+end
+
+function p._main(args)
+	local template = args['call'] or 'void'
+	local calltemplates = yesno(args.substall or "", true) or not mw.isSubsting()
+	local variableParam = args.pv
+	variableParam = tonumber(variableParam) or variableParam or 1 -- fix for positional parameters
+	local variableValPrefix = args.prefix or ''
+	local variableValPostfix = args.postfix or ''
+	local sep = args[1] or ''
+	local constantArgs = p.getConstants(args)
+	local variableVals = p.getVariableVals(args)
+
+	local result = ''
+	local addSeparator = false;
+	for _, v in ipairs(variableVals) do
+		v = mw.text.trim(v)
+		if #v &gt; 0 or not yesno(args.skipBlanks) then
+			if addSeparator then
+				result = result .. sep
+			end
+			addSeparator = true;
+			local targs = constantArgs
+			targs[variableParam] = variableValPrefix .. v .. variableValPostfix
+			if calltemplates then
+				local output = p.callTemplate(template, targs)
+				if #mw.text.trim(output) == 0 then
+					addSeparator = false
+				end
+				result = result .. output
+			else
+				local makeTemplate = require('Module:Template invocation').invocation
+				result = result .. makeTemplate(template, targs)
+			end
+		end
+	end
+	return result
+end
+
+function p.getConstants(args)
+	local constantArgNums = p.getArgNums(args, 'pc', 'n')
+	local constantArgs = {}
+	for _, num in ipairs(constantArgNums) do
+		local keyArg = 'pc' .. tostring(num) .. 'n'
+		local valArg = 'pc' .. tostring(num) .. 'v'
+		local key = args[keyArg]
+		key = tonumber(key) or key
+		local value = args[valArg]
+		constantArgs[key] = value
+	end
+	return constantArgs
+end
+
+function p.getVariableVals(args)
+	local variableVals = {}
+	if args.start or args.stop or args.by then
+		if args[2] then
+			error("Both start/stop/by and numbered parameters specified")
+		end
+		local start = tonumber(args.start or 1)
+		local stop = tonumber(args.stop or 1)
+		local by = tonumber(args.by or 1)
+		for i = start, stop, by do
+			variableVals [#variableVals + 1] = i
+		end
+	else
+		for i, v in ipairs(args) do
+			if i ~= 1 then
+				variableVals[i - 1] = v
+			end
+		end
+	end
+	return variableVals
+end
+
+function p.getArgNums(args, prefix, suffix)
+	-- Returns a table containing the numbers of the arguments that exist
+	-- for the specified prefix and suffix.
+	local nums = {}
+	local pattern = '^' .. prefix .. '([1-9]%d*)' .. suffix .. '$'
+	for k, _ in pairs(args) do
+		local num = tostring(k):match(pattern)
+		if num then
+			nums[#nums + 1] = tonumber(num)
+		end
+	end
+	table.sort(nums)
+	return nums
+end
+
+function p.callTemplate(template, targs)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = targs}
+end
+
+return p</text>
+      <sha1>3vczdtsoi79wslpamhz4wcf4ti3y68c</sha1>
+    </revision>
+    <revision>
+      <id>3608487</id>
+      <parentid>3608275</parentid>
+      <timestamp>2026-04-18T21:27:18Z</timestamp>
+      <contributor>
+        <username>Ahecht</username>
+        <id>54</id>
+      </contributor>
+      <comment>add templatemain function for direct invocation</comment>
+      <origin>3303291</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2963" sha1="3vczdtsoi79wslpamhz4wcf4ti3y68c" xml:space="preserve">-- This module implements {{for loop}}.
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local p = {}
+
+function p.templatemain(frame)
+	return p.main(frame:newChild{title = "Template:For_loop"})
+end
+
+function p.main(frame)
+	local args = getArgs(frame, {
+		trim = false,
+		removeBlanks = false
+	})
+	return p._main(args)
+end
+
+function p._main(args)
+	local template = args['call'] or 'void'
+	local calltemplates = yesno(args.substall or "", true) or not mw.isSubsting()
+	local variableParam = args.pv
+	variableParam = tonumber(variableParam) or variableParam or 1 -- fix for positional parameters
+	local variableValPrefix = args.prefix or ''
+	local variableValPostfix = args.postfix or ''
+	local sep = args[1] or ''
+	local constantArgs = p.getConstants(args)
+	local variableVals = p.getVariableVals(args)
+
+	local result = ''
+	local addSeparator = false;
+	for _, v in ipairs(variableVals) do
+		v = mw.text.trim(v)
+		if #v &gt; 0 or not yesno(args.skipBlanks) then
+			if addSeparator then
+				result = result .. sep
+			end
+			addSeparator = true;
+			local targs = constantArgs
+			targs[variableParam] = variableValPrefix .. v .. variableValPostfix
+			if calltemplates then
+				local output = p.callTemplate(template, targs)
+				if #mw.text.trim(output) == 0 then
+					addSeparator = false
+				end
+				result = result .. output
+			else
+				local makeTemplate = require('Module:Template invocation').invocation
+				result = result .. makeTemplate(template, targs)
+			end
+		end
+	end
+	return result
+end
+
+function p.getConstants(args)
+	local constantArgNums = p.getArgNums(args, 'pc', 'n')
+	local constantArgs = {}
+	for _, num in ipairs(constantArgNums) do
+		local keyArg = 'pc' .. tostring(num) .. 'n'
+		local valArg = 'pc' .. tostring(num) .. 'v'
+		local key = args[keyArg]
+		key = tonumber(key) or key
+		local value = args[valArg]
+		constantArgs[key] = value
+	end
+	return constantArgs
+end
+
+function p.getVariableVals(args)
+	local variableVals = {}
+	if args.start or args.stop or args.by then
+		if args[2] then
+			error("Both start/stop/by and numbered parameters specified")
+		end
+		local start = tonumber(args.start or 1)
+		local stop = tonumber(args.stop or 1)
+		local by = tonumber(args.by or 1)
+		for i = start, stop, by do
+			variableVals [#variableVals + 1] = i
+		end
+	else
+		for i, v in ipairs(args) do
+			if i ~= 1 then
+				variableVals[i - 1] = v
+			end
+		end
+	end
+	return variableVals
+end
+
+function p.getArgNums(args, prefix, suffix)
+	-- Returns a table containing the numbers of the arguments that exist
+	-- for the specified prefix and suffix.
+	local nums = {}
+	local pattern = '^' .. prefix .. '([1-9]%d*)' .. suffix .. '$'
+	for k, _ in pairs(args) do
+		local num = tostring(k):match(pattern)
+		if num then
+			nums[#nums + 1] = tonumber(num)
+		end
+	end
+	table.sort(nums)
+	return nums
+end
+
+function p.callTemplate(template, targs)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = targs}
+end
+
+return p</text>
+      <sha1>3vczdtsoi79wslpamhz4wcf4ti3y68c</sha1>
+    </revision>
+    <revision>
+      <id>3608488</id>
+      <parentid>3608487</parentid>
+      <timestamp>2026-04-18T21:27:18Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting to try to fix the lower alpha issue</comment>
+      <origin>3303291</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2963" sha1="3vczdtsoi79wslpamhz4wcf4ti3y68c" xml:space="preserve">-- This module implements {{for loop}}.
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local p = {}
+
+function p.templatemain(frame)
+	return p.main(frame:newChild{title = "Template:For_loop"})
+end
+
+function p.main(frame)
+	local args = getArgs(frame, {
+		trim = false,
+		removeBlanks = false
+	})
+	return p._main(args)
+end
+
+function p._main(args)
+	local template = args['call'] or 'void'
+	local calltemplates = yesno(args.substall or "", true) or not mw.isSubsting()
+	local variableParam = args.pv
+	variableParam = tonumber(variableParam) or variableParam or 1 -- fix for positional parameters
+	local variableValPrefix = args.prefix or ''
+	local variableValPostfix = args.postfix or ''
+	local sep = args[1] or ''
+	local constantArgs = p.getConstants(args)
+	local variableVals = p.getVariableVals(args)
+
+	local result = ''
+	local addSeparator = false;
+	for _, v in ipairs(variableVals) do
+		v = mw.text.trim(v)
+		if #v &gt; 0 or not yesno(args.skipBlanks) then
+			if addSeparator then
+				result = result .. sep
+			end
+			addSeparator = true;
+			local targs = constantArgs
+			targs[variableParam] = variableValPrefix .. v .. variableValPostfix
+			if calltemplates then
+				local output = p.callTemplate(template, targs)
+				if #mw.text.trim(output) == 0 then
+					addSeparator = false
+				end
+				result = result .. output
+			else
+				local makeTemplate = require('Module:Template invocation').invocation
+				result = result .. makeTemplate(template, targs)
+			end
+		end
+	end
+	return result
+end
+
+function p.getConstants(args)
+	local constantArgNums = p.getArgNums(args, 'pc', 'n')
+	local constantArgs = {}
+	for _, num in ipairs(constantArgNums) do
+		local keyArg = 'pc' .. tostring(num) .. 'n'
+		local valArg = 'pc' .. tostring(num) .. 'v'
+		local key = args[keyArg]
+		key = tonumber(key) or key
+		local value = args[valArg]
+		constantArgs[key] = value
+	end
+	return constantArgs
+end
+
+function p.getVariableVals(args)
+	local variableVals = {}
+	if args.start or args.stop or args.by then
+		if args[2] then
+			error("Both start/stop/by and numbered parameters specified")
+		end
+		local start = tonumber(args.start or 1)
+		local stop = tonumber(args.stop or 1)
+		local by = tonumber(args.by or 1)
+		for i = start, stop, by do
+			variableVals [#variableVals + 1] = i
+		end
+	else
+		for i, v in ipairs(args) do
+			if i ~= 1 then
+				variableVals[i - 1] = v
+			end
+		end
+	end
+	return variableVals
+end
+
+function p.getArgNums(args, prefix, suffix)
+	-- Returns a table containing the numbers of the arguments that exist
+	-- for the specified prefix and suffix.
+	local nums = {}
+	local pattern = '^' .. prefix .. '([1-9]%d*)' .. suffix .. '$'
+	for k, _ in pairs(args) do
+		local num = tostring(k):match(pattern)
+		if num then
+			nums[#nums + 1] = tonumber(num)
+		end
+	end
+	table.sort(nums)
+	return nums
+end
+
+function p.callTemplate(template, targs)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = targs}
+end
+
+return p</text>
+      <sha1>3vczdtsoi79wslpamhz4wcf4ti3y68c</sha1>
+    </revision>
+  </page>
+</mediawiki>

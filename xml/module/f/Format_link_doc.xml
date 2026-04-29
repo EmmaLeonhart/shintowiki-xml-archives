@@ -1,0 +1,213 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Format link/doc</title>
+    <ns>828</ns>
+    <id>7582</id>
+    <revision>
+      <id>884942</id>
+      <timestamp>2024-08-29T21:29:35Z</timestamp>
+      <contributor>
+        <username>en&gt;Nickps</username>
+        <id>0</id>
+      </contributor>
+      <comment>Added the page to [[:Category:Module documentation pages]]</comment>
+      <origin>884942</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="6077" sha1="a9e1hl5062zt8xt37xq5f893tdpkbtt" xml:space="preserve">&lt;!-- Add categories where indicated at the bottom of this page and interwikis at Wikidata --&gt;
+{{used in system|in [[MediaWiki:Perfcachedts]]}}
+{{Lua|Module:Arguments|Module:Error|Module:Yesno}}
+This module, migrated from origins in [[Module:Hatnote]], provides functionality for formatting links for display, including that powering the {{tl|format link}} template.
+
+It can pretty-format section links with the section symbol ("§") and appropriate whitespace, it automatically escapes category and file names with the [[Help:Colon trick|colon trick]], and includes functionality for italicizing the page or section name, and for detecting and categorizing results that produce [[Wikipedia:Red link|red links]].
+
+== Use from wikitext ==
+The functions in this module cannot be used directly from #invoke, and must be used through templates instead. Please see [[Template:Format link]] for documentation on usage of that template. 
+
+== Use from other Lua modules==
+To load this module from another Lua module, use the following code:
+
+&lt;syntaxhighlight lang="lua"&gt;
+local mFormatLink = require('Module:Format link')
+&lt;/syntaxhighlight&gt;
+
+You can then use the functions as documented below.
+
+=== _formatLink ===
+&lt;syntaxhighlight lang="lua"&gt;
+mFormatLink._formatLink{
+    link = 'Link',
+    display = 'Display',
+    target = 'Target',
+    italicizePage = true,
+    italicizeSection = true,
+    categorizeMissing = 'Pages using formatted red links'
+}
+&lt;/syntaxhighlight&gt;
+
+Formats &lt;var&gt;link&lt;/var&gt; as a wikilink. Categories and files are automatically escaped with the [[Help:Colon trick|colon trick]], and links to sections are automatically formatted as ''page § section'', rather than the MediaWiki default of ''page#section''.
+
+Several options modify the output:
+* If the &lt;var&gt;display&lt;/var&gt; value is present, then it will be used as a display value. Any manual piping (using the &lt;code&gt;&lt;nowiki&gt;{{!}}&lt;/nowiki&gt;&lt;/code&gt; magic word or similar) present in &lt;var&gt;link&lt;/var&gt; will be overridden by the &lt;var&gt;display&lt;/var&gt; value if present.
+* If the &lt;var&gt;target&lt;/var&gt; value is present, then it will override &lt;var&gt;link&lt;/var&gt; as a target, but the result will still be ''displayed'' using either the value from &lt;var&gt;display&lt;/var&gt;, or the result of formatting &lt;var&gt;link&lt;/var&gt;.
+* If &lt;var&gt;italicizePage&lt;/var&gt; is true, then the page portion of the link is italicized if present.
+* If &lt;var&gt;italicizeSection&lt;/var&gt; is true, then the section portion of the link is italicized if present.
+* If &lt;var&gt;categorizeMissing&lt;/var&gt; is a non-empty string, then that value is used as a category name, and that category will be applied if the resulting target of the link (no matter whether through &lt;var&gt;link&lt;/var&gt; or through &lt;var&gt;target&lt;/var&gt;) doesn't exist.
+
+;Examples:
+: &lt;syntaxhighlight lang="lua" inline&gt;mFormatLink._formatLink{link = 'Foo#Bar'}&lt;/syntaxhighlight&gt; &amp;rarr; &lt;nowiki&gt;[[:Foo#Bar|Foo §&amp;amp;nbsp;Bar]]&lt;/nowiki&gt; &amp;rarr; {{format link|Foo#Bar}}
+: &lt;syntaxhighlight lang="lua" inline&gt;mFormatLink._formatLink{link = 'Baz', display = 'Qux'}&lt;/syntaxhighlight&gt; &amp;rarr; &lt;nowiki&gt;[[:Baz|Qux]]&lt;/nowiki&gt; &amp;rarr; {{format link|Baz|Qux}}
+: &lt;syntaxhighlight lang="lua" inline&gt;mFormatLink._formatLink{link = 'Foo|Bar', display = 'Baz'}&lt;/syntaxhighlight&gt; &amp;rarr; &lt;nowiki&gt;[[:Foo|Baz]]&lt;/nowiki&gt; &amp;rarr; {{format link|Foo{{!}}Bar|Baz}}
+: &lt;syntaxhighlight lang="lua" inline&gt;mFormatLink._formatLink{link = '#Foo', target = 'Example#Foo'}&lt;/syntaxhighlight&gt; &amp;rarr; &lt;nowiki&gt;[[:Example#Foo|§&amp;amp;nbsp;Foo]]&lt;/nowiki&gt; &amp;rarr; {{format link|#Foo||Example#Foo}}
+: &lt;syntaxhighlight lang="lua" inline&gt;mFormatLink._formatLink{link = 'The Lord of the Rings#Plot', italicizePage = true}&lt;/syntaxhighlight&gt; &amp;rarr; &lt;nowiki&gt;[[:The Lord of the Rings#Plot|''The Lord of the Rings'' §&amp;amp;nbsp;Plot]]&lt;/nowiki&gt; &amp;rarr; {{format link|The Lord of the Rings#Plot|italicizepage=true}}
+: &lt;syntaxhighlight lang="lua" inline&gt;mFormatLink._formatLink{link = 'Cybercrime Prevention Act of 2012#Disini v. Secretary of Justice', italicizeSection = true}&lt;/syntaxhighlight&gt; &amp;rarr; &lt;nowiki&gt;[[:Cybercrime Prevention Act of 2012#Disini v. Secretary of Justice|Cybercrime Prevention Act of 2012 §&amp;amp;nbsp;''Disini v. Secretary of Justice'']]&lt;/nowiki&gt; &amp;rarr; {{format link|Cybercrime Prevention Act of 2012#Disini v. Secretary of Justice|italicizesection=true}}
+: &lt;syntaxhighlight lang="lua" inline&gt;mFormatLink._formatLink{link = 'Nonexistent page', categorizeMissing = 'Example'}&lt;/syntaxhighlight&gt; &amp;rarr; &lt;nowiki&gt;[[:Nonexistent page]][[Category:Example]]&lt;/nowiki&gt; &amp;rarr; {{format link|Nonexistent page}}
+: &lt;syntaxhighlight lang="lua" inline&gt;mFormatLink._formatLink{link = 'Existing', categorizeMissing = 'Example'}&lt;/syntaxhighlight&gt; &amp;rarr; &lt;nowiki&gt;[[:Existing]]&lt;/nowiki&gt; &amp;rarr; {{format link|Existing}}
+
+=== formatPages ===
+&lt;syntaxhighlight lang="lua"&gt;
+mFormatLink.formatPages(options, pages)
+&lt;/syntaxhighlight&gt;
+
+This derived function is useful for lists that format many links. It formats an array of pages using the [[#_formatLink|_formatLink]] function, and returns the result as an array. Options in the &lt;var&gt;options&lt;/var&gt; table are applied, and use the same names as the options for &lt;var&gt;_formatLink&lt;/var&gt;.
+
+;Example
+:{{code|&lt;nowiki&gt;mFormatLink.formatPages({categorizeMissing = 'Example'}, {'Foo#Bar', 'Nonexistent page'})&lt;/nowiki&gt;|lua}} &amp;rarr; {{code|&lt;nowiki&gt;{'[[:Foo#Bar|Foo §&amp;nbsp;Bar]]', '[[:Nonexistent page]][[Category:Example]]'}&lt;/nowiki&gt;|lua}}
+
+== Errors ==
+
+If &lt;var&gt;_formatLink&lt;/var&gt; is used and neither a &lt;var&gt;link&lt;/var&gt; nor a &lt;var&gt;target&lt;/var&gt; argument is provided, then the module will produce an error message instead of its usual output, as it ''cannot'' then produce valid output.
+
+You can solve this error by providing appropriate parameters to &lt;var&gt;_formatLink&lt;/var&gt;, or you may want to ensure that a more descriptive error is provided by a downstream template or module when it would otherwise call &lt;var&gt;_formatLink&lt;/var&gt; with inadequate arguments.
+
+&lt;includeonly&gt;{{Sandbox other||
+&lt;!-- Categories below this line; interwikis at Wikidata --&gt;
+[[Category:Link modules]]
+}}&lt;/includeonly&gt;&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>a9e1hl5062zt8xt37xq5f893tdpkbtt</sha1>
+    </revision>
+    <revision>
+      <id>7583</id>
+      <timestamp>2025-01-07T10:27:44Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: importing modules</comment>
+      <origin>7583</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="6077" sha1="a9e1hl5062zt8xt37xq5f893tdpkbtt" xml:space="preserve">&lt;!-- Add categories where indicated at the bottom of this page and interwikis at Wikidata --&gt;
+{{used in system|in [[MediaWiki:Perfcachedts]]}}
+{{Lua|Module:Arguments|Module:Error|Module:Yesno}}
+This module, migrated from origins in [[Module:Hatnote]], provides functionality for formatting links for display, including that powering the {{tl|format link}} template.
+
+It can pretty-format section links with the section symbol ("§") and appropriate whitespace, it automatically escapes category and file names with the [[Help:Colon trick|colon trick]], and includes functionality for italicizing the page or section name, and for detecting and categorizing results that produce [[Wikipedia:Red link|red links]].
+
+== Use from wikitext ==
+The functions in this module cannot be used directly from #invoke, and must be used through templates instead. Please see [[Template:Format link]] for documentation on usage of that template. 
+
+== Use from other Lua modules==
+To load this module from another Lua module, use the following code:
+
+&lt;syntaxhighlight lang="lua"&gt;
+local mFormatLink = require('Module:Format link')
+&lt;/syntaxhighlight&gt;
+
+You can then use the functions as documented below.
+
+=== _formatLink ===
+&lt;syntaxhighlight lang="lua"&gt;
+mFormatLink._formatLink{
+    link = 'Link',
+    display = 'Display',
+    target = 'Target',
+    italicizePage = true,
+    italicizeSection = true,
+    categorizeMissing = 'Pages using formatted red links'
+}
+&lt;/syntaxhighlight&gt;
+
+Formats &lt;var&gt;link&lt;/var&gt; as a wikilink. Categories and files are automatically escaped with the [[Help:Colon trick|colon trick]], and links to sections are automatically formatted as ''page § section'', rather than the MediaWiki default of ''page#section''.
+
+Several options modify the output:
+* If the &lt;var&gt;display&lt;/var&gt; value is present, then it will be used as a display value. Any manual piping (using the &lt;code&gt;&lt;nowiki&gt;{{!}}&lt;/nowiki&gt;&lt;/code&gt; magic word or similar) present in &lt;var&gt;link&lt;/var&gt; will be overridden by the &lt;var&gt;display&lt;/var&gt; value if present.
+* If the &lt;var&gt;target&lt;/var&gt; value is present, then it will override &lt;var&gt;link&lt;/var&gt; as a target, but the result will still be ''displayed'' using either the value from &lt;var&gt;display&lt;/var&gt;, or the result of formatting &lt;var&gt;link&lt;/var&gt;.
+* If &lt;var&gt;italicizePage&lt;/var&gt; is true, then the page portion of the link is italicized if present.
+* If &lt;var&gt;italicizeSection&lt;/var&gt; is true, then the section portion of the link is italicized if present.
+* If &lt;var&gt;categorizeMissing&lt;/var&gt; is a non-empty string, then that value is used as a category name, and that category will be applied if the resulting target of the link (no matter whether through &lt;var&gt;link&lt;/var&gt; or through &lt;var&gt;target&lt;/var&gt;) doesn't exist.
+
+;Examples:
+: &lt;syntaxhighlight lang="lua" inline&gt;mFormatLink._formatLink{link = 'Foo#Bar'}&lt;/syntaxhighlight&gt; &amp;rarr; &lt;nowiki&gt;[[:Foo#Bar|Foo §&amp;amp;nbsp;Bar]]&lt;/nowiki&gt; &amp;rarr; {{format link|Foo#Bar}}
+: &lt;syntaxhighlight lang="lua" inline&gt;mFormatLink._formatLink{link = 'Baz', display = 'Qux'}&lt;/syntaxhighlight&gt; &amp;rarr; &lt;nowiki&gt;[[:Baz|Qux]]&lt;/nowiki&gt; &amp;rarr; {{format link|Baz|Qux}}
+: &lt;syntaxhighlight lang="lua" inline&gt;mFormatLink._formatLink{link = 'Foo|Bar', display = 'Baz'}&lt;/syntaxhighlight&gt; &amp;rarr; &lt;nowiki&gt;[[:Foo|Baz]]&lt;/nowiki&gt; &amp;rarr; {{format link|Foo{{!}}Bar|Baz}}
+: &lt;syntaxhighlight lang="lua" inline&gt;mFormatLink._formatLink{link = '#Foo', target = 'Example#Foo'}&lt;/syntaxhighlight&gt; &amp;rarr; &lt;nowiki&gt;[[:Example#Foo|§&amp;amp;nbsp;Foo]]&lt;/nowiki&gt; &amp;rarr; {{format link|#Foo||Example#Foo}}
+: &lt;syntaxhighlight lang="lua" inline&gt;mFormatLink._formatLink{link = 'The Lord of the Rings#Plot', italicizePage = true}&lt;/syntaxhighlight&gt; &amp;rarr; &lt;nowiki&gt;[[:The Lord of the Rings#Plot|''The Lord of the Rings'' §&amp;amp;nbsp;Plot]]&lt;/nowiki&gt; &amp;rarr; {{format link|The Lord of the Rings#Plot|italicizepage=true}}
+: &lt;syntaxhighlight lang="lua" inline&gt;mFormatLink._formatLink{link = 'Cybercrime Prevention Act of 2012#Disini v. Secretary of Justice', italicizeSection = true}&lt;/syntaxhighlight&gt; &amp;rarr; &lt;nowiki&gt;[[:Cybercrime Prevention Act of 2012#Disini v. Secretary of Justice|Cybercrime Prevention Act of 2012 §&amp;amp;nbsp;''Disini v. Secretary of Justice'']]&lt;/nowiki&gt; &amp;rarr; {{format link|Cybercrime Prevention Act of 2012#Disini v. Secretary of Justice|italicizesection=true}}
+: &lt;syntaxhighlight lang="lua" inline&gt;mFormatLink._formatLink{link = 'Nonexistent page', categorizeMissing = 'Example'}&lt;/syntaxhighlight&gt; &amp;rarr; &lt;nowiki&gt;[[:Nonexistent page]][[Category:Example]]&lt;/nowiki&gt; &amp;rarr; {{format link|Nonexistent page}}
+: &lt;syntaxhighlight lang="lua" inline&gt;mFormatLink._formatLink{link = 'Existing', categorizeMissing = 'Example'}&lt;/syntaxhighlight&gt; &amp;rarr; &lt;nowiki&gt;[[:Existing]]&lt;/nowiki&gt; &amp;rarr; {{format link|Existing}}
+
+=== formatPages ===
+&lt;syntaxhighlight lang="lua"&gt;
+mFormatLink.formatPages(options, pages)
+&lt;/syntaxhighlight&gt;
+
+This derived function is useful for lists that format many links. It formats an array of pages using the [[#_formatLink|_formatLink]] function, and returns the result as an array. Options in the &lt;var&gt;options&lt;/var&gt; table are applied, and use the same names as the options for &lt;var&gt;_formatLink&lt;/var&gt;.
+
+;Example
+:{{code|&lt;nowiki&gt;mFormatLink.formatPages({categorizeMissing = 'Example'}, {'Foo#Bar', 'Nonexistent page'})&lt;/nowiki&gt;|lua}} &amp;rarr; {{code|&lt;nowiki&gt;{'[[:Foo#Bar|Foo §&amp;nbsp;Bar]]', '[[:Nonexistent page]][[Category:Example]]'}&lt;/nowiki&gt;|lua}}
+
+== Errors ==
+
+If &lt;var&gt;_formatLink&lt;/var&gt; is used and neither a &lt;var&gt;link&lt;/var&gt; nor a &lt;var&gt;target&lt;/var&gt; argument is provided, then the module will produce an error message instead of its usual output, as it ''cannot'' then produce valid output.
+
+You can solve this error by providing appropriate parameters to &lt;var&gt;_formatLink&lt;/var&gt;, or you may want to ensure that a more descriptive error is provided by a downstream template or module when it would otherwise call &lt;var&gt;_formatLink&lt;/var&gt; with inadequate arguments.
+
+&lt;includeonly&gt;{{Sandbox other||
+&lt;!-- Categories below this line; interwikis at Wikidata --&gt;
+[[Category:Link modules]]
+}}&lt;/includeonly&gt;&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>a9e1hl5062zt8xt37xq5f893tdpkbtt</sha1>
+    </revision>
+  </page>
+</mediawiki>

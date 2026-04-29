@@ -1,0 +1,2922 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Item</title>
+    <ns>828</ns>
+    <id>322</id>
+    <revision>
+      <id>475750</id>
+      <timestamp>2019-01-24T21:24:24Z</timestamp>
+      <contributor>
+        <username>MusikAnimal</username>
+        <id>53</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:Item]]": [[Wikipedia:High-risk templates|High-risk module]] ([Edit=Require autoconfirmed or confirmed access] (indefinite))</comment>
+      <origin>475750</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3044" sha1="8a56kjxfu3plv66z6z732hkase6suqc" xml:space="preserve">local p = {}
+
+local function escape(str)
+	return str:gsub("[|\\]", function (c) return string.format("\\%03d", c:byte()) end)
+end
+
+local function unescape(str)
+	return str:gsub("\\(%d%d%d)", function (d) return string.char(d) end)
+end
+
+-- Implements [[Template:Item]]
+function p.pack(frame)
+	local parent = frame:getParent()
+	local result = ''
+	for key, value in pairs(parent.args) do
+		result = result .. "|" .. escape(tostring(key)) .. "|" .. escape(value)
+	end
+	return result .. "|";
+end
+
+local function unpack(str)
+	local result = { }
+	for key, value in str:gfind("|([^|]*)|([^|]*)") do
+		result[unescape(key)] = unescape(value)
+	end
+	return result
+end
+
+-- Implements [[Template:Component]]
+function p.component(frame)
+	return unpack(frame.args[1])[frame.args[2]]
+end
+
+local function getItems(frame)
+	return frame:getParent().args
+end
+
+local function invert(tbl)
+	local result = { }
+	for key, value in pairs(tbl) do
+		result[value] = key
+	end
+	return result
+end
+
+-- Add args into item as appropriate (see [[Template:Format item]])
+local function addArgs(
+	item,   -- unpacked item to modify
+	args,   -- arguments for adding into item
+	ignore, -- pass in invert{keys to ignore}
+	shift   -- for numbered arguments, args[key+shift] is assigned to item[key]
+	-- returns: item
+)
+	for key, value in pairs(args) do
+		if not ignore[key] then
+			local _, _, paramKey = string.find(key, "^param (.*)")
+			local _, _, importantKey = string.find(key, "^important (.*)")
+			paramKey = paramKey or importantKey or key
+			if shift and type(paramKey) == "number" then
+				paramKey = paramKey - shift
+				if paramKey &lt; 1 then paramKey = nil end
+			end
+			if paramKey and (importantKey or item[paramKey] == nil) then
+				item[paramKey] = value
+			end
+		end
+	end
+	
+	return item
+end
+
+-- Implements [[Template:Format item]]
+function p.format(frame)
+	local args = frame:getParent().args
+	local ignore = invert{ "template", "item" }
+	local templateArgs = addArgs(unpack(args.item), args, ignore)
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+-- See [[Template:Item#Format each item using a template]]
+function p.each(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local separator = args[1] or ""
+	local prepend = args[2] or ""
+	local append = args[3] or ""
+	local ignore = invert{ "template" }
+	local shift = 3
+
+	local result = ""
+	for i, item in ipairs(items) do
+		local templateArgs = addArgs(unpack(item), args, ignore, shift)
+		result = result .. prepend .. frame:expandTemplate{ title = args.template, args = templateArgs } .. append
+		if items[i + 1] then
+			result = result .. separator
+		end
+	end
+	return result
+end
+
+-- See [[Template:Item#Gather given parameter from all items]]
+function p.gather(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local parameter = args.parameter or "1"
+	
+	local templateArgs = { }
+	for i, item in ipairs(items) do
+		templateArgs[i] = unpack(item)[parameter]
+	end
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+return p</text>
+      <sha1>8a56kjxfu3plv66z6z732hkase6suqc</sha1>
+    </revision>
+    <revision>
+      <id>475751</id>
+      <parentid>475750</parentid>
+      <timestamp>2024-06-25T13:14:41Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:Item]]: importing template</comment>
+      <origin>475750</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3044" sha1="8a56kjxfu3plv66z6z732hkase6suqc" xml:space="preserve">local p = {}
+
+local function escape(str)
+	return str:gsub("[|\\]", function (c) return string.format("\\%03d", c:byte()) end)
+end
+
+local function unescape(str)
+	return str:gsub("\\(%d%d%d)", function (d) return string.char(d) end)
+end
+
+-- Implements [[Template:Item]]
+function p.pack(frame)
+	local parent = frame:getParent()
+	local result = ''
+	for key, value in pairs(parent.args) do
+		result = result .. "|" .. escape(tostring(key)) .. "|" .. escape(value)
+	end
+	return result .. "|";
+end
+
+local function unpack(str)
+	local result = { }
+	for key, value in str:gfind("|([^|]*)|([^|]*)") do
+		result[unescape(key)] = unescape(value)
+	end
+	return result
+end
+
+-- Implements [[Template:Component]]
+function p.component(frame)
+	return unpack(frame.args[1])[frame.args[2]]
+end
+
+local function getItems(frame)
+	return frame:getParent().args
+end
+
+local function invert(tbl)
+	local result = { }
+	for key, value in pairs(tbl) do
+		result[value] = key
+	end
+	return result
+end
+
+-- Add args into item as appropriate (see [[Template:Format item]])
+local function addArgs(
+	item,   -- unpacked item to modify
+	args,   -- arguments for adding into item
+	ignore, -- pass in invert{keys to ignore}
+	shift   -- for numbered arguments, args[key+shift] is assigned to item[key]
+	-- returns: item
+)
+	for key, value in pairs(args) do
+		if not ignore[key] then
+			local _, _, paramKey = string.find(key, "^param (.*)")
+			local _, _, importantKey = string.find(key, "^important (.*)")
+			paramKey = paramKey or importantKey or key
+			if shift and type(paramKey) == "number" then
+				paramKey = paramKey - shift
+				if paramKey &lt; 1 then paramKey = nil end
+			end
+			if paramKey and (importantKey or item[paramKey] == nil) then
+				item[paramKey] = value
+			end
+		end
+	end
+	
+	return item
+end
+
+-- Implements [[Template:Format item]]
+function p.format(frame)
+	local args = frame:getParent().args
+	local ignore = invert{ "template", "item" }
+	local templateArgs = addArgs(unpack(args.item), args, ignore)
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+-- See [[Template:Item#Format each item using a template]]
+function p.each(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local separator = args[1] or ""
+	local prepend = args[2] or ""
+	local append = args[3] or ""
+	local ignore = invert{ "template" }
+	local shift = 3
+
+	local result = ""
+	for i, item in ipairs(items) do
+		local templateArgs = addArgs(unpack(item), args, ignore, shift)
+		result = result .. prepend .. frame:expandTemplate{ title = args.template, args = templateArgs } .. append
+		if items[i + 1] then
+			result = result .. separator
+		end
+	end
+	return result
+end
+
+-- See [[Template:Item#Gather given parameter from all items]]
+function p.gather(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local parameter = args.parameter or "1"
+	
+	local templateArgs = { }
+	for i, item in ipairs(items) do
+		templateArgs[i] = unpack(item)[parameter]
+	end
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+return p</text>
+      <sha1>8a56kjxfu3plv66z6z732hkase6suqc</sha1>
+    </revision>
+    <revision>
+      <id>475752</id>
+      <parentid>475751</parentid>
+      <timestamp>2025-03-06T08:37:27Z</timestamp>
+      <contributor>
+        <username>MusikAnimal</username>
+        <id>53</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:Item]]": [[Wikipedia:High-risk templates|High-risk module]] ([Edit=Require autoconfirmed or confirmed access] (indefinite))</comment>
+      <origin>475750</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3044" sha1="8a56kjxfu3plv66z6z732hkase6suqc" xml:space="preserve">local p = {}
+
+local function escape(str)
+	return str:gsub("[|\\]", function (c) return string.format("\\%03d", c:byte()) end)
+end
+
+local function unescape(str)
+	return str:gsub("\\(%d%d%d)", function (d) return string.char(d) end)
+end
+
+-- Implements [[Template:Item]]
+function p.pack(frame)
+	local parent = frame:getParent()
+	local result = ''
+	for key, value in pairs(parent.args) do
+		result = result .. "|" .. escape(tostring(key)) .. "|" .. escape(value)
+	end
+	return result .. "|";
+end
+
+local function unpack(str)
+	local result = { }
+	for key, value in str:gfind("|([^|]*)|([^|]*)") do
+		result[unescape(key)] = unescape(value)
+	end
+	return result
+end
+
+-- Implements [[Template:Component]]
+function p.component(frame)
+	return unpack(frame.args[1])[frame.args[2]]
+end
+
+local function getItems(frame)
+	return frame:getParent().args
+end
+
+local function invert(tbl)
+	local result = { }
+	for key, value in pairs(tbl) do
+		result[value] = key
+	end
+	return result
+end
+
+-- Add args into item as appropriate (see [[Template:Format item]])
+local function addArgs(
+	item,   -- unpacked item to modify
+	args,   -- arguments for adding into item
+	ignore, -- pass in invert{keys to ignore}
+	shift   -- for numbered arguments, args[key+shift] is assigned to item[key]
+	-- returns: item
+)
+	for key, value in pairs(args) do
+		if not ignore[key] then
+			local _, _, paramKey = string.find(key, "^param (.*)")
+			local _, _, importantKey = string.find(key, "^important (.*)")
+			paramKey = paramKey or importantKey or key
+			if shift and type(paramKey) == "number" then
+				paramKey = paramKey - shift
+				if paramKey &lt; 1 then paramKey = nil end
+			end
+			if paramKey and (importantKey or item[paramKey] == nil) then
+				item[paramKey] = value
+			end
+		end
+	end
+	
+	return item
+end
+
+-- Implements [[Template:Format item]]
+function p.format(frame)
+	local args = frame:getParent().args
+	local ignore = invert{ "template", "item" }
+	local templateArgs = addArgs(unpack(args.item), args, ignore)
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+-- See [[Template:Item#Format each item using a template]]
+function p.each(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local separator = args[1] or ""
+	local prepend = args[2] or ""
+	local append = args[3] or ""
+	local ignore = invert{ "template" }
+	local shift = 3
+
+	local result = ""
+	for i, item in ipairs(items) do
+		local templateArgs = addArgs(unpack(item), args, ignore, shift)
+		result = result .. prepend .. frame:expandTemplate{ title = args.template, args = templateArgs } .. append
+		if items[i + 1] then
+			result = result .. separator
+		end
+	end
+	return result
+end
+
+-- See [[Template:Item#Gather given parameter from all items]]
+function p.gather(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local parameter = args.parameter or "1"
+	
+	local templateArgs = { }
+	for i, item in ipairs(items) do
+		templateArgs[i] = unpack(item)[parameter]
+	end
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+return p</text>
+      <sha1>8a56kjxfu3plv66z6z732hkase6suqc</sha1>
+    </revision>
+    <revision>
+      <id>475753</id>
+      <parentid>475752</parentid>
+      <timestamp>2025-03-06T08:37:28Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: importing the refn stuff to try to fix the Okinawa article</comment>
+      <origin>475750</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3044" sha1="8a56kjxfu3plv66z6z732hkase6suqc" xml:space="preserve">local p = {}
+
+local function escape(str)
+	return str:gsub("[|\\]", function (c) return string.format("\\%03d", c:byte()) end)
+end
+
+local function unescape(str)
+	return str:gsub("\\(%d%d%d)", function (d) return string.char(d) end)
+end
+
+-- Implements [[Template:Item]]
+function p.pack(frame)
+	local parent = frame:getParent()
+	local result = ''
+	for key, value in pairs(parent.args) do
+		result = result .. "|" .. escape(tostring(key)) .. "|" .. escape(value)
+	end
+	return result .. "|";
+end
+
+local function unpack(str)
+	local result = { }
+	for key, value in str:gfind("|([^|]*)|([^|]*)") do
+		result[unescape(key)] = unescape(value)
+	end
+	return result
+end
+
+-- Implements [[Template:Component]]
+function p.component(frame)
+	return unpack(frame.args[1])[frame.args[2]]
+end
+
+local function getItems(frame)
+	return frame:getParent().args
+end
+
+local function invert(tbl)
+	local result = { }
+	for key, value in pairs(tbl) do
+		result[value] = key
+	end
+	return result
+end
+
+-- Add args into item as appropriate (see [[Template:Format item]])
+local function addArgs(
+	item,   -- unpacked item to modify
+	args,   -- arguments for adding into item
+	ignore, -- pass in invert{keys to ignore}
+	shift   -- for numbered arguments, args[key+shift] is assigned to item[key]
+	-- returns: item
+)
+	for key, value in pairs(args) do
+		if not ignore[key] then
+			local _, _, paramKey = string.find(key, "^param (.*)")
+			local _, _, importantKey = string.find(key, "^important (.*)")
+			paramKey = paramKey or importantKey or key
+			if shift and type(paramKey) == "number" then
+				paramKey = paramKey - shift
+				if paramKey &lt; 1 then paramKey = nil end
+			end
+			if paramKey and (importantKey or item[paramKey] == nil) then
+				item[paramKey] = value
+			end
+		end
+	end
+	
+	return item
+end
+
+-- Implements [[Template:Format item]]
+function p.format(frame)
+	local args = frame:getParent().args
+	local ignore = invert{ "template", "item" }
+	local templateArgs = addArgs(unpack(args.item), args, ignore)
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+-- See [[Template:Item#Format each item using a template]]
+function p.each(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local separator = args[1] or ""
+	local prepend = args[2] or ""
+	local append = args[3] or ""
+	local ignore = invert{ "template" }
+	local shift = 3
+
+	local result = ""
+	for i, item in ipairs(items) do
+		local templateArgs = addArgs(unpack(item), args, ignore, shift)
+		result = result .. prepend .. frame:expandTemplate{ title = args.template, args = templateArgs } .. append
+		if items[i + 1] then
+			result = result .. separator
+		end
+	end
+	return result
+end
+
+-- See [[Template:Item#Gather given parameter from all items]]
+function p.gather(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local parameter = args.parameter or "1"
+	
+	local templateArgs = { }
+	for i, item in ipairs(items) do
+		templateArgs[i] = unpack(item)[parameter]
+	end
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+return p</text>
+      <sha1>8a56kjxfu3plv66z6z732hkase6suqc</sha1>
+    </revision>
+    <revision>
+      <id>475754</id>
+      <parentid>475753</parentid>
+      <timestamp>2025-03-06T08:38:36Z</timestamp>
+      <contributor>
+        <username>MusikAnimal</username>
+        <id>53</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:Item]]": [[Wikipedia:High-risk templates|High-risk module]] ([Edit=Require autoconfirmed or confirmed access] (indefinite))</comment>
+      <origin>475750</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3044" sha1="8a56kjxfu3plv66z6z732hkase6suqc" xml:space="preserve">local p = {}
+
+local function escape(str)
+	return str:gsub("[|\\]", function (c) return string.format("\\%03d", c:byte()) end)
+end
+
+local function unescape(str)
+	return str:gsub("\\(%d%d%d)", function (d) return string.char(d) end)
+end
+
+-- Implements [[Template:Item]]
+function p.pack(frame)
+	local parent = frame:getParent()
+	local result = ''
+	for key, value in pairs(parent.args) do
+		result = result .. "|" .. escape(tostring(key)) .. "|" .. escape(value)
+	end
+	return result .. "|";
+end
+
+local function unpack(str)
+	local result = { }
+	for key, value in str:gfind("|([^|]*)|([^|]*)") do
+		result[unescape(key)] = unescape(value)
+	end
+	return result
+end
+
+-- Implements [[Template:Component]]
+function p.component(frame)
+	return unpack(frame.args[1])[frame.args[2]]
+end
+
+local function getItems(frame)
+	return frame:getParent().args
+end
+
+local function invert(tbl)
+	local result = { }
+	for key, value in pairs(tbl) do
+		result[value] = key
+	end
+	return result
+end
+
+-- Add args into item as appropriate (see [[Template:Format item]])
+local function addArgs(
+	item,   -- unpacked item to modify
+	args,   -- arguments for adding into item
+	ignore, -- pass in invert{keys to ignore}
+	shift   -- for numbered arguments, args[key+shift] is assigned to item[key]
+	-- returns: item
+)
+	for key, value in pairs(args) do
+		if not ignore[key] then
+			local _, _, paramKey = string.find(key, "^param (.*)")
+			local _, _, importantKey = string.find(key, "^important (.*)")
+			paramKey = paramKey or importantKey or key
+			if shift and type(paramKey) == "number" then
+				paramKey = paramKey - shift
+				if paramKey &lt; 1 then paramKey = nil end
+			end
+			if paramKey and (importantKey or item[paramKey] == nil) then
+				item[paramKey] = value
+			end
+		end
+	end
+	
+	return item
+end
+
+-- Implements [[Template:Format item]]
+function p.format(frame)
+	local args = frame:getParent().args
+	local ignore = invert{ "template", "item" }
+	local templateArgs = addArgs(unpack(args.item), args, ignore)
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+-- See [[Template:Item#Format each item using a template]]
+function p.each(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local separator = args[1] or ""
+	local prepend = args[2] or ""
+	local append = args[3] or ""
+	local ignore = invert{ "template" }
+	local shift = 3
+
+	local result = ""
+	for i, item in ipairs(items) do
+		local templateArgs = addArgs(unpack(item), args, ignore, shift)
+		result = result .. prepend .. frame:expandTemplate{ title = args.template, args = templateArgs } .. append
+		if items[i + 1] then
+			result = result .. separator
+		end
+	end
+	return result
+end
+
+-- See [[Template:Item#Gather given parameter from all items]]
+function p.gather(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local parameter = args.parameter or "1"
+	
+	local templateArgs = { }
+	for i, item in ipairs(items) do
+		templateArgs[i] = unpack(item)[parameter]
+	end
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+return p</text>
+      <sha1>8a56kjxfu3plv66z6z732hkase6suqc</sha1>
+    </revision>
+    <revision>
+      <id>323</id>
+      <timestamp>2025-03-06T08:38:37Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: importing the refn stuff to try to fix the Okinawa article</comment>
+      <origin>323</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3044" sha1="8a56kjxfu3plv66z6z732hkase6suqc" xml:space="preserve">local p = {}
+
+local function escape(str)
+	return str:gsub("[|\\]", function (c) return string.format("\\%03d", c:byte()) end)
+end
+
+local function unescape(str)
+	return str:gsub("\\(%d%d%d)", function (d) return string.char(d) end)
+end
+
+-- Implements [[Template:Item]]
+function p.pack(frame)
+	local parent = frame:getParent()
+	local result = ''
+	for key, value in pairs(parent.args) do
+		result = result .. "|" .. escape(tostring(key)) .. "|" .. escape(value)
+	end
+	return result .. "|";
+end
+
+local function unpack(str)
+	local result = { }
+	for key, value in str:gfind("|([^|]*)|([^|]*)") do
+		result[unescape(key)] = unescape(value)
+	end
+	return result
+end
+
+-- Implements [[Template:Component]]
+function p.component(frame)
+	return unpack(frame.args[1])[frame.args[2]]
+end
+
+local function getItems(frame)
+	return frame:getParent().args
+end
+
+local function invert(tbl)
+	local result = { }
+	for key, value in pairs(tbl) do
+		result[value] = key
+	end
+	return result
+end
+
+-- Add args into item as appropriate (see [[Template:Format item]])
+local function addArgs(
+	item,   -- unpacked item to modify
+	args,   -- arguments for adding into item
+	ignore, -- pass in invert{keys to ignore}
+	shift   -- for numbered arguments, args[key+shift] is assigned to item[key]
+	-- returns: item
+)
+	for key, value in pairs(args) do
+		if not ignore[key] then
+			local _, _, paramKey = string.find(key, "^param (.*)")
+			local _, _, importantKey = string.find(key, "^important (.*)")
+			paramKey = paramKey or importantKey or key
+			if shift and type(paramKey) == "number" then
+				paramKey = paramKey - shift
+				if paramKey &lt; 1 then paramKey = nil end
+			end
+			if paramKey and (importantKey or item[paramKey] == nil) then
+				item[paramKey] = value
+			end
+		end
+	end
+	
+	return item
+end
+
+-- Implements [[Template:Format item]]
+function p.format(frame)
+	local args = frame:getParent().args
+	local ignore = invert{ "template", "item" }
+	local templateArgs = addArgs(unpack(args.item), args, ignore)
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+-- See [[Template:Item#Format each item using a template]]
+function p.each(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local separator = args[1] or ""
+	local prepend = args[2] or ""
+	local append = args[3] or ""
+	local ignore = invert{ "template" }
+	local shift = 3
+
+	local result = ""
+	for i, item in ipairs(items) do
+		local templateArgs = addArgs(unpack(item), args, ignore, shift)
+		result = result .. prepend .. frame:expandTemplate{ title = args.template, args = templateArgs } .. append
+		if items[i + 1] then
+			result = result .. separator
+		end
+	end
+	return result
+end
+
+-- See [[Template:Item#Gather given parameter from all items]]
+function p.gather(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local parameter = args.parameter or "1"
+	
+	local templateArgs = { }
+	for i, item in ipairs(items) do
+		templateArgs[i] = unpack(item)[parameter]
+	end
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+return p</text>
+      <sha1>8a56kjxfu3plv66z6z732hkase6suqc</sha1>
+    </revision>
+    <revision>
+      <id>3303378</id>
+      <parentid>323</parentid>
+      <timestamp>2026-02-26T20:09:57Z</timestamp>
+      <contributor>
+        <username>MusikAnimal</username>
+        <id>53</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:Item]]": [[Wikipedia:High-risk templates|High-risk module]] ([Edit=Require autoconfirmed or confirmed access] (indefinite))</comment>
+      <origin>323</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3044" sha1="8a56kjxfu3plv66z6z732hkase6suqc" xml:space="preserve">local p = {}
+
+local function escape(str)
+	return str:gsub("[|\\]", function (c) return string.format("\\%03d", c:byte()) end)
+end
+
+local function unescape(str)
+	return str:gsub("\\(%d%d%d)", function (d) return string.char(d) end)
+end
+
+-- Implements [[Template:Item]]
+function p.pack(frame)
+	local parent = frame:getParent()
+	local result = ''
+	for key, value in pairs(parent.args) do
+		result = result .. "|" .. escape(tostring(key)) .. "|" .. escape(value)
+	end
+	return result .. "|";
+end
+
+local function unpack(str)
+	local result = { }
+	for key, value in str:gfind("|([^|]*)|([^|]*)") do
+		result[unescape(key)] = unescape(value)
+	end
+	return result
+end
+
+-- Implements [[Template:Component]]
+function p.component(frame)
+	return unpack(frame.args[1])[frame.args[2]]
+end
+
+local function getItems(frame)
+	return frame:getParent().args
+end
+
+local function invert(tbl)
+	local result = { }
+	for key, value in pairs(tbl) do
+		result[value] = key
+	end
+	return result
+end
+
+-- Add args into item as appropriate (see [[Template:Format item]])
+local function addArgs(
+	item,   -- unpacked item to modify
+	args,   -- arguments for adding into item
+	ignore, -- pass in invert{keys to ignore}
+	shift   -- for numbered arguments, args[key+shift] is assigned to item[key]
+	-- returns: item
+)
+	for key, value in pairs(args) do
+		if not ignore[key] then
+			local _, _, paramKey = string.find(key, "^param (.*)")
+			local _, _, importantKey = string.find(key, "^important (.*)")
+			paramKey = paramKey or importantKey or key
+			if shift and type(paramKey) == "number" then
+				paramKey = paramKey - shift
+				if paramKey &lt; 1 then paramKey = nil end
+			end
+			if paramKey and (importantKey or item[paramKey] == nil) then
+				item[paramKey] = value
+			end
+		end
+	end
+	
+	return item
+end
+
+-- Implements [[Template:Format item]]
+function p.format(frame)
+	local args = frame:getParent().args
+	local ignore = invert{ "template", "item" }
+	local templateArgs = addArgs(unpack(args.item), args, ignore)
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+-- See [[Template:Item#Format each item using a template]]
+function p.each(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local separator = args[1] or ""
+	local prepend = args[2] or ""
+	local append = args[3] or ""
+	local ignore = invert{ "template" }
+	local shift = 3
+
+	local result = ""
+	for i, item in ipairs(items) do
+		local templateArgs = addArgs(unpack(item), args, ignore, shift)
+		result = result .. prepend .. frame:expandTemplate{ title = args.template, args = templateArgs } .. append
+		if items[i + 1] then
+			result = result .. separator
+		end
+	end
+	return result
+end
+
+-- See [[Template:Item#Gather given parameter from all items]]
+function p.gather(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local parameter = args.parameter or "1"
+	
+	local templateArgs = { }
+	for i, item in ipairs(items) do
+		templateArgs[i] = unpack(item)[parameter]
+	end
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+return p</text>
+      <sha1>8a56kjxfu3plv66z6z732hkase6suqc</sha1>
+    </revision>
+    <revision>
+      <id>3303379</id>
+      <parentid>3303378</parentid>
+      <timestamp>2026-02-26T20:09:57Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: reimporting these to fix older errors</comment>
+      <origin>323</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3044" sha1="8a56kjxfu3plv66z6z732hkase6suqc" xml:space="preserve">local p = {}
+
+local function escape(str)
+	return str:gsub("[|\\]", function (c) return string.format("\\%03d", c:byte()) end)
+end
+
+local function unescape(str)
+	return str:gsub("\\(%d%d%d)", function (d) return string.char(d) end)
+end
+
+-- Implements [[Template:Item]]
+function p.pack(frame)
+	local parent = frame:getParent()
+	local result = ''
+	for key, value in pairs(parent.args) do
+		result = result .. "|" .. escape(tostring(key)) .. "|" .. escape(value)
+	end
+	return result .. "|";
+end
+
+local function unpack(str)
+	local result = { }
+	for key, value in str:gfind("|([^|]*)|([^|]*)") do
+		result[unescape(key)] = unescape(value)
+	end
+	return result
+end
+
+-- Implements [[Template:Component]]
+function p.component(frame)
+	return unpack(frame.args[1])[frame.args[2]]
+end
+
+local function getItems(frame)
+	return frame:getParent().args
+end
+
+local function invert(tbl)
+	local result = { }
+	for key, value in pairs(tbl) do
+		result[value] = key
+	end
+	return result
+end
+
+-- Add args into item as appropriate (see [[Template:Format item]])
+local function addArgs(
+	item,   -- unpacked item to modify
+	args,   -- arguments for adding into item
+	ignore, -- pass in invert{keys to ignore}
+	shift   -- for numbered arguments, args[key+shift] is assigned to item[key]
+	-- returns: item
+)
+	for key, value in pairs(args) do
+		if not ignore[key] then
+			local _, _, paramKey = string.find(key, "^param (.*)")
+			local _, _, importantKey = string.find(key, "^important (.*)")
+			paramKey = paramKey or importantKey or key
+			if shift and type(paramKey) == "number" then
+				paramKey = paramKey - shift
+				if paramKey &lt; 1 then paramKey = nil end
+			end
+			if paramKey and (importantKey or item[paramKey] == nil) then
+				item[paramKey] = value
+			end
+		end
+	end
+	
+	return item
+end
+
+-- Implements [[Template:Format item]]
+function p.format(frame)
+	local args = frame:getParent().args
+	local ignore = invert{ "template", "item" }
+	local templateArgs = addArgs(unpack(args.item), args, ignore)
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+-- See [[Template:Item#Format each item using a template]]
+function p.each(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local separator = args[1] or ""
+	local prepend = args[2] or ""
+	local append = args[3] or ""
+	local ignore = invert{ "template" }
+	local shift = 3
+
+	local result = ""
+	for i, item in ipairs(items) do
+		local templateArgs = addArgs(unpack(item), args, ignore, shift)
+		result = result .. prepend .. frame:expandTemplate{ title = args.template, args = templateArgs } .. append
+		if items[i + 1] then
+			result = result .. separator
+		end
+	end
+	return result
+end
+
+-- See [[Template:Item#Gather given parameter from all items]]
+function p.gather(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local parameter = args.parameter or "1"
+	
+	local templateArgs = { }
+	for i, item in ipairs(items) do
+		templateArgs[i] = unpack(item)[parameter]
+	end
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+return p</text>
+      <sha1>8a56kjxfu3plv66z6z732hkase6suqc</sha1>
+    </revision>
+    <revision>
+      <id>3368325</id>
+      <parentid>3303379</parentid>
+      <timestamp>2026-03-02T18:54:48Z</timestamp>
+      <contributor>
+        <username>MusikAnimal</username>
+        <id>53</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:Item]]": [[Wikipedia:High-risk templates|High-risk module]] ([Edit=Require autoconfirmed or confirmed access] (indefinite))</comment>
+      <origin>323</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3044" sha1="8a56kjxfu3plv66z6z732hkase6suqc" xml:space="preserve">local p = {}
+
+local function escape(str)
+	return str:gsub("[|\\]", function (c) return string.format("\\%03d", c:byte()) end)
+end
+
+local function unescape(str)
+	return str:gsub("\\(%d%d%d)", function (d) return string.char(d) end)
+end
+
+-- Implements [[Template:Item]]
+function p.pack(frame)
+	local parent = frame:getParent()
+	local result = ''
+	for key, value in pairs(parent.args) do
+		result = result .. "|" .. escape(tostring(key)) .. "|" .. escape(value)
+	end
+	return result .. "|";
+end
+
+local function unpack(str)
+	local result = { }
+	for key, value in str:gfind("|([^|]*)|([^|]*)") do
+		result[unescape(key)] = unescape(value)
+	end
+	return result
+end
+
+-- Implements [[Template:Component]]
+function p.component(frame)
+	return unpack(frame.args[1])[frame.args[2]]
+end
+
+local function getItems(frame)
+	return frame:getParent().args
+end
+
+local function invert(tbl)
+	local result = { }
+	for key, value in pairs(tbl) do
+		result[value] = key
+	end
+	return result
+end
+
+-- Add args into item as appropriate (see [[Template:Format item]])
+local function addArgs(
+	item,   -- unpacked item to modify
+	args,   -- arguments for adding into item
+	ignore, -- pass in invert{keys to ignore}
+	shift   -- for numbered arguments, args[key+shift] is assigned to item[key]
+	-- returns: item
+)
+	for key, value in pairs(args) do
+		if not ignore[key] then
+			local _, _, paramKey = string.find(key, "^param (.*)")
+			local _, _, importantKey = string.find(key, "^important (.*)")
+			paramKey = paramKey or importantKey or key
+			if shift and type(paramKey) == "number" then
+				paramKey = paramKey - shift
+				if paramKey &lt; 1 then paramKey = nil end
+			end
+			if paramKey and (importantKey or item[paramKey] == nil) then
+				item[paramKey] = value
+			end
+		end
+	end
+	
+	return item
+end
+
+-- Implements [[Template:Format item]]
+function p.format(frame)
+	local args = frame:getParent().args
+	local ignore = invert{ "template", "item" }
+	local templateArgs = addArgs(unpack(args.item), args, ignore)
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+-- See [[Template:Item#Format each item using a template]]
+function p.each(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local separator = args[1] or ""
+	local prepend = args[2] or ""
+	local append = args[3] or ""
+	local ignore = invert{ "template" }
+	local shift = 3
+
+	local result = ""
+	for i, item in ipairs(items) do
+		local templateArgs = addArgs(unpack(item), args, ignore, shift)
+		result = result .. prepend .. frame:expandTemplate{ title = args.template, args = templateArgs } .. append
+		if items[i + 1] then
+			result = result .. separator
+		end
+	end
+	return result
+end
+
+-- See [[Template:Item#Gather given parameter from all items]]
+function p.gather(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local parameter = args.parameter or "1"
+	
+	local templateArgs = { }
+	for i, item in ipairs(items) do
+		templateArgs[i] = unpack(item)[parameter]
+	end
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+return p</text>
+      <sha1>8a56kjxfu3plv66z6z732hkase6suqc</sha1>
+    </revision>
+    <revision>
+      <id>3368326</id>
+      <parentid>3368325</parentid>
+      <timestamp>2026-03-02T18:54:49Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>323</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3044" sha1="8a56kjxfu3plv66z6z732hkase6suqc" xml:space="preserve">local p = {}
+
+local function escape(str)
+	return str:gsub("[|\\]", function (c) return string.format("\\%03d", c:byte()) end)
+end
+
+local function unescape(str)
+	return str:gsub("\\(%d%d%d)", function (d) return string.char(d) end)
+end
+
+-- Implements [[Template:Item]]
+function p.pack(frame)
+	local parent = frame:getParent()
+	local result = ''
+	for key, value in pairs(parent.args) do
+		result = result .. "|" .. escape(tostring(key)) .. "|" .. escape(value)
+	end
+	return result .. "|";
+end
+
+local function unpack(str)
+	local result = { }
+	for key, value in str:gfind("|([^|]*)|([^|]*)") do
+		result[unescape(key)] = unescape(value)
+	end
+	return result
+end
+
+-- Implements [[Template:Component]]
+function p.component(frame)
+	return unpack(frame.args[1])[frame.args[2]]
+end
+
+local function getItems(frame)
+	return frame:getParent().args
+end
+
+local function invert(tbl)
+	local result = { }
+	for key, value in pairs(tbl) do
+		result[value] = key
+	end
+	return result
+end
+
+-- Add args into item as appropriate (see [[Template:Format item]])
+local function addArgs(
+	item,   -- unpacked item to modify
+	args,   -- arguments for adding into item
+	ignore, -- pass in invert{keys to ignore}
+	shift   -- for numbered arguments, args[key+shift] is assigned to item[key]
+	-- returns: item
+)
+	for key, value in pairs(args) do
+		if not ignore[key] then
+			local _, _, paramKey = string.find(key, "^param (.*)")
+			local _, _, importantKey = string.find(key, "^important (.*)")
+			paramKey = paramKey or importantKey or key
+			if shift and type(paramKey) == "number" then
+				paramKey = paramKey - shift
+				if paramKey &lt; 1 then paramKey = nil end
+			end
+			if paramKey and (importantKey or item[paramKey] == nil) then
+				item[paramKey] = value
+			end
+		end
+	end
+	
+	return item
+end
+
+-- Implements [[Template:Format item]]
+function p.format(frame)
+	local args = frame:getParent().args
+	local ignore = invert{ "template", "item" }
+	local templateArgs = addArgs(unpack(args.item), args, ignore)
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+-- See [[Template:Item#Format each item using a template]]
+function p.each(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local separator = args[1] or ""
+	local prepend = args[2] or ""
+	local append = args[3] or ""
+	local ignore = invert{ "template" }
+	local shift = 3
+
+	local result = ""
+	for i, item in ipairs(items) do
+		local templateArgs = addArgs(unpack(item), args, ignore, shift)
+		result = result .. prepend .. frame:expandTemplate{ title = args.template, args = templateArgs } .. append
+		if items[i + 1] then
+			result = result .. separator
+		end
+	end
+	return result
+end
+
+-- See [[Template:Item#Gather given parameter from all items]]
+function p.gather(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local parameter = args.parameter or "1"
+	
+	local templateArgs = { }
+	for i, item in ipairs(items) do
+		templateArgs[i] = unpack(item)[parameter]
+	end
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+return p</text>
+      <sha1>8a56kjxfu3plv66z6z732hkase6suqc</sha1>
+    </revision>
+    <revision>
+      <id>3368799</id>
+      <parentid>3368326</parentid>
+      <timestamp>2026-03-02T18:57:11Z</timestamp>
+      <contributor>
+        <username>MusikAnimal</username>
+        <id>53</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:Item]]": [[Wikipedia:High-risk templates|High-risk module]] ([Edit=Require autoconfirmed or confirmed access] (indefinite))</comment>
+      <origin>323</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3044" sha1="8a56kjxfu3plv66z6z732hkase6suqc" xml:space="preserve">local p = {}
+
+local function escape(str)
+	return str:gsub("[|\\]", function (c) return string.format("\\%03d", c:byte()) end)
+end
+
+local function unescape(str)
+	return str:gsub("\\(%d%d%d)", function (d) return string.char(d) end)
+end
+
+-- Implements [[Template:Item]]
+function p.pack(frame)
+	local parent = frame:getParent()
+	local result = ''
+	for key, value in pairs(parent.args) do
+		result = result .. "|" .. escape(tostring(key)) .. "|" .. escape(value)
+	end
+	return result .. "|";
+end
+
+local function unpack(str)
+	local result = { }
+	for key, value in str:gfind("|([^|]*)|([^|]*)") do
+		result[unescape(key)] = unescape(value)
+	end
+	return result
+end
+
+-- Implements [[Template:Component]]
+function p.component(frame)
+	return unpack(frame.args[1])[frame.args[2]]
+end
+
+local function getItems(frame)
+	return frame:getParent().args
+end
+
+local function invert(tbl)
+	local result = { }
+	for key, value in pairs(tbl) do
+		result[value] = key
+	end
+	return result
+end
+
+-- Add args into item as appropriate (see [[Template:Format item]])
+local function addArgs(
+	item,   -- unpacked item to modify
+	args,   -- arguments for adding into item
+	ignore, -- pass in invert{keys to ignore}
+	shift   -- for numbered arguments, args[key+shift] is assigned to item[key]
+	-- returns: item
+)
+	for key, value in pairs(args) do
+		if not ignore[key] then
+			local _, _, paramKey = string.find(key, "^param (.*)")
+			local _, _, importantKey = string.find(key, "^important (.*)")
+			paramKey = paramKey or importantKey or key
+			if shift and type(paramKey) == "number" then
+				paramKey = paramKey - shift
+				if paramKey &lt; 1 then paramKey = nil end
+			end
+			if paramKey and (importantKey or item[paramKey] == nil) then
+				item[paramKey] = value
+			end
+		end
+	end
+	
+	return item
+end
+
+-- Implements [[Template:Format item]]
+function p.format(frame)
+	local args = frame:getParent().args
+	local ignore = invert{ "template", "item" }
+	local templateArgs = addArgs(unpack(args.item), args, ignore)
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+-- See [[Template:Item#Format each item using a template]]
+function p.each(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local separator = args[1] or ""
+	local prepend = args[2] or ""
+	local append = args[3] or ""
+	local ignore = invert{ "template" }
+	local shift = 3
+
+	local result = ""
+	for i, item in ipairs(items) do
+		local templateArgs = addArgs(unpack(item), args, ignore, shift)
+		result = result .. prepend .. frame:expandTemplate{ title = args.template, args = templateArgs } .. append
+		if items[i + 1] then
+			result = result .. separator
+		end
+	end
+	return result
+end
+
+-- See [[Template:Item#Gather given parameter from all items]]
+function p.gather(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local parameter = args.parameter or "1"
+	
+	local templateArgs = { }
+	for i, item in ipairs(items) do
+		templateArgs[i] = unpack(item)[parameter]
+	end
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+return p</text>
+      <sha1>8a56kjxfu3plv66z6z732hkase6suqc</sha1>
+    </revision>
+    <revision>
+      <id>3368800</id>
+      <parentid>3368799</parentid>
+      <timestamp>2026-03-02T18:57:11Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>323</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3044" sha1="8a56kjxfu3plv66z6z732hkase6suqc" xml:space="preserve">local p = {}
+
+local function escape(str)
+	return str:gsub("[|\\]", function (c) return string.format("\\%03d", c:byte()) end)
+end
+
+local function unescape(str)
+	return str:gsub("\\(%d%d%d)", function (d) return string.char(d) end)
+end
+
+-- Implements [[Template:Item]]
+function p.pack(frame)
+	local parent = frame:getParent()
+	local result = ''
+	for key, value in pairs(parent.args) do
+		result = result .. "|" .. escape(tostring(key)) .. "|" .. escape(value)
+	end
+	return result .. "|";
+end
+
+local function unpack(str)
+	local result = { }
+	for key, value in str:gfind("|([^|]*)|([^|]*)") do
+		result[unescape(key)] = unescape(value)
+	end
+	return result
+end
+
+-- Implements [[Template:Component]]
+function p.component(frame)
+	return unpack(frame.args[1])[frame.args[2]]
+end
+
+local function getItems(frame)
+	return frame:getParent().args
+end
+
+local function invert(tbl)
+	local result = { }
+	for key, value in pairs(tbl) do
+		result[value] = key
+	end
+	return result
+end
+
+-- Add args into item as appropriate (see [[Template:Format item]])
+local function addArgs(
+	item,   -- unpacked item to modify
+	args,   -- arguments for adding into item
+	ignore, -- pass in invert{keys to ignore}
+	shift   -- for numbered arguments, args[key+shift] is assigned to item[key]
+	-- returns: item
+)
+	for key, value in pairs(args) do
+		if not ignore[key] then
+			local _, _, paramKey = string.find(key, "^param (.*)")
+			local _, _, importantKey = string.find(key, "^important (.*)")
+			paramKey = paramKey or importantKey or key
+			if shift and type(paramKey) == "number" then
+				paramKey = paramKey - shift
+				if paramKey &lt; 1 then paramKey = nil end
+			end
+			if paramKey and (importantKey or item[paramKey] == nil) then
+				item[paramKey] = value
+			end
+		end
+	end
+	
+	return item
+end
+
+-- Implements [[Template:Format item]]
+function p.format(frame)
+	local args = frame:getParent().args
+	local ignore = invert{ "template", "item" }
+	local templateArgs = addArgs(unpack(args.item), args, ignore)
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+-- See [[Template:Item#Format each item using a template]]
+function p.each(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local separator = args[1] or ""
+	local prepend = args[2] or ""
+	local append = args[3] or ""
+	local ignore = invert{ "template" }
+	local shift = 3
+
+	local result = ""
+	for i, item in ipairs(items) do
+		local templateArgs = addArgs(unpack(item), args, ignore, shift)
+		result = result .. prepend .. frame:expandTemplate{ title = args.template, args = templateArgs } .. append
+		if items[i + 1] then
+			result = result .. separator
+		end
+	end
+	return result
+end
+
+-- See [[Template:Item#Gather given parameter from all items]]
+function p.gather(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local parameter = args.parameter or "1"
+	
+	local templateArgs = { }
+	for i, item in ipairs(items) do
+		templateArgs[i] = unpack(item)[parameter]
+	end
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+return p</text>
+      <sha1>8a56kjxfu3plv66z6z732hkase6suqc</sha1>
+    </revision>
+    <revision>
+      <id>3369273</id>
+      <parentid>3368800</parentid>
+      <timestamp>2026-03-02T19:03:46Z</timestamp>
+      <contributor>
+        <username>MusikAnimal</username>
+        <id>53</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:Item]]": [[Wikipedia:High-risk templates|High-risk module]] ([Edit=Require autoconfirmed or confirmed access] (indefinite))</comment>
+      <origin>323</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3044" sha1="8a56kjxfu3plv66z6z732hkase6suqc" xml:space="preserve">local p = {}
+
+local function escape(str)
+	return str:gsub("[|\\]", function (c) return string.format("\\%03d", c:byte()) end)
+end
+
+local function unescape(str)
+	return str:gsub("\\(%d%d%d)", function (d) return string.char(d) end)
+end
+
+-- Implements [[Template:Item]]
+function p.pack(frame)
+	local parent = frame:getParent()
+	local result = ''
+	for key, value in pairs(parent.args) do
+		result = result .. "|" .. escape(tostring(key)) .. "|" .. escape(value)
+	end
+	return result .. "|";
+end
+
+local function unpack(str)
+	local result = { }
+	for key, value in str:gfind("|([^|]*)|([^|]*)") do
+		result[unescape(key)] = unescape(value)
+	end
+	return result
+end
+
+-- Implements [[Template:Component]]
+function p.component(frame)
+	return unpack(frame.args[1])[frame.args[2]]
+end
+
+local function getItems(frame)
+	return frame:getParent().args
+end
+
+local function invert(tbl)
+	local result = { }
+	for key, value in pairs(tbl) do
+		result[value] = key
+	end
+	return result
+end
+
+-- Add args into item as appropriate (see [[Template:Format item]])
+local function addArgs(
+	item,   -- unpacked item to modify
+	args,   -- arguments for adding into item
+	ignore, -- pass in invert{keys to ignore}
+	shift   -- for numbered arguments, args[key+shift] is assigned to item[key]
+	-- returns: item
+)
+	for key, value in pairs(args) do
+		if not ignore[key] then
+			local _, _, paramKey = string.find(key, "^param (.*)")
+			local _, _, importantKey = string.find(key, "^important (.*)")
+			paramKey = paramKey or importantKey or key
+			if shift and type(paramKey) == "number" then
+				paramKey = paramKey - shift
+				if paramKey &lt; 1 then paramKey = nil end
+			end
+			if paramKey and (importantKey or item[paramKey] == nil) then
+				item[paramKey] = value
+			end
+		end
+	end
+	
+	return item
+end
+
+-- Implements [[Template:Format item]]
+function p.format(frame)
+	local args = frame:getParent().args
+	local ignore = invert{ "template", "item" }
+	local templateArgs = addArgs(unpack(args.item), args, ignore)
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+-- See [[Template:Item#Format each item using a template]]
+function p.each(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local separator = args[1] or ""
+	local prepend = args[2] or ""
+	local append = args[3] or ""
+	local ignore = invert{ "template" }
+	local shift = 3
+
+	local result = ""
+	for i, item in ipairs(items) do
+		local templateArgs = addArgs(unpack(item), args, ignore, shift)
+		result = result .. prepend .. frame:expandTemplate{ title = args.template, args = templateArgs } .. append
+		if items[i + 1] then
+			result = result .. separator
+		end
+	end
+	return result
+end
+
+-- See [[Template:Item#Gather given parameter from all items]]
+function p.gather(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local parameter = args.parameter or "1"
+	
+	local templateArgs = { }
+	for i, item in ipairs(items) do
+		templateArgs[i] = unpack(item)[parameter]
+	end
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+return p</text>
+      <sha1>8a56kjxfu3plv66z6z732hkase6suqc</sha1>
+    </revision>
+    <revision>
+      <id>3369274</id>
+      <parentid>3369273</parentid>
+      <timestamp>2026-03-02T19:03:47Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>323</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3044" sha1="8a56kjxfu3plv66z6z732hkase6suqc" xml:space="preserve">local p = {}
+
+local function escape(str)
+	return str:gsub("[|\\]", function (c) return string.format("\\%03d", c:byte()) end)
+end
+
+local function unescape(str)
+	return str:gsub("\\(%d%d%d)", function (d) return string.char(d) end)
+end
+
+-- Implements [[Template:Item]]
+function p.pack(frame)
+	local parent = frame:getParent()
+	local result = ''
+	for key, value in pairs(parent.args) do
+		result = result .. "|" .. escape(tostring(key)) .. "|" .. escape(value)
+	end
+	return result .. "|";
+end
+
+local function unpack(str)
+	local result = { }
+	for key, value in str:gfind("|([^|]*)|([^|]*)") do
+		result[unescape(key)] = unescape(value)
+	end
+	return result
+end
+
+-- Implements [[Template:Component]]
+function p.component(frame)
+	return unpack(frame.args[1])[frame.args[2]]
+end
+
+local function getItems(frame)
+	return frame:getParent().args
+end
+
+local function invert(tbl)
+	local result = { }
+	for key, value in pairs(tbl) do
+		result[value] = key
+	end
+	return result
+end
+
+-- Add args into item as appropriate (see [[Template:Format item]])
+local function addArgs(
+	item,   -- unpacked item to modify
+	args,   -- arguments for adding into item
+	ignore, -- pass in invert{keys to ignore}
+	shift   -- for numbered arguments, args[key+shift] is assigned to item[key]
+	-- returns: item
+)
+	for key, value in pairs(args) do
+		if not ignore[key] then
+			local _, _, paramKey = string.find(key, "^param (.*)")
+			local _, _, importantKey = string.find(key, "^important (.*)")
+			paramKey = paramKey or importantKey or key
+			if shift and type(paramKey) == "number" then
+				paramKey = paramKey - shift
+				if paramKey &lt; 1 then paramKey = nil end
+			end
+			if paramKey and (importantKey or item[paramKey] == nil) then
+				item[paramKey] = value
+			end
+		end
+	end
+	
+	return item
+end
+
+-- Implements [[Template:Format item]]
+function p.format(frame)
+	local args = frame:getParent().args
+	local ignore = invert{ "template", "item" }
+	local templateArgs = addArgs(unpack(args.item), args, ignore)
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+-- See [[Template:Item#Format each item using a template]]
+function p.each(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local separator = args[1] or ""
+	local prepend = args[2] or ""
+	local append = args[3] or ""
+	local ignore = invert{ "template" }
+	local shift = 3
+
+	local result = ""
+	for i, item in ipairs(items) do
+		local templateArgs = addArgs(unpack(item), args, ignore, shift)
+		result = result .. prepend .. frame:expandTemplate{ title = args.template, args = templateArgs } .. append
+		if items[i + 1] then
+			result = result .. separator
+		end
+	end
+	return result
+end
+
+-- See [[Template:Item#Gather given parameter from all items]]
+function p.gather(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local parameter = args.parameter or "1"
+	
+	local templateArgs = { }
+	for i, item in ipairs(items) do
+		templateArgs[i] = unpack(item)[parameter]
+	end
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+return p</text>
+      <sha1>8a56kjxfu3plv66z6z732hkase6suqc</sha1>
+    </revision>
+    <revision>
+      <id>3562760</id>
+      <parentid>3369274</parentid>
+      <timestamp>2026-03-22T19:01:36Z</timestamp>
+      <contributor>
+        <username>MusikAnimal</username>
+        <id>53</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:Item]]": [[Wikipedia:High-risk templates|High-risk module]] ([Edit=Require autoconfirmed or confirmed access] (indefinite))</comment>
+      <origin>323</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3044" sha1="8a56kjxfu3plv66z6z732hkase6suqc" xml:space="preserve">local p = {}
+
+local function escape(str)
+	return str:gsub("[|\\]", function (c) return string.format("\\%03d", c:byte()) end)
+end
+
+local function unescape(str)
+	return str:gsub("\\(%d%d%d)", function (d) return string.char(d) end)
+end
+
+-- Implements [[Template:Item]]
+function p.pack(frame)
+	local parent = frame:getParent()
+	local result = ''
+	for key, value in pairs(parent.args) do
+		result = result .. "|" .. escape(tostring(key)) .. "|" .. escape(value)
+	end
+	return result .. "|";
+end
+
+local function unpack(str)
+	local result = { }
+	for key, value in str:gfind("|([^|]*)|([^|]*)") do
+		result[unescape(key)] = unescape(value)
+	end
+	return result
+end
+
+-- Implements [[Template:Component]]
+function p.component(frame)
+	return unpack(frame.args[1])[frame.args[2]]
+end
+
+local function getItems(frame)
+	return frame:getParent().args
+end
+
+local function invert(tbl)
+	local result = { }
+	for key, value in pairs(tbl) do
+		result[value] = key
+	end
+	return result
+end
+
+-- Add args into item as appropriate (see [[Template:Format item]])
+local function addArgs(
+	item,   -- unpacked item to modify
+	args,   -- arguments for adding into item
+	ignore, -- pass in invert{keys to ignore}
+	shift   -- for numbered arguments, args[key+shift] is assigned to item[key]
+	-- returns: item
+)
+	for key, value in pairs(args) do
+		if not ignore[key] then
+			local _, _, paramKey = string.find(key, "^param (.*)")
+			local _, _, importantKey = string.find(key, "^important (.*)")
+			paramKey = paramKey or importantKey or key
+			if shift and type(paramKey) == "number" then
+				paramKey = paramKey - shift
+				if paramKey &lt; 1 then paramKey = nil end
+			end
+			if paramKey and (importantKey or item[paramKey] == nil) then
+				item[paramKey] = value
+			end
+		end
+	end
+	
+	return item
+end
+
+-- Implements [[Template:Format item]]
+function p.format(frame)
+	local args = frame:getParent().args
+	local ignore = invert{ "template", "item" }
+	local templateArgs = addArgs(unpack(args.item), args, ignore)
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+-- See [[Template:Item#Format each item using a template]]
+function p.each(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local separator = args[1] or ""
+	local prepend = args[2] or ""
+	local append = args[3] or ""
+	local ignore = invert{ "template" }
+	local shift = 3
+
+	local result = ""
+	for i, item in ipairs(items) do
+		local templateArgs = addArgs(unpack(item), args, ignore, shift)
+		result = result .. prepend .. frame:expandTemplate{ title = args.template, args = templateArgs } .. append
+		if items[i + 1] then
+			result = result .. separator
+		end
+	end
+	return result
+end
+
+-- See [[Template:Item#Gather given parameter from all items]]
+function p.gather(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local parameter = args.parameter or "1"
+	
+	local templateArgs = { }
+	for i, item in ipairs(items) do
+		templateArgs[i] = unpack(item)[parameter]
+	end
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+return p</text>
+      <sha1>8a56kjxfu3plv66z6z732hkase6suqc</sha1>
+    </revision>
+    <revision>
+      <id>3562761</id>
+      <parentid>3562760</parentid>
+      <timestamp>2026-03-22T19:01:36Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>323</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3044" sha1="8a56kjxfu3plv66z6z732hkase6suqc" xml:space="preserve">local p = {}
+
+local function escape(str)
+	return str:gsub("[|\\]", function (c) return string.format("\\%03d", c:byte()) end)
+end
+
+local function unescape(str)
+	return str:gsub("\\(%d%d%d)", function (d) return string.char(d) end)
+end
+
+-- Implements [[Template:Item]]
+function p.pack(frame)
+	local parent = frame:getParent()
+	local result = ''
+	for key, value in pairs(parent.args) do
+		result = result .. "|" .. escape(tostring(key)) .. "|" .. escape(value)
+	end
+	return result .. "|";
+end
+
+local function unpack(str)
+	local result = { }
+	for key, value in str:gfind("|([^|]*)|([^|]*)") do
+		result[unescape(key)] = unescape(value)
+	end
+	return result
+end
+
+-- Implements [[Template:Component]]
+function p.component(frame)
+	return unpack(frame.args[1])[frame.args[2]]
+end
+
+local function getItems(frame)
+	return frame:getParent().args
+end
+
+local function invert(tbl)
+	local result = { }
+	for key, value in pairs(tbl) do
+		result[value] = key
+	end
+	return result
+end
+
+-- Add args into item as appropriate (see [[Template:Format item]])
+local function addArgs(
+	item,   -- unpacked item to modify
+	args,   -- arguments for adding into item
+	ignore, -- pass in invert{keys to ignore}
+	shift   -- for numbered arguments, args[key+shift] is assigned to item[key]
+	-- returns: item
+)
+	for key, value in pairs(args) do
+		if not ignore[key] then
+			local _, _, paramKey = string.find(key, "^param (.*)")
+			local _, _, importantKey = string.find(key, "^important (.*)")
+			paramKey = paramKey or importantKey or key
+			if shift and type(paramKey) == "number" then
+				paramKey = paramKey - shift
+				if paramKey &lt; 1 then paramKey = nil end
+			end
+			if paramKey and (importantKey or item[paramKey] == nil) then
+				item[paramKey] = value
+			end
+		end
+	end
+	
+	return item
+end
+
+-- Implements [[Template:Format item]]
+function p.format(frame)
+	local args = frame:getParent().args
+	local ignore = invert{ "template", "item" }
+	local templateArgs = addArgs(unpack(args.item), args, ignore)
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+-- See [[Template:Item#Format each item using a template]]
+function p.each(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local separator = args[1] or ""
+	local prepend = args[2] or ""
+	local append = args[3] or ""
+	local ignore = invert{ "template" }
+	local shift = 3
+
+	local result = ""
+	for i, item in ipairs(items) do
+		local templateArgs = addArgs(unpack(item), args, ignore, shift)
+		result = result .. prepend .. frame:expandTemplate{ title = args.template, args = templateArgs } .. append
+		if items[i + 1] then
+			result = result .. separator
+		end
+	end
+	return result
+end
+
+-- See [[Template:Item#Gather given parameter from all items]]
+function p.gather(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local parameter = args.parameter or "1"
+	
+	local templateArgs = { }
+	for i, item in ipairs(items) do
+		templateArgs[i] = unpack(item)[parameter]
+	end
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+return p</text>
+      <sha1>8a56kjxfu3plv66z6z732hkase6suqc</sha1>
+    </revision>
+    <revision>
+      <id>3608102</id>
+      <parentid>3562761</parentid>
+      <timestamp>2026-04-18T21:23:18Z</timestamp>
+      <contributor>
+        <username>MusikAnimal</username>
+        <id>53</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:Item]]": [[Wikipedia:High-risk templates|High-risk module]] ([Edit=Require autoconfirmed or confirmed access] (indefinite))</comment>
+      <origin>323</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3044" sha1="8a56kjxfu3plv66z6z732hkase6suqc" xml:space="preserve">local p = {}
+
+local function escape(str)
+	return str:gsub("[|\\]", function (c) return string.format("\\%03d", c:byte()) end)
+end
+
+local function unescape(str)
+	return str:gsub("\\(%d%d%d)", function (d) return string.char(d) end)
+end
+
+-- Implements [[Template:Item]]
+function p.pack(frame)
+	local parent = frame:getParent()
+	local result = ''
+	for key, value in pairs(parent.args) do
+		result = result .. "|" .. escape(tostring(key)) .. "|" .. escape(value)
+	end
+	return result .. "|";
+end
+
+local function unpack(str)
+	local result = { }
+	for key, value in str:gfind("|([^|]*)|([^|]*)") do
+		result[unescape(key)] = unescape(value)
+	end
+	return result
+end
+
+-- Implements [[Template:Component]]
+function p.component(frame)
+	return unpack(frame.args[1])[frame.args[2]]
+end
+
+local function getItems(frame)
+	return frame:getParent().args
+end
+
+local function invert(tbl)
+	local result = { }
+	for key, value in pairs(tbl) do
+		result[value] = key
+	end
+	return result
+end
+
+-- Add args into item as appropriate (see [[Template:Format item]])
+local function addArgs(
+	item,   -- unpacked item to modify
+	args,   -- arguments for adding into item
+	ignore, -- pass in invert{keys to ignore}
+	shift   -- for numbered arguments, args[key+shift] is assigned to item[key]
+	-- returns: item
+)
+	for key, value in pairs(args) do
+		if not ignore[key] then
+			local _, _, paramKey = string.find(key, "^param (.*)")
+			local _, _, importantKey = string.find(key, "^important (.*)")
+			paramKey = paramKey or importantKey or key
+			if shift and type(paramKey) == "number" then
+				paramKey = paramKey - shift
+				if paramKey &lt; 1 then paramKey = nil end
+			end
+			if paramKey and (importantKey or item[paramKey] == nil) then
+				item[paramKey] = value
+			end
+		end
+	end
+	
+	return item
+end
+
+-- Implements [[Template:Format item]]
+function p.format(frame)
+	local args = frame:getParent().args
+	local ignore = invert{ "template", "item" }
+	local templateArgs = addArgs(unpack(args.item), args, ignore)
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+-- See [[Template:Item#Format each item using a template]]
+function p.each(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local separator = args[1] or ""
+	local prepend = args[2] or ""
+	local append = args[3] or ""
+	local ignore = invert{ "template" }
+	local shift = 3
+
+	local result = ""
+	for i, item in ipairs(items) do
+		local templateArgs = addArgs(unpack(item), args, ignore, shift)
+		result = result .. prepend .. frame:expandTemplate{ title = args.template, args = templateArgs } .. append
+		if items[i + 1] then
+			result = result .. separator
+		end
+	end
+	return result
+end
+
+-- See [[Template:Item#Gather given parameter from all items]]
+function p.gather(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local parameter = args.parameter or "1"
+	
+	local templateArgs = { }
+	for i, item in ipairs(items) do
+		templateArgs[i] = unpack(item)[parameter]
+	end
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+return p</text>
+      <sha1>8a56kjxfu3plv66z6z732hkase6suqc</sha1>
+    </revision>
+    <revision>
+      <id>3608103</id>
+      <parentid>3608102</parentid>
+      <timestamp>2026-04-18T21:23:18Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting to try to fix the lower alpha issue</comment>
+      <origin>323</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3044" sha1="8a56kjxfu3plv66z6z732hkase6suqc" xml:space="preserve">local p = {}
+
+local function escape(str)
+	return str:gsub("[|\\]", function (c) return string.format("\\%03d", c:byte()) end)
+end
+
+local function unescape(str)
+	return str:gsub("\\(%d%d%d)", function (d) return string.char(d) end)
+end
+
+-- Implements [[Template:Item]]
+function p.pack(frame)
+	local parent = frame:getParent()
+	local result = ''
+	for key, value in pairs(parent.args) do
+		result = result .. "|" .. escape(tostring(key)) .. "|" .. escape(value)
+	end
+	return result .. "|";
+end
+
+local function unpack(str)
+	local result = { }
+	for key, value in str:gfind("|([^|]*)|([^|]*)") do
+		result[unescape(key)] = unescape(value)
+	end
+	return result
+end
+
+-- Implements [[Template:Component]]
+function p.component(frame)
+	return unpack(frame.args[1])[frame.args[2]]
+end
+
+local function getItems(frame)
+	return frame:getParent().args
+end
+
+local function invert(tbl)
+	local result = { }
+	for key, value in pairs(tbl) do
+		result[value] = key
+	end
+	return result
+end
+
+-- Add args into item as appropriate (see [[Template:Format item]])
+local function addArgs(
+	item,   -- unpacked item to modify
+	args,   -- arguments for adding into item
+	ignore, -- pass in invert{keys to ignore}
+	shift   -- for numbered arguments, args[key+shift] is assigned to item[key]
+	-- returns: item
+)
+	for key, value in pairs(args) do
+		if not ignore[key] then
+			local _, _, paramKey = string.find(key, "^param (.*)")
+			local _, _, importantKey = string.find(key, "^important (.*)")
+			paramKey = paramKey or importantKey or key
+			if shift and type(paramKey) == "number" then
+				paramKey = paramKey - shift
+				if paramKey &lt; 1 then paramKey = nil end
+			end
+			if paramKey and (importantKey or item[paramKey] == nil) then
+				item[paramKey] = value
+			end
+		end
+	end
+	
+	return item
+end
+
+-- Implements [[Template:Format item]]
+function p.format(frame)
+	local args = frame:getParent().args
+	local ignore = invert{ "template", "item" }
+	local templateArgs = addArgs(unpack(args.item), args, ignore)
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+-- See [[Template:Item#Format each item using a template]]
+function p.each(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local separator = args[1] or ""
+	local prepend = args[2] or ""
+	local append = args[3] or ""
+	local ignore = invert{ "template" }
+	local shift = 3
+
+	local result = ""
+	for i, item in ipairs(items) do
+		local templateArgs = addArgs(unpack(item), args, ignore, shift)
+		result = result .. prepend .. frame:expandTemplate{ title = args.template, args = templateArgs } .. append
+		if items[i + 1] then
+			result = result .. separator
+		end
+	end
+	return result
+end
+
+-- See [[Template:Item#Gather given parameter from all items]]
+function p.gather(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local parameter = args.parameter or "1"
+	
+	local templateArgs = { }
+	for i, item in ipairs(items) do
+		templateArgs[i] = unpack(item)[parameter]
+	end
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+return p</text>
+      <sha1>8a56kjxfu3plv66z6z732hkase6suqc</sha1>
+    </revision>
+    <revision>
+      <id>3608334</id>
+      <parentid>3608103</parentid>
+      <timestamp>2026-04-18T21:24:11Z</timestamp>
+      <contributor>
+        <username>MusikAnimal</username>
+        <id>53</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:Item]]": [[Wikipedia:High-risk templates|High-risk module]] ([Edit=Require autoconfirmed or confirmed access] (indefinite))</comment>
+      <origin>323</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3044" sha1="8a56kjxfu3plv66z6z732hkase6suqc" xml:space="preserve">local p = {}
+
+local function escape(str)
+	return str:gsub("[|\\]", function (c) return string.format("\\%03d", c:byte()) end)
+end
+
+local function unescape(str)
+	return str:gsub("\\(%d%d%d)", function (d) return string.char(d) end)
+end
+
+-- Implements [[Template:Item]]
+function p.pack(frame)
+	local parent = frame:getParent()
+	local result = ''
+	for key, value in pairs(parent.args) do
+		result = result .. "|" .. escape(tostring(key)) .. "|" .. escape(value)
+	end
+	return result .. "|";
+end
+
+local function unpack(str)
+	local result = { }
+	for key, value in str:gfind("|([^|]*)|([^|]*)") do
+		result[unescape(key)] = unescape(value)
+	end
+	return result
+end
+
+-- Implements [[Template:Component]]
+function p.component(frame)
+	return unpack(frame.args[1])[frame.args[2]]
+end
+
+local function getItems(frame)
+	return frame:getParent().args
+end
+
+local function invert(tbl)
+	local result = { }
+	for key, value in pairs(tbl) do
+		result[value] = key
+	end
+	return result
+end
+
+-- Add args into item as appropriate (see [[Template:Format item]])
+local function addArgs(
+	item,   -- unpacked item to modify
+	args,   -- arguments for adding into item
+	ignore, -- pass in invert{keys to ignore}
+	shift   -- for numbered arguments, args[key+shift] is assigned to item[key]
+	-- returns: item
+)
+	for key, value in pairs(args) do
+		if not ignore[key] then
+			local _, _, paramKey = string.find(key, "^param (.*)")
+			local _, _, importantKey = string.find(key, "^important (.*)")
+			paramKey = paramKey or importantKey or key
+			if shift and type(paramKey) == "number" then
+				paramKey = paramKey - shift
+				if paramKey &lt; 1 then paramKey = nil end
+			end
+			if paramKey and (importantKey or item[paramKey] == nil) then
+				item[paramKey] = value
+			end
+		end
+	end
+	
+	return item
+end
+
+-- Implements [[Template:Format item]]
+function p.format(frame)
+	local args = frame:getParent().args
+	local ignore = invert{ "template", "item" }
+	local templateArgs = addArgs(unpack(args.item), args, ignore)
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+-- See [[Template:Item#Format each item using a template]]
+function p.each(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local separator = args[1] or ""
+	local prepend = args[2] or ""
+	local append = args[3] or ""
+	local ignore = invert{ "template" }
+	local shift = 3
+
+	local result = ""
+	for i, item in ipairs(items) do
+		local templateArgs = addArgs(unpack(item), args, ignore, shift)
+		result = result .. prepend .. frame:expandTemplate{ title = args.template, args = templateArgs } .. append
+		if items[i + 1] then
+			result = result .. separator
+		end
+	end
+	return result
+end
+
+-- See [[Template:Item#Gather given parameter from all items]]
+function p.gather(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local parameter = args.parameter or "1"
+	
+	local templateArgs = { }
+	for i, item in ipairs(items) do
+		templateArgs[i] = unpack(item)[parameter]
+	end
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+return p</text>
+      <sha1>8a56kjxfu3plv66z6z732hkase6suqc</sha1>
+    </revision>
+    <revision>
+      <id>3608335</id>
+      <parentid>3608334</parentid>
+      <timestamp>2026-04-18T21:24:11Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting to try to fix the lower alpha issue</comment>
+      <origin>323</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3044" sha1="8a56kjxfu3plv66z6z732hkase6suqc" xml:space="preserve">local p = {}
+
+local function escape(str)
+	return str:gsub("[|\\]", function (c) return string.format("\\%03d", c:byte()) end)
+end
+
+local function unescape(str)
+	return str:gsub("\\(%d%d%d)", function (d) return string.char(d) end)
+end
+
+-- Implements [[Template:Item]]
+function p.pack(frame)
+	local parent = frame:getParent()
+	local result = ''
+	for key, value in pairs(parent.args) do
+		result = result .. "|" .. escape(tostring(key)) .. "|" .. escape(value)
+	end
+	return result .. "|";
+end
+
+local function unpack(str)
+	local result = { }
+	for key, value in str:gfind("|([^|]*)|([^|]*)") do
+		result[unescape(key)] = unescape(value)
+	end
+	return result
+end
+
+-- Implements [[Template:Component]]
+function p.component(frame)
+	return unpack(frame.args[1])[frame.args[2]]
+end
+
+local function getItems(frame)
+	return frame:getParent().args
+end
+
+local function invert(tbl)
+	local result = { }
+	for key, value in pairs(tbl) do
+		result[value] = key
+	end
+	return result
+end
+
+-- Add args into item as appropriate (see [[Template:Format item]])
+local function addArgs(
+	item,   -- unpacked item to modify
+	args,   -- arguments for adding into item
+	ignore, -- pass in invert{keys to ignore}
+	shift   -- for numbered arguments, args[key+shift] is assigned to item[key]
+	-- returns: item
+)
+	for key, value in pairs(args) do
+		if not ignore[key] then
+			local _, _, paramKey = string.find(key, "^param (.*)")
+			local _, _, importantKey = string.find(key, "^important (.*)")
+			paramKey = paramKey or importantKey or key
+			if shift and type(paramKey) == "number" then
+				paramKey = paramKey - shift
+				if paramKey &lt; 1 then paramKey = nil end
+			end
+			if paramKey and (importantKey or item[paramKey] == nil) then
+				item[paramKey] = value
+			end
+		end
+	end
+	
+	return item
+end
+
+-- Implements [[Template:Format item]]
+function p.format(frame)
+	local args = frame:getParent().args
+	local ignore = invert{ "template", "item" }
+	local templateArgs = addArgs(unpack(args.item), args, ignore)
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+-- See [[Template:Item#Format each item using a template]]
+function p.each(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local separator = args[1] or ""
+	local prepend = args[2] or ""
+	local append = args[3] or ""
+	local ignore = invert{ "template" }
+	local shift = 3
+
+	local result = ""
+	for i, item in ipairs(items) do
+		local templateArgs = addArgs(unpack(item), args, ignore, shift)
+		result = result .. prepend .. frame:expandTemplate{ title = args.template, args = templateArgs } .. append
+		if items[i + 1] then
+			result = result .. separator
+		end
+	end
+	return result
+end
+
+-- See [[Template:Item#Gather given parameter from all items]]
+function p.gather(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local parameter = args.parameter or "1"
+	
+	local templateArgs = { }
+	for i, item in ipairs(items) do
+		templateArgs[i] = unpack(item)[parameter]
+	end
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+return p</text>
+      <sha1>8a56kjxfu3plv66z6z732hkase6suqc</sha1>
+    </revision>
+    <revision>
+      <id>3608563</id>
+      <parentid>3608335</parentid>
+      <timestamp>2026-04-18T21:27:29Z</timestamp>
+      <contributor>
+        <username>MusikAnimal</username>
+        <id>53</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:Item]]": [[Wikipedia:High-risk templates|High-risk module]] ([Edit=Require autoconfirmed or confirmed access] (indefinite))</comment>
+      <origin>323</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3044" sha1="8a56kjxfu3plv66z6z732hkase6suqc" xml:space="preserve">local p = {}
+
+local function escape(str)
+	return str:gsub("[|\\]", function (c) return string.format("\\%03d", c:byte()) end)
+end
+
+local function unescape(str)
+	return str:gsub("\\(%d%d%d)", function (d) return string.char(d) end)
+end
+
+-- Implements [[Template:Item]]
+function p.pack(frame)
+	local parent = frame:getParent()
+	local result = ''
+	for key, value in pairs(parent.args) do
+		result = result .. "|" .. escape(tostring(key)) .. "|" .. escape(value)
+	end
+	return result .. "|";
+end
+
+local function unpack(str)
+	local result = { }
+	for key, value in str:gfind("|([^|]*)|([^|]*)") do
+		result[unescape(key)] = unescape(value)
+	end
+	return result
+end
+
+-- Implements [[Template:Component]]
+function p.component(frame)
+	return unpack(frame.args[1])[frame.args[2]]
+end
+
+local function getItems(frame)
+	return frame:getParent().args
+end
+
+local function invert(tbl)
+	local result = { }
+	for key, value in pairs(tbl) do
+		result[value] = key
+	end
+	return result
+end
+
+-- Add args into item as appropriate (see [[Template:Format item]])
+local function addArgs(
+	item,   -- unpacked item to modify
+	args,   -- arguments for adding into item
+	ignore, -- pass in invert{keys to ignore}
+	shift   -- for numbered arguments, args[key+shift] is assigned to item[key]
+	-- returns: item
+)
+	for key, value in pairs(args) do
+		if not ignore[key] then
+			local _, _, paramKey = string.find(key, "^param (.*)")
+			local _, _, importantKey = string.find(key, "^important (.*)")
+			paramKey = paramKey or importantKey or key
+			if shift and type(paramKey) == "number" then
+				paramKey = paramKey - shift
+				if paramKey &lt; 1 then paramKey = nil end
+			end
+			if paramKey and (importantKey or item[paramKey] == nil) then
+				item[paramKey] = value
+			end
+		end
+	end
+	
+	return item
+end
+
+-- Implements [[Template:Format item]]
+function p.format(frame)
+	local args = frame:getParent().args
+	local ignore = invert{ "template", "item" }
+	local templateArgs = addArgs(unpack(args.item), args, ignore)
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+-- See [[Template:Item#Format each item using a template]]
+function p.each(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local separator = args[1] or ""
+	local prepend = args[2] or ""
+	local append = args[3] or ""
+	local ignore = invert{ "template" }
+	local shift = 3
+
+	local result = ""
+	for i, item in ipairs(items) do
+		local templateArgs = addArgs(unpack(item), args, ignore, shift)
+		result = result .. prepend .. frame:expandTemplate{ title = args.template, args = templateArgs } .. append
+		if items[i + 1] then
+			result = result .. separator
+		end
+	end
+	return result
+end
+
+-- See [[Template:Item#Gather given parameter from all items]]
+function p.gather(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local parameter = args.parameter or "1"
+	
+	local templateArgs = { }
+	for i, item in ipairs(items) do
+		templateArgs[i] = unpack(item)[parameter]
+	end
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+return p</text>
+      <sha1>8a56kjxfu3plv66z6z732hkase6suqc</sha1>
+    </revision>
+    <revision>
+      <id>3608564</id>
+      <parentid>3608563</parentid>
+      <timestamp>2026-04-18T21:27:29Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting to try to fix the lower alpha issue</comment>
+      <origin>323</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3044" sha1="8a56kjxfu3plv66z6z732hkase6suqc" xml:space="preserve">local p = {}
+
+local function escape(str)
+	return str:gsub("[|\\]", function (c) return string.format("\\%03d", c:byte()) end)
+end
+
+local function unescape(str)
+	return str:gsub("\\(%d%d%d)", function (d) return string.char(d) end)
+end
+
+-- Implements [[Template:Item]]
+function p.pack(frame)
+	local parent = frame:getParent()
+	local result = ''
+	for key, value in pairs(parent.args) do
+		result = result .. "|" .. escape(tostring(key)) .. "|" .. escape(value)
+	end
+	return result .. "|";
+end
+
+local function unpack(str)
+	local result = { }
+	for key, value in str:gfind("|([^|]*)|([^|]*)") do
+		result[unescape(key)] = unescape(value)
+	end
+	return result
+end
+
+-- Implements [[Template:Component]]
+function p.component(frame)
+	return unpack(frame.args[1])[frame.args[2]]
+end
+
+local function getItems(frame)
+	return frame:getParent().args
+end
+
+local function invert(tbl)
+	local result = { }
+	for key, value in pairs(tbl) do
+		result[value] = key
+	end
+	return result
+end
+
+-- Add args into item as appropriate (see [[Template:Format item]])
+local function addArgs(
+	item,   -- unpacked item to modify
+	args,   -- arguments for adding into item
+	ignore, -- pass in invert{keys to ignore}
+	shift   -- for numbered arguments, args[key+shift] is assigned to item[key]
+	-- returns: item
+)
+	for key, value in pairs(args) do
+		if not ignore[key] then
+			local _, _, paramKey = string.find(key, "^param (.*)")
+			local _, _, importantKey = string.find(key, "^important (.*)")
+			paramKey = paramKey or importantKey or key
+			if shift and type(paramKey) == "number" then
+				paramKey = paramKey - shift
+				if paramKey &lt; 1 then paramKey = nil end
+			end
+			if paramKey and (importantKey or item[paramKey] == nil) then
+				item[paramKey] = value
+			end
+		end
+	end
+	
+	return item
+end
+
+-- Implements [[Template:Format item]]
+function p.format(frame)
+	local args = frame:getParent().args
+	local ignore = invert{ "template", "item" }
+	local templateArgs = addArgs(unpack(args.item), args, ignore)
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+-- See [[Template:Item#Format each item using a template]]
+function p.each(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local separator = args[1] or ""
+	local prepend = args[2] or ""
+	local append = args[3] or ""
+	local ignore = invert{ "template" }
+	local shift = 3
+
+	local result = ""
+	for i, item in ipairs(items) do
+		local templateArgs = addArgs(unpack(item), args, ignore, shift)
+		result = result .. prepend .. frame:expandTemplate{ title = args.template, args = templateArgs } .. append
+		if items[i + 1] then
+			result = result .. separator
+		end
+	end
+	return result
+end
+
+-- See [[Template:Item#Gather given parameter from all items]]
+function p.gather(frame)
+	local args = frame.args
+	local items = getItems(frame)
+	local parameter = args.parameter or "1"
+	
+	local templateArgs = { }
+	for i, item in ipairs(items) do
+		templateArgs[i] = unpack(item)[parameter]
+	end
+	
+	return frame:expandTemplate{ title = args.template, args = templateArgs }
+end
+
+return p</text>
+      <sha1>8a56kjxfu3plv66z6z732hkase6suqc</sha1>
+    </revision>
+  </page>
+</mediawiki>

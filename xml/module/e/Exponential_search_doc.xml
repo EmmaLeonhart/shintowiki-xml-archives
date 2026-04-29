@@ -1,0 +1,332 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Exponential search/doc</title>
+    <ns>828</ns>
+    <id>7571</id>
+    <revision>
+      <id>884928</id>
+      <timestamp>2024-08-29T21:17:59Z</timestamp>
+      <contributor>
+        <username>en&gt;Nickps</username>
+        <id>0</id>
+      </contributor>
+      <comment>Added the page to [[:Category:Module documentation pages]]</comment>
+      <origin>884928</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="4013" sha1="5non91g5lsb0alpdt2gh0gzvy1rj78e" xml:space="preserve">{{high use}}
+This module provides a generic [[exponential search]] algorithm. This kind of search can be useful when you want to find a key in some kind of sorted array, and you want to do it by checking as few array elements as possible. This could include situations like:
+* Finding the highest archive number in a set of archives without checking whether they all exist.
+* Finding the number of positional arguments in frame.args without having to expand the wikitext for each of them.
+
+You shouldn't use this module if any of the following apply:
+# You can use the [[mw:Extension:Scribunto/Lua reference manual#Length operator|Lua length operator]] to find what you need.
+# Your array has any gaps in it. (In other words, any of the items before the final item is &lt;code&gt;nil&lt;/code&gt;, e.g. &lt;syntaxhighlight lang="lua" inline&gt;{'foo', 'bar', nil, 'baz'}&lt;/syntaxhighlight&gt;.) If you try and use this module on a sparse array, you might get an erroneous value.
+# Your array has less then about 10 items in it. It's possible to use this module for those arrays, but you will access most of the array elements anyway (perhaps some of them twice), and your code will be more complicated than if you just used a for loop.
+
+== Usage ==
+
+First, load the module.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local expSearch = require('Module:Exponential search')
+&lt;/syntaxhighlight&gt;
+
+You can then use the expSearch function with the following syntax:
+
+&lt;syntaxhighlight lang="lua"&gt;
+expSearch(testFunc, init)
+&lt;/syntaxhighlight&gt;
+
+Parameters:
+* &lt;var&gt;testFunc&lt;/var&gt; - a test function for your array. This function should take a positive integer &lt;var&gt;i&lt;/var&gt; as its first parameter. If the element corresponding to &lt;var&gt;i&lt;/var&gt; is not in the array, then the function should return false or nil; and if it ''is'' in the array, then the function should return a truthy value (anything other than false or nil). (required)
+* &lt;var&gt;init&lt;/var&gt; - the initial value of &lt;var&gt;i&lt;/var&gt; to check. For advanced users. (optional)
+
+expSearch will return the highest value of &lt;var&gt;i&lt;/var&gt; for which testFunc was truthy. If no values were truthy, the function will return nil.
+
+== Examples ==
+
+=== Jimbo's talk archives ===
+
+[[User talk:Jimbo Wales]] has archives at [[User talk:Jimbo Wales/Archive 1]], [[User talk:Jimbo Wales/Archive 2]], ... To find the highest archive number, you would use code like this:
+
+&lt;syntaxhighlight lang="lua"&gt;
+local expSearch = require('Module:Exponential search')
+local highestArchive = expSearch(function (i)
+	local archive = 'User talk:Jimbo Wales/Archive ' .. i
+	return mw.title.new(archive).exists
+end)
+&lt;/syntaxhighlight&gt;
+
+=== Village pump archives ===
+
+[[Wikipedia:Village pump (proposals)]] has old archives at [[Wikipedia:Village pump (proposals)/Archive A]], [[Wikipedia:Village pump (proposals)/Archive B]], etc. After they go through to Archive Z, the next archive is Archive AA. Although these archives aren't being updated anymore, as a demonstration we can find the highest one using this module; all we need is a function that converts from an integer to the corresponding archive name.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local expSearch = require('Module:Exponential search')
+
+local function integerToAlpha(i)
+	-- This function converts 1 to A, 2 to B, ... 26 to Z, 27 to AA, ...
+	local ret = ''
+	while i &gt; 0 do
+		local rem = i % 26
+		if rem == 0 then
+			rem = 26
+		end
+		local char = string.char(rem + 64) -- the "rem"th letter of the alphabet
+		ret = char .. ret
+		i = (i - rem) / 26
+	end
+	return ret
+end
+
+local function integerToArchive(i)
+	return 'Wikipedia:Village pump (proposals)/Archive ' .. integerToAlpha(i)
+end
+
+local highestInteger = expSearch(function (i)
+	local archive = integerToArchive(i)
+	return mw.title.new(archive).exists
+end)
+local highestArchive = integerToArchive(highestInteger)
+&lt;/syntaxhighlight&gt;
+
+&lt;includeonly&gt;{{#ifeq:{{SUBPAGENAME}}|sandbox | |
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+
+}}&lt;/includeonly&gt;&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>5non91g5lsb0alpdt2gh0gzvy1rj78e</sha1>
+    </revision>
+    <revision>
+      <id>884929</id>
+      <parentid>884928</parentid>
+      <timestamp>2025-01-07T10:27:40Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: importing modules</comment>
+      <origin>884928</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="4013" sha1="5non91g5lsb0alpdt2gh0gzvy1rj78e" xml:space="preserve">{{high use}}
+This module provides a generic [[exponential search]] algorithm. This kind of search can be useful when you want to find a key in some kind of sorted array, and you want to do it by checking as few array elements as possible. This could include situations like:
+* Finding the highest archive number in a set of archives without checking whether they all exist.
+* Finding the number of positional arguments in frame.args without having to expand the wikitext for each of them.
+
+You shouldn't use this module if any of the following apply:
+# You can use the [[mw:Extension:Scribunto/Lua reference manual#Length operator|Lua length operator]] to find what you need.
+# Your array has any gaps in it. (In other words, any of the items before the final item is &lt;code&gt;nil&lt;/code&gt;, e.g. &lt;syntaxhighlight lang="lua" inline&gt;{'foo', 'bar', nil, 'baz'}&lt;/syntaxhighlight&gt;.) If you try and use this module on a sparse array, you might get an erroneous value.
+# Your array has less then about 10 items in it. It's possible to use this module for those arrays, but you will access most of the array elements anyway (perhaps some of them twice), and your code will be more complicated than if you just used a for loop.
+
+== Usage ==
+
+First, load the module.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local expSearch = require('Module:Exponential search')
+&lt;/syntaxhighlight&gt;
+
+You can then use the expSearch function with the following syntax:
+
+&lt;syntaxhighlight lang="lua"&gt;
+expSearch(testFunc, init)
+&lt;/syntaxhighlight&gt;
+
+Parameters:
+* &lt;var&gt;testFunc&lt;/var&gt; - a test function for your array. This function should take a positive integer &lt;var&gt;i&lt;/var&gt; as its first parameter. If the element corresponding to &lt;var&gt;i&lt;/var&gt; is not in the array, then the function should return false or nil; and if it ''is'' in the array, then the function should return a truthy value (anything other than false or nil). (required)
+* &lt;var&gt;init&lt;/var&gt; - the initial value of &lt;var&gt;i&lt;/var&gt; to check. For advanced users. (optional)
+
+expSearch will return the highest value of &lt;var&gt;i&lt;/var&gt; for which testFunc was truthy. If no values were truthy, the function will return nil.
+
+== Examples ==
+
+=== Jimbo's talk archives ===
+
+[[User talk:Jimbo Wales]] has archives at [[User talk:Jimbo Wales/Archive 1]], [[User talk:Jimbo Wales/Archive 2]], ... To find the highest archive number, you would use code like this:
+
+&lt;syntaxhighlight lang="lua"&gt;
+local expSearch = require('Module:Exponential search')
+local highestArchive = expSearch(function (i)
+	local archive = 'User talk:Jimbo Wales/Archive ' .. i
+	return mw.title.new(archive).exists
+end)
+&lt;/syntaxhighlight&gt;
+
+=== Village pump archives ===
+
+[[Wikipedia:Village pump (proposals)]] has old archives at [[Wikipedia:Village pump (proposals)/Archive A]], [[Wikipedia:Village pump (proposals)/Archive B]], etc. After they go through to Archive Z, the next archive is Archive AA. Although these archives aren't being updated anymore, as a demonstration we can find the highest one using this module; all we need is a function that converts from an integer to the corresponding archive name.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local expSearch = require('Module:Exponential search')
+
+local function integerToAlpha(i)
+	-- This function converts 1 to A, 2 to B, ... 26 to Z, 27 to AA, ...
+	local ret = ''
+	while i &gt; 0 do
+		local rem = i % 26
+		if rem == 0 then
+			rem = 26
+		end
+		local char = string.char(rem + 64) -- the "rem"th letter of the alphabet
+		ret = char .. ret
+		i = (i - rem) / 26
+	end
+	return ret
+end
+
+local function integerToArchive(i)
+	return 'Wikipedia:Village pump (proposals)/Archive ' .. integerToAlpha(i)
+end
+
+local highestInteger = expSearch(function (i)
+	local archive = integerToArchive(i)
+	return mw.title.new(archive).exists
+end)
+local highestArchive = integerToArchive(highestInteger)
+&lt;/syntaxhighlight&gt;
+
+&lt;includeonly&gt;{{#ifeq:{{SUBPAGENAME}}|sandbox | |
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+
+}}&lt;/includeonly&gt;&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>5non91g5lsb0alpdt2gh0gzvy1rj78e</sha1>
+    </revision>
+    <revision>
+      <id>7572</id>
+      <timestamp>2025-05-19T22:47:35Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Bot: convert local link → enwiki interwiki</comment>
+      <origin>7572</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="4036" sha1="9pjdvpx2cb3qluv6ob5y5aul94xj17z" xml:space="preserve">{{high use}}
+This module provides a generic [[:en:Exponential search|Exponential search]] algorithm. This kind of search can be useful when you want to find a key in some kind of sorted array, and you want to do it by checking as few array elements as possible. This could include situations like:
+* Finding the highest archive number in a set of archives without checking whether they all exist.
+* Finding the number of positional arguments in frame.args without having to expand the wikitext for each of them.
+
+You shouldn't use this module if any of the following apply:
+# You can use the [[mw:Extension:Scribunto/Lua reference manual#Length operator|Lua length operator]] to find what you need.
+# Your array has any gaps in it. (In other words, any of the items before the final item is &lt;code&gt;nil&lt;/code&gt;, e.g. &lt;syntaxhighlight lang="lua" inline&gt;{'foo', 'bar', nil, 'baz'}&lt;/syntaxhighlight&gt;.) If you try and use this module on a sparse array, you might get an erroneous value.
+# Your array has less then about 10 items in it. It's possible to use this module for those arrays, but you will access most of the array elements anyway (perhaps some of them twice), and your code will be more complicated than if you just used a for loop.
+
+== Usage ==
+
+First, load the module.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local expSearch = require('Module:Exponential search')
+&lt;/syntaxhighlight&gt;
+
+You can then use the expSearch function with the following syntax:
+
+&lt;syntaxhighlight lang="lua"&gt;
+expSearch(testFunc, init)
+&lt;/syntaxhighlight&gt;
+
+Parameters:
+* &lt;var&gt;testFunc&lt;/var&gt; - a test function for your array. This function should take a positive integer &lt;var&gt;i&lt;/var&gt; as its first parameter. If the element corresponding to &lt;var&gt;i&lt;/var&gt; is not in the array, then the function should return false or nil; and if it ''is'' in the array, then the function should return a truthy value (anything other than false or nil). (required)
+* &lt;var&gt;init&lt;/var&gt; - the initial value of &lt;var&gt;i&lt;/var&gt; to check. For advanced users. (optional)
+
+expSearch will return the highest value of &lt;var&gt;i&lt;/var&gt; for which testFunc was truthy. If no values were truthy, the function will return nil.
+
+== Examples ==
+
+=== Jimbo's talk archives ===
+
+[[User talk:Jimbo Wales]] has archives at [[User talk:Jimbo Wales/Archive 1]], [[User talk:Jimbo Wales/Archive 2]], ... To find the highest archive number, you would use code like this:
+
+&lt;syntaxhighlight lang="lua"&gt;
+local expSearch = require('Module:Exponential search')
+local highestArchive = expSearch(function (i)
+	local archive = 'User talk:Jimbo Wales/Archive ' .. i
+	return mw.title.new(archive).exists
+end)
+&lt;/syntaxhighlight&gt;
+
+=== Village pump archives ===
+
+[[Wikipedia:Village pump (proposals)]] has old archives at [[Wikipedia:Village pump (proposals)/Archive A]], [[Wikipedia:Village pump (proposals)/Archive B]], etc. After they go through to Archive Z, the next archive is Archive AA. Although these archives aren't being updated anymore, as a demonstration we can find the highest one using this module; all we need is a function that converts from an integer to the corresponding archive name.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local expSearch = require('Module:Exponential search')
+
+local function integerToAlpha(i)
+	-- This function converts 1 to A, 2 to B, ... 26 to Z, 27 to AA, ...
+	local ret = ''
+	while i &gt; 0 do
+		local rem = i % 26
+		if rem == 0 then
+			rem = 26
+		end
+		local char = string.char(rem + 64) -- the "rem"th letter of the alphabet
+		ret = char .. ret
+		i = (i - rem) / 26
+	end
+	return ret
+end
+
+local function integerToArchive(i)
+	return 'Wikipedia:Village pump (proposals)/Archive ' .. integerToAlpha(i)
+end
+
+local highestInteger = expSearch(function (i)
+	local archive = integerToArchive(i)
+	return mw.title.new(archive).exists
+end)
+local highestArchive = integerToArchive(highestInteger)
+&lt;/syntaxhighlight&gt;
+
+&lt;includeonly&gt;{{#ifeq:{{SUBPAGENAME}}|sandbox | |
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+
+}}&lt;/includeonly&gt;&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>9pjdvpx2cb3qluv6ob5y5aul94xj17z</sha1>
+    </revision>
+  </page>
+</mediawiki>

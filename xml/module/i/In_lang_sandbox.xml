@@ -1,0 +1,708 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:In lang/sandbox</title>
+    <ns>828</ns>
+    <id>5916</id>
+    <revision>
+      <id>832345</id>
+      <timestamp>2023-07-22T06:11:35Z</timestamp>
+      <contributor>
+        <username>en&gt;Sdrqaz</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Removed protection from "[[Module:In lang/sandbox]]": [[WP:UNPROTPOL|No longer necessary]]: [[Special:Permalink/1166536345#Template and module sandboxes (done)|Requested at RfPP]] with one transclusion</comment>
+      <origin>832345</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="9678" sha1="lsobtelrukzmfz19a7laz4pa2wk0tq9" xml:space="preserve">require('strict');
+
+
+--[[--------------------------&lt; _ I N _ L A N G &gt;--------------------------------------------------------------
+
+implements {{in lang}}
+
+Module entry point from another module
+
+|link=yes - creates wikilinked language names
+|template=&lt;template name&gt; - customizes error messages created by Module:lang
+|list-cats=yes - documentation tool returns language-category names of cats populated by this template
+
+&lt;span class="languageicon"&gt;(in &lt;language&gt;)&lt;/span&gt;
+
+]]
+
+local function _in_lang (args)
+	local synonym_table = mw.loadData ('Module:Lang/ISO 639 synonyms');			-- ISO 639-2/639-2T code translation to 639-1 code
+	local list_cats = 'yes' == args['list-cats'];								-- make a boolean
+	local list = {};
+	local cats = {};
+	local maint_msgs = {};
+	
+	if not args[1] then
+		local template = (args['template'] and table.concat ({'{{', args['template'], '}}: '})) or '';	-- make template name (if provided by the template)
+		return table.concat ({'&lt;span style=\"font-size:100%; font-style:normal;\" class=\"error\"&gt;error: ', template, 'missing language tag&lt;/span&gt;'});
+	end
+
+	local module = 'Module:Lang' .. (mw.getCurrentFrame():getTitle():match ('/sandbox') or '');	-- if this module is the sandbox,
+
+	local name_from_tag = require (module)._name_from_tag;						-- use Module:Lang/sandbox; Module:Lang else
+
+	local namespace = mw.title.getCurrentTitle().namespace;						-- used for categorization
+	local this_wiki_lang = mw.language.getContentLanguage().code;				-- get this wiki's language code
+
+	for i, lang in ipairs (args) do
+		local code = args[i]:lower();
+		local t = {code, ['link'] = args['link'], ['template'] = args['template']};	-- build an 'args' table
+		lang = name_from_tag (t)												-- get the language name
+		table.insert (list, lang)												-- add this language or error message to the list
+
+		if 'ca-valencia' ~= code then											-- except for valencian
+			code = code:match ('^%a%a%a?%f[^%a]');								-- strip off region, script, and variant tags so that they aren't used to make category names
+		end
+		if synonym_table[code] then												-- if 639-2/639-2T code has a 639-1 synonym
+			if (0 == namespace) and not list_cats then							-- when listing cats don't include this cat; TODO: right choice?
+				table.insert (cats, table.concat ({'[[Category:Lang and lang-xx code promoted to ISO 639-1|', code ..']]'}));
+			end
+			table.insert (maint_msgs, ' &lt;span class="lang-comment" style="font-style:normal; display:none; color:#33aa33; margin-left:0.3em"&gt;')
+			table.insert (maint_msgs, table.concat ({'code: ', code, ' promoted to code: ', synonym_table[code]}));
+			table.insert (maint_msgs, '&lt;/span&gt;;');
+			code = synonym_table[code];											-- use the synonym
+		end
+
+		if (0 == namespace) or list_cats then									-- when in article space
+			if lang:find ('error') then											-- add error category (message provided by Module:Lang)
+				if not list_cats then											-- don't include this cat when listin cats; TODO: right choice?
+					table.insert (cats, '[[Category:in lang template errors]]');
+				end
+			elseif this_wiki_lang ~= code then									-- categorize article only when code is not this wiki's language code
+				if lang:match ('%[%[.-|.-%]%]') then							-- wikilinked individual language name
+					lang = lang:match ('%[%[.-|(.-)%]%]');
+				elseif lang:match ('%[%[.-%]%]') then							-- wikilinked collective languages name
+					lang = lang:match ('%[%[(.-)%]%]');
+				end																-- neither of these then plain-text language name
+
+				if lang:find ('languages') then									-- add appropriate language-name category
+					table.insert (cats, table.concat ({'[[Category:Articles with ', lang, '-collective sources (', code, ')]]'}));
+				else
+					table.insert (cats, table.concat ({'[[Category:Articles with ', lang, '-language sources (', code, ')]]'}));
+				end
+			end
+		end
+	end
+	
+	if list_cats then
+		local cats = table.concat (cats, ', '):gsub ('[%[%]]', '');				-- make a string of categories and then strip wikilink markup
+		return cats
+	end
+
+	local result = {'&lt;span class="languageicon"&gt;('};							-- opening span and (
+	table.insert (result, 'yes' == args['cap'] and 'In ' or 'in ');				-- add capitalized or uncapitalized 'in'
+	table.insert (result, mw.text.listToText (list, ', ', (2 &lt; #list) and ', and ' or ' and ' ));	-- and concatenate the language list
+
+	table.insert (result, ')&lt;/span&gt;');											-- add closing ) and closing span
+	table.insert (result, table.concat (maint_msgs) or '');		          		-- add maint messages, if any
+	table.insert (result, table.concat (cats));									-- add categories
+	return table.concat (result);												-- make a big string and done
+end
+
+
+--[[--------------------------&lt; I N _ L A N G &gt;----------------------------------------------------------------
+
+implements {{in lang}}
+
+Module entry point from an {{#invoke:lang/utilities/sanbox|in_lang|&lt;code&gt;|&lt;code2&gt;|&lt;code3&gt;|&lt;code...&gt;|link=yes|template=in lang|list-cats=yes}}
+
+]]
+
+local function in_lang (frame)
+	local args = require ('Module:Arguments').getArgs (frame);
+	return _in_lang (args);
+	end
+
+
+--[[--------------------------&lt; N A T I V E _ N A M E _ L A N G &gt;----------------------------------------------
+
+experimental code; may not be retained
+
+implements combined is_ietf_tag() and tag_from_name() in Module:Lang for various infoboxen that support a 
+|native_name_lang= parameter.
+
+if {{{1}}} is a valid ietf language tag, returns that tag;
+if {{{1}}} is a properly spelled (case agnostic) language name, returns the ietf language tag associated with that name
+error messages else
+
+entry point from an {{#invoke:Lang/utilities/sandbox|native_name_lang|&lt;language name or tag&gt;|template=&lt;template name&gt;}}
+
+]]
+
+local function native_name_lang (frame)
+	local lang_module = require ('Module:Lang/sandbox');
+	local getArgs = require ('Module:Arguments').getArgs;
+	local args = getArgs(frame);
+	
+	if lang_module._is_ietf_tag (args[1]) then
+		return args[1];															-- if a tag, return the tag
+	else
+		return lang_module._tag_from_name (args);								-- not a tag, attempt to get a tag from the args[1] input value; return tag or error message
+	end
+end
+
+
+--[[--------------------------&lt; C A T _ T E S T &gt;--------------------------------------------------------------
+
+temporary test code to be deleted
+
+support for {{Category articles containing non-English-language text}} that tests the language parameters provided
+to that template against the category name.
+
+{{#invoke:Lang/utilities/sandbox|cat_test}}
+
+]]
+
+local function cat_test (frame)
+	local lang_module = require ('Module:Lang');
+	local args = require ('Module:Arguments').getArgs (frame);
+	local err = false;															-- boolean set true when an error is detected; one error message only
+	local cat_page_title = mw.title.getCurrentTitle().text;						-- get the category title
+	local lang_name;
+	local index;																-- positional parameter index
+	local lc_lang_name, lc_lang_name_col;										-- individual and collective cat names are different
+	local lc_title;
+	
+	for i, v in ipairs (args) do												-- pairs because ipairs stops at nil value (empty positional parameter)
+		if 'number' == type (i) and args[i] then								-- only positional parameters and only when they have a value
+			if lang_module._is_ietf_tag (v) then								-- see if this thing 'v' is an ietf tag
+				local t = {v};													-- it is so make an args table for _name_from_tag()
+				lang_name = lang_module._name_from_tag (t);						-- get the language name
+			else
+				lang_name = v;													-- not a valid tag so presume it is a name
+			end
+mw.logObject (lang_name, 'lang_name')
+			lc_lang_name = table.concat ({										-- build a string to match category name form for individual and macro languages
+				'containing ',
+				mw.ustring.lower (lang_name);									-- to lowercase for comparisons
+				'-language',
+				});
+mw.logObject (lc_lang_name, 'lc_lang_name')
+			lc_lang_name_col = table.concat ({									-- build a string to match category name form for collective languages
+				'the ',
+				mw.ustring.lower (lang_name);									-- to lowercase for comparisons
+				' ',															-- next word is languages which is included in the name retrieved from Module:lang
+				});
+mw.logObject (lc_lang_name_col, 'lc_lang_name_col')
+			
+			lc_title = mw.ustring.lower (cat_page_title);
+
+			if  not mw.ustring.find (lc_title, lc_lang_name, 1, true) and		-- if lang name not found in cat title
+				not mw.ustring.find (lc_title, lc_lang_name_col, 1, true) then
+					err = true;													-- set a flag
+					index = i;													-- remember which positional param failed the test
+					break;														-- abandon the search on first error
+			end
+		end
+	end
+																				-- create error message and done
+	return err and table.concat ({
+		'&lt;span style=\"font-size:100%; font-style:normal;\" class=\"error\"&gt;error: language: ',
+		lang_name,																-- the thing that we think is the language name
+		' from {{{',
+		index,																	-- the positional parameter index: 1 in {{{1}}}
+		'}}} (',
+		args[index],															-- the content of the positional parameter
+		') does not match category title.&lt;/span&gt;[[Category:Lang and lang-xx template errors]]'
+		}) or nil;
+end
+
+--[[--------------------------&lt; E X P O R T E D   F U N C T I O N S &gt;------------------------------------------
+]]
+
+return {
+	in_lang = in_lang,															-- module entry from {{#invoke:}}
+	native_name_lang = native_name_lang,										-- experimental code; may not be retained
+	
+	_in_lang = _in_lang,														-- module entry from another module
+
+	cat_test = cat_test,														-- temporary test code to be deleted
+	}</text>
+      <sha1>lsobtelrukzmfz19a7laz4pa2wk0tq9</sha1>
+    </revision>
+    <revision>
+      <id>832346</id>
+      <parentid>832345</parentid>
+      <timestamp>2024-12-31T06:41:07Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Mass importing wikipedia categories, not taking histories because these are unused ones and it is kind of obvious where they came from</comment>
+      <origin>832345</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="9678" sha1="lsobtelrukzmfz19a7laz4pa2wk0tq9" xml:space="preserve">require('strict');
+
+
+--[[--------------------------&lt; _ I N _ L A N G &gt;--------------------------------------------------------------
+
+implements {{in lang}}
+
+Module entry point from another module
+
+|link=yes - creates wikilinked language names
+|template=&lt;template name&gt; - customizes error messages created by Module:lang
+|list-cats=yes - documentation tool returns language-category names of cats populated by this template
+
+&lt;span class="languageicon"&gt;(in &lt;language&gt;)&lt;/span&gt;
+
+]]
+
+local function _in_lang (args)
+	local synonym_table = mw.loadData ('Module:Lang/ISO 639 synonyms');			-- ISO 639-2/639-2T code translation to 639-1 code
+	local list_cats = 'yes' == args['list-cats'];								-- make a boolean
+	local list = {};
+	local cats = {};
+	local maint_msgs = {};
+	
+	if not args[1] then
+		local template = (args['template'] and table.concat ({'{{', args['template'], '}}: '})) or '';	-- make template name (if provided by the template)
+		return table.concat ({'&lt;span style=\"font-size:100%; font-style:normal;\" class=\"error\"&gt;error: ', template, 'missing language tag&lt;/span&gt;'});
+	end
+
+	local module = 'Module:Lang' .. (mw.getCurrentFrame():getTitle():match ('/sandbox') or '');	-- if this module is the sandbox,
+
+	local name_from_tag = require (module)._name_from_tag;						-- use Module:Lang/sandbox; Module:Lang else
+
+	local namespace = mw.title.getCurrentTitle().namespace;						-- used for categorization
+	local this_wiki_lang = mw.language.getContentLanguage().code;				-- get this wiki's language code
+
+	for i, lang in ipairs (args) do
+		local code = args[i]:lower();
+		local t = {code, ['link'] = args['link'], ['template'] = args['template']};	-- build an 'args' table
+		lang = name_from_tag (t)												-- get the language name
+		table.insert (list, lang)												-- add this language or error message to the list
+
+		if 'ca-valencia' ~= code then											-- except for valencian
+			code = code:match ('^%a%a%a?%f[^%a]');								-- strip off region, script, and variant tags so that they aren't used to make category names
+		end
+		if synonym_table[code] then												-- if 639-2/639-2T code has a 639-1 synonym
+			if (0 == namespace) and not list_cats then							-- when listing cats don't include this cat; TODO: right choice?
+				table.insert (cats, table.concat ({'[[Category:Lang and lang-xx code promoted to ISO 639-1|', code ..']]'}));
+			end
+			table.insert (maint_msgs, ' &lt;span class="lang-comment" style="font-style:normal; display:none; color:#33aa33; margin-left:0.3em"&gt;')
+			table.insert (maint_msgs, table.concat ({'code: ', code, ' promoted to code: ', synonym_table[code]}));
+			table.insert (maint_msgs, '&lt;/span&gt;;');
+			code = synonym_table[code];											-- use the synonym
+		end
+
+		if (0 == namespace) or list_cats then									-- when in article space
+			if lang:find ('error') then											-- add error category (message provided by Module:Lang)
+				if not list_cats then											-- don't include this cat when listin cats; TODO: right choice?
+					table.insert (cats, '[[Category:in lang template errors]]');
+				end
+			elseif this_wiki_lang ~= code then									-- categorize article only when code is not this wiki's language code
+				if lang:match ('%[%[.-|.-%]%]') then							-- wikilinked individual language name
+					lang = lang:match ('%[%[.-|(.-)%]%]');
+				elseif lang:match ('%[%[.-%]%]') then							-- wikilinked collective languages name
+					lang = lang:match ('%[%[(.-)%]%]');
+				end																-- neither of these then plain-text language name
+
+				if lang:find ('languages') then									-- add appropriate language-name category
+					table.insert (cats, table.concat ({'[[Category:Articles with ', lang, '-collective sources (', code, ')]]'}));
+				else
+					table.insert (cats, table.concat ({'[[Category:Articles with ', lang, '-language sources (', code, ')]]'}));
+				end
+			end
+		end
+	end
+	
+	if list_cats then
+		local cats = table.concat (cats, ', '):gsub ('[%[%]]', '');				-- make a string of categories and then strip wikilink markup
+		return cats
+	end
+
+	local result = {'&lt;span class="languageicon"&gt;('};							-- opening span and (
+	table.insert (result, 'yes' == args['cap'] and 'In ' or 'in ');				-- add capitalized or uncapitalized 'in'
+	table.insert (result, mw.text.listToText (list, ', ', (2 &lt; #list) and ', and ' or ' and ' ));	-- and concatenate the language list
+
+	table.insert (result, ')&lt;/span&gt;');											-- add closing ) and closing span
+	table.insert (result, table.concat (maint_msgs) or '');		          		-- add maint messages, if any
+	table.insert (result, table.concat (cats));									-- add categories
+	return table.concat (result);												-- make a big string and done
+end
+
+
+--[[--------------------------&lt; I N _ L A N G &gt;----------------------------------------------------------------
+
+implements {{in lang}}
+
+Module entry point from an {{#invoke:lang/utilities/sanbox|in_lang|&lt;code&gt;|&lt;code2&gt;|&lt;code3&gt;|&lt;code...&gt;|link=yes|template=in lang|list-cats=yes}}
+
+]]
+
+local function in_lang (frame)
+	local args = require ('Module:Arguments').getArgs (frame);
+	return _in_lang (args);
+	end
+
+
+--[[--------------------------&lt; N A T I V E _ N A M E _ L A N G &gt;----------------------------------------------
+
+experimental code; may not be retained
+
+implements combined is_ietf_tag() and tag_from_name() in Module:Lang for various infoboxen that support a 
+|native_name_lang= parameter.
+
+if {{{1}}} is a valid ietf language tag, returns that tag;
+if {{{1}}} is a properly spelled (case agnostic) language name, returns the ietf language tag associated with that name
+error messages else
+
+entry point from an {{#invoke:Lang/utilities/sandbox|native_name_lang|&lt;language name or tag&gt;|template=&lt;template name&gt;}}
+
+]]
+
+local function native_name_lang (frame)
+	local lang_module = require ('Module:Lang/sandbox');
+	local getArgs = require ('Module:Arguments').getArgs;
+	local args = getArgs(frame);
+	
+	if lang_module._is_ietf_tag (args[1]) then
+		return args[1];															-- if a tag, return the tag
+	else
+		return lang_module._tag_from_name (args);								-- not a tag, attempt to get a tag from the args[1] input value; return tag or error message
+	end
+end
+
+
+--[[--------------------------&lt; C A T _ T E S T &gt;--------------------------------------------------------------
+
+temporary test code to be deleted
+
+support for {{Category articles containing non-English-language text}} that tests the language parameters provided
+to that template against the category name.
+
+{{#invoke:Lang/utilities/sandbox|cat_test}}
+
+]]
+
+local function cat_test (frame)
+	local lang_module = require ('Module:Lang');
+	local args = require ('Module:Arguments').getArgs (frame);
+	local err = false;															-- boolean set true when an error is detected; one error message only
+	local cat_page_title = mw.title.getCurrentTitle().text;						-- get the category title
+	local lang_name;
+	local index;																-- positional parameter index
+	local lc_lang_name, lc_lang_name_col;										-- individual and collective cat names are different
+	local lc_title;
+	
+	for i, v in ipairs (args) do												-- pairs because ipairs stops at nil value (empty positional parameter)
+		if 'number' == type (i) and args[i] then								-- only positional parameters and only when they have a value
+			if lang_module._is_ietf_tag (v) then								-- see if this thing 'v' is an ietf tag
+				local t = {v};													-- it is so make an args table for _name_from_tag()
+				lang_name = lang_module._name_from_tag (t);						-- get the language name
+			else
+				lang_name = v;													-- not a valid tag so presume it is a name
+			end
+mw.logObject (lang_name, 'lang_name')
+			lc_lang_name = table.concat ({										-- build a string to match category name form for individual and macro languages
+				'containing ',
+				mw.ustring.lower (lang_name);									-- to lowercase for comparisons
+				'-language',
+				});
+mw.logObject (lc_lang_name, 'lc_lang_name')
+			lc_lang_name_col = table.concat ({									-- build a string to match category name form for collective languages
+				'the ',
+				mw.ustring.lower (lang_name);									-- to lowercase for comparisons
+				' ',															-- next word is languages which is included in the name retrieved from Module:lang
+				});
+mw.logObject (lc_lang_name_col, 'lc_lang_name_col')
+			
+			lc_title = mw.ustring.lower (cat_page_title);
+
+			if  not mw.ustring.find (lc_title, lc_lang_name, 1, true) and		-- if lang name not found in cat title
+				not mw.ustring.find (lc_title, lc_lang_name_col, 1, true) then
+					err = true;													-- set a flag
+					index = i;													-- remember which positional param failed the test
+					break;														-- abandon the search on first error
+			end
+		end
+	end
+																				-- create error message and done
+	return err and table.concat ({
+		'&lt;span style=\"font-size:100%; font-style:normal;\" class=\"error\"&gt;error: language: ',
+		lang_name,																-- the thing that we think is the language name
+		' from {{{',
+		index,																	-- the positional parameter index: 1 in {{{1}}}
+		'}}} (',
+		args[index],															-- the content of the positional parameter
+		') does not match category title.&lt;/span&gt;[[Category:Lang and lang-xx template errors]]'
+		}) or nil;
+end
+
+--[[--------------------------&lt; E X P O R T E D   F U N C T I O N S &gt;------------------------------------------
+]]
+
+return {
+	in_lang = in_lang,															-- module entry from {{#invoke:}}
+	native_name_lang = native_name_lang,										-- experimental code; may not be retained
+	
+	_in_lang = _in_lang,														-- module entry from another module
+
+	cat_test = cat_test,														-- temporary test code to be deleted
+	}</text>
+      <sha1>lsobtelrukzmfz19a7laz4pa2wk0tq9</sha1>
+    </revision>
+    <revision>
+      <id>5917</id>
+      <timestamp>2025-11-22T14:38:02Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Text replacement - "↵↵↵" to "
+"</comment>
+      <origin>5917</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="9670" sha1="5x5uawv4na9k6pfzzbg7ma7b5twgv1f" xml:space="preserve">require('strict');
+--[[--------------------------&lt; _ I N _ L A N G &gt;--------------------------------------------------------------
+
+implements {{in lang}}
+
+Module entry point from another module
+
+|link=yes - creates wikilinked language names
+|template=&lt;template name&gt; - customizes error messages created by Module:lang
+|list-cats=yes - documentation tool returns language-category names of cats populated by this template
+
+&lt;span class="languageicon"&gt;(in &lt;language&gt;)&lt;/span&gt;
+
+]]
+
+local function _in_lang (args)
+	local synonym_table = mw.loadData ('Module:Lang/ISO 639 synonyms');			-- ISO 639-2/639-2T code translation to 639-1 code
+	local list_cats = 'yes' == args['list-cats'];								-- make a boolean
+	local list = {};
+	local cats = {};
+	local maint_msgs = {};
+	
+	if not args[1] then
+		local template = (args['template'] and table.concat ({'{{', args['template'], '}}: '})) or '';	-- make template name (if provided by the template)
+		return table.concat ({'&lt;span style=\"font-size:100%; font-style:normal;\" class=\"error\"&gt;error: ', template, 'missing language tag&lt;/span&gt;'});
+	end
+
+	local module = 'Module:Lang' .. (mw.getCurrentFrame():getTitle():match ('/sandbox') or '');	-- if this module is the sandbox,
+
+	local name_from_tag = require (module)._name_from_tag;						-- use Module:Lang/sandbox; Module:Lang else
+
+	local namespace = mw.title.getCurrentTitle().namespace;						-- used for categorization
+	local this_wiki_lang = mw.language.getContentLanguage().code;				-- get this wiki's language code
+
+	for i, lang in ipairs (args) do
+		local code = args[i]:lower();
+		local t = {code, ['link'] = args['link'], ['template'] = args['template']};	-- build an 'args' table
+		lang = name_from_tag (t)												-- get the language name
+		table.insert (list, lang)												-- add this language or error message to the list
+
+		if 'ca-valencia' ~= code then											-- except for valencian
+			code = code:match ('^%a%a%a?%f[^%a]');								-- strip off region, script, and variant tags so that they aren't used to make category names
+		end
+		if synonym_table[code] then												-- if 639-2/639-2T code has a 639-1 synonym
+			if (0 == namespace) and not list_cats then							-- when listing cats don't include this cat; TODO: right choice?
+				table.insert (cats, table.concat ({'[[Category:Lang and lang-xx code promoted to ISO 639-1|', code ..']]'}));
+			end
+			table.insert (maint_msgs, ' &lt;span class="lang-comment" style="font-style:normal; display:none; color:#33aa33; margin-left:0.3em"&gt;')
+			table.insert (maint_msgs, table.concat ({'code: ', code, ' promoted to code: ', synonym_table[code]}));
+			table.insert (maint_msgs, '&lt;/span&gt;;');
+			code = synonym_table[code];											-- use the synonym
+		end
+
+		if (0 == namespace) or list_cats then									-- when in article space
+			if lang:find ('error') then											-- add error category (message provided by Module:Lang)
+				if not list_cats then											-- don't include this cat when listin cats; TODO: right choice?
+					table.insert (cats, '[[Category:in lang template errors]]');
+				end
+			elseif this_wiki_lang ~= code then									-- categorize article only when code is not this wiki's language code
+				if lang:match ('%[%[.-|.-%]%]') then							-- wikilinked individual language name
+					lang = lang:match ('%[%[.-|(.-)%]%]');
+				elseif lang:match ('%[%[.-%]%]') then							-- wikilinked collective languages name
+					lang = lang:match ('%[%[(.-)%]%]');
+				end																-- neither of these then plain-text language name
+
+				if lang:find ('languages') then									-- add appropriate language-name category
+					table.insert (cats, table.concat ({'[[Category:Articles with ', lang, '-collective sources (', code, ')]]'}));
+				else
+					table.insert (cats, table.concat ({'[[Category:Articles with ', lang, '-language sources (', code, ')]]'}));
+				end
+			end
+		end
+	end
+	
+	if list_cats then
+		local cats = table.concat (cats, ', '):gsub ('[%[%]]', '');				-- make a string of categories and then strip wikilink markup
+		return cats
+	end
+
+	local result = {'&lt;span class="languageicon"&gt;('};							-- opening span and (
+	table.insert (result, 'yes' == args['cap'] and 'In ' or 'in ');				-- add capitalized or uncapitalized 'in'
+	table.insert (result, mw.text.listToText (list, ', ', (2 &lt; #list) and ', and ' or ' and ' ));	-- and concatenate the language list
+
+	table.insert (result, ')&lt;/span&gt;');											-- add closing ) and closing span
+	table.insert (result, table.concat (maint_msgs) or '');		          		-- add maint messages, if any
+	table.insert (result, table.concat (cats));									-- add categories
+	return table.concat (result);												-- make a big string and done
+end
+--[[--------------------------&lt; I N _ L A N G &gt;----------------------------------------------------------------
+
+implements {{in lang}}
+
+Module entry point from an {{#invoke:lang/utilities/sanbox|in_lang|&lt;code&gt;|&lt;code2&gt;|&lt;code3&gt;|&lt;code...&gt;|link=yes|template=in lang|list-cats=yes}}
+
+]]
+
+local function in_lang (frame)
+	local args = require ('Module:Arguments').getArgs (frame);
+	return _in_lang (args);
+	end
+--[[--------------------------&lt; N A T I V E _ N A M E _ L A N G &gt;----------------------------------------------
+
+experimental code; may not be retained
+
+implements combined is_ietf_tag() and tag_from_name() in Module:Lang for various infoboxen that support a 
+|native_name_lang= parameter.
+
+if {{{1}}} is a valid ietf language tag, returns that tag;
+if {{{1}}} is a properly spelled (case agnostic) language name, returns the ietf language tag associated with that name
+error messages else
+
+entry point from an {{#invoke:Lang/utilities/sandbox|native_name_lang|&lt;language name or tag&gt;|template=&lt;template name&gt;}}
+
+]]
+
+local function native_name_lang (frame)
+	local lang_module = require ('Module:Lang/sandbox');
+	local getArgs = require ('Module:Arguments').getArgs;
+	local args = getArgs(frame);
+	
+	if lang_module._is_ietf_tag (args[1]) then
+		return args[1];															-- if a tag, return the tag
+	else
+		return lang_module._tag_from_name (args);								-- not a tag, attempt to get a tag from the args[1] input value; return tag or error message
+	end
+end
+--[[--------------------------&lt; C A T _ T E S T &gt;--------------------------------------------------------------
+
+temporary test code to be deleted
+
+support for {{Category articles containing non-English-language text}} that tests the language parameters provided
+to that template against the category name.
+
+{{#invoke:Lang/utilities/sandbox|cat_test}}
+
+]]
+
+local function cat_test (frame)
+	local lang_module = require ('Module:Lang');
+	local args = require ('Module:Arguments').getArgs (frame);
+	local err = false;															-- boolean set true when an error is detected; one error message only
+	local cat_page_title = mw.title.getCurrentTitle().text;						-- get the category title
+	local lang_name;
+	local index;																-- positional parameter index
+	local lc_lang_name, lc_lang_name_col;										-- individual and collective cat names are different
+	local lc_title;
+	
+	for i, v in ipairs (args) do												-- pairs because ipairs stops at nil value (empty positional parameter)
+		if 'number' == type (i) and args[i] then								-- only positional parameters and only when they have a value
+			if lang_module._is_ietf_tag (v) then								-- see if this thing 'v' is an ietf tag
+				local t = {v};													-- it is so make an args table for _name_from_tag()
+				lang_name = lang_module._name_from_tag (t);						-- get the language name
+			else
+				lang_name = v;													-- not a valid tag so presume it is a name
+			end
+mw.logObject (lang_name, 'lang_name')
+			lc_lang_name = table.concat ({										-- build a string to match category name form for individual and macro languages
+				'containing ',
+				mw.ustring.lower (lang_name);									-- to lowercase for comparisons
+				'-language',
+				});
+mw.logObject (lc_lang_name, 'lc_lang_name')
+			lc_lang_name_col = table.concat ({									-- build a string to match category name form for collective languages
+				'the ',
+				mw.ustring.lower (lang_name);									-- to lowercase for comparisons
+				' ',															-- next word is languages which is included in the name retrieved from Module:lang
+				});
+mw.logObject (lc_lang_name_col, 'lc_lang_name_col')
+			
+			lc_title = mw.ustring.lower (cat_page_title);
+
+			if  not mw.ustring.find (lc_title, lc_lang_name, 1, true) and		-- if lang name not found in cat title
+				not mw.ustring.find (lc_title, lc_lang_name_col, 1, true) then
+					err = true;													-- set a flag
+					index = i;													-- remember which positional param failed the test
+					break;														-- abandon the search on first error
+			end
+		end
+	end
+																				-- create error message and done
+	return err and table.concat ({
+		'&lt;span style=\"font-size:100%; font-style:normal;\" class=\"error\"&gt;error: language: ',
+		lang_name,																-- the thing that we think is the language name
+		' from {{{',
+		index,																	-- the positional parameter index: 1 in {{{1}}}
+		'}}} (',
+		args[index],															-- the content of the positional parameter
+		') does not match category title.&lt;/span&gt;[[Category:Lang and lang-xx template errors]]'
+		}) or nil;
+end
+
+--[[--------------------------&lt; E X P O R T E D   F U N C T I O N S &gt;------------------------------------------
+]]
+
+return {
+	in_lang = in_lang,															-- module entry from {{#invoke:}}
+	native_name_lang = native_name_lang,										-- experimental code; may not be retained
+	
+	_in_lang = _in_lang,														-- module entry from another module
+
+	cat_test = cat_test,														-- temporary test code to be deleted
+	}</text>
+      <sha1>5x5uawv4na9k6pfzzbg7ma7b5twgv1f</sha1>
+    </revision>
+  </page>
+</mediawiki>

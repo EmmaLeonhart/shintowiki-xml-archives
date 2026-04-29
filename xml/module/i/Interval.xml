@@ -1,0 +1,202 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Interval</title>
+    <ns>828</ns>
+    <id>587</id>
+    <revision>
+      <id>510944</id>
+      <timestamp>2018-11-29T01:11:27Z</timestamp>
+      <contributor>
+        <username>Anomie</username>
+        <id>48</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection level for "[[Module:Interval]]": Syncing protection from formerly cascade-protected [[Template:ACEWatchlistNotice]] ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>510944</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1773" sha1="r86cc354wo1sh2fsjm1d5fl8xr8h3zr" xml:space="preserve">-- This module powers {{interval}}.
+
+local p = {}
+
+-- Constants
+local lang = mw.language.getContentLanguage()
+local getArgs = require('Module:Arguments').getArgs
+
+local function getArgNums(args)
+    -- Returns an array containing the keys of all positional arguments
+    -- that contain data (i.e. non-whitespace values).
+    -- (from Module:Unbulleted_list)
+    local nums = {}
+    for k, v in pairs(args) do
+        if type(k) == 'number' and
+            k &gt;= 1 and
+            math.floor(k) == k and
+            mw.ustring.match(v, '%S') then
+                table.insert(nums, k)
+        end
+    end
+    table.sort(nums)
+    return nums
+end
+
+function p.main(frame)
+    local args = getArgs(frame)
+    return p._main(args)
+end
+
+function p._main(args)
+    local n, rule, format = args.n, args.rule, args.format
+    local numbers = getArgNums(args)
+    local low, high, lowpos, highpos = nil, nil, 0, #numbers + 1
+
+    -- If comparing times, convert them all to seconds after the epoch
+    if format == 'time' then
+        if n then
+            n = lang:formatDate('U', '@' .. n)
+        else
+            n = os.time() -- Set n to now if no time provided
+        end
+    end
+
+    n = tonumber(n)
+
+    for i, num in ipairs(numbers) do
+        local interval
+        if format == 'time' then
+            interval = tonumber(lang:formatDate('U', '@' .. args[num]))
+        else
+            interval = tonumber(args[num])
+        end
+
+        if n and ((n &gt;= interval and not rule) or (n &gt; interval and rule == '&gt;')) then
+            low = interval
+            lowpos = num
+        else
+            high = high and math.min(interval, high) or interval
+            if high == interval then highpos = num end
+        end
+    end
+    return lowpos .. '-' .. highpos
+end
+
+return p</text>
+      <sha1>r86cc354wo1sh2fsjm1d5fl8xr8h3zr</sha1>
+    </revision>
+    <revision>
+      <id>588</id>
+      <timestamp>2024-06-28T09:35:32Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported from [[:wikipedia:Module:Interval]]</comment>
+      <origin>588</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1773" sha1="r86cc354wo1sh2fsjm1d5fl8xr8h3zr" xml:space="preserve">-- This module powers {{interval}}.
+
+local p = {}
+
+-- Constants
+local lang = mw.language.getContentLanguage()
+local getArgs = require('Module:Arguments').getArgs
+
+local function getArgNums(args)
+    -- Returns an array containing the keys of all positional arguments
+    -- that contain data (i.e. non-whitespace values).
+    -- (from Module:Unbulleted_list)
+    local nums = {}
+    for k, v in pairs(args) do
+        if type(k) == 'number' and
+            k &gt;= 1 and
+            math.floor(k) == k and
+            mw.ustring.match(v, '%S') then
+                table.insert(nums, k)
+        end
+    end
+    table.sort(nums)
+    return nums
+end
+
+function p.main(frame)
+    local args = getArgs(frame)
+    return p._main(args)
+end
+
+function p._main(args)
+    local n, rule, format = args.n, args.rule, args.format
+    local numbers = getArgNums(args)
+    local low, high, lowpos, highpos = nil, nil, 0, #numbers + 1
+
+    -- If comparing times, convert them all to seconds after the epoch
+    if format == 'time' then
+        if n then
+            n = lang:formatDate('U', '@' .. n)
+        else
+            n = os.time() -- Set n to now if no time provided
+        end
+    end
+
+    n = tonumber(n)
+
+    for i, num in ipairs(numbers) do
+        local interval
+        if format == 'time' then
+            interval = tonumber(lang:formatDate('U', '@' .. args[num]))
+        else
+            interval = tonumber(args[num])
+        end
+
+        if n and ((n &gt;= interval and not rule) or (n &gt; interval and rule == '&gt;')) then
+            low = interval
+            lowpos = num
+        else
+            high = high and math.min(interval, high) or interval
+            if high == interval then highpos = num end
+        end
+    end
+    return lowpos .. '-' .. highpos
+end
+
+return p</text>
+      <sha1>r86cc354wo1sh2fsjm1d5fl8xr8h3zr</sha1>
+    </revision>
+  </page>
+</mediawiki>

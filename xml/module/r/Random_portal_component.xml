@@ -1,0 +1,914 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Random portal component</title>
+    <ns>828</ns>
+    <id>5012</id>
+    <revision>
+      <id>787908</id>
+      <timestamp>2020-10-03T10:08:46Z</timestamp>
+      <contributor>
+        <username>en&gt;Certes</username>
+        <id>0</id>
+      </contributor>
+      <comment>‎Check that subpage being presented exists. Reduce checks that subpages not being presented exist, to reduce [[Portal:San Francisco Bay Area]] from &gt;500 expensive functions to 50</comment>
+      <origin>787908</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7060" sha1="gyma9c7ca2zmw0x15n2c0w8rv93p5wt" xml:space="preserve">-- This module implements [[Template:Random portal component]]
+
+local p = {}
+
+local mRandom = require('Module:Random')
+local currentTitle = mw.title.getCurrentTitle()
+
+-- tracking function added by BHG 29/04/2019
+-- called as subPageTrackingCategories(pages, args.max)
+local function subPageTrackingCategories(pages, max, header)
+	local retval = "";
+	local thispagetitle = mw.title.getCurrentTitle().text
+
+	-- don't track DYK etc, only selected/featured articles, biogs etc
+	if ((string.find(header, "/[sS]elected") == -1) and (string.find(header, "/[fF]eatured") == -1)) then
+		return retval
+	end
+	-- no tracking unless we are in Portal namespace
+	if (mw.title.getCurrentTitle().nsText ~= "Portal") then
+		return ""
+	end
+
+	-- no tracking if this is a subpage
+	if ((mw.ustring.match(thispagetitle, "/") ~= nil) and (thispagetitle ~= "AC/DC")) then
+		return retval
+	end
+
+	local maxNum = tonumber(max)
+	local availableSubPageCount = maxNum
+
+	-- Check for missing subpages at end of alleged number range
+	while availableSubPageCount &gt; 0 and not mw.title.new(pages.subpage .. '/' .. tostring(availableSubPageCount)).exists do
+		availableSubPageCount = availableSubPageCount - 1
+	end
+	if availableSubPageCount &lt; maxNum then 
+		retval = retval .. "[[Category:Random portal component with fewer available subpages than specified max]]"
+	else
+		-- Check for spurious subpages beyond end of alleged number range
+		while mw.title.new(pages.subpage .. '/' .. tostring(availableSubPageCount + 1)).exists do
+			availableSubPageCount = availableSubPageCount + 1
+		end
+		if availableSubPageCount &gt; maxNum then 
+			retval = retval .. "[[Category:Random portal component with more available subpages than specified max]]"
+		end
+	end
+
+	-- before categorising, check what type of subpage we are categorising, and if detected, categorise images separately
+	local subpageType = "subpages" -- generic type
+	local subpageName = pages.subpage
+	subpageName = mw.ustring.gsub(subpageName, "^[^/]*/", "")
+	subpageName = mw.ustring.lower(subpageName)
+	if ((mw.ustring.find(subpageName, "picture", 1, true) ~= nil) or
+		(mw.ustring.find(subpageName, "image", 1, true) ~= nil) or
+		(mw.ustring.find(subpageName, "panorama", 1, true) ~= nil)) then
+		subpageType = "image subpages"
+	end
+	if (availableSubPageCount &lt; 2) then
+		retval = retval .. "[[Category:Random portal component with less than 2 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 5) then
+		retval = retval .. "[[Category:Random portal component with 2–5 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 10) then
+		retval = retval .. "[[Category:Random portal component with 6–10 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 15) then
+		retval = retval .. "[[Category:Random portal component with 11–15 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 20) then
+		retval = retval .. "[[Category:Random portal component with 16–20 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 25) then
+		retval = retval .. "[[Category:Random portal component with 21–25 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 30) then
+		retval = retval .. "[[Category:Random portal component with 26–30 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 40) then
+		retval = retval .. "[[Category:Random portal component with 31–40 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 50) then
+		retval = retval .. "[[Category:Random portal component with 41–50 available " .. subpageType .. "]]"
+	else
+		retval = retval .. "[[Category:Random portal component with over 50 available " .. subpageType .. "]]"
+	end
+	return retval;
+end
+local function getRandomNumber(max)
+	-- gets a random integer between 1 and max; max defaults to 1
+	return mRandom.number{max or 1}
+end
+
+local function expandArg(args, key)
+	-- Emulate how unspecified template parameters appear in wikitext. If the
+	-- specified argument exists, its value is returned, and if not the argument
+	-- name is returned inside triple curly braces.
+	local val = args[key]
+	if val then
+		return val
+	else
+		return string.format('{{{%s}}}', key)
+	end
+end
+
+local function getPages(args)
+	local pages = {}
+	pages.root = args.rootpage or currentTitle.prefixedText
+	pages.subpage = pages.root .. '/' .. expandArg(args, 'subpage')
+	local tries = 10
+	repeat
+		pages.random = pages.subpage .. '/' .. getRandomNumber(args.max)
+		tries = tries - 1
+	until tries &lt; 1 or mw.title.new(pages.random).exists
+	pages.footer = 'Template:Box-footer'
+	return pages
+end
+
+local function tryExpandTemplate(frame, title, args)
+	local success, result = pcall(frame.expandTemplate, frame, {title = title, args = args})
+	if success then
+		return result
+	else
+		local msg = string.format(
+			'&lt;strong class="error"&gt;The page "[[%s]]" does not exist.&lt;/strong&gt;',
+			title
+		)
+		if mw.title.getCurrentTitle().namespace == 100 then -- is in the portal namespace
+			msg = msg .. '[[Category:Portals needing attention]]'
+		end
+		return msg
+	end
+end
+
+local function getHeader(frame, pages, header, template)
+	return tryExpandTemplate(
+		frame,
+		template or pages.root .. '/box-header',
+		{header, pages.random}
+	)
+end
+
+local function getRandomSubpageContent(frame, pages)
+	return tryExpandTemplate(
+		frame,
+		pages.random
+	)
+end
+
+local function getFooter(frame, pages, link)
+	return tryExpandTemplate(
+		frame,
+		pages.footer,
+		{link}
+	)
+end
+
+function p._main(args, frame)
+	frame = frame or mw.getCurrentFrame()
+	local pages = getPages(args)
+
+	local ret = {}
+	ret[#ret + 1] = getHeader(frame, pages, args.header or 'subpage', args.headertemplate)
+	ret[#ret + 1] = getRandomSubpageContent(frame, pages)
+	if not args.footer or not args.footer:find('%S') then
+		ret[#ret + 1] = '&lt;div style="clear:both;"&gt;&lt;/div&gt;&lt;/div&gt;'
+	else
+		ret[#ret + 1] = getFooter(frame, pages, string.format(
+			'[[%s|%s]]',
+			pages.subpage,
+			expandArg(args, 'footer')
+		))
+	end
+
+	return table.concat(ret, '\n') .. subPageTrackingCategories(pages, args.max, args.header)
+end
+
+function p._nominate(args, frame)
+	frame = frame or mw.getCurrentFrame()
+	local pages = getPages(args)
+	
+	local ret = {}
+	ret[#ret + 1] = getHeader(frame, pages, expandArg(args, 'header'), args.headertemplate)
+	ret[#ret + 1] = getRandomSubpageContent(frame, pages)
+	ret[#ret + 1] = getFooter(frame, pages, string.format(
+		'[[/Nominate/%s|Suggest]] • [[%s|%s]] ',
+		expandArg(args, 'subpage'),
+		pages.subpage,
+		args.footer or 'Archive'
+	))
+
+	return table.concat(ret, '\n') .. subPageTrackingCategories(pages, args.max, args.header)
+end
+
+local function makeInvokeFunction(func)
+	return function (frame)
+		local args = require('Module:Arguments').getArgs(frame, {
+			trim = false,
+			removeBlanks = false,
+			wrappers = {
+				'Template:Random portal component',
+				'Template:Random portal component/BHG-test',
+				'Template:Random portal component with nominate'
+			}
+		})
+		return func(args, frame)
+	end
+end
+
+p.main = makeInvokeFunction(p._main)
+p.nominate = makeInvokeFunction(p._nominate)
+
+return p</text>
+      <sha1>gyma9c7ca2zmw0x15n2c0w8rv93p5wt</sha1>
+    </revision>
+    <revision>
+      <id>5013</id>
+      <timestamp>2024-12-20T23:55:37Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: importing wikipedia</comment>
+      <origin>5013</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7060" sha1="gyma9c7ca2zmw0x15n2c0w8rv93p5wt" xml:space="preserve">-- This module implements [[Template:Random portal component]]
+
+local p = {}
+
+local mRandom = require('Module:Random')
+local currentTitle = mw.title.getCurrentTitle()
+
+-- tracking function added by BHG 29/04/2019
+-- called as subPageTrackingCategories(pages, args.max)
+local function subPageTrackingCategories(pages, max, header)
+	local retval = "";
+	local thispagetitle = mw.title.getCurrentTitle().text
+
+	-- don't track DYK etc, only selected/featured articles, biogs etc
+	if ((string.find(header, "/[sS]elected") == -1) and (string.find(header, "/[fF]eatured") == -1)) then
+		return retval
+	end
+	-- no tracking unless we are in Portal namespace
+	if (mw.title.getCurrentTitle().nsText ~= "Portal") then
+		return ""
+	end
+
+	-- no tracking if this is a subpage
+	if ((mw.ustring.match(thispagetitle, "/") ~= nil) and (thispagetitle ~= "AC/DC")) then
+		return retval
+	end
+
+	local maxNum = tonumber(max)
+	local availableSubPageCount = maxNum
+
+	-- Check for missing subpages at end of alleged number range
+	while availableSubPageCount &gt; 0 and not mw.title.new(pages.subpage .. '/' .. tostring(availableSubPageCount)).exists do
+		availableSubPageCount = availableSubPageCount - 1
+	end
+	if availableSubPageCount &lt; maxNum then 
+		retval = retval .. "[[Category:Random portal component with fewer available subpages than specified max]]"
+	else
+		-- Check for spurious subpages beyond end of alleged number range
+		while mw.title.new(pages.subpage .. '/' .. tostring(availableSubPageCount + 1)).exists do
+			availableSubPageCount = availableSubPageCount + 1
+		end
+		if availableSubPageCount &gt; maxNum then 
+			retval = retval .. "[[Category:Random portal component with more available subpages than specified max]]"
+		end
+	end
+
+	-- before categorising, check what type of subpage we are categorising, and if detected, categorise images separately
+	local subpageType = "subpages" -- generic type
+	local subpageName = pages.subpage
+	subpageName = mw.ustring.gsub(subpageName, "^[^/]*/", "")
+	subpageName = mw.ustring.lower(subpageName)
+	if ((mw.ustring.find(subpageName, "picture", 1, true) ~= nil) or
+		(mw.ustring.find(subpageName, "image", 1, true) ~= nil) or
+		(mw.ustring.find(subpageName, "panorama", 1, true) ~= nil)) then
+		subpageType = "image subpages"
+	end
+	if (availableSubPageCount &lt; 2) then
+		retval = retval .. "[[Category:Random portal component with less than 2 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 5) then
+		retval = retval .. "[[Category:Random portal component with 2–5 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 10) then
+		retval = retval .. "[[Category:Random portal component with 6–10 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 15) then
+		retval = retval .. "[[Category:Random portal component with 11–15 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 20) then
+		retval = retval .. "[[Category:Random portal component with 16–20 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 25) then
+		retval = retval .. "[[Category:Random portal component with 21–25 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 30) then
+		retval = retval .. "[[Category:Random portal component with 26–30 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 40) then
+		retval = retval .. "[[Category:Random portal component with 31–40 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 50) then
+		retval = retval .. "[[Category:Random portal component with 41–50 available " .. subpageType .. "]]"
+	else
+		retval = retval .. "[[Category:Random portal component with over 50 available " .. subpageType .. "]]"
+	end
+	return retval;
+end
+local function getRandomNumber(max)
+	-- gets a random integer between 1 and max; max defaults to 1
+	return mRandom.number{max or 1}
+end
+
+local function expandArg(args, key)
+	-- Emulate how unspecified template parameters appear in wikitext. If the
+	-- specified argument exists, its value is returned, and if not the argument
+	-- name is returned inside triple curly braces.
+	local val = args[key]
+	if val then
+		return val
+	else
+		return string.format('{{{%s}}}', key)
+	end
+end
+
+local function getPages(args)
+	local pages = {}
+	pages.root = args.rootpage or currentTitle.prefixedText
+	pages.subpage = pages.root .. '/' .. expandArg(args, 'subpage')
+	local tries = 10
+	repeat
+		pages.random = pages.subpage .. '/' .. getRandomNumber(args.max)
+		tries = tries - 1
+	until tries &lt; 1 or mw.title.new(pages.random).exists
+	pages.footer = 'Template:Box-footer'
+	return pages
+end
+
+local function tryExpandTemplate(frame, title, args)
+	local success, result = pcall(frame.expandTemplate, frame, {title = title, args = args})
+	if success then
+		return result
+	else
+		local msg = string.format(
+			'&lt;strong class="error"&gt;The page "[[%s]]" does not exist.&lt;/strong&gt;',
+			title
+		)
+		if mw.title.getCurrentTitle().namespace == 100 then -- is in the portal namespace
+			msg = msg .. '[[Category:Portals needing attention]]'
+		end
+		return msg
+	end
+end
+
+local function getHeader(frame, pages, header, template)
+	return tryExpandTemplate(
+		frame,
+		template or pages.root .. '/box-header',
+		{header, pages.random}
+	)
+end
+
+local function getRandomSubpageContent(frame, pages)
+	return tryExpandTemplate(
+		frame,
+		pages.random
+	)
+end
+
+local function getFooter(frame, pages, link)
+	return tryExpandTemplate(
+		frame,
+		pages.footer,
+		{link}
+	)
+end
+
+function p._main(args, frame)
+	frame = frame or mw.getCurrentFrame()
+	local pages = getPages(args)
+
+	local ret = {}
+	ret[#ret + 1] = getHeader(frame, pages, args.header or 'subpage', args.headertemplate)
+	ret[#ret + 1] = getRandomSubpageContent(frame, pages)
+	if not args.footer or not args.footer:find('%S') then
+		ret[#ret + 1] = '&lt;div style="clear:both;"&gt;&lt;/div&gt;&lt;/div&gt;'
+	else
+		ret[#ret + 1] = getFooter(frame, pages, string.format(
+			'[[%s|%s]]',
+			pages.subpage,
+			expandArg(args, 'footer')
+		))
+	end
+
+	return table.concat(ret, '\n') .. subPageTrackingCategories(pages, args.max, args.header)
+end
+
+function p._nominate(args, frame)
+	frame = frame or mw.getCurrentFrame()
+	local pages = getPages(args)
+	
+	local ret = {}
+	ret[#ret + 1] = getHeader(frame, pages, expandArg(args, 'header'), args.headertemplate)
+	ret[#ret + 1] = getRandomSubpageContent(frame, pages)
+	ret[#ret + 1] = getFooter(frame, pages, string.format(
+		'[[/Nominate/%s|Suggest]] • [[%s|%s]] ',
+		expandArg(args, 'subpage'),
+		pages.subpage,
+		args.footer or 'Archive'
+	))
+
+	return table.concat(ret, '\n') .. subPageTrackingCategories(pages, args.max, args.header)
+end
+
+local function makeInvokeFunction(func)
+	return function (frame)
+		local args = require('Module:Arguments').getArgs(frame, {
+			trim = false,
+			removeBlanks = false,
+			wrappers = {
+				'Template:Random portal component',
+				'Template:Random portal component/BHG-test',
+				'Template:Random portal component with nominate'
+			}
+		})
+		return func(args, frame)
+	end
+end
+
+p.main = makeInvokeFunction(p._main)
+p.nominate = makeInvokeFunction(p._nominate)
+
+return p</text>
+      <sha1>gyma9c7ca2zmw0x15n2c0w8rv93p5wt</sha1>
+    </revision>
+    <revision>
+      <id>3408447</id>
+      <parentid>5013</parentid>
+      <timestamp>2026-03-12T20:38:04Z</timestamp>
+      <contributor>
+        <username>en&gt;Certes</username>
+        <id>0</id>
+      </contributor>
+      <comment>‎Check that subpage being presented exists. Reduce checks that subpages not being presented exist, to reduce [[Portal:San Francisco Bay Area]] from &gt;500 expensive functions to 50</comment>
+      <origin>5013</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7060" sha1="gyma9c7ca2zmw0x15n2c0w8rv93p5wt" xml:space="preserve">-- This module implements [[Template:Random portal component]]
+
+local p = {}
+
+local mRandom = require('Module:Random')
+local currentTitle = mw.title.getCurrentTitle()
+
+-- tracking function added by BHG 29/04/2019
+-- called as subPageTrackingCategories(pages, args.max)
+local function subPageTrackingCategories(pages, max, header)
+	local retval = "";
+	local thispagetitle = mw.title.getCurrentTitle().text
+
+	-- don't track DYK etc, only selected/featured articles, biogs etc
+	if ((string.find(header, "/[sS]elected") == -1) and (string.find(header, "/[fF]eatured") == -1)) then
+		return retval
+	end
+	-- no tracking unless we are in Portal namespace
+	if (mw.title.getCurrentTitle().nsText ~= "Portal") then
+		return ""
+	end
+
+	-- no tracking if this is a subpage
+	if ((mw.ustring.match(thispagetitle, "/") ~= nil) and (thispagetitle ~= "AC/DC")) then
+		return retval
+	end
+
+	local maxNum = tonumber(max)
+	local availableSubPageCount = maxNum
+
+	-- Check for missing subpages at end of alleged number range
+	while availableSubPageCount &gt; 0 and not mw.title.new(pages.subpage .. '/' .. tostring(availableSubPageCount)).exists do
+		availableSubPageCount = availableSubPageCount - 1
+	end
+	if availableSubPageCount &lt; maxNum then 
+		retval = retval .. "[[Category:Random portal component with fewer available subpages than specified max]]"
+	else
+		-- Check for spurious subpages beyond end of alleged number range
+		while mw.title.new(pages.subpage .. '/' .. tostring(availableSubPageCount + 1)).exists do
+			availableSubPageCount = availableSubPageCount + 1
+		end
+		if availableSubPageCount &gt; maxNum then 
+			retval = retval .. "[[Category:Random portal component with more available subpages than specified max]]"
+		end
+	end
+
+	-- before categorising, check what type of subpage we are categorising, and if detected, categorise images separately
+	local subpageType = "subpages" -- generic type
+	local subpageName = pages.subpage
+	subpageName = mw.ustring.gsub(subpageName, "^[^/]*/", "")
+	subpageName = mw.ustring.lower(subpageName)
+	if ((mw.ustring.find(subpageName, "picture", 1, true) ~= nil) or
+		(mw.ustring.find(subpageName, "image", 1, true) ~= nil) or
+		(mw.ustring.find(subpageName, "panorama", 1, true) ~= nil)) then
+		subpageType = "image subpages"
+	end
+	if (availableSubPageCount &lt; 2) then
+		retval = retval .. "[[Category:Random portal component with less than 2 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 5) then
+		retval = retval .. "[[Category:Random portal component with 2–5 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 10) then
+		retval = retval .. "[[Category:Random portal component with 6–10 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 15) then
+		retval = retval .. "[[Category:Random portal component with 11–15 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 20) then
+		retval = retval .. "[[Category:Random portal component with 16–20 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 25) then
+		retval = retval .. "[[Category:Random portal component with 21–25 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 30) then
+		retval = retval .. "[[Category:Random portal component with 26–30 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 40) then
+		retval = retval .. "[[Category:Random portal component with 31–40 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 50) then
+		retval = retval .. "[[Category:Random portal component with 41–50 available " .. subpageType .. "]]"
+	else
+		retval = retval .. "[[Category:Random portal component with over 50 available " .. subpageType .. "]]"
+	end
+	return retval;
+end
+local function getRandomNumber(max)
+	-- gets a random integer between 1 and max; max defaults to 1
+	return mRandom.number{max or 1}
+end
+
+local function expandArg(args, key)
+	-- Emulate how unspecified template parameters appear in wikitext. If the
+	-- specified argument exists, its value is returned, and if not the argument
+	-- name is returned inside triple curly braces.
+	local val = args[key]
+	if val then
+		return val
+	else
+		return string.format('{{{%s}}}', key)
+	end
+end
+
+local function getPages(args)
+	local pages = {}
+	pages.root = args.rootpage or currentTitle.prefixedText
+	pages.subpage = pages.root .. '/' .. expandArg(args, 'subpage')
+	local tries = 10
+	repeat
+		pages.random = pages.subpage .. '/' .. getRandomNumber(args.max)
+		tries = tries - 1
+	until tries &lt; 1 or mw.title.new(pages.random).exists
+	pages.footer = 'Template:Box-footer'
+	return pages
+end
+
+local function tryExpandTemplate(frame, title, args)
+	local success, result = pcall(frame.expandTemplate, frame, {title = title, args = args})
+	if success then
+		return result
+	else
+		local msg = string.format(
+			'&lt;strong class="error"&gt;The page "[[%s]]" does not exist.&lt;/strong&gt;',
+			title
+		)
+		if mw.title.getCurrentTitle().namespace == 100 then -- is in the portal namespace
+			msg = msg .. '[[Category:Portals needing attention]]'
+		end
+		return msg
+	end
+end
+
+local function getHeader(frame, pages, header, template)
+	return tryExpandTemplate(
+		frame,
+		template or pages.root .. '/box-header',
+		{header, pages.random}
+	)
+end
+
+local function getRandomSubpageContent(frame, pages)
+	return tryExpandTemplate(
+		frame,
+		pages.random
+	)
+end
+
+local function getFooter(frame, pages, link)
+	return tryExpandTemplate(
+		frame,
+		pages.footer,
+		{link}
+	)
+end
+
+function p._main(args, frame)
+	frame = frame or mw.getCurrentFrame()
+	local pages = getPages(args)
+
+	local ret = {}
+	ret[#ret + 1] = getHeader(frame, pages, args.header or 'subpage', args.headertemplate)
+	ret[#ret + 1] = getRandomSubpageContent(frame, pages)
+	if not args.footer or not args.footer:find('%S') then
+		ret[#ret + 1] = '&lt;div style="clear:both;"&gt;&lt;/div&gt;&lt;/div&gt;'
+	else
+		ret[#ret + 1] = getFooter(frame, pages, string.format(
+			'[[%s|%s]]',
+			pages.subpage,
+			expandArg(args, 'footer')
+		))
+	end
+
+	return table.concat(ret, '\n') .. subPageTrackingCategories(pages, args.max, args.header)
+end
+
+function p._nominate(args, frame)
+	frame = frame or mw.getCurrentFrame()
+	local pages = getPages(args)
+	
+	local ret = {}
+	ret[#ret + 1] = getHeader(frame, pages, expandArg(args, 'header'), args.headertemplate)
+	ret[#ret + 1] = getRandomSubpageContent(frame, pages)
+	ret[#ret + 1] = getFooter(frame, pages, string.format(
+		'[[/Nominate/%s|Suggest]] • [[%s|%s]] ',
+		expandArg(args, 'subpage'),
+		pages.subpage,
+		args.footer or 'Archive'
+	))
+
+	return table.concat(ret, '\n') .. subPageTrackingCategories(pages, args.max, args.header)
+end
+
+local function makeInvokeFunction(func)
+	return function (frame)
+		local args = require('Module:Arguments').getArgs(frame, {
+			trim = false,
+			removeBlanks = false,
+			wrappers = {
+				'Template:Random portal component',
+				'Template:Random portal component/BHG-test',
+				'Template:Random portal component with nominate'
+			}
+		})
+		return func(args, frame)
+	end
+end
+
+p.main = makeInvokeFunction(p._main)
+p.nominate = makeInvokeFunction(p._nominate)
+
+return p</text>
+      <sha1>gyma9c7ca2zmw0x15n2c0w8rv93p5wt</sha1>
+    </revision>
+    <revision>
+      <id>3408448</id>
+      <parentid>3408447</parentid>
+      <timestamp>2026-03-12T20:38:04Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>5013</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7060" sha1="gyma9c7ca2zmw0x15n2c0w8rv93p5wt" xml:space="preserve">-- This module implements [[Template:Random portal component]]
+
+local p = {}
+
+local mRandom = require('Module:Random')
+local currentTitle = mw.title.getCurrentTitle()
+
+-- tracking function added by BHG 29/04/2019
+-- called as subPageTrackingCategories(pages, args.max)
+local function subPageTrackingCategories(pages, max, header)
+	local retval = "";
+	local thispagetitle = mw.title.getCurrentTitle().text
+
+	-- don't track DYK etc, only selected/featured articles, biogs etc
+	if ((string.find(header, "/[sS]elected") == -1) and (string.find(header, "/[fF]eatured") == -1)) then
+		return retval
+	end
+	-- no tracking unless we are in Portal namespace
+	if (mw.title.getCurrentTitle().nsText ~= "Portal") then
+		return ""
+	end
+
+	-- no tracking if this is a subpage
+	if ((mw.ustring.match(thispagetitle, "/") ~= nil) and (thispagetitle ~= "AC/DC")) then
+		return retval
+	end
+
+	local maxNum = tonumber(max)
+	local availableSubPageCount = maxNum
+
+	-- Check for missing subpages at end of alleged number range
+	while availableSubPageCount &gt; 0 and not mw.title.new(pages.subpage .. '/' .. tostring(availableSubPageCount)).exists do
+		availableSubPageCount = availableSubPageCount - 1
+	end
+	if availableSubPageCount &lt; maxNum then 
+		retval = retval .. "[[Category:Random portal component with fewer available subpages than specified max]]"
+	else
+		-- Check for spurious subpages beyond end of alleged number range
+		while mw.title.new(pages.subpage .. '/' .. tostring(availableSubPageCount + 1)).exists do
+			availableSubPageCount = availableSubPageCount + 1
+		end
+		if availableSubPageCount &gt; maxNum then 
+			retval = retval .. "[[Category:Random portal component with more available subpages than specified max]]"
+		end
+	end
+
+	-- before categorising, check what type of subpage we are categorising, and if detected, categorise images separately
+	local subpageType = "subpages" -- generic type
+	local subpageName = pages.subpage
+	subpageName = mw.ustring.gsub(subpageName, "^[^/]*/", "")
+	subpageName = mw.ustring.lower(subpageName)
+	if ((mw.ustring.find(subpageName, "picture", 1, true) ~= nil) or
+		(mw.ustring.find(subpageName, "image", 1, true) ~= nil) or
+		(mw.ustring.find(subpageName, "panorama", 1, true) ~= nil)) then
+		subpageType = "image subpages"
+	end
+	if (availableSubPageCount &lt; 2) then
+		retval = retval .. "[[Category:Random portal component with less than 2 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 5) then
+		retval = retval .. "[[Category:Random portal component with 2–5 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 10) then
+		retval = retval .. "[[Category:Random portal component with 6–10 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 15) then
+		retval = retval .. "[[Category:Random portal component with 11–15 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 20) then
+		retval = retval .. "[[Category:Random portal component with 16–20 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 25) then
+		retval = retval .. "[[Category:Random portal component with 21–25 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 30) then
+		retval = retval .. "[[Category:Random portal component with 26–30 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 40) then
+		retval = retval .. "[[Category:Random portal component with 31–40 available " .. subpageType .. "]]"
+	elseif (availableSubPageCount &lt;= 50) then
+		retval = retval .. "[[Category:Random portal component with 41–50 available " .. subpageType .. "]]"
+	else
+		retval = retval .. "[[Category:Random portal component with over 50 available " .. subpageType .. "]]"
+	end
+	return retval;
+end
+local function getRandomNumber(max)
+	-- gets a random integer between 1 and max; max defaults to 1
+	return mRandom.number{max or 1}
+end
+
+local function expandArg(args, key)
+	-- Emulate how unspecified template parameters appear in wikitext. If the
+	-- specified argument exists, its value is returned, and if not the argument
+	-- name is returned inside triple curly braces.
+	local val = args[key]
+	if val then
+		return val
+	else
+		return string.format('{{{%s}}}', key)
+	end
+end
+
+local function getPages(args)
+	local pages = {}
+	pages.root = args.rootpage or currentTitle.prefixedText
+	pages.subpage = pages.root .. '/' .. expandArg(args, 'subpage')
+	local tries = 10
+	repeat
+		pages.random = pages.subpage .. '/' .. getRandomNumber(args.max)
+		tries = tries - 1
+	until tries &lt; 1 or mw.title.new(pages.random).exists
+	pages.footer = 'Template:Box-footer'
+	return pages
+end
+
+local function tryExpandTemplate(frame, title, args)
+	local success, result = pcall(frame.expandTemplate, frame, {title = title, args = args})
+	if success then
+		return result
+	else
+		local msg = string.format(
+			'&lt;strong class="error"&gt;The page "[[%s]]" does not exist.&lt;/strong&gt;',
+			title
+		)
+		if mw.title.getCurrentTitle().namespace == 100 then -- is in the portal namespace
+			msg = msg .. '[[Category:Portals needing attention]]'
+		end
+		return msg
+	end
+end
+
+local function getHeader(frame, pages, header, template)
+	return tryExpandTemplate(
+		frame,
+		template or pages.root .. '/box-header',
+		{header, pages.random}
+	)
+end
+
+local function getRandomSubpageContent(frame, pages)
+	return tryExpandTemplate(
+		frame,
+		pages.random
+	)
+end
+
+local function getFooter(frame, pages, link)
+	return tryExpandTemplate(
+		frame,
+		pages.footer,
+		{link}
+	)
+end
+
+function p._main(args, frame)
+	frame = frame or mw.getCurrentFrame()
+	local pages = getPages(args)
+
+	local ret = {}
+	ret[#ret + 1] = getHeader(frame, pages, args.header or 'subpage', args.headertemplate)
+	ret[#ret + 1] = getRandomSubpageContent(frame, pages)
+	if not args.footer or not args.footer:find('%S') then
+		ret[#ret + 1] = '&lt;div style="clear:both;"&gt;&lt;/div&gt;&lt;/div&gt;'
+	else
+		ret[#ret + 1] = getFooter(frame, pages, string.format(
+			'[[%s|%s]]',
+			pages.subpage,
+			expandArg(args, 'footer')
+		))
+	end
+
+	return table.concat(ret, '\n') .. subPageTrackingCategories(pages, args.max, args.header)
+end
+
+function p._nominate(args, frame)
+	frame = frame or mw.getCurrentFrame()
+	local pages = getPages(args)
+	
+	local ret = {}
+	ret[#ret + 1] = getHeader(frame, pages, expandArg(args, 'header'), args.headertemplate)
+	ret[#ret + 1] = getRandomSubpageContent(frame, pages)
+	ret[#ret + 1] = getFooter(frame, pages, string.format(
+		'[[/Nominate/%s|Suggest]] • [[%s|%s]] ',
+		expandArg(args, 'subpage'),
+		pages.subpage,
+		args.footer or 'Archive'
+	))
+
+	return table.concat(ret, '\n') .. subPageTrackingCategories(pages, args.max, args.header)
+end
+
+local function makeInvokeFunction(func)
+	return function (frame)
+		local args = require('Module:Arguments').getArgs(frame, {
+			trim = false,
+			removeBlanks = false,
+			wrappers = {
+				'Template:Random portal component',
+				'Template:Random portal component/BHG-test',
+				'Template:Random portal component with nominate'
+			}
+		})
+		return func(args, frame)
+	end
+end
+
+p.main = makeInvokeFunction(p._main)
+p.nominate = makeInvokeFunction(p._nominate)
+
+return p</text>
+      <sha1>gyma9c7ca2zmw0x15n2c0w8rv93p5wt</sha1>
+    </revision>
+  </page>
+</mediawiki>

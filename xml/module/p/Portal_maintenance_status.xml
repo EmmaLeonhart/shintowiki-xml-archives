@@ -1,0 +1,1095 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Portal maintenance status</title>
+    <ns>828</ns>
+    <id>5496</id>
+    <revision>
+      <id>811621</id>
+      <timestamp>2018-12-23T16:46:20Z</timestamp>
+      <contributor>
+        <username>en&gt;Ymblanter</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:Portal maintenance status]]": [[WP:High-risk templates|High-risk Lua module]]: request at [[WP:RFPP]] ([Edit=Require autoconfirmed or confirmed access] (indefinite) [Move=Require autoconfirmed or confirmed access] (indefinite))</comment>
+      <origin>811621</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4740" sha1="1hn4nc5le17zw9fg7wk42lnx288u79u" xml:space="preserve">local p = {}
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+local content = {}
+
+function makeTemplatePattern(template)
+	local first = string.sub(template, 1, 1)
+	local rest = string.sub(template, 2)
+	local pattern = mw.ustring.format('%s[%s%s]%s%s', '%{%{%s*', mw.ustring.upper(first), mw.ustring.lower(first), rest, '%s*|?[^%}]*%}%}')
+	return pattern
+end
+
+function makeParameterPattern(parameter)
+	return mw.ustring.format('%s%s%s%s', '|%s*', parameter, '%s*=%s*', '([^|%}]*)', '%s*[|%}]')
+end
+
+function getMatchingTemplateWikitext(content, template, leadOnly)
+	if leadOnly then
+		content = mw.ustring.gsub(content, "%c%s*==.*","") -- remove first ==Heading== and everything after it
+	end
+	for templateWikitext in mw.ustring.gmatch(content, '%b{}') do
+		local isCorrectTemplate = mw.ustring.match(templateWikitext, makeTemplatePattern(template))
+		if isCorrectTemplate then
+			return templateWikitext
+		end
+	end
+	return false
+end
+
+function getSubjectPageContent(contentNamespaceNumber)
+	local namespace = mw.site.namespaces[contentNamespaceNumber] ["name"]
+	local talkTitle = mw.title.getCurrentTitle()
+	if talkTitle.namespace ~= contentNamespaceNumber + 1 then
+		return error('Wrong namespace', 0)
+	end
+	local subjectTitle = mw.title.new(namespace .. ":" .. talkTitle.text)
+	return subjectTitle:getContent()
+end
+
+-- historical function
+--   Looks for {{Historical}} on a Wikipedia_talk: page's related project page.
+--   Returns 'yes' if found or '' (empty string) if not found, or an error if used in the wrong namespace.
+p.historical = function(frame)
+	local parent = frame.getParent(frame)
+	local args = cleanupArgs(frame.args)
+	local demo = args.demo and true or false
+	local content
+	if demo then
+		local demoText = mw.ustring.gsub(args.demo, '%{%{%!%}%}', '|')
+		content = '{{' .. demoText .. '}}'
+		if args.demo2 then
+			local demo2Text = mw.ustring.gsub(args.demo2, '%{%{%!%}%}', '|')
+			content= portalContent  .. '{{' .. demo2Text .. '}}'
+		end
+	else
+		content = getSubjectPageContent(4)
+	end
+
+	content = mw.ustring.gsub(content, "&lt;!%-%-.-%-%-&gt;","") -- remove HTML comments
+	content = mw.ustring.gsub(content, "%c%s*==.*","") -- remove first ==Heading== and everything after it
+	content = mw.ustring.gsub(content, "&lt;noinclude&gt;.-&lt;/noinclude&gt;", "") -- remove noinclude bits
+
+	local isHistorical = mw.ustring.match(content, makeTemplatePattern('Historical')) and true or false
+	return isHistorical and 'yes' or ''
+end
+
+-- featured function
+--   Looks for {{Featured portal}} on a Portal_talk: page's related portal page.
+--   Returns 'yes' if found or '' (empty string) if not found, or an error if used in the wrong namespace.
+p.featured = function(frame)
+	local parent = frame.getParent(frame)
+	local args = cleanupArgs(frame.args)
+	local demo = args.demo and true or false
+	local content
+	if demo then
+		local demoText = mw.ustring.gsub(args.demo, '%{%{%!%}%}', '|')
+		content = '{{' .. demoText .. '}}'
+		if args.demo2 then
+			local demo2Text = mw.ustring.gsub(args.demo2, '%{%{%!%}%}', '|')
+			content= portalContent  .. '{{' .. demo2Text .. '}}'
+		end
+	else
+		content = getSubjectPageContent(100)
+	end
+
+	content = mw.ustring.gsub(content, "&lt;!%-%-.-%-%-&gt;","") -- remove HTML comments
+	content = mw.ustring.gsub(content, "&lt;noinclude&gt;.-&lt;/noinclude&gt;", "") -- remove noinclude bits
+
+	local isFeatured = mw.ustring.match(content, makeTemplatePattern('Featured portal')) and true or false
+	return isFeatured and 'yes' or ''
+end
+
+-- main function
+--   Looks for {{Portal maintenance status}} (or earlier deprecated templates) on a Portal_talk: page's related portal page.
+--   Returns an appropriate message string if found or '' (empty string) if not found, or an error if used in the wrong namespace.
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local args = cleanupArgs(frame.args)
+	local demo = args.demo and true or false
+	local portalContent
+	if demo then
+		local demoText = mw.ustring.gsub(args.demo, '%{%{%!%}%}', '|')
+		portalContent = '{{' .. demoText .. '}}'
+		if args.demo2 then
+			local demo2Text = mw.ustring.gsub(args.demo2, '%{%{%!%}%}', '|')
+			portalContent = portalContent  .. '{{' .. demo2Text .. '}}'
+		end
+	else
+		portalContent = getSubjectPageContent(100)
+	end
+
+	local status = getMatchingTemplateWikitext(portalContent, 'Portal maintenance status') or getMatchingTemplateWikitext(portalContent, 'Portal flag')
+	if not status then
+		return ''
+	end
+
+	local output = mw.ustring.sub(status, 0, -3) .. '|embed=yes}}' 
+	return frame:preprocess(output)
+end
+
+return p</text>
+      <sha1>1hn4nc5le17zw9fg7wk42lnx288u79u</sha1>
+    </revision>
+    <revision>
+      <id>811622</id>
+      <parentid>811621</parentid>
+      <timestamp>2024-12-27T08:45:33Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: impor5ting these because otherwise I might accidentally redirect them</comment>
+      <origin>811621</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4740" sha1="1hn4nc5le17zw9fg7wk42lnx288u79u" xml:space="preserve">local p = {}
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+local content = {}
+
+function makeTemplatePattern(template)
+	local first = string.sub(template, 1, 1)
+	local rest = string.sub(template, 2)
+	local pattern = mw.ustring.format('%s[%s%s]%s%s', '%{%{%s*', mw.ustring.upper(first), mw.ustring.lower(first), rest, '%s*|?[^%}]*%}%}')
+	return pattern
+end
+
+function makeParameterPattern(parameter)
+	return mw.ustring.format('%s%s%s%s', '|%s*', parameter, '%s*=%s*', '([^|%}]*)', '%s*[|%}]')
+end
+
+function getMatchingTemplateWikitext(content, template, leadOnly)
+	if leadOnly then
+		content = mw.ustring.gsub(content, "%c%s*==.*","") -- remove first ==Heading== and everything after it
+	end
+	for templateWikitext in mw.ustring.gmatch(content, '%b{}') do
+		local isCorrectTemplate = mw.ustring.match(templateWikitext, makeTemplatePattern(template))
+		if isCorrectTemplate then
+			return templateWikitext
+		end
+	end
+	return false
+end
+
+function getSubjectPageContent(contentNamespaceNumber)
+	local namespace = mw.site.namespaces[contentNamespaceNumber] ["name"]
+	local talkTitle = mw.title.getCurrentTitle()
+	if talkTitle.namespace ~= contentNamespaceNumber + 1 then
+		return error('Wrong namespace', 0)
+	end
+	local subjectTitle = mw.title.new(namespace .. ":" .. talkTitle.text)
+	return subjectTitle:getContent()
+end
+
+-- historical function
+--   Looks for {{Historical}} on a Wikipedia_talk: page's related project page.
+--   Returns 'yes' if found or '' (empty string) if not found, or an error if used in the wrong namespace.
+p.historical = function(frame)
+	local parent = frame.getParent(frame)
+	local args = cleanupArgs(frame.args)
+	local demo = args.demo and true or false
+	local content
+	if demo then
+		local demoText = mw.ustring.gsub(args.demo, '%{%{%!%}%}', '|')
+		content = '{{' .. demoText .. '}}'
+		if args.demo2 then
+			local demo2Text = mw.ustring.gsub(args.demo2, '%{%{%!%}%}', '|')
+			content= portalContent  .. '{{' .. demo2Text .. '}}'
+		end
+	else
+		content = getSubjectPageContent(4)
+	end
+
+	content = mw.ustring.gsub(content, "&lt;!%-%-.-%-%-&gt;","") -- remove HTML comments
+	content = mw.ustring.gsub(content, "%c%s*==.*","") -- remove first ==Heading== and everything after it
+	content = mw.ustring.gsub(content, "&lt;noinclude&gt;.-&lt;/noinclude&gt;", "") -- remove noinclude bits
+
+	local isHistorical = mw.ustring.match(content, makeTemplatePattern('Historical')) and true or false
+	return isHistorical and 'yes' or ''
+end
+
+-- featured function
+--   Looks for {{Featured portal}} on a Portal_talk: page's related portal page.
+--   Returns 'yes' if found or '' (empty string) if not found, or an error if used in the wrong namespace.
+p.featured = function(frame)
+	local parent = frame.getParent(frame)
+	local args = cleanupArgs(frame.args)
+	local demo = args.demo and true or false
+	local content
+	if demo then
+		local demoText = mw.ustring.gsub(args.demo, '%{%{%!%}%}', '|')
+		content = '{{' .. demoText .. '}}'
+		if args.demo2 then
+			local demo2Text = mw.ustring.gsub(args.demo2, '%{%{%!%}%}', '|')
+			content= portalContent  .. '{{' .. demo2Text .. '}}'
+		end
+	else
+		content = getSubjectPageContent(100)
+	end
+
+	content = mw.ustring.gsub(content, "&lt;!%-%-.-%-%-&gt;","") -- remove HTML comments
+	content = mw.ustring.gsub(content, "&lt;noinclude&gt;.-&lt;/noinclude&gt;", "") -- remove noinclude bits
+
+	local isFeatured = mw.ustring.match(content, makeTemplatePattern('Featured portal')) and true or false
+	return isFeatured and 'yes' or ''
+end
+
+-- main function
+--   Looks for {{Portal maintenance status}} (or earlier deprecated templates) on a Portal_talk: page's related portal page.
+--   Returns an appropriate message string if found or '' (empty string) if not found, or an error if used in the wrong namespace.
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local args = cleanupArgs(frame.args)
+	local demo = args.demo and true or false
+	local portalContent
+	if demo then
+		local demoText = mw.ustring.gsub(args.demo, '%{%{%!%}%}', '|')
+		portalContent = '{{' .. demoText .. '}}'
+		if args.demo2 then
+			local demo2Text = mw.ustring.gsub(args.demo2, '%{%{%!%}%}', '|')
+			portalContent = portalContent  .. '{{' .. demo2Text .. '}}'
+		end
+	else
+		portalContent = getSubjectPageContent(100)
+	end
+
+	local status = getMatchingTemplateWikitext(portalContent, 'Portal maintenance status') or getMatchingTemplateWikitext(portalContent, 'Portal flag')
+	if not status then
+		return ''
+	end
+
+	local output = mw.ustring.sub(status, 0, -3) .. '|embed=yes}}' 
+	return frame:preprocess(output)
+end
+
+return p</text>
+      <sha1>1hn4nc5le17zw9fg7wk42lnx288u79u</sha1>
+    </revision>
+    <revision>
+      <id>811623</id>
+      <parentid>811622</parentid>
+      <timestamp>2025-01-26T22:57:50Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Adding [[Category:refreshing imported pages]] on using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>811623</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4780" sha1="bxw3gapw6yxtk03bbgxnue9ajzsfeav" xml:space="preserve">local p = {}
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+local content = {}
+
+function makeTemplatePattern(template)
+	local first = string.sub(template, 1, 1)
+	local rest = string.sub(template, 2)
+	local pattern = mw.ustring.format('%s[%s%s]%s%s', '%{%{%s*', mw.ustring.upper(first), mw.ustring.lower(first), rest, '%s*|?[^%}]*%}%}')
+	return pattern
+end
+
+function makeParameterPattern(parameter)
+	return mw.ustring.format('%s%s%s%s', '|%s*', parameter, '%s*=%s*', '([^|%}]*)', '%s*[|%}]')
+end
+
+function getMatchingTemplateWikitext(content, template, leadOnly)
+	if leadOnly then
+		content = mw.ustring.gsub(content, "%c%s*==.*","") -- remove first ==Heading== and everything after it
+	end
+	for templateWikitext in mw.ustring.gmatch(content, '%b{}') do
+		local isCorrectTemplate = mw.ustring.match(templateWikitext, makeTemplatePattern(template))
+		if isCorrectTemplate then
+			return templateWikitext
+		end
+	end
+	return false
+end
+
+function getSubjectPageContent(contentNamespaceNumber)
+	local namespace = mw.site.namespaces[contentNamespaceNumber] ["name"]
+	local talkTitle = mw.title.getCurrentTitle()
+	if talkTitle.namespace ~= contentNamespaceNumber + 1 then
+		return error('Wrong namespace', 0)
+	end
+	local subjectTitle = mw.title.new(namespace .. ":" .. talkTitle.text)
+	return subjectTitle:getContent()
+end
+
+-- historical function
+--   Looks for {{Historical}} on a Wikipedia_talk: page's related project page.
+--   Returns 'yes' if found or '' (empty string) if not found, or an error if used in the wrong namespace.
+p.historical = function(frame)
+	local parent = frame.getParent(frame)
+	local args = cleanupArgs(frame.args)
+	local demo = args.demo and true or false
+	local content
+	if demo then
+		local demoText = mw.ustring.gsub(args.demo, '%{%{%!%}%}', '|')
+		content = '{{' .. demoText .. '}}'
+		if args.demo2 then
+			local demo2Text = mw.ustring.gsub(args.demo2, '%{%{%!%}%}', '|')
+			content= portalContent  .. '{{' .. demo2Text .. '}}'
+		end
+	else
+		content = getSubjectPageContent(4)
+	end
+
+	content = mw.ustring.gsub(content, "&lt;!%-%-.-%-%-&gt;","") -- remove HTML comments
+	content = mw.ustring.gsub(content, "%c%s*==.*","") -- remove first ==Heading== and everything after it
+	content = mw.ustring.gsub(content, "&lt;noinclude&gt;.-&lt;/noinclude&gt;", "") -- remove noinclude bits
+
+	local isHistorical = mw.ustring.match(content, makeTemplatePattern('Historical')) and true or false
+	return isHistorical and 'yes' or ''
+end
+
+-- featured function
+--   Looks for {{Featured portal}} on a Portal_talk: page's related portal page.
+--   Returns 'yes' if found or '' (empty string) if not found, or an error if used in the wrong namespace.
+p.featured = function(frame)
+	local parent = frame.getParent(frame)
+	local args = cleanupArgs(frame.args)
+	local demo = args.demo and true or false
+	local content
+	if demo then
+		local demoText = mw.ustring.gsub(args.demo, '%{%{%!%}%}', '|')
+		content = '{{' .. demoText .. '}}'
+		if args.demo2 then
+			local demo2Text = mw.ustring.gsub(args.demo2, '%{%{%!%}%}', '|')
+			content= portalContent  .. '{{' .. demo2Text .. '}}'
+		end
+	else
+		content = getSubjectPageContent(100)
+	end
+
+	content = mw.ustring.gsub(content, "&lt;!%-%-.-%-%-&gt;","") -- remove HTML comments
+	content = mw.ustring.gsub(content, "&lt;noinclude&gt;.-&lt;/noinclude&gt;", "") -- remove noinclude bits
+
+	local isFeatured = mw.ustring.match(content, makeTemplatePattern('Featured portal')) and true or false
+	return isFeatured and 'yes' or ''
+end
+
+-- main function
+--   Looks for {{Portal maintenance status}} (or earlier deprecated templates) on a Portal_talk: page's related portal page.
+--   Returns an appropriate message string if found or '' (empty string) if not found, or an error if used in the wrong namespace.
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local args = cleanupArgs(frame.args)
+	local demo = args.demo and true or false
+	local portalContent
+	if demo then
+		local demoText = mw.ustring.gsub(args.demo, '%{%{%!%}%}', '|')
+		portalContent = '{{' .. demoText .. '}}'
+		if args.demo2 then
+			local demo2Text = mw.ustring.gsub(args.demo2, '%{%{%!%}%}', '|')
+			portalContent = portalContent  .. '{{' .. demo2Text .. '}}'
+		end
+	else
+		portalContent = getSubjectPageContent(100)
+	end
+
+	local status = getMatchingTemplateWikitext(portalContent, 'Portal maintenance status') or getMatchingTemplateWikitext(portalContent, 'Portal flag')
+	if not status then
+		return ''
+	end
+
+	local output = mw.ustring.sub(status, 0, -3) .. '|embed=yes}}' 
+	return frame:preprocess(output)
+end
+
+return p
+
+[[Category:refreshing imported pages]]</text>
+      <sha1>bxw3gapw6yxtk03bbgxnue9ajzsfeav</sha1>
+    </revision>
+    <revision>
+      <id>811624</id>
+      <parentid>811623</parentid>
+      <timestamp>2025-01-26T23:22:01Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Removing from [[Category:refreshing imported pages]] on using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>811624</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4740" sha1="1hn4nc5le17zw9fg7wk42lnx288u79u" xml:space="preserve">local p = {}
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+local content = {}
+
+function makeTemplatePattern(template)
+	local first = string.sub(template, 1, 1)
+	local rest = string.sub(template, 2)
+	local pattern = mw.ustring.format('%s[%s%s]%s%s', '%{%{%s*', mw.ustring.upper(first), mw.ustring.lower(first), rest, '%s*|?[^%}]*%}%}')
+	return pattern
+end
+
+function makeParameterPattern(parameter)
+	return mw.ustring.format('%s%s%s%s', '|%s*', parameter, '%s*=%s*', '([^|%}]*)', '%s*[|%}]')
+end
+
+function getMatchingTemplateWikitext(content, template, leadOnly)
+	if leadOnly then
+		content = mw.ustring.gsub(content, "%c%s*==.*","") -- remove first ==Heading== and everything after it
+	end
+	for templateWikitext in mw.ustring.gmatch(content, '%b{}') do
+		local isCorrectTemplate = mw.ustring.match(templateWikitext, makeTemplatePattern(template))
+		if isCorrectTemplate then
+			return templateWikitext
+		end
+	end
+	return false
+end
+
+function getSubjectPageContent(contentNamespaceNumber)
+	local namespace = mw.site.namespaces[contentNamespaceNumber] ["name"]
+	local talkTitle = mw.title.getCurrentTitle()
+	if talkTitle.namespace ~= contentNamespaceNumber + 1 then
+		return error('Wrong namespace', 0)
+	end
+	local subjectTitle = mw.title.new(namespace .. ":" .. talkTitle.text)
+	return subjectTitle:getContent()
+end
+
+-- historical function
+--   Looks for {{Historical}} on a Wikipedia_talk: page's related project page.
+--   Returns 'yes' if found or '' (empty string) if not found, or an error if used in the wrong namespace.
+p.historical = function(frame)
+	local parent = frame.getParent(frame)
+	local args = cleanupArgs(frame.args)
+	local demo = args.demo and true or false
+	local content
+	if demo then
+		local demoText = mw.ustring.gsub(args.demo, '%{%{%!%}%}', '|')
+		content = '{{' .. demoText .. '}}'
+		if args.demo2 then
+			local demo2Text = mw.ustring.gsub(args.demo2, '%{%{%!%}%}', '|')
+			content= portalContent  .. '{{' .. demo2Text .. '}}'
+		end
+	else
+		content = getSubjectPageContent(4)
+	end
+
+	content = mw.ustring.gsub(content, "&lt;!%-%-.-%-%-&gt;","") -- remove HTML comments
+	content = mw.ustring.gsub(content, "%c%s*==.*","") -- remove first ==Heading== and everything after it
+	content = mw.ustring.gsub(content, "&lt;noinclude&gt;.-&lt;/noinclude&gt;", "") -- remove noinclude bits
+
+	local isHistorical = mw.ustring.match(content, makeTemplatePattern('Historical')) and true or false
+	return isHistorical and 'yes' or ''
+end
+
+-- featured function
+--   Looks for {{Featured portal}} on a Portal_talk: page's related portal page.
+--   Returns 'yes' if found or '' (empty string) if not found, or an error if used in the wrong namespace.
+p.featured = function(frame)
+	local parent = frame.getParent(frame)
+	local args = cleanupArgs(frame.args)
+	local demo = args.demo and true or false
+	local content
+	if demo then
+		local demoText = mw.ustring.gsub(args.demo, '%{%{%!%}%}', '|')
+		content = '{{' .. demoText .. '}}'
+		if args.demo2 then
+			local demo2Text = mw.ustring.gsub(args.demo2, '%{%{%!%}%}', '|')
+			content= portalContent  .. '{{' .. demo2Text .. '}}'
+		end
+	else
+		content = getSubjectPageContent(100)
+	end
+
+	content = mw.ustring.gsub(content, "&lt;!%-%-.-%-%-&gt;","") -- remove HTML comments
+	content = mw.ustring.gsub(content, "&lt;noinclude&gt;.-&lt;/noinclude&gt;", "") -- remove noinclude bits
+
+	local isFeatured = mw.ustring.match(content, makeTemplatePattern('Featured portal')) and true or false
+	return isFeatured and 'yes' or ''
+end
+
+-- main function
+--   Looks for {{Portal maintenance status}} (or earlier deprecated templates) on a Portal_talk: page's related portal page.
+--   Returns an appropriate message string if found or '' (empty string) if not found, or an error if used in the wrong namespace.
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local args = cleanupArgs(frame.args)
+	local demo = args.demo and true or false
+	local portalContent
+	if demo then
+		local demoText = mw.ustring.gsub(args.demo, '%{%{%!%}%}', '|')
+		portalContent = '{{' .. demoText .. '}}'
+		if args.demo2 then
+			local demo2Text = mw.ustring.gsub(args.demo2, '%{%{%!%}%}', '|')
+			portalContent = portalContent  .. '{{' .. demo2Text .. '}}'
+		end
+	else
+		portalContent = getSubjectPageContent(100)
+	end
+
+	local status = getMatchingTemplateWikitext(portalContent, 'Portal maintenance status') or getMatchingTemplateWikitext(portalContent, 'Portal flag')
+	if not status then
+		return ''
+	end
+
+	local output = mw.ustring.sub(status, 0, -3) .. '|embed=yes}}' 
+	return frame:preprocess(output)
+end
+
+return p</text>
+      <sha1>1hn4nc5le17zw9fg7wk42lnx288u79u</sha1>
+    </revision>
+    <revision>
+      <id>811625</id>
+      <parentid>811624</parentid>
+      <timestamp>2025-02-19T03:16:21Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Copying from [[Category:Automatic wikipedia redirects]] to [[Category:pages tagged as Automatic wikipedia redirects in namespace {{subst:NAMESPACE}}]][[Category:qq]] on using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>811625</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4848" sha1="t929koorc99fg4nqkic7ir5fnonhtqj" xml:space="preserve">local p = {}
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+local content = {}
+
+function makeTemplatePattern(template)
+	local first = string.sub(template, 1, 1)
+	local rest = string.sub(template, 2)
+	local pattern = mw.ustring.format('%s[%s%s]%s%s', '%{%{%s*', mw.ustring.upper(first), mw.ustring.lower(first), rest, '%s*|?[^%}]*%}%}')
+	return pattern
+end
+
+function makeParameterPattern(parameter)
+	return mw.ustring.format('%s%s%s%s', '|%s*', parameter, '%s*=%s*', '([^|%}]*)', '%s*[|%}]')
+end
+
+function getMatchingTemplateWikitext(content, template, leadOnly)
+	if leadOnly then
+		content = mw.ustring.gsub(content, "%c%s*==.*","") -- remove first ==Heading== and everything after it
+	end
+	for templateWikitext in mw.ustring.gmatch(content, '%b{}') do
+		local isCorrectTemplate = mw.ustring.match(templateWikitext, makeTemplatePattern(template))
+		if isCorrectTemplate then
+			return templateWikitext
+		end
+	end
+	return false
+end
+
+function getSubjectPageContent(contentNamespaceNumber)
+	local namespace = mw.site.namespaces[contentNamespaceNumber] ["name"]
+	local talkTitle = mw.title.getCurrentTitle()
+	if talkTitle.namespace ~= contentNamespaceNumber + 1 then
+		return error('Wrong namespace', 0)
+	end
+	local subjectTitle = mw.title.new(namespace .. ":" .. talkTitle.text)
+	return subjectTitle:getContent()
+end
+
+-- historical function
+--   Looks for {{Historical}} on a Wikipedia_talk: page's related project page.
+--   Returns 'yes' if found or '' (empty string) if not found, or an error if used in the wrong namespace.
+p.historical = function(frame)
+	local parent = frame.getParent(frame)
+	local args = cleanupArgs(frame.args)
+	local demo = args.demo and true or false
+	local content
+	if demo then
+		local demoText = mw.ustring.gsub(args.demo, '%{%{%!%}%}', '|')
+		content = '{{' .. demoText .. '}}'
+		if args.demo2 then
+			local demo2Text = mw.ustring.gsub(args.demo2, '%{%{%!%}%}', '|')
+			content= portalContent  .. '{{' .. demo2Text .. '}}'
+		end
+	else
+		content = getSubjectPageContent(4)
+	end
+
+	content = mw.ustring.gsub(content, "&lt;!%-%-.-%-%-&gt;","") -- remove HTML comments
+	content = mw.ustring.gsub(content, "%c%s*==.*","") -- remove first ==Heading== and everything after it
+	content = mw.ustring.gsub(content, "&lt;noinclude&gt;.-&lt;/noinclude&gt;", "") -- remove noinclude bits
+
+	local isHistorical = mw.ustring.match(content, makeTemplatePattern('Historical')) and true or false
+	return isHistorical and 'yes' or ''
+end
+
+-- featured function
+--   Looks for {{Featured portal}} on a Portal_talk: page's related portal page.
+--   Returns 'yes' if found or '' (empty string) if not found, or an error if used in the wrong namespace.
+p.featured = function(frame)
+	local parent = frame.getParent(frame)
+	local args = cleanupArgs(frame.args)
+	local demo = args.demo and true or false
+	local content
+	if demo then
+		local demoText = mw.ustring.gsub(args.demo, '%{%{%!%}%}', '|')
+		content = '{{' .. demoText .. '}}'
+		if args.demo2 then
+			local demo2Text = mw.ustring.gsub(args.demo2, '%{%{%!%}%}', '|')
+			content= portalContent  .. '{{' .. demo2Text .. '}}'
+		end
+	else
+		content = getSubjectPageContent(100)
+	end
+
+	content = mw.ustring.gsub(content, "&lt;!%-%-.-%-%-&gt;","") -- remove HTML comments
+	content = mw.ustring.gsub(content, "&lt;noinclude&gt;.-&lt;/noinclude&gt;", "") -- remove noinclude bits
+
+	local isFeatured = mw.ustring.match(content, makeTemplatePattern('Featured portal')) and true or false
+	return isFeatured and 'yes' or ''
+end
+
+-- main function
+--   Looks for {{Portal maintenance status}} (or earlier deprecated templates) on a Portal_talk: page's related portal page.
+--   Returns an appropriate message string if found or '' (empty string) if not found, or an error if used in the wrong namespace.
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local args = cleanupArgs(frame.args)
+	local demo = args.demo and true or false
+	local portalContent
+	if demo then
+		local demoText = mw.ustring.gsub(args.demo, '%{%{%!%}%}', '|')
+		portalContent = '{{' .. demoText .. '}}'
+		if args.demo2 then
+			local demo2Text = mw.ustring.gsub(args.demo2, '%{%{%!%}%}', '|')
+			portalContent = portalContent  .. '{{' .. demo2Text .. '}}'
+		end
+	else
+		portalContent = getSubjectPageContent(100)
+	end
+
+	local status = getMatchingTemplateWikitext(portalContent, 'Portal maintenance status') or getMatchingTemplateWikitext(portalContent, 'Portal flag')
+	if not status then
+		return ''
+	end
+
+	local output = mw.ustring.sub(status, 0, -3) .. '|embed=yes}}' 
+	return frame:preprocess(output)
+end
+
+return p
+
+[[Category:pages tagged as Automatic wikipedia redirects in namespace {{subst:NAMESPACE}}]][[Category:qq]]</text>
+      <sha1>t929koorc99fg4nqkic7ir5fnonhtqj</sha1>
+    </revision>
+    <revision>
+      <id>811626</id>
+      <parentid>811625</parentid>
+      <timestamp>2025-03-20T00:03:16Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "qq" to "11"</comment>
+      <origin>811626</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4848" sha1="lun9y5lejmugy0vl3g0qccn11yw1s5d" xml:space="preserve">local p = {}
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+local content = {}
+
+function makeTemplatePattern(template)
+	local first = string.sub(template, 1, 1)
+	local rest = string.sub(template, 2)
+	local pattern = mw.ustring.format('%s[%s%s]%s%s', '%{%{%s*', mw.ustring.upper(first), mw.ustring.lower(first), rest, '%s*|?[^%}]*%}%}')
+	return pattern
+end
+
+function makeParameterPattern(parameter)
+	return mw.ustring.format('%s%s%s%s', '|%s*', parameter, '%s*=%s*', '([^|%}]*)', '%s*[|%}]')
+end
+
+function getMatchingTemplateWikitext(content, template, leadOnly)
+	if leadOnly then
+		content = mw.ustring.gsub(content, "%c%s*==.*","") -- remove first ==Heading== and everything after it
+	end
+	for templateWikitext in mw.ustring.gmatch(content, '%b{}') do
+		local isCorrectTemplate = mw.ustring.match(templateWikitext, makeTemplatePattern(template))
+		if isCorrectTemplate then
+			return templateWikitext
+		end
+	end
+	return false
+end
+
+function getSubjectPageContent(contentNamespaceNumber)
+	local namespace = mw.site.namespaces[contentNamespaceNumber] ["name"]
+	local talkTitle = mw.title.getCurrentTitle()
+	if talkTitle.namespace ~= contentNamespaceNumber + 1 then
+		return error('Wrong namespace', 0)
+	end
+	local subjectTitle = mw.title.new(namespace .. ":" .. talkTitle.text)
+	return subjectTitle:getContent()
+end
+
+-- historical function
+--   Looks for {{Historical}} on a Wikipedia_talk: page's related project page.
+--   Returns 'yes' if found or '' (empty string) if not found, or an error if used in the wrong namespace.
+p.historical = function(frame)
+	local parent = frame.getParent(frame)
+	local args = cleanupArgs(frame.args)
+	local demo = args.demo and true or false
+	local content
+	if demo then
+		local demoText = mw.ustring.gsub(args.demo, '%{%{%!%}%}', '|')
+		content = '{{' .. demoText .. '}}'
+		if args.demo2 then
+			local demo2Text = mw.ustring.gsub(args.demo2, '%{%{%!%}%}', '|')
+			content= portalContent  .. '{{' .. demo2Text .. '}}'
+		end
+	else
+		content = getSubjectPageContent(4)
+	end
+
+	content = mw.ustring.gsub(content, "&lt;!%-%-.-%-%-&gt;","") -- remove HTML comments
+	content = mw.ustring.gsub(content, "%c%s*==.*","") -- remove first ==Heading== and everything after it
+	content = mw.ustring.gsub(content, "&lt;noinclude&gt;.-&lt;/noinclude&gt;", "") -- remove noinclude bits
+
+	local isHistorical = mw.ustring.match(content, makeTemplatePattern('Historical')) and true or false
+	return isHistorical and 'yes' or ''
+end
+
+-- featured function
+--   Looks for {{Featured portal}} on a Portal_talk: page's related portal page.
+--   Returns 'yes' if found or '' (empty string) if not found, or an error if used in the wrong namespace.
+p.featured = function(frame)
+	local parent = frame.getParent(frame)
+	local args = cleanupArgs(frame.args)
+	local demo = args.demo and true or false
+	local content
+	if demo then
+		local demoText = mw.ustring.gsub(args.demo, '%{%{%!%}%}', '|')
+		content = '{{' .. demoText .. '}}'
+		if args.demo2 then
+			local demo2Text = mw.ustring.gsub(args.demo2, '%{%{%!%}%}', '|')
+			content= portalContent  .. '{{' .. demo2Text .. '}}'
+		end
+	else
+		content = getSubjectPageContent(100)
+	end
+
+	content = mw.ustring.gsub(content, "&lt;!%-%-.-%-%-&gt;","") -- remove HTML comments
+	content = mw.ustring.gsub(content, "&lt;noinclude&gt;.-&lt;/noinclude&gt;", "") -- remove noinclude bits
+
+	local isFeatured = mw.ustring.match(content, makeTemplatePattern('Featured portal')) and true or false
+	return isFeatured and 'yes' or ''
+end
+
+-- main function
+--   Looks for {{Portal maintenance status}} (or earlier deprecated templates) on a Portal_talk: page's related portal page.
+--   Returns an appropriate message string if found or '' (empty string) if not found, or an error if used in the wrong namespace.
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local args = cleanupArgs(frame.args)
+	local demo = args.demo and true or false
+	local portalContent
+	if demo then
+		local demoText = mw.ustring.gsub(args.demo, '%{%{%!%}%}', '|')
+		portalContent = '{{' .. demoText .. '}}'
+		if args.demo2 then
+			local demo2Text = mw.ustring.gsub(args.demo2, '%{%{%!%}%}', '|')
+			portalContent = portalContent  .. '{{' .. demo2Text .. '}}'
+		end
+	else
+		portalContent = getSubjectPageContent(100)
+	end
+
+	local status = getMatchingTemplateWikitext(portalContent, 'Portal maintenance status') or getMatchingTemplateWikitext(portalContent, 'Portal flag')
+	if not status then
+		return ''
+	end
+
+	local output = mw.ustring.sub(status, 0, -3) .. '|embed=yes}}' 
+	return frame:preprocess(output)
+end
+
+return p
+
+[[Category:pages tagged as Automatic wikipedia redirects in namespace {{subst:NAMESPACE}}]][[Category:11]]</text>
+      <sha1>lun9y5lejmugy0vl3g0qccn11yw1s5d</sha1>
+    </revision>
+    <revision>
+      <id>5497</id>
+      <timestamp>2025-04-29T10:46:19Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Text replacement - "[[Category:11]]" to ""</comment>
+      <origin>5497</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4833" sha1="a25ue0pcgwg1ssl74hhpjonzcphs8w8" xml:space="preserve">local p = {}
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+local content = {}
+
+function makeTemplatePattern(template)
+	local first = string.sub(template, 1, 1)
+	local rest = string.sub(template, 2)
+	local pattern = mw.ustring.format('%s[%s%s]%s%s', '%{%{%s*', mw.ustring.upper(first), mw.ustring.lower(first), rest, '%s*|?[^%}]*%}%}')
+	return pattern
+end
+
+function makeParameterPattern(parameter)
+	return mw.ustring.format('%s%s%s%s', '|%s*', parameter, '%s*=%s*', '([^|%}]*)', '%s*[|%}]')
+end
+
+function getMatchingTemplateWikitext(content, template, leadOnly)
+	if leadOnly then
+		content = mw.ustring.gsub(content, "%c%s*==.*","") -- remove first ==Heading== and everything after it
+	end
+	for templateWikitext in mw.ustring.gmatch(content, '%b{}') do
+		local isCorrectTemplate = mw.ustring.match(templateWikitext, makeTemplatePattern(template))
+		if isCorrectTemplate then
+			return templateWikitext
+		end
+	end
+	return false
+end
+
+function getSubjectPageContent(contentNamespaceNumber)
+	local namespace = mw.site.namespaces[contentNamespaceNumber] ["name"]
+	local talkTitle = mw.title.getCurrentTitle()
+	if talkTitle.namespace ~= contentNamespaceNumber + 1 then
+		return error('Wrong namespace', 0)
+	end
+	local subjectTitle = mw.title.new(namespace .. ":" .. talkTitle.text)
+	return subjectTitle:getContent()
+end
+
+-- historical function
+--   Looks for {{Historical}} on a Wikipedia_talk: page's related project page.
+--   Returns 'yes' if found or '' (empty string) if not found, or an error if used in the wrong namespace.
+p.historical = function(frame)
+	local parent = frame.getParent(frame)
+	local args = cleanupArgs(frame.args)
+	local demo = args.demo and true or false
+	local content
+	if demo then
+		local demoText = mw.ustring.gsub(args.demo, '%{%{%!%}%}', '|')
+		content = '{{' .. demoText .. '}}'
+		if args.demo2 then
+			local demo2Text = mw.ustring.gsub(args.demo2, '%{%{%!%}%}', '|')
+			content= portalContent  .. '{{' .. demo2Text .. '}}'
+		end
+	else
+		content = getSubjectPageContent(4)
+	end
+
+	content = mw.ustring.gsub(content, "&lt;!%-%-.-%-%-&gt;","") -- remove HTML comments
+	content = mw.ustring.gsub(content, "%c%s*==.*","") -- remove first ==Heading== and everything after it
+	content = mw.ustring.gsub(content, "&lt;noinclude&gt;.-&lt;/noinclude&gt;", "") -- remove noinclude bits
+
+	local isHistorical = mw.ustring.match(content, makeTemplatePattern('Historical')) and true or false
+	return isHistorical and 'yes' or ''
+end
+
+-- featured function
+--   Looks for {{Featured portal}} on a Portal_talk: page's related portal page.
+--   Returns 'yes' if found or '' (empty string) if not found, or an error if used in the wrong namespace.
+p.featured = function(frame)
+	local parent = frame.getParent(frame)
+	local args = cleanupArgs(frame.args)
+	local demo = args.demo and true or false
+	local content
+	if demo then
+		local demoText = mw.ustring.gsub(args.demo, '%{%{%!%}%}', '|')
+		content = '{{' .. demoText .. '}}'
+		if args.demo2 then
+			local demo2Text = mw.ustring.gsub(args.demo2, '%{%{%!%}%}', '|')
+			content= portalContent  .. '{{' .. demo2Text .. '}}'
+		end
+	else
+		content = getSubjectPageContent(100)
+	end
+
+	content = mw.ustring.gsub(content, "&lt;!%-%-.-%-%-&gt;","") -- remove HTML comments
+	content = mw.ustring.gsub(content, "&lt;noinclude&gt;.-&lt;/noinclude&gt;", "") -- remove noinclude bits
+
+	local isFeatured = mw.ustring.match(content, makeTemplatePattern('Featured portal')) and true or false
+	return isFeatured and 'yes' or ''
+end
+
+-- main function
+--   Looks for {{Portal maintenance status}} (or earlier deprecated templates) on a Portal_talk: page's related portal page.
+--   Returns an appropriate message string if found or '' (empty string) if not found, or an error if used in the wrong namespace.
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local args = cleanupArgs(frame.args)
+	local demo = args.demo and true or false
+	local portalContent
+	if demo then
+		local demoText = mw.ustring.gsub(args.demo, '%{%{%!%}%}', '|')
+		portalContent = '{{' .. demoText .. '}}'
+		if args.demo2 then
+			local demo2Text = mw.ustring.gsub(args.demo2, '%{%{%!%}%}', '|')
+			portalContent = portalContent  .. '{{' .. demo2Text .. '}}'
+		end
+	else
+		portalContent = getSubjectPageContent(100)
+	end
+
+	local status = getMatchingTemplateWikitext(portalContent, 'Portal maintenance status') or getMatchingTemplateWikitext(portalContent, 'Portal flag')
+	if not status then
+		return ''
+	end
+
+	local output = mw.ustring.sub(status, 0, -3) .. '|embed=yes}}' 
+	return frame:preprocess(output)
+end
+
+return p
+
+[[Category:pages tagged as Automatic wikipedia redirects in namespace {{subst:NAMESPACE}}]]</text>
+      <sha1>a25ue0pcgwg1ssl74hhpjonzcphs8w8</sha1>
+    </revision>
+  </page>
+</mediawiki>

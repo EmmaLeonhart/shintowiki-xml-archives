@@ -1,0 +1,4252 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:SDcat</title>
+    <ns>828</ns>
+    <id>37</id>
+    <revision>
+      <id>432394</id>
+      <timestamp>2020-08-03T21:25:37Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;RexxS</username>
+        <id>0</id>
+      </contributor>
+      <comment>Creating Module:Sandbox/RexxS/SDcat</comment>
+      <origin>432394</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1210" sha1="s2yrre84z4uade542i2zrq8du2dmbaa" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (ideally case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+--]]
+
+p.setCat = function(frame)
+	local itemID = mw.text.trim(frame.args.qid or "")
+	if itemID == "" then itemID = nil end
+	local sdesc = mw.text.trim(frame.args.sd or ""):lower()
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[:Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[:Category:Short description matches Wikidata]]"
+	else
+		return "[[:Category:Short description is different from Wikidata]]"
+	end
+end
+
+return p</text>
+      <sha1>s2yrre84z4uade542i2zrq8du2dmbaa</sha1>
+    </revision>
+    <revision>
+      <id>432395</id>
+      <parentid>432394</parentid>
+      <timestamp>2020-08-03T21:57:41Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;RexxS</username>
+        <id>0</id>
+      </contributor>
+      <comment>split to allow calling from other modules; add link prefix for testing</comment>
+      <origin>432395</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1739" sha1="4wxu3rvgsoncvmqlw74ltww1er5gjr1" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (ideally case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (Wikidata entity-ID, local short description, link prefix)
+p._setCat = function(itemID, sdesc, lp)
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(frame.args.qid or "")
+	if itemID == "" then itemID = nil end
+	-- local short description
+	local sdesc = mw.text.trim(frame.args.sd or ""):lower()
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(frame.args.sd or ""):gsub('"', '')
+	return p._setCat(itemID, sdesc, lp)
+end
+
+return p</text>
+      <sha1>4wxu3rvgsoncvmqlw74ltww1er5gjr1</sha1>
+    </revision>
+    <revision>
+      <id>432396</id>
+      <parentid>432395</parentid>
+      <timestamp>2020-08-03T22:01:14Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;RexxS</username>
+        <id>0</id>
+      </contributor>
+      <comment>typo</comment>
+      <origin>432396</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1739" sha1="jb8owqx06c8602wcm0tqco8mcpewplj" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (ideally case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (Wikidata entity-ID, local short description, link prefix)
+p._setCat = function(itemID, sdesc, lp)
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(frame.args.qid or "")
+	if itemID == "" then itemID = nil end
+	-- local short description
+	local sdesc = mw.text.trim(frame.args.sd or ""):lower()
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(frame.args.lp or ""):gsub('"', '')
+	return p._setCat(itemID, sdesc, lp)
+end
+
+return p</text>
+      <sha1>jb8owqx06c8602wcm0tqco8mcpewplj</sha1>
+    </revision>
+    <revision>
+      <id>432397</id>
+      <parentid>432396</parentid>
+      <timestamp>2020-08-03T22:14:24Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;RexxS</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>RexxS moved page [[Module:Sandbox/RexxS/SDcat]] to [[Module:SDcat]] without leaving a redirect: ready for main module space</comment>
+      <origin>432396</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1739" sha1="jb8owqx06c8602wcm0tqco8mcpewplj" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (ideally case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (Wikidata entity-ID, local short description, link prefix)
+p._setCat = function(itemID, sdesc, lp)
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(frame.args.qid or "")
+	if itemID == "" then itemID = nil end
+	-- local short description
+	local sdesc = mw.text.trim(frame.args.sd or ""):lower()
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(frame.args.lp or ""):gsub('"', '')
+	return p._setCat(itemID, sdesc, lp)
+end
+
+return p</text>
+      <sha1>jb8owqx06c8602wcm0tqco8mcpewplj</sha1>
+    </revision>
+    <revision>
+      <id>432398</id>
+      <parentid>432397</parentid>
+      <timestamp>2020-08-03T22:31:56Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;RexxS</username>
+        <id>0</id>
+      </contributor>
+      <comment>move the catching of empty ID to subroutine</comment>
+      <origin>432398</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1731" sha1="qjxn4u5ez7bb4jqzpcylncc869zl2n6" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (Wikidata entity-ID, local short description, link prefix)
+p._setCat = function(itemID, sdesc, lp)
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(frame.args.qid or "")
+	-- local short description
+	local sdesc = mw.text.trim(frame.args.sd or ""):lower()
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(frame.args.lp or ""):gsub('"', '')
+	return p._setCat(itemID, sdesc, lp)
+end
+
+return p</text>
+      <sha1>qjxn4u5ez7bb4jqzpcylncc869zl2n6</sha1>
+    </revision>
+    <revision>
+      <id>432399</id>
+      <parentid>432398</parentid>
+      <timestamp>2020-08-03T22:34:25Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;RexxS</username>
+        <id>0</id>
+      </contributor>
+      <comment>change order of parameters passed to subroutine - optional parameters last</comment>
+      <origin>432399</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1731" sha1="6kipgpmjtgn3m5tkd6mo4tzdacb1wiq" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(frame.args.qid or "")
+	-- local short description
+	local sdesc = mw.text.trim(frame.args.sd or ""):lower()
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(frame.args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>6kipgpmjtgn3m5tkd6mo4tzdacb1wiq</sha1>
+    </revision>
+    <revision>
+      <id>432400</id>
+      <parentid>432399</parentid>
+      <timestamp>2020-08-04T15:19:31Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;RexxS</username>
+        <id>0</id>
+      </contributor>
+      <comment>fetch parent args if called from a wrapper</comment>
+      <origin>432400</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1811" sha1="fv0g8cuey2mrgudor33jxriy09x66uq" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>fv0g8cuey2mrgudor33jxriy09x66uq</sha1>
+    </revision>
+    <revision>
+      <id>432401</id>
+      <parentid>432400</parentid>
+      <timestamp>2020-08-07T18:03:10Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;MusikBot II</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:SDcat]]": [[Wikipedia:High-risk templates|High-risk template or module]] ([[User:MusikBot II/TemplateProtector|more info]]) ([Edit=Require template editor access] (indefinite) [Move=Require template editor access] (indefinite))</comment>
+      <origin>432400</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1811" sha1="fv0g8cuey2mrgudor33jxriy09x66uq" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>fv0g8cuey2mrgudor33jxriy09x66uq</sha1>
+    </revision>
+    <revision>
+      <id>432402</id>
+      <parentid>432401</parentid>
+      <timestamp>2020-08-16T16:10:51Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;IceWelder</username>
+        <id>0</id>
+      </contributor>
+      <comment>Fix Lua error when Wikidata is unavailable (default to "different from Wikidata")</comment>
+      <origin>432402</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1852" sha1="3qkt6pw6ocbq63xdnva61wr63j86305" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if itemID == "" then itemID = nil end
+	
+	if not mw.wikibase == nil then
+		-- Wikidata description field
+		local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+		if wdesc == "" then
+			return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+		elseif wdesc == sdesc then
+			return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+		end
+	end
+	
+	return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>3qkt6pw6ocbq63xdnva61wr63j86305</sha1>
+    </revision>
+    <revision>
+      <id>432403</id>
+      <parentid>432402</parentid>
+      <timestamp>2020-08-16T17:13:10Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;IceWelder</username>
+        <id>0</id>
+      </contributor>
+      <comment>Undid revision 973324023 by [[Special:Contributions/IceWelder|IceWelder]] ([[User talk:IceWelder|talk]]) rv while under discussion</comment>
+      <origin>432403</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1811" sha1="fv0g8cuey2mrgudor33jxriy09x66uq" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>fv0g8cuey2mrgudor33jxriy09x66uq</sha1>
+    </revision>
+    <revision>
+      <id>432404</id>
+      <parentid>432403</parentid>
+      <timestamp>2020-08-16T17:20:37Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;RexxS</username>
+        <id>0</id>
+      </contributor>
+      <comment>if no connection to Wikidata, then do nothing</comment>
+      <origin>432404</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>432390</id>
+      <timestamp>2024-02-17T03:57:52Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:SDcat]]": Per main ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>432390</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>432391</id>
+      <parentid>432390</parentid>
+      <timestamp>2024-06-25T10:18:06Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:SDcat]]: importing for the list. This is a canonical list of Shrines to work with</comment>
+      <origin>432390</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>432392</id>
+      <parentid>432391</parentid>
+      <timestamp>2025-03-11T09:00:43Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:SDcat]]": Per main ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>432390</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>432393</id>
+      <parentid>432392</parentid>
+      <timestamp>2025-03-11T09:00:44Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: more imports</comment>
+      <origin>432390</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>432405</id>
+      <parentid>432393</parentid>
+      <timestamp>2025-03-12T23:59:34Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>11 revisions imported from [[:wikipedia:Module:SDcat]]: importing because this actually has redlinks for a lot of the articles</comment>
+      <origin>432390</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>432406</id>
+      <parentid>432405</parentid>
+      <timestamp>2025-03-15T19:25:26Z</timestamp>
+      <contributor>
+        <username>en&gt;Unknown user</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:SDcat]]": Per main ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>432390</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>432407</id>
+      <parentid>432406</parentid>
+      <timestamp>2025-04-27T22:11:01Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:SDcat]]": Per main ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>432390</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>432408</id>
+      <parentid>432407</parentid>
+      <timestamp>2025-04-27T22:12:27Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:SDcat]]": Per main ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>432390</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>432409</id>
+      <parentid>432408</parentid>
+      <timestamp>2025-04-27T22:13:20Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:SDcat]]": Per main ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>432390</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>432410</id>
+      <parentid>432409</parentid>
+      <timestamp>2025-04-27T22:13:21Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: chat is this real</comment>
+      <origin>432390</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>38</id>
+      <timestamp>2025-04-27T22:17:02Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: chat is this real</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3553991</id>
+      <parentid>38</parentid>
+      <timestamp>2026-03-20T18:19:47Z</timestamp>
+      <contributor>
+        <username>en&gt;Pppery</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:SDcat]]": Per main ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3553992</id>
+      <parentid>3553991</parentid>
+      <timestamp>2026-03-20T18:19:47Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3554205</id>
+      <parentid>3553992</parentid>
+      <timestamp>2026-03-20T18:20:50Z</timestamp>
+      <contributor>
+        <username>en&gt;Pppery</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:SDcat]]": Per main ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3554206</id>
+      <parentid>3554205</parentid>
+      <timestamp>2026-03-20T18:20:50Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3554419</id>
+      <parentid>3554206</parentid>
+      <timestamp>2026-03-20T18:22:19Z</timestamp>
+      <contributor>
+        <username>en&gt;Pppery</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:SDcat]]": Per main ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3554420</id>
+      <parentid>3554419</parentid>
+      <timestamp>2026-03-20T18:22:19Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3554633</id>
+      <parentid>3554420</parentid>
+      <timestamp>2026-03-20T18:24:19Z</timestamp>
+      <contributor>
+        <username>en&gt;Pppery</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:SDcat]]": Per main ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3554634</id>
+      <parentid>3554633</parentid>
+      <timestamp>2026-03-20T18:24:19Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3554847</id>
+      <parentid>3554634</parentid>
+      <timestamp>2026-03-20T18:26:49Z</timestamp>
+      <contributor>
+        <username>en&gt;Pppery</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:SDcat]]": Per main ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3554848</id>
+      <parentid>3554847</parentid>
+      <timestamp>2026-03-20T18:26:49Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3555061</id>
+      <parentid>3554848</parentid>
+      <timestamp>2026-03-20T18:29:51Z</timestamp>
+      <contributor>
+        <username>en&gt;Pppery</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:SDcat]]": Per main ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3555062</id>
+      <parentid>3555061</parentid>
+      <timestamp>2026-03-20T18:29:51Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3555275</id>
+      <parentid>3555062</parentid>
+      <timestamp>2026-03-20T18:33:22Z</timestamp>
+      <contributor>
+        <username>en&gt;Pppery</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:SDcat]]": Per main ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3555276</id>
+      <parentid>3555275</parentid>
+      <timestamp>2026-03-20T18:33:22Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3555489</id>
+      <parentid>3555276</parentid>
+      <timestamp>2026-03-20T18:37:26Z</timestamp>
+      <contributor>
+        <username>en&gt;Pppery</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:SDcat]]": Per main ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3555490</id>
+      <parentid>3555489</parentid>
+      <timestamp>2026-03-20T18:37:26Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3555703</id>
+      <parentid>3555490</parentid>
+      <timestamp>2026-03-20T18:41:55Z</timestamp>
+      <contributor>
+        <username>en&gt;Pppery</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:SDcat]]": Per main ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3555704</id>
+      <parentid>3555703</parentid>
+      <timestamp>2026-03-20T18:41:55Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3555917</id>
+      <parentid>3555704</parentid>
+      <timestamp>2026-03-20T18:46:58Z</timestamp>
+      <contributor>
+        <username>en&gt;Pppery</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:SDcat]]": Per main ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3555918</id>
+      <parentid>3555917</parentid>
+      <timestamp>2026-03-20T18:46:58Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3556131</id>
+      <parentid>3555918</parentid>
+      <timestamp>2026-03-20T18:52:27Z</timestamp>
+      <contributor>
+        <username>en&gt;Pppery</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:SDcat]]": Per main ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3556132</id>
+      <parentid>3556131</parentid>
+      <timestamp>2026-03-20T18:52:27Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3556345</id>
+      <parentid>3556132</parentid>
+      <timestamp>2026-03-20T18:58:32Z</timestamp>
+      <contributor>
+        <username>en&gt;Pppery</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:SDcat]]": Per main ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3556346</id>
+      <parentid>3556345</parentid>
+      <timestamp>2026-03-20T18:58:33Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3556559</id>
+      <parentid>3556346</parentid>
+      <timestamp>2026-03-20T19:05:02Z</timestamp>
+      <contributor>
+        <username>en&gt;Pppery</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:SDcat]]": Per main ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3556560</id>
+      <parentid>3556559</parentid>
+      <timestamp>2026-03-20T19:05:02Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3556773</id>
+      <parentid>3556560</parentid>
+      <timestamp>2026-03-20T19:12:04Z</timestamp>
+      <contributor>
+        <username>en&gt;Pppery</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:SDcat]]": Per main ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3556774</id>
+      <parentid>3556773</parentid>
+      <timestamp>2026-03-20T19:12:04Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3557030</id>
+      <parentid>3556774</parentid>
+      <timestamp>2026-03-20T19:37:46Z</timestamp>
+      <contributor>
+        <username>en&gt;Pppery</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:SDcat]]": Per main ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3557031</id>
+      <parentid>3557030</parentid>
+      <timestamp>2026-03-20T19:37:46Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3557352</id>
+      <parentid>3557031</parentid>
+      <timestamp>2026-03-20T19:41:43Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:SDcat]]": Per main ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3557353</id>
+      <parentid>3557352</parentid>
+      <timestamp>2026-03-20T19:41:43Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3557866</id>
+      <parentid>3557353</parentid>
+      <timestamp>2026-03-20T19:46:17Z</timestamp>
+      <contributor>
+        <username>en&gt;Pppery</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:SDcat]]": Per main ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3557867</id>
+      <parentid>3557866</parentid>
+      <timestamp>2026-03-20T19:46:17Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3558738</id>
+      <parentid>3557867</parentid>
+      <timestamp>2026-03-20T19:55:17Z</timestamp>
+      <contributor>
+        <username>en&gt;Pppery</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:SDcat]]": Per main ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3558739</id>
+      <parentid>3558738</parentid>
+      <timestamp>2026-03-20T19:55:18Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Manual reimport from enwiki to fix erroneous transclusions</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3562134</id>
+      <parentid>3558739</parentid>
+      <timestamp>2026-03-22T18:47:31Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:SDcat]]": Per main ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3562135</id>
+      <parentid>3562134</parentid>
+      <timestamp>2026-03-22T18:47:31Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3646118</id>
+      <parentid>3562135</parentid>
+      <timestamp>2026-04-24T16:30:28Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:SDcat]]": Per main ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+    <revision>
+      <id>3646119</id>
+      <parentid>3646118</parentid>
+      <timestamp>2026-04-24T16:30:28Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: trying to do a last fix of these, they will be fixed and not bloat the site</comment>
+      <origin>38</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1851" sha1="cml06m2kvz7og9bi5f1xe6ylhi3d9a0" xml:space="preserve">--[[
+SDcat
+Module to check whether local short description matches that on Wikidata
+--]]
+
+local p = {}
+
+-------------------------------------------------------------------------------
+--[[
+setCat has the qid of a Wikidata entity passed as |qid=
+(it defaults to the associated qid of the current article if omitted)
+and the local short description passed as |sd=
+It returns a category if there is an associated Wikidata entity.
+It returns one of the following tracking categories, as appropriate:
+* Category:Short description matches Wikidata (case-insensitive)
+* Category:Short description is different from Wikidata
+* Category:Short description with empty Wikidata description
+For testing purposes, a link prefix |lp= may be set to ":" to make the categories visible.
+--]]
+
+-- function exported for use in other modules
+-- (local short description, Wikidata entity-ID, link prefix)
+p._setCat = function(sdesc, itemID, lp)
+	if not mw.wikibase then return nil end
+	if itemID == "" then itemID = nil end
+	-- Wikidata description field
+	local wdesc = (mw.wikibase.getDescription(itemID) or ""):lower()
+	if wdesc == "" then
+		return "[[" .. lp .. "Category:Short description with empty Wikidata description]]"
+	elseif wdesc == sdesc then
+		return "[[" .. lp .. "Category:Short description matches Wikidata]]"
+	else
+		return "[[" .. lp .. "Category:Short description is different from Wikidata]]"
+	end
+end
+
+-- function exported for call from #invoke
+p.setCat = function(frame)
+	local args
+	if frame.args.sd then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	-- local short description
+	local sdesc = mw.text.trim(args.sd or ""):lower()
+	-- Wikidata entity-ID
+	local itemID = mw.text.trim(args.qid or "")
+	-- link prefix, strip quotes
+	local lp = mw.text.trim(args.lp or ""):gsub('"', '')
+	return p._setCat(sdesc, itemID, lp)
+end
+
+return p</text>
+      <sha1>cml06m2kvz7og9bi5f1xe6ylhi3d9a0</sha1>
+    </revision>
+  </page>
+</mediawiki>

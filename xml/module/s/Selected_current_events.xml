@@ -1,0 +1,919 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Selected current events</title>
+    <ns>828</ns>
+    <id>5497</id>
+    <revision>
+      <id>811627</id>
+      <timestamp>2019-03-09T08:25:04Z</timestamp>
+      <contributor>
+        <username>en&gt;Evad37</username>
+        <id>0</id>
+      </contributor>
+      <comment>allow wikitext to be shown alongside items, for when the template is just used to generate suggestions</comment>
+      <origin>811627</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5966" sha1="bnyc6lmiv8dpghaxhdnlsv56mjljf13" xml:space="preserve">function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+function isAffirmed(val)
+	if not(val) then return false end
+	local affirmedWords = ' add added affirm affirmed include included on true yes y '
+	return string.find(affirmedWords, ' '..string.lower(val)..' ', 1, true ) and true or false
+end
+
+function makeOutput(allItems, maxItems, more)
+	local output = ''
+	local itemIndex = 1
+	local maxCount = math.min(#allItems, maxItems)
+	while itemIndex &lt;= maxCount do
+		output = output .. allItems[itemIndex] .. '\n'
+		itemIndex = itemIndex + 1
+	end
+	if more then
+		output = output .. more
+	end
+	return mw.text.trim(output)
+end
+
+function cleanForPatternMatching(wikitext)
+	-- remove wikilink brackets
+	local cleaned = mw.ustring.gsub(wikitext, "%[%[(.-)%]%]","%1")
+	-- remove pipes that would have been in piped links
+	cleaned = mw.ustring.gsub(cleaned, "%|"," ")
+	-- remove external links
+	cleaned = mw.ustring.gsub(cleaned, "%[.-%]"," ")
+	return cleaned
+end
+
+function formatDateString(dateString, mdyDates)
+	if mdyDates then
+		formattedDatePattern = "%2 %3, %1"
+	else
+		formattedDatePattern = "%3 %2 %1"
+	end
+	return '&lt;span style="font-weight:normal;"&gt;' .. string.gsub(dateString, "(.*) (.*) (.*)", formattedDatePattern) .. ' –&lt;/span&gt;'
+end
+
+function makeCollapsed(outerText, innerText)
+	return "{{Hidden begin | titlestyle = font-weight:normal | title = " .. outerText .. "}}" .. innerText .. "{{Hidden end}}"
+end
+
+-- Get current events for a "YYYY Month D" date. Returns a table of list items.
+function getCurrentEvents(date, mdyDates, keepPatterns, skipPatterns, showWikitext)
+	local title = mw.title.new("Portal:Current events/" .. date)
+	local raw = title:getContent()
+	if (not raw) or raw == '' then
+		return {}
+	end
+	local lines = mw.text.split( raw , '\n')
+	local items = {}
+	local itemHeading = ''
+	local cleanItemHeading = ''
+	local previousItemPrefix = ''
+
+	local formattedDate = formatDateString(date, mdyDates)
+
+	for i, v in ipairs(lines) do
+		local keep = false
+		local skip = false
+		local isSublistItem = ( string.sub( v, 0, 2 ) == '**' )
+		local isListItem = not isSublistItem and ( string.sub( v, 0, 1) == '*' )
+		local hasSublistItem = isListItem and i &lt; #lines and ( string.sub( lines[i+1], 0, 2 ) == '**' )
+
+		if hasSublistItem then
+			itemHeading = mw.text.trim(mw.ustring.gsub(v, '%*', '', 1))
+			cleanItemHeading = cleanForPatternMatching(itemHeading)
+		elseif isListItem then
+			itemHeading = ""
+			cleanItemHeading = ""
+		end
+
+		if (isListItem and not hasSublistItem) or isSublistItem then
+			local text = cleanForPatternMatching(v)
+			for ii, keepPatt in pairs(keepPatterns) do
+				if not keep and ( mw.ustring.find(text, keepPatt) or mw.ustring.find(cleanItemHeading, keepPatt) ) then
+					keep = true
+				end
+			end
+			if #skipPatterns &gt; 0 then
+				for iii, skipPatt in pairs(skipPatterns) do
+					if not skip and ( mw.ustring.find(text, skipPatt) or mw.ustring.find(cleanItemHeading, skipPatt) ) then
+						skip = true			
+					end
+				end
+			end
+		end
+
+		if keep and not skip then
+			local itemPrefix = ";" .. formattedDate
+			if itemHeading ~= "" then itemPrefix = itemPrefix .. " '''"..itemHeading.."'''" end
+			itemPrefix = itemPrefix .. "\n:"
+			if previousItemPrefix == itemPrefix then
+				itemPrefix = ':'
+			else
+				previousItemPrefix = itemPrefix
+			end
+			local item = mw.ustring.gsub(v, '%*+', itemPrefix)
+			if showWikitext then
+				-- remove html comments
+				local itemWikitext = mw.ustring.gsub(item, "%&lt;%!%-%-(.-)%-%-%&gt;", "")
+				-- remove prefix from wikitext
+				itemWikitext = mw.ustring.gsub(itemWikitext, ";(.-)\n", "")
+				itemWikitext = "&lt;pre&gt;" .. mw.text.nowiki( itemWikitext ) .. "&lt;/pre&gt;"
+				-- remove prefix from item
+				itemWithoutPrexix = mw.ustring.gsub(v, '%*+', '')
+				item = itemPrefix .. makeCollapsed(itemWithoutPrexix, itemWikitext)
+			end
+			table.insert(items, item)
+		end
+	end
+	return items
+end
+
+function getItems(maxDays, mdyDates, patterns, skipPatterns, showWikitext)
+	local allItems = {}
+	local lang = mw.language.new('en')
+	local daysAgo = 0
+	while daysAgo &lt; maxDays do
+		local day = lang:formatDate('Y F j', 'now - '..daysAgo..' days')
+		local dailyItems = getCurrentEvents(day, mdyDates, patterns, skipPatterns, showWikitext)
+		for i, item in ipairs(dailyItems) do
+			table.insert(allItems, item)
+		end
+		daysAgo = daysAgo + 1
+	end
+	return allItems
+end
+
+function getPatterns(args, prefix)
+	local patterns = {}
+	local ii = 1
+	while args[prefix and prefix..ii or ii] do
+		patterns[ii] = args[prefix and prefix..ii or ii]
+		ii = ii + 1
+	end
+	return patterns
+end
+
+local p = {}
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+
+	if args['not'] and not args['not1'] then
+		args['not1'] = args['not']
+	end
+	
+	local patterns = getPatterns(args)
+	if #patterns &lt; 1 then
+		return error("Search pattern not set")
+	end
+
+	local skipPatterns = getPatterns(args, 'not')
+
+	local days = tonumber(args.days) or 30
+
+	local mdyDates = args.dates and string.lower(args.dates) == 'mdy'
+	
+	local showWikitext = isAffirmed(args.wikitext)
+
+	local allItems = getItems(days, mdyDates, patterns, skipPatterns, showWikitext)
+	if #allItems &lt; 1 then
+		return args.header and '' or args.none or 'No recent news'
+	end
+
+	local maxItems = tonumber(args.max) or 6
+
+	local more = args.more
+	if isAffirmed(args.more) then
+		more = "'''[[Portal:Current events|More current events...]]'''"
+	end
+
+	local output = makeOutput(allItems, maxItems, more)
+	if args.header then
+		output = args.header .. '\n' .. output .. '\n' .. (args.footer or '{{Box-footer}}')
+	end
+	local needsExpansion = mw.ustring.find(output, '{{', 0, true)	
+	if needsExpansion then
+		return frame:preprocess(output)
+	else 
+		return output
+	end
+
+end
+
+return p</text>
+      <sha1>bnyc6lmiv8dpghaxhdnlsv56mjljf13</sha1>
+    </revision>
+    <revision>
+      <id>811628</id>
+      <parentid>811627</parentid>
+      <timestamp>2024-12-27T08:45:33Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: impor5ting these because otherwise I might accidentally redirect them</comment>
+      <origin>811627</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5966" sha1="bnyc6lmiv8dpghaxhdnlsv56mjljf13" xml:space="preserve">function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+function isAffirmed(val)
+	if not(val) then return false end
+	local affirmedWords = ' add added affirm affirmed include included on true yes y '
+	return string.find(affirmedWords, ' '..string.lower(val)..' ', 1, true ) and true or false
+end
+
+function makeOutput(allItems, maxItems, more)
+	local output = ''
+	local itemIndex = 1
+	local maxCount = math.min(#allItems, maxItems)
+	while itemIndex &lt;= maxCount do
+		output = output .. allItems[itemIndex] .. '\n'
+		itemIndex = itemIndex + 1
+	end
+	if more then
+		output = output .. more
+	end
+	return mw.text.trim(output)
+end
+
+function cleanForPatternMatching(wikitext)
+	-- remove wikilink brackets
+	local cleaned = mw.ustring.gsub(wikitext, "%[%[(.-)%]%]","%1")
+	-- remove pipes that would have been in piped links
+	cleaned = mw.ustring.gsub(cleaned, "%|"," ")
+	-- remove external links
+	cleaned = mw.ustring.gsub(cleaned, "%[.-%]"," ")
+	return cleaned
+end
+
+function formatDateString(dateString, mdyDates)
+	if mdyDates then
+		formattedDatePattern = "%2 %3, %1"
+	else
+		formattedDatePattern = "%3 %2 %1"
+	end
+	return '&lt;span style="font-weight:normal;"&gt;' .. string.gsub(dateString, "(.*) (.*) (.*)", formattedDatePattern) .. ' –&lt;/span&gt;'
+end
+
+function makeCollapsed(outerText, innerText)
+	return "{{Hidden begin | titlestyle = font-weight:normal | title = " .. outerText .. "}}" .. innerText .. "{{Hidden end}}"
+end
+
+-- Get current events for a "YYYY Month D" date. Returns a table of list items.
+function getCurrentEvents(date, mdyDates, keepPatterns, skipPatterns, showWikitext)
+	local title = mw.title.new("Portal:Current events/" .. date)
+	local raw = title:getContent()
+	if (not raw) or raw == '' then
+		return {}
+	end
+	local lines = mw.text.split( raw , '\n')
+	local items = {}
+	local itemHeading = ''
+	local cleanItemHeading = ''
+	local previousItemPrefix = ''
+
+	local formattedDate = formatDateString(date, mdyDates)
+
+	for i, v in ipairs(lines) do
+		local keep = false
+		local skip = false
+		local isSublistItem = ( string.sub( v, 0, 2 ) == '**' )
+		local isListItem = not isSublistItem and ( string.sub( v, 0, 1) == '*' )
+		local hasSublistItem = isListItem and i &lt; #lines and ( string.sub( lines[i+1], 0, 2 ) == '**' )
+
+		if hasSublistItem then
+			itemHeading = mw.text.trim(mw.ustring.gsub(v, '%*', '', 1))
+			cleanItemHeading = cleanForPatternMatching(itemHeading)
+		elseif isListItem then
+			itemHeading = ""
+			cleanItemHeading = ""
+		end
+
+		if (isListItem and not hasSublistItem) or isSublistItem then
+			local text = cleanForPatternMatching(v)
+			for ii, keepPatt in pairs(keepPatterns) do
+				if not keep and ( mw.ustring.find(text, keepPatt) or mw.ustring.find(cleanItemHeading, keepPatt) ) then
+					keep = true
+				end
+			end
+			if #skipPatterns &gt; 0 then
+				for iii, skipPatt in pairs(skipPatterns) do
+					if not skip and ( mw.ustring.find(text, skipPatt) or mw.ustring.find(cleanItemHeading, skipPatt) ) then
+						skip = true			
+					end
+				end
+			end
+		end
+
+		if keep and not skip then
+			local itemPrefix = ";" .. formattedDate
+			if itemHeading ~= "" then itemPrefix = itemPrefix .. " '''"..itemHeading.."'''" end
+			itemPrefix = itemPrefix .. "\n:"
+			if previousItemPrefix == itemPrefix then
+				itemPrefix = ':'
+			else
+				previousItemPrefix = itemPrefix
+			end
+			local item = mw.ustring.gsub(v, '%*+', itemPrefix)
+			if showWikitext then
+				-- remove html comments
+				local itemWikitext = mw.ustring.gsub(item, "%&lt;%!%-%-(.-)%-%-%&gt;", "")
+				-- remove prefix from wikitext
+				itemWikitext = mw.ustring.gsub(itemWikitext, ";(.-)\n", "")
+				itemWikitext = "&lt;pre&gt;" .. mw.text.nowiki( itemWikitext ) .. "&lt;/pre&gt;"
+				-- remove prefix from item
+				itemWithoutPrexix = mw.ustring.gsub(v, '%*+', '')
+				item = itemPrefix .. makeCollapsed(itemWithoutPrexix, itemWikitext)
+			end
+			table.insert(items, item)
+		end
+	end
+	return items
+end
+
+function getItems(maxDays, mdyDates, patterns, skipPatterns, showWikitext)
+	local allItems = {}
+	local lang = mw.language.new('en')
+	local daysAgo = 0
+	while daysAgo &lt; maxDays do
+		local day = lang:formatDate('Y F j', 'now - '..daysAgo..' days')
+		local dailyItems = getCurrentEvents(day, mdyDates, patterns, skipPatterns, showWikitext)
+		for i, item in ipairs(dailyItems) do
+			table.insert(allItems, item)
+		end
+		daysAgo = daysAgo + 1
+	end
+	return allItems
+end
+
+function getPatterns(args, prefix)
+	local patterns = {}
+	local ii = 1
+	while args[prefix and prefix..ii or ii] do
+		patterns[ii] = args[prefix and prefix..ii or ii]
+		ii = ii + 1
+	end
+	return patterns
+end
+
+local p = {}
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+
+	if args['not'] and not args['not1'] then
+		args['not1'] = args['not']
+	end
+	
+	local patterns = getPatterns(args)
+	if #patterns &lt; 1 then
+		return error("Search pattern not set")
+	end
+
+	local skipPatterns = getPatterns(args, 'not')
+
+	local days = tonumber(args.days) or 30
+
+	local mdyDates = args.dates and string.lower(args.dates) == 'mdy'
+	
+	local showWikitext = isAffirmed(args.wikitext)
+
+	local allItems = getItems(days, mdyDates, patterns, skipPatterns, showWikitext)
+	if #allItems &lt; 1 then
+		return args.header and '' or args.none or 'No recent news'
+	end
+
+	local maxItems = tonumber(args.max) or 6
+
+	local more = args.more
+	if isAffirmed(args.more) then
+		more = "'''[[Portal:Current events|More current events...]]'''"
+	end
+
+	local output = makeOutput(allItems, maxItems, more)
+	if args.header then
+		output = args.header .. '\n' .. output .. '\n' .. (args.footer or '{{Box-footer}}')
+	end
+	local needsExpansion = mw.ustring.find(output, '{{', 0, true)	
+	if needsExpansion then
+		return frame:preprocess(output)
+	else 
+		return output
+	end
+
+end
+
+return p</text>
+      <sha1>bnyc6lmiv8dpghaxhdnlsv56mjljf13</sha1>
+    </revision>
+    <revision>
+      <id>811629</id>
+      <parentid>811628</parentid>
+      <timestamp>2025-01-26T22:57:49Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Adding [[Category:refreshing imported pages]] on using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>811629</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="6006" sha1="mxfd57mfa0n7lyowyh721jvr3ce0ziz" xml:space="preserve">function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+function isAffirmed(val)
+	if not(val) then return false end
+	local affirmedWords = ' add added affirm affirmed include included on true yes y '
+	return string.find(affirmedWords, ' '..string.lower(val)..' ', 1, true ) and true or false
+end
+
+function makeOutput(allItems, maxItems, more)
+	local output = ''
+	local itemIndex = 1
+	local maxCount = math.min(#allItems, maxItems)
+	while itemIndex &lt;= maxCount do
+		output = output .. allItems[itemIndex] .. '\n'
+		itemIndex = itemIndex + 1
+	end
+	if more then
+		output = output .. more
+	end
+	return mw.text.trim(output)
+end
+
+function cleanForPatternMatching(wikitext)
+	-- remove wikilink brackets
+	local cleaned = mw.ustring.gsub(wikitext, "%[%[(.-)%]%]","%1")
+	-- remove pipes that would have been in piped links
+	cleaned = mw.ustring.gsub(cleaned, "%|"," ")
+	-- remove external links
+	cleaned = mw.ustring.gsub(cleaned, "%[.-%]"," ")
+	return cleaned
+end
+
+function formatDateString(dateString, mdyDates)
+	if mdyDates then
+		formattedDatePattern = "%2 %3, %1"
+	else
+		formattedDatePattern = "%3 %2 %1"
+	end
+	return '&lt;span style="font-weight:normal;"&gt;' .. string.gsub(dateString, "(.*) (.*) (.*)", formattedDatePattern) .. ' –&lt;/span&gt;'
+end
+
+function makeCollapsed(outerText, innerText)
+	return "{{Hidden begin | titlestyle = font-weight:normal | title = " .. outerText .. "}}" .. innerText .. "{{Hidden end}}"
+end
+
+-- Get current events for a "YYYY Month D" date. Returns a table of list items.
+function getCurrentEvents(date, mdyDates, keepPatterns, skipPatterns, showWikitext)
+	local title = mw.title.new("Portal:Current events/" .. date)
+	local raw = title:getContent()
+	if (not raw) or raw == '' then
+		return {}
+	end
+	local lines = mw.text.split( raw , '\n')
+	local items = {}
+	local itemHeading = ''
+	local cleanItemHeading = ''
+	local previousItemPrefix = ''
+
+	local formattedDate = formatDateString(date, mdyDates)
+
+	for i, v in ipairs(lines) do
+		local keep = false
+		local skip = false
+		local isSublistItem = ( string.sub( v, 0, 2 ) == '**' )
+		local isListItem = not isSublistItem and ( string.sub( v, 0, 1) == '*' )
+		local hasSublistItem = isListItem and i &lt; #lines and ( string.sub( lines[i+1], 0, 2 ) == '**' )
+
+		if hasSublistItem then
+			itemHeading = mw.text.trim(mw.ustring.gsub(v, '%*', '', 1))
+			cleanItemHeading = cleanForPatternMatching(itemHeading)
+		elseif isListItem then
+			itemHeading = ""
+			cleanItemHeading = ""
+		end
+
+		if (isListItem and not hasSublistItem) or isSublistItem then
+			local text = cleanForPatternMatching(v)
+			for ii, keepPatt in pairs(keepPatterns) do
+				if not keep and ( mw.ustring.find(text, keepPatt) or mw.ustring.find(cleanItemHeading, keepPatt) ) then
+					keep = true
+				end
+			end
+			if #skipPatterns &gt; 0 then
+				for iii, skipPatt in pairs(skipPatterns) do
+					if not skip and ( mw.ustring.find(text, skipPatt) or mw.ustring.find(cleanItemHeading, skipPatt) ) then
+						skip = true			
+					end
+				end
+			end
+		end
+
+		if keep and not skip then
+			local itemPrefix = ";" .. formattedDate
+			if itemHeading ~= "" then itemPrefix = itemPrefix .. " '''"..itemHeading.."'''" end
+			itemPrefix = itemPrefix .. "\n:"
+			if previousItemPrefix == itemPrefix then
+				itemPrefix = ':'
+			else
+				previousItemPrefix = itemPrefix
+			end
+			local item = mw.ustring.gsub(v, '%*+', itemPrefix)
+			if showWikitext then
+				-- remove html comments
+				local itemWikitext = mw.ustring.gsub(item, "%&lt;%!%-%-(.-)%-%-%&gt;", "")
+				-- remove prefix from wikitext
+				itemWikitext = mw.ustring.gsub(itemWikitext, ";(.-)\n", "")
+				itemWikitext = "&lt;pre&gt;" .. mw.text.nowiki( itemWikitext ) .. "&lt;/pre&gt;"
+				-- remove prefix from item
+				itemWithoutPrexix = mw.ustring.gsub(v, '%*+', '')
+				item = itemPrefix .. makeCollapsed(itemWithoutPrexix, itemWikitext)
+			end
+			table.insert(items, item)
+		end
+	end
+	return items
+end
+
+function getItems(maxDays, mdyDates, patterns, skipPatterns, showWikitext)
+	local allItems = {}
+	local lang = mw.language.new('en')
+	local daysAgo = 0
+	while daysAgo &lt; maxDays do
+		local day = lang:formatDate('Y F j', 'now - '..daysAgo..' days')
+		local dailyItems = getCurrentEvents(day, mdyDates, patterns, skipPatterns, showWikitext)
+		for i, item in ipairs(dailyItems) do
+			table.insert(allItems, item)
+		end
+		daysAgo = daysAgo + 1
+	end
+	return allItems
+end
+
+function getPatterns(args, prefix)
+	local patterns = {}
+	local ii = 1
+	while args[prefix and prefix..ii or ii] do
+		patterns[ii] = args[prefix and prefix..ii or ii]
+		ii = ii + 1
+	end
+	return patterns
+end
+
+local p = {}
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+
+	if args['not'] and not args['not1'] then
+		args['not1'] = args['not']
+	end
+	
+	local patterns = getPatterns(args)
+	if #patterns &lt; 1 then
+		return error("Search pattern not set")
+	end
+
+	local skipPatterns = getPatterns(args, 'not')
+
+	local days = tonumber(args.days) or 30
+
+	local mdyDates = args.dates and string.lower(args.dates) == 'mdy'
+	
+	local showWikitext = isAffirmed(args.wikitext)
+
+	local allItems = getItems(days, mdyDates, patterns, skipPatterns, showWikitext)
+	if #allItems &lt; 1 then
+		return args.header and '' or args.none or 'No recent news'
+	end
+
+	local maxItems = tonumber(args.max) or 6
+
+	local more = args.more
+	if isAffirmed(args.more) then
+		more = "'''[[Portal:Current events|More current events...]]'''"
+	end
+
+	local output = makeOutput(allItems, maxItems, more)
+	if args.header then
+		output = args.header .. '\n' .. output .. '\n' .. (args.footer or '{{Box-footer}}')
+	end
+	local needsExpansion = mw.ustring.find(output, '{{', 0, true)	
+	if needsExpansion then
+		return frame:preprocess(output)
+	else 
+		return output
+	end
+
+end
+
+return p
+
+[[Category:refreshing imported pages]]</text>
+      <sha1>mxfd57mfa0n7lyowyh721jvr3ce0ziz</sha1>
+    </revision>
+    <revision>
+      <id>5498</id>
+      <timestamp>2025-01-26T23:22:00Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Removing from [[Category:refreshing imported pages]] on using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>5498</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5966" sha1="bnyc6lmiv8dpghaxhdnlsv56mjljf13" xml:space="preserve">function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+function isAffirmed(val)
+	if not(val) then return false end
+	local affirmedWords = ' add added affirm affirmed include included on true yes y '
+	return string.find(affirmedWords, ' '..string.lower(val)..' ', 1, true ) and true or false
+end
+
+function makeOutput(allItems, maxItems, more)
+	local output = ''
+	local itemIndex = 1
+	local maxCount = math.min(#allItems, maxItems)
+	while itemIndex &lt;= maxCount do
+		output = output .. allItems[itemIndex] .. '\n'
+		itemIndex = itemIndex + 1
+	end
+	if more then
+		output = output .. more
+	end
+	return mw.text.trim(output)
+end
+
+function cleanForPatternMatching(wikitext)
+	-- remove wikilink brackets
+	local cleaned = mw.ustring.gsub(wikitext, "%[%[(.-)%]%]","%1")
+	-- remove pipes that would have been in piped links
+	cleaned = mw.ustring.gsub(cleaned, "%|"," ")
+	-- remove external links
+	cleaned = mw.ustring.gsub(cleaned, "%[.-%]"," ")
+	return cleaned
+end
+
+function formatDateString(dateString, mdyDates)
+	if mdyDates then
+		formattedDatePattern = "%2 %3, %1"
+	else
+		formattedDatePattern = "%3 %2 %1"
+	end
+	return '&lt;span style="font-weight:normal;"&gt;' .. string.gsub(dateString, "(.*) (.*) (.*)", formattedDatePattern) .. ' –&lt;/span&gt;'
+end
+
+function makeCollapsed(outerText, innerText)
+	return "{{Hidden begin | titlestyle = font-weight:normal | title = " .. outerText .. "}}" .. innerText .. "{{Hidden end}}"
+end
+
+-- Get current events for a "YYYY Month D" date. Returns a table of list items.
+function getCurrentEvents(date, mdyDates, keepPatterns, skipPatterns, showWikitext)
+	local title = mw.title.new("Portal:Current events/" .. date)
+	local raw = title:getContent()
+	if (not raw) or raw == '' then
+		return {}
+	end
+	local lines = mw.text.split( raw , '\n')
+	local items = {}
+	local itemHeading = ''
+	local cleanItemHeading = ''
+	local previousItemPrefix = ''
+
+	local formattedDate = formatDateString(date, mdyDates)
+
+	for i, v in ipairs(lines) do
+		local keep = false
+		local skip = false
+		local isSublistItem = ( string.sub( v, 0, 2 ) == '**' )
+		local isListItem = not isSublistItem and ( string.sub( v, 0, 1) == '*' )
+		local hasSublistItem = isListItem and i &lt; #lines and ( string.sub( lines[i+1], 0, 2 ) == '**' )
+
+		if hasSublistItem then
+			itemHeading = mw.text.trim(mw.ustring.gsub(v, '%*', '', 1))
+			cleanItemHeading = cleanForPatternMatching(itemHeading)
+		elseif isListItem then
+			itemHeading = ""
+			cleanItemHeading = ""
+		end
+
+		if (isListItem and not hasSublistItem) or isSublistItem then
+			local text = cleanForPatternMatching(v)
+			for ii, keepPatt in pairs(keepPatterns) do
+				if not keep and ( mw.ustring.find(text, keepPatt) or mw.ustring.find(cleanItemHeading, keepPatt) ) then
+					keep = true
+				end
+			end
+			if #skipPatterns &gt; 0 then
+				for iii, skipPatt in pairs(skipPatterns) do
+					if not skip and ( mw.ustring.find(text, skipPatt) or mw.ustring.find(cleanItemHeading, skipPatt) ) then
+						skip = true			
+					end
+				end
+			end
+		end
+
+		if keep and not skip then
+			local itemPrefix = ";" .. formattedDate
+			if itemHeading ~= "" then itemPrefix = itemPrefix .. " '''"..itemHeading.."'''" end
+			itemPrefix = itemPrefix .. "\n:"
+			if previousItemPrefix == itemPrefix then
+				itemPrefix = ':'
+			else
+				previousItemPrefix = itemPrefix
+			end
+			local item = mw.ustring.gsub(v, '%*+', itemPrefix)
+			if showWikitext then
+				-- remove html comments
+				local itemWikitext = mw.ustring.gsub(item, "%&lt;%!%-%-(.-)%-%-%&gt;", "")
+				-- remove prefix from wikitext
+				itemWikitext = mw.ustring.gsub(itemWikitext, ";(.-)\n", "")
+				itemWikitext = "&lt;pre&gt;" .. mw.text.nowiki( itemWikitext ) .. "&lt;/pre&gt;"
+				-- remove prefix from item
+				itemWithoutPrexix = mw.ustring.gsub(v, '%*+', '')
+				item = itemPrefix .. makeCollapsed(itemWithoutPrexix, itemWikitext)
+			end
+			table.insert(items, item)
+		end
+	end
+	return items
+end
+
+function getItems(maxDays, mdyDates, patterns, skipPatterns, showWikitext)
+	local allItems = {}
+	local lang = mw.language.new('en')
+	local daysAgo = 0
+	while daysAgo &lt; maxDays do
+		local day = lang:formatDate('Y F j', 'now - '..daysAgo..' days')
+		local dailyItems = getCurrentEvents(day, mdyDates, patterns, skipPatterns, showWikitext)
+		for i, item in ipairs(dailyItems) do
+			table.insert(allItems, item)
+		end
+		daysAgo = daysAgo + 1
+	end
+	return allItems
+end
+
+function getPatterns(args, prefix)
+	local patterns = {}
+	local ii = 1
+	while args[prefix and prefix..ii or ii] do
+		patterns[ii] = args[prefix and prefix..ii or ii]
+		ii = ii + 1
+	end
+	return patterns
+end
+
+local p = {}
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+
+	if args['not'] and not args['not1'] then
+		args['not1'] = args['not']
+	end
+	
+	local patterns = getPatterns(args)
+	if #patterns &lt; 1 then
+		return error("Search pattern not set")
+	end
+
+	local skipPatterns = getPatterns(args, 'not')
+
+	local days = tonumber(args.days) or 30
+
+	local mdyDates = args.dates and string.lower(args.dates) == 'mdy'
+	
+	local showWikitext = isAffirmed(args.wikitext)
+
+	local allItems = getItems(days, mdyDates, patterns, skipPatterns, showWikitext)
+	if #allItems &lt; 1 then
+		return args.header and '' or args.none or 'No recent news'
+	end
+
+	local maxItems = tonumber(args.max) or 6
+
+	local more = args.more
+	if isAffirmed(args.more) then
+		more = "'''[[Portal:Current events|More current events...]]'''"
+	end
+
+	local output = makeOutput(allItems, maxItems, more)
+	if args.header then
+		output = args.header .. '\n' .. output .. '\n' .. (args.footer or '{{Box-footer}}')
+	end
+	local needsExpansion = mw.ustring.find(output, '{{', 0, true)	
+	if needsExpansion then
+		return frame:preprocess(output)
+	else 
+		return output
+	end
+
+end
+
+return p</text>
+      <sha1>bnyc6lmiv8dpghaxhdnlsv56mjljf13</sha1>
+    </revision>
+  </page>
+</mediawiki>

@@ -1,0 +1,740 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Reply to</title>
+    <ns>828</ns>
+    <id>10903</id>
+    <revision>
+      <id>1043403</id>
+      <timestamp>2018-07-04T01:38:15Z</timestamp>
+      <contributor>
+        <username>Ahecht</username>
+        <id>54</id>
+      </contributor>
+      <comment>cleanup code</comment>
+      <origin>1043403</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1667" sha1="2g258a6jic0282azfyk17p5289xwnxm" xml:space="preserve">local p = {}
+
+local function makeError(msg)
+	msg ='Error in [[Template:Reply to]]: ' .. msg
+	return mw.text.tag('strong', {['class']='error'}, msg)
+end
+
+function p.replyto(frame)
+	local origArgs = frame:getParent().args
+	local args = {}
+	local maxArg = 1
+	local usernames = 0
+	for k, v in pairs(origArgs) do
+		if type(k) == 'number' then
+			if mw.ustring.match(v,'%S') then
+				if k &gt; maxArg then maxArg = k end
+				usernames = usernames + 1
+				local title = mw.title.new(v)
+				if not title then return makeError('Input contains forbidden characters.') end
+				args[k] = title.rootText
+			end
+		elseif v == '' and k:sub(0,5) == 'label' then
+			args[k] = '&amp;#x200B;'
+		else
+			args[k] = v
+		end
+	end
+
+	if usernames &gt; (tonumber(frame.args.max) or 50) then
+		return makeError(string.format(
+			'More than %s names specified.',
+			tostring(frame.args.max or 50)
+		))
+	else
+		if usernames &lt; 1 then
+			if frame.args.example then args[1] = frame.args.example else return makeError('Username not given.') end
+		end
+		args['label1'] = args['label1'] or args['label']
+		local isfirst = true
+		local outStr = args['prefix'] or '@'
+		for i = 1, maxArg do
+			if args[i] then
+				if isfirst then
+					isfirst = false
+				else
+					if ( (usernames &gt; 2) or ((usernames == 2) and (args['c'] == '')) ) then outStr = outStr..', ' end
+					if i == maxArg then outStr = outStr..' '..(args['c'] or 'and') .. ' ' end
+				end
+				outStr = string.format(
+					'%s[[User:%s|%s]]',
+					outStr,
+					args[i],
+					args['label'..tostring(i)] or args[i]
+				)
+			end
+		end
+		outStr = outStr..(args['p'] or ':')
+		return mw.text.tag('span', {['class']='template-ping'}, outStr)
+	end
+end
+
+return p</text>
+      <sha1>2g258a6jic0282azfyk17p5289xwnxm</sha1>
+    </revision>
+    <revision>
+      <id>1043404</id>
+      <parentid>1043403</parentid>
+      <timestamp>2025-02-19T17:23:24Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:Reply_to]]</comment>
+      <origin>1043403</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1667" sha1="2g258a6jic0282azfyk17p5289xwnxm" xml:space="preserve">local p = {}
+
+local function makeError(msg)
+	msg ='Error in [[Template:Reply to]]: ' .. msg
+	return mw.text.tag('strong', {['class']='error'}, msg)
+end
+
+function p.replyto(frame)
+	local origArgs = frame:getParent().args
+	local args = {}
+	local maxArg = 1
+	local usernames = 0
+	for k, v in pairs(origArgs) do
+		if type(k) == 'number' then
+			if mw.ustring.match(v,'%S') then
+				if k &gt; maxArg then maxArg = k end
+				usernames = usernames + 1
+				local title = mw.title.new(v)
+				if not title then return makeError('Input contains forbidden characters.') end
+				args[k] = title.rootText
+			end
+		elseif v == '' and k:sub(0,5) == 'label' then
+			args[k] = '&amp;#x200B;'
+		else
+			args[k] = v
+		end
+	end
+
+	if usernames &gt; (tonumber(frame.args.max) or 50) then
+		return makeError(string.format(
+			'More than %s names specified.',
+			tostring(frame.args.max or 50)
+		))
+	else
+		if usernames &lt; 1 then
+			if frame.args.example then args[1] = frame.args.example else return makeError('Username not given.') end
+		end
+		args['label1'] = args['label1'] or args['label']
+		local isfirst = true
+		local outStr = args['prefix'] or '@'
+		for i = 1, maxArg do
+			if args[i] then
+				if isfirst then
+					isfirst = false
+				else
+					if ( (usernames &gt; 2) or ((usernames == 2) and (args['c'] == '')) ) then outStr = outStr..', ' end
+					if i == maxArg then outStr = outStr..' '..(args['c'] or 'and') .. ' ' end
+				end
+				outStr = string.format(
+					'%s[[User:%s|%s]]',
+					outStr,
+					args[i],
+					args['label'..tostring(i)] or args[i]
+				)
+			end
+		end
+		outStr = outStr..(args['p'] or ':')
+		return mw.text.tag('span', {['class']='template-ping'}, outStr)
+	end
+end
+
+return p</text>
+      <sha1>2g258a6jic0282azfyk17p5289xwnxm</sha1>
+    </revision>
+    <revision>
+      <id>1043405</id>
+      <parentid>1043404</parentid>
+      <timestamp>2025-03-24T06:13:12Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Copying from [[Category:Untranslated pages]] to [[Category:qq]][[sn:{{subst:PAGENAME}}]][[Category:qq]] using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>1043405</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1724" sha1="tb193b63entfat6y0rxstss9ax0qi0g" xml:space="preserve">local p = {}
+
+local function makeError(msg)
+	msg ='Error in [[Template:Reply to]]: ' .. msg
+	return mw.text.tag('strong', {['class']='error'}, msg)
+end
+
+function p.replyto(frame)
+	local origArgs = frame:getParent().args
+	local args = {}
+	local maxArg = 1
+	local usernames = 0
+	for k, v in pairs(origArgs) do
+		if type(k) == 'number' then
+			if mw.ustring.match(v,'%S') then
+				if k &gt; maxArg then maxArg = k end
+				usernames = usernames + 1
+				local title = mw.title.new(v)
+				if not title then return makeError('Input contains forbidden characters.') end
+				args[k] = title.rootText
+			end
+		elseif v == '' and k:sub(0,5) == 'label' then
+			args[k] = '&amp;#x200B;'
+		else
+			args[k] = v
+		end
+	end
+
+	if usernames &gt; (tonumber(frame.args.max) or 50) then
+		return makeError(string.format(
+			'More than %s names specified.',
+			tostring(frame.args.max or 50)
+		))
+	else
+		if usernames &lt; 1 then
+			if frame.args.example then args[1] = frame.args.example else return makeError('Username not given.') end
+		end
+		args['label1'] = args['label1'] or args['label']
+		local isfirst = true
+		local outStr = args['prefix'] or '@'
+		for i = 1, maxArg do
+			if args[i] then
+				if isfirst then
+					isfirst = false
+				else
+					if ( (usernames &gt; 2) or ((usernames == 2) and (args['c'] == '')) ) then outStr = outStr..', ' end
+					if i == maxArg then outStr = outStr..' '..(args['c'] or 'and') .. ' ' end
+				end
+				outStr = string.format(
+					'%s[[User:%s|%s]]',
+					outStr,
+					args[i],
+					args['label'..tostring(i)] or args[i]
+				)
+			end
+		end
+		outStr = outStr..(args['p'] or ':')
+		return mw.text.tag('span', {['class']='template-ping'}, outStr)
+	end
+end
+
+return p
+
+[[Category:qq]][[sn:{{subst:PAGENAME}}]][[Category:qq]]</text>
+      <sha1>tb193b63entfat6y0rxstss9ax0qi0g</sha1>
+    </revision>
+    <revision>
+      <id>1043406</id>
+      <parentid>1043405</parentid>
+      <timestamp>2025-04-25T23:00:00Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "{subst:PAGENAME}" to "{{subst:PAGENAME}}"</comment>
+      <origin>1043406</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1726" sha1="fgai7omtunu2qk868gyv9w3q46mlx4a" xml:space="preserve">local p = {}
+
+local function makeError(msg)
+	msg ='Error in [[Template:Reply to]]: ' .. msg
+	return mw.text.tag('strong', {['class']='error'}, msg)
+end
+
+function p.replyto(frame)
+	local origArgs = frame:getParent().args
+	local args = {}
+	local maxArg = 1
+	local usernames = 0
+	for k, v in pairs(origArgs) do
+		if type(k) == 'number' then
+			if mw.ustring.match(v,'%S') then
+				if k &gt; maxArg then maxArg = k end
+				usernames = usernames + 1
+				local title = mw.title.new(v)
+				if not title then return makeError('Input contains forbidden characters.') end
+				args[k] = title.rootText
+			end
+		elseif v == '' and k:sub(0,5) == 'label' then
+			args[k] = '&amp;#x200B;'
+		else
+			args[k] = v
+		end
+	end
+
+	if usernames &gt; (tonumber(frame.args.max) or 50) then
+		return makeError(string.format(
+			'More than %s names specified.',
+			tostring(frame.args.max or 50)
+		))
+	else
+		if usernames &lt; 1 then
+			if frame.args.example then args[1] = frame.args.example else return makeError('Username not given.') end
+		end
+		args['label1'] = args['label1'] or args['label']
+		local isfirst = true
+		local outStr = args['prefix'] or '@'
+		for i = 1, maxArg do
+			if args[i] then
+				if isfirst then
+					isfirst = false
+				else
+					if ( (usernames &gt; 2) or ((usernames == 2) and (args['c'] == '')) ) then outStr = outStr..', ' end
+					if i == maxArg then outStr = outStr..' '..(args['c'] or 'and') .. ' ' end
+				end
+				outStr = string.format(
+					'%s[[User:%s|%s]]',
+					outStr,
+					args[i],
+					args['label'..tostring(i)] or args[i]
+				)
+			end
+		end
+		outStr = outStr..(args['p'] or ':')
+		return mw.text.tag('span', {['class']='template-ping'}, outStr)
+	end
+end
+
+return p
+
+[[Category:qq]][[sn:{{{subst:PAGENAME}}}]][[Category:qq]]</text>
+      <sha1>fgai7omtunu2qk868gyv9w3q46mlx4a</sha1>
+    </revision>
+    <revision>
+      <id>1043407</id>
+      <parentid>1043406</parentid>
+      <timestamp>2025-04-29T10:47:13Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "[[Category:qq]]" to ""</comment>
+      <origin>1043407</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1696" sha1="4zjbq4r53499gua62w7bq7m9f93k7ke" xml:space="preserve">local p = {}
+
+local function makeError(msg)
+	msg ='Error in [[Template:Reply to]]: ' .. msg
+	return mw.text.tag('strong', {['class']='error'}, msg)
+end
+
+function p.replyto(frame)
+	local origArgs = frame:getParent().args
+	local args = {}
+	local maxArg = 1
+	local usernames = 0
+	for k, v in pairs(origArgs) do
+		if type(k) == 'number' then
+			if mw.ustring.match(v,'%S') then
+				if k &gt; maxArg then maxArg = k end
+				usernames = usernames + 1
+				local title = mw.title.new(v)
+				if not title then return makeError('Input contains forbidden characters.') end
+				args[k] = title.rootText
+			end
+		elseif v == '' and k:sub(0,5) == 'label' then
+			args[k] = '&amp;#x200B;'
+		else
+			args[k] = v
+		end
+	end
+
+	if usernames &gt; (tonumber(frame.args.max) or 50) then
+		return makeError(string.format(
+			'More than %s names specified.',
+			tostring(frame.args.max or 50)
+		))
+	else
+		if usernames &lt; 1 then
+			if frame.args.example then args[1] = frame.args.example else return makeError('Username not given.') end
+		end
+		args['label1'] = args['label1'] or args['label']
+		local isfirst = true
+		local outStr = args['prefix'] or '@'
+		for i = 1, maxArg do
+			if args[i] then
+				if isfirst then
+					isfirst = false
+				else
+					if ( (usernames &gt; 2) or ((usernames == 2) and (args['c'] == '')) ) then outStr = outStr..', ' end
+					if i == maxArg then outStr = outStr..' '..(args['c'] or 'and') .. ' ' end
+				end
+				outStr = string.format(
+					'%s[[User:%s|%s]]',
+					outStr,
+					args[i],
+					args['label'..tostring(i)] or args[i]
+				)
+			end
+		end
+		outStr = outStr..(args['p'] or ':')
+		return mw.text.tag('span', {['class']='template-ping'}, outStr)
+	end
+end
+
+return p
+
+[[sn:{{{subst:PAGENAME}}}]]</text>
+      <sha1>4zjbq4r53499gua62w7bq7m9f93k7ke</sha1>
+    </revision>
+    <revision>
+      <id>10904</id>
+      <timestamp>2025-05-03T01:10:53Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Text replacement - "{{{subst:PAGENAME}}}" to "{{subst:PAGENAME}}"</comment>
+      <origin>10904</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1694" sha1="p0shjk5fju48qcl2fli5pirh7qk7d6s" xml:space="preserve">local p = {}
+
+local function makeError(msg)
+	msg ='Error in [[Template:Reply to]]: ' .. msg
+	return mw.text.tag('strong', {['class']='error'}, msg)
+end
+
+function p.replyto(frame)
+	local origArgs = frame:getParent().args
+	local args = {}
+	local maxArg = 1
+	local usernames = 0
+	for k, v in pairs(origArgs) do
+		if type(k) == 'number' then
+			if mw.ustring.match(v,'%S') then
+				if k &gt; maxArg then maxArg = k end
+				usernames = usernames + 1
+				local title = mw.title.new(v)
+				if not title then return makeError('Input contains forbidden characters.') end
+				args[k] = title.rootText
+			end
+		elseif v == '' and k:sub(0,5) == 'label' then
+			args[k] = '&amp;#x200B;'
+		else
+			args[k] = v
+		end
+	end
+
+	if usernames &gt; (tonumber(frame.args.max) or 50) then
+		return makeError(string.format(
+			'More than %s names specified.',
+			tostring(frame.args.max or 50)
+		))
+	else
+		if usernames &lt; 1 then
+			if frame.args.example then args[1] = frame.args.example else return makeError('Username not given.') end
+		end
+		args['label1'] = args['label1'] or args['label']
+		local isfirst = true
+		local outStr = args['prefix'] or '@'
+		for i = 1, maxArg do
+			if args[i] then
+				if isfirst then
+					isfirst = false
+				else
+					if ( (usernames &gt; 2) or ((usernames == 2) and (args['c'] == '')) ) then outStr = outStr..', ' end
+					if i == maxArg then outStr = outStr..' '..(args['c'] or 'and') .. ' ' end
+				end
+				outStr = string.format(
+					'%s[[User:%s|%s]]',
+					outStr,
+					args[i],
+					args['label'..tostring(i)] or args[i]
+				)
+			end
+		end
+		outStr = outStr..(args['p'] or ':')
+		return mw.text.tag('span', {['class']='template-ping'}, outStr)
+	end
+end
+
+return p
+
+[[sn:{{subst:PAGENAME}}]]</text>
+      <sha1>p0shjk5fju48qcl2fli5pirh7qk7d6s</sha1>
+    </revision>
+    <revision>
+      <id>365209</id>
+      <parentid>10904</parentid>
+      <timestamp>2026-02-20T01:58:15Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "[[sn:" to "[[Category:sn_crud|TEST"</comment>
+      <origin>365209</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1712" sha1="3eh9qd23z5cdarmrutwwy83ljlb8z35" xml:space="preserve">local p = {}
+
+local function makeError(msg)
+	msg ='Error in [[Template:Reply to]]: ' .. msg
+	return mw.text.tag('strong', {['class']='error'}, msg)
+end
+
+function p.replyto(frame)
+	local origArgs = frame:getParent().args
+	local args = {}
+	local maxArg = 1
+	local usernames = 0
+	for k, v in pairs(origArgs) do
+		if type(k) == 'number' then
+			if mw.ustring.match(v,'%S') then
+				if k &gt; maxArg then maxArg = k end
+				usernames = usernames + 1
+				local title = mw.title.new(v)
+				if not title then return makeError('Input contains forbidden characters.') end
+				args[k] = title.rootText
+			end
+		elseif v == '' and k:sub(0,5) == 'label' then
+			args[k] = '&amp;#x200B;'
+		else
+			args[k] = v
+		end
+	end
+
+	if usernames &gt; (tonumber(frame.args.max) or 50) then
+		return makeError(string.format(
+			'More than %s names specified.',
+			tostring(frame.args.max or 50)
+		))
+	else
+		if usernames &lt; 1 then
+			if frame.args.example then args[1] = frame.args.example else return makeError('Username not given.') end
+		end
+		args['label1'] = args['label1'] or args['label']
+		local isfirst = true
+		local outStr = args['prefix'] or '@'
+		for i = 1, maxArg do
+			if args[i] then
+				if isfirst then
+					isfirst = false
+				else
+					if ( (usernames &gt; 2) or ((usernames == 2) and (args['c'] == '')) ) then outStr = outStr..', ' end
+					if i == maxArg then outStr = outStr..' '..(args['c'] or 'and') .. ' ' end
+				end
+				outStr = string.format(
+					'%s[[User:%s|%s]]',
+					outStr,
+					args[i],
+					args['label'..tostring(i)] or args[i]
+				)
+			end
+		end
+		outStr = outStr..(args['p'] or ':')
+		return mw.text.tag('span', {['class']='template-ping'}, outStr)
+	end
+end
+
+return p
+
+[[Category:sn_crud|TEST{{subst:PAGENAME}}]]</text>
+      <sha1>3eh9qd23z5cdarmrutwwy83ljlb8z35</sha1>
+    </revision>
+    <revision>
+      <id>3408449</id>
+      <parentid>365209</parentid>
+      <timestamp>2026-03-12T20:38:04Z</timestamp>
+      <contributor>
+        <username>Ahecht</username>
+        <id>54</id>
+      </contributor>
+      <comment>cleanup code</comment>
+      <origin>3408449</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1667" sha1="2g258a6jic0282azfyk17p5289xwnxm" xml:space="preserve">local p = {}
+
+local function makeError(msg)
+	msg ='Error in [[Template:Reply to]]: ' .. msg
+	return mw.text.tag('strong', {['class']='error'}, msg)
+end
+
+function p.replyto(frame)
+	local origArgs = frame:getParent().args
+	local args = {}
+	local maxArg = 1
+	local usernames = 0
+	for k, v in pairs(origArgs) do
+		if type(k) == 'number' then
+			if mw.ustring.match(v,'%S') then
+				if k &gt; maxArg then maxArg = k end
+				usernames = usernames + 1
+				local title = mw.title.new(v)
+				if not title then return makeError('Input contains forbidden characters.') end
+				args[k] = title.rootText
+			end
+		elseif v == '' and k:sub(0,5) == 'label' then
+			args[k] = '&amp;#x200B;'
+		else
+			args[k] = v
+		end
+	end
+
+	if usernames &gt; (tonumber(frame.args.max) or 50) then
+		return makeError(string.format(
+			'More than %s names specified.',
+			tostring(frame.args.max or 50)
+		))
+	else
+		if usernames &lt; 1 then
+			if frame.args.example then args[1] = frame.args.example else return makeError('Username not given.') end
+		end
+		args['label1'] = args['label1'] or args['label']
+		local isfirst = true
+		local outStr = args['prefix'] or '@'
+		for i = 1, maxArg do
+			if args[i] then
+				if isfirst then
+					isfirst = false
+				else
+					if ( (usernames &gt; 2) or ((usernames == 2) and (args['c'] == '')) ) then outStr = outStr..', ' end
+					if i == maxArg then outStr = outStr..' '..(args['c'] or 'and') .. ' ' end
+				end
+				outStr = string.format(
+					'%s[[User:%s|%s]]',
+					outStr,
+					args[i],
+					args['label'..tostring(i)] or args[i]
+				)
+			end
+		end
+		outStr = outStr..(args['p'] or ':')
+		return mw.text.tag('span', {['class']='template-ping'}, outStr)
+	end
+end
+
+return p</text>
+      <sha1>2g258a6jic0282azfyk17p5289xwnxm</sha1>
+    </revision>
+    <revision>
+      <id>3408450</id>
+      <parentid>3408449</parentid>
+      <timestamp>2026-03-12T20:38:04Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3408449</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1667" sha1="2g258a6jic0282azfyk17p5289xwnxm" xml:space="preserve">local p = {}
+
+local function makeError(msg)
+	msg ='Error in [[Template:Reply to]]: ' .. msg
+	return mw.text.tag('strong', {['class']='error'}, msg)
+end
+
+function p.replyto(frame)
+	local origArgs = frame:getParent().args
+	local args = {}
+	local maxArg = 1
+	local usernames = 0
+	for k, v in pairs(origArgs) do
+		if type(k) == 'number' then
+			if mw.ustring.match(v,'%S') then
+				if k &gt; maxArg then maxArg = k end
+				usernames = usernames + 1
+				local title = mw.title.new(v)
+				if not title then return makeError('Input contains forbidden characters.') end
+				args[k] = title.rootText
+			end
+		elseif v == '' and k:sub(0,5) == 'label' then
+			args[k] = '&amp;#x200B;'
+		else
+			args[k] = v
+		end
+	end
+
+	if usernames &gt; (tonumber(frame.args.max) or 50) then
+		return makeError(string.format(
+			'More than %s names specified.',
+			tostring(frame.args.max or 50)
+		))
+	else
+		if usernames &lt; 1 then
+			if frame.args.example then args[1] = frame.args.example else return makeError('Username not given.') end
+		end
+		args['label1'] = args['label1'] or args['label']
+		local isfirst = true
+		local outStr = args['prefix'] or '@'
+		for i = 1, maxArg do
+			if args[i] then
+				if isfirst then
+					isfirst = false
+				else
+					if ( (usernames &gt; 2) or ((usernames == 2) and (args['c'] == '')) ) then outStr = outStr..', ' end
+					if i == maxArg then outStr = outStr..' '..(args['c'] or 'and') .. ' ' end
+				end
+				outStr = string.format(
+					'%s[[User:%s|%s]]',
+					outStr,
+					args[i],
+					args['label'..tostring(i)] or args[i]
+				)
+			end
+		end
+		outStr = outStr..(args['p'] or ':')
+		return mw.text.tag('span', {['class']='template-ping'}, outStr)
+	end
+end
+
+return p</text>
+      <sha1>2g258a6jic0282azfyk17p5289xwnxm</sha1>
+    </revision>
+  </page>
+</mediawiki>

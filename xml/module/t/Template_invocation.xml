@@ -1,0 +1,2091 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Template invocation</title>
+    <ns>828</ns>
+    <id>658</id>
+    <revision>
+      <id>516405</id>
+      <timestamp>2024-02-09T23:22:47Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <comment>Add space per request</comment>
+      <origin>516405</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4381" sha1="1o64uv58uwwidur3epashete6t91tls" xml:space="preserve">-- This module provides functions for making MediaWiki template invocations.
+
+local checkType = require('libraryUtil').checkType
+
+local p = {}
+
+------------------------------------------------------------------------
+--         Name:  p.name
+--      Purpose:  Find a template invocation name from a page name or a
+--                mw.title object.
+--  Description:  This function detects whether a string or a mw.title
+--                object has been passed in, and uses that to find a
+--                template name as it is used in template invocations.
+--   Parameters:  title - full page name or mw.title object for the
+--                template (string or mw.title object)
+--      Returns:  String
+------------------------------------------------------------------------
+
+function p.name(title)
+	if type(title) == 'string' then
+		title = mw.title.new(title)
+		if not title then
+			error("invalid title in parameter #1 of function 'name'", 2)
+		end
+	elseif type(title) ~= 'table' or type(title.getContent) ~= 'function' then
+		error("parameter #1 of function 'name' must be a string or a mw.title object", 2)
+	end
+	if title.namespace == 10 then
+		return title.text
+	elseif title.namespace == 0 then
+		return ':' .. title.prefixedText
+	else
+		return title.prefixedText
+	end
+end
+
+------------------------------------------------------------------------
+--         Name:  p.invocation
+--      Purpose:  Construct a MediaWiki template invocation.
+--  Description:  This function makes a template invocation from the
+--                name and the arguments given. Note that it isn't
+--                perfect: we have no way of knowing what whitespace was
+--                in the original invocation, the named parameters will be
+--                alphabetically sorted, and any parameters with duplicate keys
+--                will be removed.
+--   Parameters:  name - the template name, formatted as it will appear
+--                    in the invocation. (string)
+--                args - a table of template arguments. (table)
+--                format - formatting options. (string, optional)
+--                    Set to "nowiki" to escape, curly braces, pipes and
+--                    equals signs with their HTML entities. The default
+--                    is unescaped.
+--      Returns:  String
+------------------------------------------------------------------------
+
+function p.invocation(name, args, format)
+	checkType('invocation', 1, name, 'string')
+	checkType('invocation', 2, args, 'table')
+	checkType('invocation', 3, format, 'string', true)
+
+	-- Validate the args table and make a copy to work from. We need to
+	-- make a copy of the table rather than just using the original, as
+	-- some of the values may be erased when building the invocation.
+	local invArgs = {}
+	for k, v in pairs(args) do
+		local typek = type(k)
+		local typev = type(v)
+		if typek ~= 'string' and typek ~= 'number'
+			or typev ~= 'string' and typev ~= 'number'
+		then
+			error("invalid arguments table in parameter #2 of " ..
+			"'invocation' (keys and values must be strings or numbers)", 2)
+		end
+		invArgs[k] = v
+	end
+
+	-- Get the separators to use.
+	local seps = {
+		openb = '{{',
+		closeb = '}}',
+		pipe = '|',
+		equals = '='
+	}
+	if format == 'nowiki' then
+		for k, v in pairs(seps) do
+			seps[k] = mw.text.nowiki(v)
+		end
+	end
+
+	-- Build the invocation body with numbered args first, then named.
+	local ret = {}
+	ret[#ret + 1] = seps.openb
+	ret[#ret + 1] = name
+	for k, v in ipairs(invArgs) do
+		if type(v) == 'string' and v:find('=', 1, true) then
+			-- Likely something like 1=foo=bar which needs to be displayed as a named arg.
+		else
+			ret[#ret + 1] = seps.pipe
+			ret[#ret + 1] = v
+			invArgs[k] = nil -- Erase the key so that we don't add the value twice
+		end
+	end
+	local keys = {} -- sort parameter list; better than arbitrary order
+	for k, _ in pairs(invArgs) do
+		keys[#keys + 1] = k
+	end
+	table.sort(keys, function (a, b)
+			-- Sort with keys of type number first, then string.
+			if type(a) == type(b) then
+				return a &lt; b
+			elseif type(a) == 'number' then
+				return true
+			end
+		end)
+	for _, v in ipairs(keys) do -- Add named args based on sorted parameter list
+		ret[#ret + 1] = ' ' .. seps.pipe
+		ret[#ret + 1] = tostring(v)
+		ret[#ret + 1] = seps.equals
+		ret[#ret + 1] = invArgs[v]
+	end
+	ret[#ret + 1] = seps.closeb
+
+	return table.concat(ret)
+end
+
+return p</text>
+      <sha1>1o64uv58uwwidur3epashete6t91tls</sha1>
+    </revision>
+    <revision>
+      <id>659</id>
+      <timestamp>2024-06-28T09:43:25Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported from [[:wikipedia:Module:Template_invocation]]</comment>
+      <origin>659</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4381" sha1="1o64uv58uwwidur3epashete6t91tls" xml:space="preserve">-- This module provides functions for making MediaWiki template invocations.
+
+local checkType = require('libraryUtil').checkType
+
+local p = {}
+
+------------------------------------------------------------------------
+--         Name:  p.name
+--      Purpose:  Find a template invocation name from a page name or a
+--                mw.title object.
+--  Description:  This function detects whether a string or a mw.title
+--                object has been passed in, and uses that to find a
+--                template name as it is used in template invocations.
+--   Parameters:  title - full page name or mw.title object for the
+--                template (string or mw.title object)
+--      Returns:  String
+------------------------------------------------------------------------
+
+function p.name(title)
+	if type(title) == 'string' then
+		title = mw.title.new(title)
+		if not title then
+			error("invalid title in parameter #1 of function 'name'", 2)
+		end
+	elseif type(title) ~= 'table' or type(title.getContent) ~= 'function' then
+		error("parameter #1 of function 'name' must be a string or a mw.title object", 2)
+	end
+	if title.namespace == 10 then
+		return title.text
+	elseif title.namespace == 0 then
+		return ':' .. title.prefixedText
+	else
+		return title.prefixedText
+	end
+end
+
+------------------------------------------------------------------------
+--         Name:  p.invocation
+--      Purpose:  Construct a MediaWiki template invocation.
+--  Description:  This function makes a template invocation from the
+--                name and the arguments given. Note that it isn't
+--                perfect: we have no way of knowing what whitespace was
+--                in the original invocation, the named parameters will be
+--                alphabetically sorted, and any parameters with duplicate keys
+--                will be removed.
+--   Parameters:  name - the template name, formatted as it will appear
+--                    in the invocation. (string)
+--                args - a table of template arguments. (table)
+--                format - formatting options. (string, optional)
+--                    Set to "nowiki" to escape, curly braces, pipes and
+--                    equals signs with their HTML entities. The default
+--                    is unescaped.
+--      Returns:  String
+------------------------------------------------------------------------
+
+function p.invocation(name, args, format)
+	checkType('invocation', 1, name, 'string')
+	checkType('invocation', 2, args, 'table')
+	checkType('invocation', 3, format, 'string', true)
+
+	-- Validate the args table and make a copy to work from. We need to
+	-- make a copy of the table rather than just using the original, as
+	-- some of the values may be erased when building the invocation.
+	local invArgs = {}
+	for k, v in pairs(args) do
+		local typek = type(k)
+		local typev = type(v)
+		if typek ~= 'string' and typek ~= 'number'
+			or typev ~= 'string' and typev ~= 'number'
+		then
+			error("invalid arguments table in parameter #2 of " ..
+			"'invocation' (keys and values must be strings or numbers)", 2)
+		end
+		invArgs[k] = v
+	end
+
+	-- Get the separators to use.
+	local seps = {
+		openb = '{{',
+		closeb = '}}',
+		pipe = '|',
+		equals = '='
+	}
+	if format == 'nowiki' then
+		for k, v in pairs(seps) do
+			seps[k] = mw.text.nowiki(v)
+		end
+	end
+
+	-- Build the invocation body with numbered args first, then named.
+	local ret = {}
+	ret[#ret + 1] = seps.openb
+	ret[#ret + 1] = name
+	for k, v in ipairs(invArgs) do
+		if type(v) == 'string' and v:find('=', 1, true) then
+			-- Likely something like 1=foo=bar which needs to be displayed as a named arg.
+		else
+			ret[#ret + 1] = seps.pipe
+			ret[#ret + 1] = v
+			invArgs[k] = nil -- Erase the key so that we don't add the value twice
+		end
+	end
+	local keys = {} -- sort parameter list; better than arbitrary order
+	for k, _ in pairs(invArgs) do
+		keys[#keys + 1] = k
+	end
+	table.sort(keys, function (a, b)
+			-- Sort with keys of type number first, then string.
+			if type(a) == type(b) then
+				return a &lt; b
+			elseif type(a) == 'number' then
+				return true
+			end
+		end)
+	for _, v in ipairs(keys) do -- Add named args based on sorted parameter list
+		ret[#ret + 1] = ' ' .. seps.pipe
+		ret[#ret + 1] = tostring(v)
+		ret[#ret + 1] = seps.equals
+		ret[#ret + 1] = invArgs[v]
+	end
+	ret[#ret + 1] = seps.closeb
+
+	return table.concat(ret)
+end
+
+return p</text>
+      <sha1>1o64uv58uwwidur3epashete6t91tls</sha1>
+    </revision>
+    <revision>
+      <id>3368429</id>
+      <parentid>659</parentid>
+      <timestamp>2026-03-02T18:55:03Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <comment>Update name call to fix a few edge cases per request</comment>
+      <origin>3368429</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4798" sha1="2md7jjxjwpjhfzpzbxftnmbmqvfpwv0" xml:space="preserve">-- This module provides functions for making MediaWiki template invocations.
+
+local checkType = require('libraryUtil').checkType
+
+local p = {}
+
+------------------------------------------------------------------------
+--         Name:  p.name
+--      Purpose:  Find a template invocation name from a page name or a
+--                mw.title object.
+--  Description:  This function detects whether a string or a mw.title
+--                object has been passed in, and uses that to find a
+--                template name as it is used in template invocations.
+--   Parameters:  title - full page name or mw.title object for the
+--                template (string or mw.title object)
+--      Returns:  String
+------------------------------------------------------------------------
+
+function p.name(title)
+	if type(title) == 'string' then
+		title = mw.title.new(title)
+		if not title or #title.prefixedText == 0 or #title.interwiki &gt; 0 then
+			error("invalid title in parameter #1 of function 'name'", 2)
+		end
+	elseif type(title) ~= 'table' or type(title.getContent) ~= 'function' then
+		error("parameter #1 of function 'name' must be a string or a mw.title object", 2)
+	end
+	if title.namespace == 10 then
+		local text = title.text
+		local check = mw.title.new(text, 10)
+		-- Exclude the prefix, unless we have something like "Template:Category:Foo", which can't be abbreviated to "Category:Foo".
+		return check and mw.title.equals(title, check) and text or title.prefixedText
+	elseif title.namespace == 0 then
+		return ':' .. title.prefixedText
+	else
+		return title.prefixedText
+	end
+end
+------------------------------------------------------------------------
+--         Name:  p.invocation
+--      Purpose:  Construct a MediaWiki template invocation.
+--  Description:  This function makes a template invocation from the
+--                name and the arguments given. Note that it isn't
+--                perfect: we have no way of knowing what whitespace was
+--                in the original invocation, the named parameters will be
+--                alphabetically sorted, and any parameters with duplicate keys
+--                will be removed.
+--   Parameters:  name - the template name, formatted as it will appear
+--                    in the invocation. (string)
+--                args - a table of template arguments. (table)
+--                format - formatting options. (string, optional)
+--                    Set to "nowiki" to escape, curly braces, pipes and
+--                    equals signs with their HTML entities. The default
+--                    is unescaped.
+--      Returns:  String
+------------------------------------------------------------------------
+
+function p.invocation(name, args, format)
+	checkType('invocation', 1, name, 'string')
+	checkType('invocation', 2, args, 'table')
+	checkType('invocation', 3, format, 'string', true)
+
+	-- Validate the args table and make a copy to work from. We need to
+	-- make a copy of the table rather than just using the original, as
+	-- some of the values may be erased when building the invocation.
+	local invArgs = {}
+	for k, v in pairs(args) do
+		local typek = type(k)
+		local typev = type(v)
+		if typek ~= 'string' and typek ~= 'number'
+			or typev ~= 'string' and typev ~= 'number'
+		then
+			error("invalid arguments table in parameter #2 of " ..
+			"'invocation' (keys and values must be strings or numbers)", 2)
+		end
+		invArgs[k] = v
+	end
+
+	-- Get the separators to use.
+	local seps = {
+		openb = '{{',
+		closeb = '}}',
+		pipe = '|',
+		equals = '='
+	}
+	if format == 'nowiki' then
+		for k, v in pairs(seps) do
+			seps[k] = mw.text.nowiki(v)
+		end
+	end
+
+	-- Build the invocation body with numbered args first, then named.
+	local ret = {}
+	ret[#ret + 1] = seps.openb
+	ret[#ret + 1] = name
+	for k, v in ipairs(invArgs) do
+		if type(v) == 'string' and v:find('=', 1, true) then
+			-- Likely something like 1=foo=bar which needs to be displayed as a named arg.
+		else
+			ret[#ret + 1] = seps.pipe
+			ret[#ret + 1] = v
+			invArgs[k] = nil -- Erase the key so that we don't add the value twice
+		end
+	end
+	local keys = {} -- sort parameter list; better than arbitrary order
+	for k, _ in pairs(invArgs) do
+		keys[#keys + 1] = k
+	end
+	table.sort(keys,
+		function (a, b)
+			-- Sort with keys of type number first, then string.
+			if type(a) == type(b) then
+				return a &lt; b
+			elseif type(a) == 'number' then
+				return true
+			end
+		end
+	)
+	
+	local maybeSpace = '' -- First named parameter should not be separated by a space
+	for _, v in ipairs(keys) do -- Add named args based on sorted parameter list
+		ret[#ret + 1] = maybeSpace .. seps.pipe
+		ret[#ret + 1] = tostring(v)
+		ret[#ret + 1] = seps.equals
+		ret[#ret + 1] = invArgs[v]
+		maybeSpace = ' '
+	end
+	ret[#ret + 1] = seps.closeb
+
+	return table.concat(ret)
+end
+
+return p</text>
+      <sha1>2md7jjxjwpjhfzpzbxftnmbmqvfpwv0</sha1>
+    </revision>
+    <revision>
+      <id>3368430</id>
+      <parentid>3368429</parentid>
+      <timestamp>2026-03-02T18:55:04Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3368429</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4798" sha1="2md7jjxjwpjhfzpzbxftnmbmqvfpwv0" xml:space="preserve">-- This module provides functions for making MediaWiki template invocations.
+
+local checkType = require('libraryUtil').checkType
+
+local p = {}
+
+------------------------------------------------------------------------
+--         Name:  p.name
+--      Purpose:  Find a template invocation name from a page name or a
+--                mw.title object.
+--  Description:  This function detects whether a string or a mw.title
+--                object has been passed in, and uses that to find a
+--                template name as it is used in template invocations.
+--   Parameters:  title - full page name or mw.title object for the
+--                template (string or mw.title object)
+--      Returns:  String
+------------------------------------------------------------------------
+
+function p.name(title)
+	if type(title) == 'string' then
+		title = mw.title.new(title)
+		if not title or #title.prefixedText == 0 or #title.interwiki &gt; 0 then
+			error("invalid title in parameter #1 of function 'name'", 2)
+		end
+	elseif type(title) ~= 'table' or type(title.getContent) ~= 'function' then
+		error("parameter #1 of function 'name' must be a string or a mw.title object", 2)
+	end
+	if title.namespace == 10 then
+		local text = title.text
+		local check = mw.title.new(text, 10)
+		-- Exclude the prefix, unless we have something like "Template:Category:Foo", which can't be abbreviated to "Category:Foo".
+		return check and mw.title.equals(title, check) and text or title.prefixedText
+	elseif title.namespace == 0 then
+		return ':' .. title.prefixedText
+	else
+		return title.prefixedText
+	end
+end
+------------------------------------------------------------------------
+--         Name:  p.invocation
+--      Purpose:  Construct a MediaWiki template invocation.
+--  Description:  This function makes a template invocation from the
+--                name and the arguments given. Note that it isn't
+--                perfect: we have no way of knowing what whitespace was
+--                in the original invocation, the named parameters will be
+--                alphabetically sorted, and any parameters with duplicate keys
+--                will be removed.
+--   Parameters:  name - the template name, formatted as it will appear
+--                    in the invocation. (string)
+--                args - a table of template arguments. (table)
+--                format - formatting options. (string, optional)
+--                    Set to "nowiki" to escape, curly braces, pipes and
+--                    equals signs with their HTML entities. The default
+--                    is unescaped.
+--      Returns:  String
+------------------------------------------------------------------------
+
+function p.invocation(name, args, format)
+	checkType('invocation', 1, name, 'string')
+	checkType('invocation', 2, args, 'table')
+	checkType('invocation', 3, format, 'string', true)
+
+	-- Validate the args table and make a copy to work from. We need to
+	-- make a copy of the table rather than just using the original, as
+	-- some of the values may be erased when building the invocation.
+	local invArgs = {}
+	for k, v in pairs(args) do
+		local typek = type(k)
+		local typev = type(v)
+		if typek ~= 'string' and typek ~= 'number'
+			or typev ~= 'string' and typev ~= 'number'
+		then
+			error("invalid arguments table in parameter #2 of " ..
+			"'invocation' (keys and values must be strings or numbers)", 2)
+		end
+		invArgs[k] = v
+	end
+
+	-- Get the separators to use.
+	local seps = {
+		openb = '{{',
+		closeb = '}}',
+		pipe = '|',
+		equals = '='
+	}
+	if format == 'nowiki' then
+		for k, v in pairs(seps) do
+			seps[k] = mw.text.nowiki(v)
+		end
+	end
+
+	-- Build the invocation body with numbered args first, then named.
+	local ret = {}
+	ret[#ret + 1] = seps.openb
+	ret[#ret + 1] = name
+	for k, v in ipairs(invArgs) do
+		if type(v) == 'string' and v:find('=', 1, true) then
+			-- Likely something like 1=foo=bar which needs to be displayed as a named arg.
+		else
+			ret[#ret + 1] = seps.pipe
+			ret[#ret + 1] = v
+			invArgs[k] = nil -- Erase the key so that we don't add the value twice
+		end
+	end
+	local keys = {} -- sort parameter list; better than arbitrary order
+	for k, _ in pairs(invArgs) do
+		keys[#keys + 1] = k
+	end
+	table.sort(keys,
+		function (a, b)
+			-- Sort with keys of type number first, then string.
+			if type(a) == type(b) then
+				return a &lt; b
+			elseif type(a) == 'number' then
+				return true
+			end
+		end
+	)
+	
+	local maybeSpace = '' -- First named parameter should not be separated by a space
+	for _, v in ipairs(keys) do -- Add named args based on sorted parameter list
+		ret[#ret + 1] = maybeSpace .. seps.pipe
+		ret[#ret + 1] = tostring(v)
+		ret[#ret + 1] = seps.equals
+		ret[#ret + 1] = invArgs[v]
+		maybeSpace = ' '
+	end
+	ret[#ret + 1] = seps.closeb
+
+	return table.concat(ret)
+end
+
+return p</text>
+      <sha1>2md7jjxjwpjhfzpzbxftnmbmqvfpwv0</sha1>
+    </revision>
+    <revision>
+      <id>3368903</id>
+      <parentid>3368430</parentid>
+      <timestamp>2026-03-02T18:57:32Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <comment>Update name call to fix a few edge cases per request</comment>
+      <origin>3368429</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4798" sha1="2md7jjxjwpjhfzpzbxftnmbmqvfpwv0" xml:space="preserve">-- This module provides functions for making MediaWiki template invocations.
+
+local checkType = require('libraryUtil').checkType
+
+local p = {}
+
+------------------------------------------------------------------------
+--         Name:  p.name
+--      Purpose:  Find a template invocation name from a page name or a
+--                mw.title object.
+--  Description:  This function detects whether a string or a mw.title
+--                object has been passed in, and uses that to find a
+--                template name as it is used in template invocations.
+--   Parameters:  title - full page name or mw.title object for the
+--                template (string or mw.title object)
+--      Returns:  String
+------------------------------------------------------------------------
+
+function p.name(title)
+	if type(title) == 'string' then
+		title = mw.title.new(title)
+		if not title or #title.prefixedText == 0 or #title.interwiki &gt; 0 then
+			error("invalid title in parameter #1 of function 'name'", 2)
+		end
+	elseif type(title) ~= 'table' or type(title.getContent) ~= 'function' then
+		error("parameter #1 of function 'name' must be a string or a mw.title object", 2)
+	end
+	if title.namespace == 10 then
+		local text = title.text
+		local check = mw.title.new(text, 10)
+		-- Exclude the prefix, unless we have something like "Template:Category:Foo", which can't be abbreviated to "Category:Foo".
+		return check and mw.title.equals(title, check) and text or title.prefixedText
+	elseif title.namespace == 0 then
+		return ':' .. title.prefixedText
+	else
+		return title.prefixedText
+	end
+end
+------------------------------------------------------------------------
+--         Name:  p.invocation
+--      Purpose:  Construct a MediaWiki template invocation.
+--  Description:  This function makes a template invocation from the
+--                name and the arguments given. Note that it isn't
+--                perfect: we have no way of knowing what whitespace was
+--                in the original invocation, the named parameters will be
+--                alphabetically sorted, and any parameters with duplicate keys
+--                will be removed.
+--   Parameters:  name - the template name, formatted as it will appear
+--                    in the invocation. (string)
+--                args - a table of template arguments. (table)
+--                format - formatting options. (string, optional)
+--                    Set to "nowiki" to escape, curly braces, pipes and
+--                    equals signs with their HTML entities. The default
+--                    is unescaped.
+--      Returns:  String
+------------------------------------------------------------------------
+
+function p.invocation(name, args, format)
+	checkType('invocation', 1, name, 'string')
+	checkType('invocation', 2, args, 'table')
+	checkType('invocation', 3, format, 'string', true)
+
+	-- Validate the args table and make a copy to work from. We need to
+	-- make a copy of the table rather than just using the original, as
+	-- some of the values may be erased when building the invocation.
+	local invArgs = {}
+	for k, v in pairs(args) do
+		local typek = type(k)
+		local typev = type(v)
+		if typek ~= 'string' and typek ~= 'number'
+			or typev ~= 'string' and typev ~= 'number'
+		then
+			error("invalid arguments table in parameter #2 of " ..
+			"'invocation' (keys and values must be strings or numbers)", 2)
+		end
+		invArgs[k] = v
+	end
+
+	-- Get the separators to use.
+	local seps = {
+		openb = '{{',
+		closeb = '}}',
+		pipe = '|',
+		equals = '='
+	}
+	if format == 'nowiki' then
+		for k, v in pairs(seps) do
+			seps[k] = mw.text.nowiki(v)
+		end
+	end
+
+	-- Build the invocation body with numbered args first, then named.
+	local ret = {}
+	ret[#ret + 1] = seps.openb
+	ret[#ret + 1] = name
+	for k, v in ipairs(invArgs) do
+		if type(v) == 'string' and v:find('=', 1, true) then
+			-- Likely something like 1=foo=bar which needs to be displayed as a named arg.
+		else
+			ret[#ret + 1] = seps.pipe
+			ret[#ret + 1] = v
+			invArgs[k] = nil -- Erase the key so that we don't add the value twice
+		end
+	end
+	local keys = {} -- sort parameter list; better than arbitrary order
+	for k, _ in pairs(invArgs) do
+		keys[#keys + 1] = k
+	end
+	table.sort(keys,
+		function (a, b)
+			-- Sort with keys of type number first, then string.
+			if type(a) == type(b) then
+				return a &lt; b
+			elseif type(a) == 'number' then
+				return true
+			end
+		end
+	)
+	
+	local maybeSpace = '' -- First named parameter should not be separated by a space
+	for _, v in ipairs(keys) do -- Add named args based on sorted parameter list
+		ret[#ret + 1] = maybeSpace .. seps.pipe
+		ret[#ret + 1] = tostring(v)
+		ret[#ret + 1] = seps.equals
+		ret[#ret + 1] = invArgs[v]
+		maybeSpace = ' '
+	end
+	ret[#ret + 1] = seps.closeb
+
+	return table.concat(ret)
+end
+
+return p</text>
+      <sha1>2md7jjxjwpjhfzpzbxftnmbmqvfpwv0</sha1>
+    </revision>
+    <revision>
+      <id>3368904</id>
+      <parentid>3368903</parentid>
+      <timestamp>2026-03-02T18:57:33Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3368429</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4798" sha1="2md7jjxjwpjhfzpzbxftnmbmqvfpwv0" xml:space="preserve">-- This module provides functions for making MediaWiki template invocations.
+
+local checkType = require('libraryUtil').checkType
+
+local p = {}
+
+------------------------------------------------------------------------
+--         Name:  p.name
+--      Purpose:  Find a template invocation name from a page name or a
+--                mw.title object.
+--  Description:  This function detects whether a string or a mw.title
+--                object has been passed in, and uses that to find a
+--                template name as it is used in template invocations.
+--   Parameters:  title - full page name or mw.title object for the
+--                template (string or mw.title object)
+--      Returns:  String
+------------------------------------------------------------------------
+
+function p.name(title)
+	if type(title) == 'string' then
+		title = mw.title.new(title)
+		if not title or #title.prefixedText == 0 or #title.interwiki &gt; 0 then
+			error("invalid title in parameter #1 of function 'name'", 2)
+		end
+	elseif type(title) ~= 'table' or type(title.getContent) ~= 'function' then
+		error("parameter #1 of function 'name' must be a string or a mw.title object", 2)
+	end
+	if title.namespace == 10 then
+		local text = title.text
+		local check = mw.title.new(text, 10)
+		-- Exclude the prefix, unless we have something like "Template:Category:Foo", which can't be abbreviated to "Category:Foo".
+		return check and mw.title.equals(title, check) and text or title.prefixedText
+	elseif title.namespace == 0 then
+		return ':' .. title.prefixedText
+	else
+		return title.prefixedText
+	end
+end
+------------------------------------------------------------------------
+--         Name:  p.invocation
+--      Purpose:  Construct a MediaWiki template invocation.
+--  Description:  This function makes a template invocation from the
+--                name and the arguments given. Note that it isn't
+--                perfect: we have no way of knowing what whitespace was
+--                in the original invocation, the named parameters will be
+--                alphabetically sorted, and any parameters with duplicate keys
+--                will be removed.
+--   Parameters:  name - the template name, formatted as it will appear
+--                    in the invocation. (string)
+--                args - a table of template arguments. (table)
+--                format - formatting options. (string, optional)
+--                    Set to "nowiki" to escape, curly braces, pipes and
+--                    equals signs with their HTML entities. The default
+--                    is unescaped.
+--      Returns:  String
+------------------------------------------------------------------------
+
+function p.invocation(name, args, format)
+	checkType('invocation', 1, name, 'string')
+	checkType('invocation', 2, args, 'table')
+	checkType('invocation', 3, format, 'string', true)
+
+	-- Validate the args table and make a copy to work from. We need to
+	-- make a copy of the table rather than just using the original, as
+	-- some of the values may be erased when building the invocation.
+	local invArgs = {}
+	for k, v in pairs(args) do
+		local typek = type(k)
+		local typev = type(v)
+		if typek ~= 'string' and typek ~= 'number'
+			or typev ~= 'string' and typev ~= 'number'
+		then
+			error("invalid arguments table in parameter #2 of " ..
+			"'invocation' (keys and values must be strings or numbers)", 2)
+		end
+		invArgs[k] = v
+	end
+
+	-- Get the separators to use.
+	local seps = {
+		openb = '{{',
+		closeb = '}}',
+		pipe = '|',
+		equals = '='
+	}
+	if format == 'nowiki' then
+		for k, v in pairs(seps) do
+			seps[k] = mw.text.nowiki(v)
+		end
+	end
+
+	-- Build the invocation body with numbered args first, then named.
+	local ret = {}
+	ret[#ret + 1] = seps.openb
+	ret[#ret + 1] = name
+	for k, v in ipairs(invArgs) do
+		if type(v) == 'string' and v:find('=', 1, true) then
+			-- Likely something like 1=foo=bar which needs to be displayed as a named arg.
+		else
+			ret[#ret + 1] = seps.pipe
+			ret[#ret + 1] = v
+			invArgs[k] = nil -- Erase the key so that we don't add the value twice
+		end
+	end
+	local keys = {} -- sort parameter list; better than arbitrary order
+	for k, _ in pairs(invArgs) do
+		keys[#keys + 1] = k
+	end
+	table.sort(keys,
+		function (a, b)
+			-- Sort with keys of type number first, then string.
+			if type(a) == type(b) then
+				return a &lt; b
+			elseif type(a) == 'number' then
+				return true
+			end
+		end
+	)
+	
+	local maybeSpace = '' -- First named parameter should not be separated by a space
+	for _, v in ipairs(keys) do -- Add named args based on sorted parameter list
+		ret[#ret + 1] = maybeSpace .. seps.pipe
+		ret[#ret + 1] = tostring(v)
+		ret[#ret + 1] = seps.equals
+		ret[#ret + 1] = invArgs[v]
+		maybeSpace = ' '
+	end
+	ret[#ret + 1] = seps.closeb
+
+	return table.concat(ret)
+end
+
+return p</text>
+      <sha1>2md7jjxjwpjhfzpzbxftnmbmqvfpwv0</sha1>
+    </revision>
+    <revision>
+      <id>3369378</id>
+      <parentid>3368904</parentid>
+      <timestamp>2026-03-02T19:04:00Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <comment>Update name call to fix a few edge cases per request</comment>
+      <origin>3368429</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4798" sha1="2md7jjxjwpjhfzpzbxftnmbmqvfpwv0" xml:space="preserve">-- This module provides functions for making MediaWiki template invocations.
+
+local checkType = require('libraryUtil').checkType
+
+local p = {}
+
+------------------------------------------------------------------------
+--         Name:  p.name
+--      Purpose:  Find a template invocation name from a page name or a
+--                mw.title object.
+--  Description:  This function detects whether a string or a mw.title
+--                object has been passed in, and uses that to find a
+--                template name as it is used in template invocations.
+--   Parameters:  title - full page name or mw.title object for the
+--                template (string or mw.title object)
+--      Returns:  String
+------------------------------------------------------------------------
+
+function p.name(title)
+	if type(title) == 'string' then
+		title = mw.title.new(title)
+		if not title or #title.prefixedText == 0 or #title.interwiki &gt; 0 then
+			error("invalid title in parameter #1 of function 'name'", 2)
+		end
+	elseif type(title) ~= 'table' or type(title.getContent) ~= 'function' then
+		error("parameter #1 of function 'name' must be a string or a mw.title object", 2)
+	end
+	if title.namespace == 10 then
+		local text = title.text
+		local check = mw.title.new(text, 10)
+		-- Exclude the prefix, unless we have something like "Template:Category:Foo", which can't be abbreviated to "Category:Foo".
+		return check and mw.title.equals(title, check) and text or title.prefixedText
+	elseif title.namespace == 0 then
+		return ':' .. title.prefixedText
+	else
+		return title.prefixedText
+	end
+end
+------------------------------------------------------------------------
+--         Name:  p.invocation
+--      Purpose:  Construct a MediaWiki template invocation.
+--  Description:  This function makes a template invocation from the
+--                name and the arguments given. Note that it isn't
+--                perfect: we have no way of knowing what whitespace was
+--                in the original invocation, the named parameters will be
+--                alphabetically sorted, and any parameters with duplicate keys
+--                will be removed.
+--   Parameters:  name - the template name, formatted as it will appear
+--                    in the invocation. (string)
+--                args - a table of template arguments. (table)
+--                format - formatting options. (string, optional)
+--                    Set to "nowiki" to escape, curly braces, pipes and
+--                    equals signs with their HTML entities. The default
+--                    is unescaped.
+--      Returns:  String
+------------------------------------------------------------------------
+
+function p.invocation(name, args, format)
+	checkType('invocation', 1, name, 'string')
+	checkType('invocation', 2, args, 'table')
+	checkType('invocation', 3, format, 'string', true)
+
+	-- Validate the args table and make a copy to work from. We need to
+	-- make a copy of the table rather than just using the original, as
+	-- some of the values may be erased when building the invocation.
+	local invArgs = {}
+	for k, v in pairs(args) do
+		local typek = type(k)
+		local typev = type(v)
+		if typek ~= 'string' and typek ~= 'number'
+			or typev ~= 'string' and typev ~= 'number'
+		then
+			error("invalid arguments table in parameter #2 of " ..
+			"'invocation' (keys and values must be strings or numbers)", 2)
+		end
+		invArgs[k] = v
+	end
+
+	-- Get the separators to use.
+	local seps = {
+		openb = '{{',
+		closeb = '}}',
+		pipe = '|',
+		equals = '='
+	}
+	if format == 'nowiki' then
+		for k, v in pairs(seps) do
+			seps[k] = mw.text.nowiki(v)
+		end
+	end
+
+	-- Build the invocation body with numbered args first, then named.
+	local ret = {}
+	ret[#ret + 1] = seps.openb
+	ret[#ret + 1] = name
+	for k, v in ipairs(invArgs) do
+		if type(v) == 'string' and v:find('=', 1, true) then
+			-- Likely something like 1=foo=bar which needs to be displayed as a named arg.
+		else
+			ret[#ret + 1] = seps.pipe
+			ret[#ret + 1] = v
+			invArgs[k] = nil -- Erase the key so that we don't add the value twice
+		end
+	end
+	local keys = {} -- sort parameter list; better than arbitrary order
+	for k, _ in pairs(invArgs) do
+		keys[#keys + 1] = k
+	end
+	table.sort(keys,
+		function (a, b)
+			-- Sort with keys of type number first, then string.
+			if type(a) == type(b) then
+				return a &lt; b
+			elseif type(a) == 'number' then
+				return true
+			end
+		end
+	)
+	
+	local maybeSpace = '' -- First named parameter should not be separated by a space
+	for _, v in ipairs(keys) do -- Add named args based on sorted parameter list
+		ret[#ret + 1] = maybeSpace .. seps.pipe
+		ret[#ret + 1] = tostring(v)
+		ret[#ret + 1] = seps.equals
+		ret[#ret + 1] = invArgs[v]
+		maybeSpace = ' '
+	end
+	ret[#ret + 1] = seps.closeb
+
+	return table.concat(ret)
+end
+
+return p</text>
+      <sha1>2md7jjxjwpjhfzpzbxftnmbmqvfpwv0</sha1>
+    </revision>
+    <revision>
+      <id>3369379</id>
+      <parentid>3369378</parentid>
+      <timestamp>2026-03-02T19:04:00Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3368429</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4798" sha1="2md7jjxjwpjhfzpzbxftnmbmqvfpwv0" xml:space="preserve">-- This module provides functions for making MediaWiki template invocations.
+
+local checkType = require('libraryUtil').checkType
+
+local p = {}
+
+------------------------------------------------------------------------
+--         Name:  p.name
+--      Purpose:  Find a template invocation name from a page name or a
+--                mw.title object.
+--  Description:  This function detects whether a string or a mw.title
+--                object has been passed in, and uses that to find a
+--                template name as it is used in template invocations.
+--   Parameters:  title - full page name or mw.title object for the
+--                template (string or mw.title object)
+--      Returns:  String
+------------------------------------------------------------------------
+
+function p.name(title)
+	if type(title) == 'string' then
+		title = mw.title.new(title)
+		if not title or #title.prefixedText == 0 or #title.interwiki &gt; 0 then
+			error("invalid title in parameter #1 of function 'name'", 2)
+		end
+	elseif type(title) ~= 'table' or type(title.getContent) ~= 'function' then
+		error("parameter #1 of function 'name' must be a string or a mw.title object", 2)
+	end
+	if title.namespace == 10 then
+		local text = title.text
+		local check = mw.title.new(text, 10)
+		-- Exclude the prefix, unless we have something like "Template:Category:Foo", which can't be abbreviated to "Category:Foo".
+		return check and mw.title.equals(title, check) and text or title.prefixedText
+	elseif title.namespace == 0 then
+		return ':' .. title.prefixedText
+	else
+		return title.prefixedText
+	end
+end
+------------------------------------------------------------------------
+--         Name:  p.invocation
+--      Purpose:  Construct a MediaWiki template invocation.
+--  Description:  This function makes a template invocation from the
+--                name and the arguments given. Note that it isn't
+--                perfect: we have no way of knowing what whitespace was
+--                in the original invocation, the named parameters will be
+--                alphabetically sorted, and any parameters with duplicate keys
+--                will be removed.
+--   Parameters:  name - the template name, formatted as it will appear
+--                    in the invocation. (string)
+--                args - a table of template arguments. (table)
+--                format - formatting options. (string, optional)
+--                    Set to "nowiki" to escape, curly braces, pipes and
+--                    equals signs with their HTML entities. The default
+--                    is unescaped.
+--      Returns:  String
+------------------------------------------------------------------------
+
+function p.invocation(name, args, format)
+	checkType('invocation', 1, name, 'string')
+	checkType('invocation', 2, args, 'table')
+	checkType('invocation', 3, format, 'string', true)
+
+	-- Validate the args table and make a copy to work from. We need to
+	-- make a copy of the table rather than just using the original, as
+	-- some of the values may be erased when building the invocation.
+	local invArgs = {}
+	for k, v in pairs(args) do
+		local typek = type(k)
+		local typev = type(v)
+		if typek ~= 'string' and typek ~= 'number'
+			or typev ~= 'string' and typev ~= 'number'
+		then
+			error("invalid arguments table in parameter #2 of " ..
+			"'invocation' (keys and values must be strings or numbers)", 2)
+		end
+		invArgs[k] = v
+	end
+
+	-- Get the separators to use.
+	local seps = {
+		openb = '{{',
+		closeb = '}}',
+		pipe = '|',
+		equals = '='
+	}
+	if format == 'nowiki' then
+		for k, v in pairs(seps) do
+			seps[k] = mw.text.nowiki(v)
+		end
+	end
+
+	-- Build the invocation body with numbered args first, then named.
+	local ret = {}
+	ret[#ret + 1] = seps.openb
+	ret[#ret + 1] = name
+	for k, v in ipairs(invArgs) do
+		if type(v) == 'string' and v:find('=', 1, true) then
+			-- Likely something like 1=foo=bar which needs to be displayed as a named arg.
+		else
+			ret[#ret + 1] = seps.pipe
+			ret[#ret + 1] = v
+			invArgs[k] = nil -- Erase the key so that we don't add the value twice
+		end
+	end
+	local keys = {} -- sort parameter list; better than arbitrary order
+	for k, _ in pairs(invArgs) do
+		keys[#keys + 1] = k
+	end
+	table.sort(keys,
+		function (a, b)
+			-- Sort with keys of type number first, then string.
+			if type(a) == type(b) then
+				return a &lt; b
+			elseif type(a) == 'number' then
+				return true
+			end
+		end
+	)
+	
+	local maybeSpace = '' -- First named parameter should not be separated by a space
+	for _, v in ipairs(keys) do -- Add named args based on sorted parameter list
+		ret[#ret + 1] = maybeSpace .. seps.pipe
+		ret[#ret + 1] = tostring(v)
+		ret[#ret + 1] = seps.equals
+		ret[#ret + 1] = invArgs[v]
+		maybeSpace = ' '
+	end
+	ret[#ret + 1] = seps.closeb
+
+	return table.concat(ret)
+end
+
+return p</text>
+      <sha1>2md7jjxjwpjhfzpzbxftnmbmqvfpwv0</sha1>
+    </revision>
+    <revision>
+      <id>3407075</id>
+      <parentid>3369379</parentid>
+      <timestamp>2026-03-12T20:03:18Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <comment>Update name call to fix a few edge cases per request</comment>
+      <origin>3368429</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4798" sha1="2md7jjxjwpjhfzpzbxftnmbmqvfpwv0" xml:space="preserve">-- This module provides functions for making MediaWiki template invocations.
+
+local checkType = require('libraryUtil').checkType
+
+local p = {}
+
+------------------------------------------------------------------------
+--         Name:  p.name
+--      Purpose:  Find a template invocation name from a page name or a
+--                mw.title object.
+--  Description:  This function detects whether a string or a mw.title
+--                object has been passed in, and uses that to find a
+--                template name as it is used in template invocations.
+--   Parameters:  title - full page name or mw.title object for the
+--                template (string or mw.title object)
+--      Returns:  String
+------------------------------------------------------------------------
+
+function p.name(title)
+	if type(title) == 'string' then
+		title = mw.title.new(title)
+		if not title or #title.prefixedText == 0 or #title.interwiki &gt; 0 then
+			error("invalid title in parameter #1 of function 'name'", 2)
+		end
+	elseif type(title) ~= 'table' or type(title.getContent) ~= 'function' then
+		error("parameter #1 of function 'name' must be a string or a mw.title object", 2)
+	end
+	if title.namespace == 10 then
+		local text = title.text
+		local check = mw.title.new(text, 10)
+		-- Exclude the prefix, unless we have something like "Template:Category:Foo", which can't be abbreviated to "Category:Foo".
+		return check and mw.title.equals(title, check) and text or title.prefixedText
+	elseif title.namespace == 0 then
+		return ':' .. title.prefixedText
+	else
+		return title.prefixedText
+	end
+end
+------------------------------------------------------------------------
+--         Name:  p.invocation
+--      Purpose:  Construct a MediaWiki template invocation.
+--  Description:  This function makes a template invocation from the
+--                name and the arguments given. Note that it isn't
+--                perfect: we have no way of knowing what whitespace was
+--                in the original invocation, the named parameters will be
+--                alphabetically sorted, and any parameters with duplicate keys
+--                will be removed.
+--   Parameters:  name - the template name, formatted as it will appear
+--                    in the invocation. (string)
+--                args - a table of template arguments. (table)
+--                format - formatting options. (string, optional)
+--                    Set to "nowiki" to escape, curly braces, pipes and
+--                    equals signs with their HTML entities. The default
+--                    is unescaped.
+--      Returns:  String
+------------------------------------------------------------------------
+
+function p.invocation(name, args, format)
+	checkType('invocation', 1, name, 'string')
+	checkType('invocation', 2, args, 'table')
+	checkType('invocation', 3, format, 'string', true)
+
+	-- Validate the args table and make a copy to work from. We need to
+	-- make a copy of the table rather than just using the original, as
+	-- some of the values may be erased when building the invocation.
+	local invArgs = {}
+	for k, v in pairs(args) do
+		local typek = type(k)
+		local typev = type(v)
+		if typek ~= 'string' and typek ~= 'number'
+			or typev ~= 'string' and typev ~= 'number'
+		then
+			error("invalid arguments table in parameter #2 of " ..
+			"'invocation' (keys and values must be strings or numbers)", 2)
+		end
+		invArgs[k] = v
+	end
+
+	-- Get the separators to use.
+	local seps = {
+		openb = '{{',
+		closeb = '}}',
+		pipe = '|',
+		equals = '='
+	}
+	if format == 'nowiki' then
+		for k, v in pairs(seps) do
+			seps[k] = mw.text.nowiki(v)
+		end
+	end
+
+	-- Build the invocation body with numbered args first, then named.
+	local ret = {}
+	ret[#ret + 1] = seps.openb
+	ret[#ret + 1] = name
+	for k, v in ipairs(invArgs) do
+		if type(v) == 'string' and v:find('=', 1, true) then
+			-- Likely something like 1=foo=bar which needs to be displayed as a named arg.
+		else
+			ret[#ret + 1] = seps.pipe
+			ret[#ret + 1] = v
+			invArgs[k] = nil -- Erase the key so that we don't add the value twice
+		end
+	end
+	local keys = {} -- sort parameter list; better than arbitrary order
+	for k, _ in pairs(invArgs) do
+		keys[#keys + 1] = k
+	end
+	table.sort(keys,
+		function (a, b)
+			-- Sort with keys of type number first, then string.
+			if type(a) == type(b) then
+				return a &lt; b
+			elseif type(a) == 'number' then
+				return true
+			end
+		end
+	)
+	
+	local maybeSpace = '' -- First named parameter should not be separated by a space
+	for _, v in ipairs(keys) do -- Add named args based on sorted parameter list
+		ret[#ret + 1] = maybeSpace .. seps.pipe
+		ret[#ret + 1] = tostring(v)
+		ret[#ret + 1] = seps.equals
+		ret[#ret + 1] = invArgs[v]
+		maybeSpace = ' '
+	end
+	ret[#ret + 1] = seps.closeb
+
+	return table.concat(ret)
+end
+
+return p</text>
+      <sha1>2md7jjxjwpjhfzpzbxftnmbmqvfpwv0</sha1>
+    </revision>
+    <revision>
+      <id>3407076</id>
+      <parentid>3407075</parentid>
+      <timestamp>2026-03-12T20:03:19Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3368429</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4798" sha1="2md7jjxjwpjhfzpzbxftnmbmqvfpwv0" xml:space="preserve">-- This module provides functions for making MediaWiki template invocations.
+
+local checkType = require('libraryUtil').checkType
+
+local p = {}
+
+------------------------------------------------------------------------
+--         Name:  p.name
+--      Purpose:  Find a template invocation name from a page name or a
+--                mw.title object.
+--  Description:  This function detects whether a string or a mw.title
+--                object has been passed in, and uses that to find a
+--                template name as it is used in template invocations.
+--   Parameters:  title - full page name or mw.title object for the
+--                template (string or mw.title object)
+--      Returns:  String
+------------------------------------------------------------------------
+
+function p.name(title)
+	if type(title) == 'string' then
+		title = mw.title.new(title)
+		if not title or #title.prefixedText == 0 or #title.interwiki &gt; 0 then
+			error("invalid title in parameter #1 of function 'name'", 2)
+		end
+	elseif type(title) ~= 'table' or type(title.getContent) ~= 'function' then
+		error("parameter #1 of function 'name' must be a string or a mw.title object", 2)
+	end
+	if title.namespace == 10 then
+		local text = title.text
+		local check = mw.title.new(text, 10)
+		-- Exclude the prefix, unless we have something like "Template:Category:Foo", which can't be abbreviated to "Category:Foo".
+		return check and mw.title.equals(title, check) and text or title.prefixedText
+	elseif title.namespace == 0 then
+		return ':' .. title.prefixedText
+	else
+		return title.prefixedText
+	end
+end
+------------------------------------------------------------------------
+--         Name:  p.invocation
+--      Purpose:  Construct a MediaWiki template invocation.
+--  Description:  This function makes a template invocation from the
+--                name and the arguments given. Note that it isn't
+--                perfect: we have no way of knowing what whitespace was
+--                in the original invocation, the named parameters will be
+--                alphabetically sorted, and any parameters with duplicate keys
+--                will be removed.
+--   Parameters:  name - the template name, formatted as it will appear
+--                    in the invocation. (string)
+--                args - a table of template arguments. (table)
+--                format - formatting options. (string, optional)
+--                    Set to "nowiki" to escape, curly braces, pipes and
+--                    equals signs with their HTML entities. The default
+--                    is unescaped.
+--      Returns:  String
+------------------------------------------------------------------------
+
+function p.invocation(name, args, format)
+	checkType('invocation', 1, name, 'string')
+	checkType('invocation', 2, args, 'table')
+	checkType('invocation', 3, format, 'string', true)
+
+	-- Validate the args table and make a copy to work from. We need to
+	-- make a copy of the table rather than just using the original, as
+	-- some of the values may be erased when building the invocation.
+	local invArgs = {}
+	for k, v in pairs(args) do
+		local typek = type(k)
+		local typev = type(v)
+		if typek ~= 'string' and typek ~= 'number'
+			or typev ~= 'string' and typev ~= 'number'
+		then
+			error("invalid arguments table in parameter #2 of " ..
+			"'invocation' (keys and values must be strings or numbers)", 2)
+		end
+		invArgs[k] = v
+	end
+
+	-- Get the separators to use.
+	local seps = {
+		openb = '{{',
+		closeb = '}}',
+		pipe = '|',
+		equals = '='
+	}
+	if format == 'nowiki' then
+		for k, v in pairs(seps) do
+			seps[k] = mw.text.nowiki(v)
+		end
+	end
+
+	-- Build the invocation body with numbered args first, then named.
+	local ret = {}
+	ret[#ret + 1] = seps.openb
+	ret[#ret + 1] = name
+	for k, v in ipairs(invArgs) do
+		if type(v) == 'string' and v:find('=', 1, true) then
+			-- Likely something like 1=foo=bar which needs to be displayed as a named arg.
+		else
+			ret[#ret + 1] = seps.pipe
+			ret[#ret + 1] = v
+			invArgs[k] = nil -- Erase the key so that we don't add the value twice
+		end
+	end
+	local keys = {} -- sort parameter list; better than arbitrary order
+	for k, _ in pairs(invArgs) do
+		keys[#keys + 1] = k
+	end
+	table.sort(keys,
+		function (a, b)
+			-- Sort with keys of type number first, then string.
+			if type(a) == type(b) then
+				return a &lt; b
+			elseif type(a) == 'number' then
+				return true
+			end
+		end
+	)
+	
+	local maybeSpace = '' -- First named parameter should not be separated by a space
+	for _, v in ipairs(keys) do -- Add named args based on sorted parameter list
+		ret[#ret + 1] = maybeSpace .. seps.pipe
+		ret[#ret + 1] = tostring(v)
+		ret[#ret + 1] = seps.equals
+		ret[#ret + 1] = invArgs[v]
+		maybeSpace = ' '
+	end
+	ret[#ret + 1] = seps.closeb
+
+	return table.concat(ret)
+end
+
+return p</text>
+      <sha1>2md7jjxjwpjhfzpzbxftnmbmqvfpwv0</sha1>
+    </revision>
+    <revision>
+      <id>3412380</id>
+      <parentid>3407076</parentid>
+      <timestamp>2026-03-13T00:16:31Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <comment>Update name call to fix a few edge cases per request</comment>
+      <origin>3368429</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4798" sha1="2md7jjxjwpjhfzpzbxftnmbmqvfpwv0" xml:space="preserve">-- This module provides functions for making MediaWiki template invocations.
+
+local checkType = require('libraryUtil').checkType
+
+local p = {}
+
+------------------------------------------------------------------------
+--         Name:  p.name
+--      Purpose:  Find a template invocation name from a page name or a
+--                mw.title object.
+--  Description:  This function detects whether a string or a mw.title
+--                object has been passed in, and uses that to find a
+--                template name as it is used in template invocations.
+--   Parameters:  title - full page name or mw.title object for the
+--                template (string or mw.title object)
+--      Returns:  String
+------------------------------------------------------------------------
+
+function p.name(title)
+	if type(title) == 'string' then
+		title = mw.title.new(title)
+		if not title or #title.prefixedText == 0 or #title.interwiki &gt; 0 then
+			error("invalid title in parameter #1 of function 'name'", 2)
+		end
+	elseif type(title) ~= 'table' or type(title.getContent) ~= 'function' then
+		error("parameter #1 of function 'name' must be a string or a mw.title object", 2)
+	end
+	if title.namespace == 10 then
+		local text = title.text
+		local check = mw.title.new(text, 10)
+		-- Exclude the prefix, unless we have something like "Template:Category:Foo", which can't be abbreviated to "Category:Foo".
+		return check and mw.title.equals(title, check) and text or title.prefixedText
+	elseif title.namespace == 0 then
+		return ':' .. title.prefixedText
+	else
+		return title.prefixedText
+	end
+end
+------------------------------------------------------------------------
+--         Name:  p.invocation
+--      Purpose:  Construct a MediaWiki template invocation.
+--  Description:  This function makes a template invocation from the
+--                name and the arguments given. Note that it isn't
+--                perfect: we have no way of knowing what whitespace was
+--                in the original invocation, the named parameters will be
+--                alphabetically sorted, and any parameters with duplicate keys
+--                will be removed.
+--   Parameters:  name - the template name, formatted as it will appear
+--                    in the invocation. (string)
+--                args - a table of template arguments. (table)
+--                format - formatting options. (string, optional)
+--                    Set to "nowiki" to escape, curly braces, pipes and
+--                    equals signs with their HTML entities. The default
+--                    is unescaped.
+--      Returns:  String
+------------------------------------------------------------------------
+
+function p.invocation(name, args, format)
+	checkType('invocation', 1, name, 'string')
+	checkType('invocation', 2, args, 'table')
+	checkType('invocation', 3, format, 'string', true)
+
+	-- Validate the args table and make a copy to work from. We need to
+	-- make a copy of the table rather than just using the original, as
+	-- some of the values may be erased when building the invocation.
+	local invArgs = {}
+	for k, v in pairs(args) do
+		local typek = type(k)
+		local typev = type(v)
+		if typek ~= 'string' and typek ~= 'number'
+			or typev ~= 'string' and typev ~= 'number'
+		then
+			error("invalid arguments table in parameter #2 of " ..
+			"'invocation' (keys and values must be strings or numbers)", 2)
+		end
+		invArgs[k] = v
+	end
+
+	-- Get the separators to use.
+	local seps = {
+		openb = '{{',
+		closeb = '}}',
+		pipe = '|',
+		equals = '='
+	}
+	if format == 'nowiki' then
+		for k, v in pairs(seps) do
+			seps[k] = mw.text.nowiki(v)
+		end
+	end
+
+	-- Build the invocation body with numbered args first, then named.
+	local ret = {}
+	ret[#ret + 1] = seps.openb
+	ret[#ret + 1] = name
+	for k, v in ipairs(invArgs) do
+		if type(v) == 'string' and v:find('=', 1, true) then
+			-- Likely something like 1=foo=bar which needs to be displayed as a named arg.
+		else
+			ret[#ret + 1] = seps.pipe
+			ret[#ret + 1] = v
+			invArgs[k] = nil -- Erase the key so that we don't add the value twice
+		end
+	end
+	local keys = {} -- sort parameter list; better than arbitrary order
+	for k, _ in pairs(invArgs) do
+		keys[#keys + 1] = k
+	end
+	table.sort(keys,
+		function (a, b)
+			-- Sort with keys of type number first, then string.
+			if type(a) == type(b) then
+				return a &lt; b
+			elseif type(a) == 'number' then
+				return true
+			end
+		end
+	)
+	
+	local maybeSpace = '' -- First named parameter should not be separated by a space
+	for _, v in ipairs(keys) do -- Add named args based on sorted parameter list
+		ret[#ret + 1] = maybeSpace .. seps.pipe
+		ret[#ret + 1] = tostring(v)
+		ret[#ret + 1] = seps.equals
+		ret[#ret + 1] = invArgs[v]
+		maybeSpace = ' '
+	end
+	ret[#ret + 1] = seps.closeb
+
+	return table.concat(ret)
+end
+
+return p</text>
+      <sha1>2md7jjxjwpjhfzpzbxftnmbmqvfpwv0</sha1>
+    </revision>
+    <revision>
+      <id>3412381</id>
+      <parentid>3412380</parentid>
+      <timestamp>2026-03-13T00:16:32Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: importing</comment>
+      <origin>3368429</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4798" sha1="2md7jjxjwpjhfzpzbxftnmbmqvfpwv0" xml:space="preserve">-- This module provides functions for making MediaWiki template invocations.
+
+local checkType = require('libraryUtil').checkType
+
+local p = {}
+
+------------------------------------------------------------------------
+--         Name:  p.name
+--      Purpose:  Find a template invocation name from a page name or a
+--                mw.title object.
+--  Description:  This function detects whether a string or a mw.title
+--                object has been passed in, and uses that to find a
+--                template name as it is used in template invocations.
+--   Parameters:  title - full page name or mw.title object for the
+--                template (string or mw.title object)
+--      Returns:  String
+------------------------------------------------------------------------
+
+function p.name(title)
+	if type(title) == 'string' then
+		title = mw.title.new(title)
+		if not title or #title.prefixedText == 0 or #title.interwiki &gt; 0 then
+			error("invalid title in parameter #1 of function 'name'", 2)
+		end
+	elseif type(title) ~= 'table' or type(title.getContent) ~= 'function' then
+		error("parameter #1 of function 'name' must be a string or a mw.title object", 2)
+	end
+	if title.namespace == 10 then
+		local text = title.text
+		local check = mw.title.new(text, 10)
+		-- Exclude the prefix, unless we have something like "Template:Category:Foo", which can't be abbreviated to "Category:Foo".
+		return check and mw.title.equals(title, check) and text or title.prefixedText
+	elseif title.namespace == 0 then
+		return ':' .. title.prefixedText
+	else
+		return title.prefixedText
+	end
+end
+------------------------------------------------------------------------
+--         Name:  p.invocation
+--      Purpose:  Construct a MediaWiki template invocation.
+--  Description:  This function makes a template invocation from the
+--                name and the arguments given. Note that it isn't
+--                perfect: we have no way of knowing what whitespace was
+--                in the original invocation, the named parameters will be
+--                alphabetically sorted, and any parameters with duplicate keys
+--                will be removed.
+--   Parameters:  name - the template name, formatted as it will appear
+--                    in the invocation. (string)
+--                args - a table of template arguments. (table)
+--                format - formatting options. (string, optional)
+--                    Set to "nowiki" to escape, curly braces, pipes and
+--                    equals signs with their HTML entities. The default
+--                    is unescaped.
+--      Returns:  String
+------------------------------------------------------------------------
+
+function p.invocation(name, args, format)
+	checkType('invocation', 1, name, 'string')
+	checkType('invocation', 2, args, 'table')
+	checkType('invocation', 3, format, 'string', true)
+
+	-- Validate the args table and make a copy to work from. We need to
+	-- make a copy of the table rather than just using the original, as
+	-- some of the values may be erased when building the invocation.
+	local invArgs = {}
+	for k, v in pairs(args) do
+		local typek = type(k)
+		local typev = type(v)
+		if typek ~= 'string' and typek ~= 'number'
+			or typev ~= 'string' and typev ~= 'number'
+		then
+			error("invalid arguments table in parameter #2 of " ..
+			"'invocation' (keys and values must be strings or numbers)", 2)
+		end
+		invArgs[k] = v
+	end
+
+	-- Get the separators to use.
+	local seps = {
+		openb = '{{',
+		closeb = '}}',
+		pipe = '|',
+		equals = '='
+	}
+	if format == 'nowiki' then
+		for k, v in pairs(seps) do
+			seps[k] = mw.text.nowiki(v)
+		end
+	end
+
+	-- Build the invocation body with numbered args first, then named.
+	local ret = {}
+	ret[#ret + 1] = seps.openb
+	ret[#ret + 1] = name
+	for k, v in ipairs(invArgs) do
+		if type(v) == 'string' and v:find('=', 1, true) then
+			-- Likely something like 1=foo=bar which needs to be displayed as a named arg.
+		else
+			ret[#ret + 1] = seps.pipe
+			ret[#ret + 1] = v
+			invArgs[k] = nil -- Erase the key so that we don't add the value twice
+		end
+	end
+	local keys = {} -- sort parameter list; better than arbitrary order
+	for k, _ in pairs(invArgs) do
+		keys[#keys + 1] = k
+	end
+	table.sort(keys,
+		function (a, b)
+			-- Sort with keys of type number first, then string.
+			if type(a) == type(b) then
+				return a &lt; b
+			elseif type(a) == 'number' then
+				return true
+			end
+		end
+	)
+	
+	local maybeSpace = '' -- First named parameter should not be separated by a space
+	for _, v in ipairs(keys) do -- Add named args based on sorted parameter list
+		ret[#ret + 1] = maybeSpace .. seps.pipe
+		ret[#ret + 1] = tostring(v)
+		ret[#ret + 1] = seps.equals
+		ret[#ret + 1] = invArgs[v]
+		maybeSpace = ' '
+	end
+	ret[#ret + 1] = seps.closeb
+
+	return table.concat(ret)
+end
+
+return p</text>
+      <sha1>2md7jjxjwpjhfzpzbxftnmbmqvfpwv0</sha1>
+    </revision>
+    <revision>
+      <id>3412749</id>
+      <parentid>3412381</parentid>
+      <timestamp>2026-03-13T00:17:34Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <comment>Update name call to fix a few edge cases per request</comment>
+      <origin>3368429</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4798" sha1="2md7jjxjwpjhfzpzbxftnmbmqvfpwv0" xml:space="preserve">-- This module provides functions for making MediaWiki template invocations.
+
+local checkType = require('libraryUtil').checkType
+
+local p = {}
+
+------------------------------------------------------------------------
+--         Name:  p.name
+--      Purpose:  Find a template invocation name from a page name or a
+--                mw.title object.
+--  Description:  This function detects whether a string or a mw.title
+--                object has been passed in, and uses that to find a
+--                template name as it is used in template invocations.
+--   Parameters:  title - full page name or mw.title object for the
+--                template (string or mw.title object)
+--      Returns:  String
+------------------------------------------------------------------------
+
+function p.name(title)
+	if type(title) == 'string' then
+		title = mw.title.new(title)
+		if not title or #title.prefixedText == 0 or #title.interwiki &gt; 0 then
+			error("invalid title in parameter #1 of function 'name'", 2)
+		end
+	elseif type(title) ~= 'table' or type(title.getContent) ~= 'function' then
+		error("parameter #1 of function 'name' must be a string or a mw.title object", 2)
+	end
+	if title.namespace == 10 then
+		local text = title.text
+		local check = mw.title.new(text, 10)
+		-- Exclude the prefix, unless we have something like "Template:Category:Foo", which can't be abbreviated to "Category:Foo".
+		return check and mw.title.equals(title, check) and text or title.prefixedText
+	elseif title.namespace == 0 then
+		return ':' .. title.prefixedText
+	else
+		return title.prefixedText
+	end
+end
+------------------------------------------------------------------------
+--         Name:  p.invocation
+--      Purpose:  Construct a MediaWiki template invocation.
+--  Description:  This function makes a template invocation from the
+--                name and the arguments given. Note that it isn't
+--                perfect: we have no way of knowing what whitespace was
+--                in the original invocation, the named parameters will be
+--                alphabetically sorted, and any parameters with duplicate keys
+--                will be removed.
+--   Parameters:  name - the template name, formatted as it will appear
+--                    in the invocation. (string)
+--                args - a table of template arguments. (table)
+--                format - formatting options. (string, optional)
+--                    Set to "nowiki" to escape, curly braces, pipes and
+--                    equals signs with their HTML entities. The default
+--                    is unescaped.
+--      Returns:  String
+------------------------------------------------------------------------
+
+function p.invocation(name, args, format)
+	checkType('invocation', 1, name, 'string')
+	checkType('invocation', 2, args, 'table')
+	checkType('invocation', 3, format, 'string', true)
+
+	-- Validate the args table and make a copy to work from. We need to
+	-- make a copy of the table rather than just using the original, as
+	-- some of the values may be erased when building the invocation.
+	local invArgs = {}
+	for k, v in pairs(args) do
+		local typek = type(k)
+		local typev = type(v)
+		if typek ~= 'string' and typek ~= 'number'
+			or typev ~= 'string' and typev ~= 'number'
+		then
+			error("invalid arguments table in parameter #2 of " ..
+			"'invocation' (keys and values must be strings or numbers)", 2)
+		end
+		invArgs[k] = v
+	end
+
+	-- Get the separators to use.
+	local seps = {
+		openb = '{{',
+		closeb = '}}',
+		pipe = '|',
+		equals = '='
+	}
+	if format == 'nowiki' then
+		for k, v in pairs(seps) do
+			seps[k] = mw.text.nowiki(v)
+		end
+	end
+
+	-- Build the invocation body with numbered args first, then named.
+	local ret = {}
+	ret[#ret + 1] = seps.openb
+	ret[#ret + 1] = name
+	for k, v in ipairs(invArgs) do
+		if type(v) == 'string' and v:find('=', 1, true) then
+			-- Likely something like 1=foo=bar which needs to be displayed as a named arg.
+		else
+			ret[#ret + 1] = seps.pipe
+			ret[#ret + 1] = v
+			invArgs[k] = nil -- Erase the key so that we don't add the value twice
+		end
+	end
+	local keys = {} -- sort parameter list; better than arbitrary order
+	for k, _ in pairs(invArgs) do
+		keys[#keys + 1] = k
+	end
+	table.sort(keys,
+		function (a, b)
+			-- Sort with keys of type number first, then string.
+			if type(a) == type(b) then
+				return a &lt; b
+			elseif type(a) == 'number' then
+				return true
+			end
+		end
+	)
+	
+	local maybeSpace = '' -- First named parameter should not be separated by a space
+	for _, v in ipairs(keys) do -- Add named args based on sorted parameter list
+		ret[#ret + 1] = maybeSpace .. seps.pipe
+		ret[#ret + 1] = tostring(v)
+		ret[#ret + 1] = seps.equals
+		ret[#ret + 1] = invArgs[v]
+		maybeSpace = ' '
+	end
+	ret[#ret + 1] = seps.closeb
+
+	return table.concat(ret)
+end
+
+return p</text>
+      <sha1>2md7jjxjwpjhfzpzbxftnmbmqvfpwv0</sha1>
+    </revision>
+    <revision>
+      <id>3412750</id>
+      <parentid>3412749</parentid>
+      <timestamp>2026-03-13T00:17:34Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3368429</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4798" sha1="2md7jjxjwpjhfzpzbxftnmbmqvfpwv0" xml:space="preserve">-- This module provides functions for making MediaWiki template invocations.
+
+local checkType = require('libraryUtil').checkType
+
+local p = {}
+
+------------------------------------------------------------------------
+--         Name:  p.name
+--      Purpose:  Find a template invocation name from a page name or a
+--                mw.title object.
+--  Description:  This function detects whether a string or a mw.title
+--                object has been passed in, and uses that to find a
+--                template name as it is used in template invocations.
+--   Parameters:  title - full page name or mw.title object for the
+--                template (string or mw.title object)
+--      Returns:  String
+------------------------------------------------------------------------
+
+function p.name(title)
+	if type(title) == 'string' then
+		title = mw.title.new(title)
+		if not title or #title.prefixedText == 0 or #title.interwiki &gt; 0 then
+			error("invalid title in parameter #1 of function 'name'", 2)
+		end
+	elseif type(title) ~= 'table' or type(title.getContent) ~= 'function' then
+		error("parameter #1 of function 'name' must be a string or a mw.title object", 2)
+	end
+	if title.namespace == 10 then
+		local text = title.text
+		local check = mw.title.new(text, 10)
+		-- Exclude the prefix, unless we have something like "Template:Category:Foo", which can't be abbreviated to "Category:Foo".
+		return check and mw.title.equals(title, check) and text or title.prefixedText
+	elseif title.namespace == 0 then
+		return ':' .. title.prefixedText
+	else
+		return title.prefixedText
+	end
+end
+------------------------------------------------------------------------
+--         Name:  p.invocation
+--      Purpose:  Construct a MediaWiki template invocation.
+--  Description:  This function makes a template invocation from the
+--                name and the arguments given. Note that it isn't
+--                perfect: we have no way of knowing what whitespace was
+--                in the original invocation, the named parameters will be
+--                alphabetically sorted, and any parameters with duplicate keys
+--                will be removed.
+--   Parameters:  name - the template name, formatted as it will appear
+--                    in the invocation. (string)
+--                args - a table of template arguments. (table)
+--                format - formatting options. (string, optional)
+--                    Set to "nowiki" to escape, curly braces, pipes and
+--                    equals signs with their HTML entities. The default
+--                    is unescaped.
+--      Returns:  String
+------------------------------------------------------------------------
+
+function p.invocation(name, args, format)
+	checkType('invocation', 1, name, 'string')
+	checkType('invocation', 2, args, 'table')
+	checkType('invocation', 3, format, 'string', true)
+
+	-- Validate the args table and make a copy to work from. We need to
+	-- make a copy of the table rather than just using the original, as
+	-- some of the values may be erased when building the invocation.
+	local invArgs = {}
+	for k, v in pairs(args) do
+		local typek = type(k)
+		local typev = type(v)
+		if typek ~= 'string' and typek ~= 'number'
+			or typev ~= 'string' and typev ~= 'number'
+		then
+			error("invalid arguments table in parameter #2 of " ..
+			"'invocation' (keys and values must be strings or numbers)", 2)
+		end
+		invArgs[k] = v
+	end
+
+	-- Get the separators to use.
+	local seps = {
+		openb = '{{',
+		closeb = '}}',
+		pipe = '|',
+		equals = '='
+	}
+	if format == 'nowiki' then
+		for k, v in pairs(seps) do
+			seps[k] = mw.text.nowiki(v)
+		end
+	end
+
+	-- Build the invocation body with numbered args first, then named.
+	local ret = {}
+	ret[#ret + 1] = seps.openb
+	ret[#ret + 1] = name
+	for k, v in ipairs(invArgs) do
+		if type(v) == 'string' and v:find('=', 1, true) then
+			-- Likely something like 1=foo=bar which needs to be displayed as a named arg.
+		else
+			ret[#ret + 1] = seps.pipe
+			ret[#ret + 1] = v
+			invArgs[k] = nil -- Erase the key so that we don't add the value twice
+		end
+	end
+	local keys = {} -- sort parameter list; better than arbitrary order
+	for k, _ in pairs(invArgs) do
+		keys[#keys + 1] = k
+	end
+	table.sort(keys,
+		function (a, b)
+			-- Sort with keys of type number first, then string.
+			if type(a) == type(b) then
+				return a &lt; b
+			elseif type(a) == 'number' then
+				return true
+			end
+		end
+	)
+	
+	local maybeSpace = '' -- First named parameter should not be separated by a space
+	for _, v in ipairs(keys) do -- Add named args based on sorted parameter list
+		ret[#ret + 1] = maybeSpace .. seps.pipe
+		ret[#ret + 1] = tostring(v)
+		ret[#ret + 1] = seps.equals
+		ret[#ret + 1] = invArgs[v]
+		maybeSpace = ' '
+	end
+	ret[#ret + 1] = seps.closeb
+
+	return table.concat(ret)
+end
+
+return p</text>
+      <sha1>2md7jjxjwpjhfzpzbxftnmbmqvfpwv0</sha1>
+    </revision>
+  </page>
+</mediawiki>

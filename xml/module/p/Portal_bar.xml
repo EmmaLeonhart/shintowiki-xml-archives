@@ -1,0 +1,458 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Portal bar</title>
+    <ns>828</ns>
+    <id>623</id>
+    <revision>
+      <id>513953</id>
+      <timestamp>2024-05-22T22:00:26Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Hike395</username>
+        <id>0</id>
+      </contributor>
+      <comment>better implementation of nbsp</comment>
+      <origin>513953</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2829" sha1="n9t3v7g125fo0dprrdmvkb65kuqo7u5" xml:space="preserve">-- This module implements {{portal bar}}.
+
+require('strict')
+
+-- determine whether we're being called from a sandbox
+local isSandbox = mw.getCurrentFrame():getTitle():find('sandbox', 1, true)
+local sandbox = isSandbox and '/sandbox' or ''
+
+local portalModule = require('Module:Portal'..sandbox)
+local getImageName = portalModule._image
+local checkPortals = portalModule._checkPortals
+local processPortalArgs = portalModule._processPortalArgs
+local yesno = require( 'Module:Yesno' )
+local getArgs = require('Module:Arguments').getArgs
+local p = {}
+
+local function sandboxVersion(s)
+	return isSandbox and s.."-sand" or s
+end
+
+-- Builds the portal bar used by {{portal bar}}.
+function p._main( portals, args )
+	
+	-- check for sensible args
+	args = type(args) == "table" and args or {}
+	
+	-- Normalize arguments
+	for key, default in pairs({border=true,redlinks=false,tracking=true}) do
+		if args[key] == nil then args[key] = default end
+		args[key] = yesno(args[key], default)
+	end
+
+	local nav = mw.html.create( 'div' )
+		:addClass(sandboxVersion('portal-bar'))
+		:addClass( 'noprint metadata noviewer' )
+		:attr( 'role', 'navigation' )
+		:attr( 'aria-label' , 'Portals' )
+		:addClass(sandboxVersion(args.border and 'portal-bar-bordered' or 'portal-bar-unbordered'))
+	
+	local trackingCat = ''
+	-- Allow any number of portals
+	args.minPortals = 0
+	args.maxPortals = -1
+	-- Check to see whether there are redlinks, filter out unless args.redlink is true
+	portals, trackingCat = checkPortals(portals, args)
+	nav:wikitext(trackingCat)
+	if #portals == 0 then
+		return trackingCat
+	end
+
+	local related = yesno(args.related)
+	if related then
+		nav:addClass(sandboxVersion('portal-bar-related'))
+	else
+		local header = nav:tag('span')
+		header:addClass(sandboxVersion('portal-bar-header'))
+		header:wikitext('[[Wikipedia:Contents/Portals|Portal]]')
+		if #portals &gt; 1 then
+			header:wikitext('s')
+		end
+		header:wikitext(':')
+	end
+	local container = nav:tag('ul')
+	container:addClass(sandboxVersion('portal-bar-content'))
+	if related then
+		container:addClass(sandboxVersion('portal-bar-content-related'))
+	end
+	local size = related and '27x25px' or '21x19px'
+	for _, portal in ipairs( portals ) do
+		container
+			:tag( 'li' )
+			:addClass(sandboxVersion('portal-bar-item'))
+			:wikitext( string.format('&lt;span class="nowrap"&gt;[[File:%s|%s]] &lt;/span&gt;[[Portal:%s|%s]]',
+					getImageName(portal,true), size, portal, portal))
+	end
+	
+	local styleFile = 'Module:Portal bar'..sandbox..'/styles.css'
+	return mw.getCurrentFrame():extensionTag{
+		name = 'templatestyles', args = { src = styleFile }
+	} .. tostring( nav ) 
+end
+
+-- Processes external arguments and sends them to the other functions.
+function p.main( frame )
+	local origArgs = getArgs(frame)
+	local portals, args = processPortalArgs(origArgs)
+	return p._main( portals, args )
+end
+
+return p</text>
+      <sha1>n9t3v7g125fo0dprrdmvkb65kuqo7u5</sha1>
+    </revision>
+    <revision>
+      <id>624</id>
+      <timestamp>2024-06-28T09:39:34Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported from [[:wikipedia:Module:Portal_bar]]</comment>
+      <origin>624</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2829" sha1="n9t3v7g125fo0dprrdmvkb65kuqo7u5" xml:space="preserve">-- This module implements {{portal bar}}.
+
+require('strict')
+
+-- determine whether we're being called from a sandbox
+local isSandbox = mw.getCurrentFrame():getTitle():find('sandbox', 1, true)
+local sandbox = isSandbox and '/sandbox' or ''
+
+local portalModule = require('Module:Portal'..sandbox)
+local getImageName = portalModule._image
+local checkPortals = portalModule._checkPortals
+local processPortalArgs = portalModule._processPortalArgs
+local yesno = require( 'Module:Yesno' )
+local getArgs = require('Module:Arguments').getArgs
+local p = {}
+
+local function sandboxVersion(s)
+	return isSandbox and s.."-sand" or s
+end
+
+-- Builds the portal bar used by {{portal bar}}.
+function p._main( portals, args )
+	
+	-- check for sensible args
+	args = type(args) == "table" and args or {}
+	
+	-- Normalize arguments
+	for key, default in pairs({border=true,redlinks=false,tracking=true}) do
+		if args[key] == nil then args[key] = default end
+		args[key] = yesno(args[key], default)
+	end
+
+	local nav = mw.html.create( 'div' )
+		:addClass(sandboxVersion('portal-bar'))
+		:addClass( 'noprint metadata noviewer' )
+		:attr( 'role', 'navigation' )
+		:attr( 'aria-label' , 'Portals' )
+		:addClass(sandboxVersion(args.border and 'portal-bar-bordered' or 'portal-bar-unbordered'))
+	
+	local trackingCat = ''
+	-- Allow any number of portals
+	args.minPortals = 0
+	args.maxPortals = -1
+	-- Check to see whether there are redlinks, filter out unless args.redlink is true
+	portals, trackingCat = checkPortals(portals, args)
+	nav:wikitext(trackingCat)
+	if #portals == 0 then
+		return trackingCat
+	end
+
+	local related = yesno(args.related)
+	if related then
+		nav:addClass(sandboxVersion('portal-bar-related'))
+	else
+		local header = nav:tag('span')
+		header:addClass(sandboxVersion('portal-bar-header'))
+		header:wikitext('[[Wikipedia:Contents/Portals|Portal]]')
+		if #portals &gt; 1 then
+			header:wikitext('s')
+		end
+		header:wikitext(':')
+	end
+	local container = nav:tag('ul')
+	container:addClass(sandboxVersion('portal-bar-content'))
+	if related then
+		container:addClass(sandboxVersion('portal-bar-content-related'))
+	end
+	local size = related and '27x25px' or '21x19px'
+	for _, portal in ipairs( portals ) do
+		container
+			:tag( 'li' )
+			:addClass(sandboxVersion('portal-bar-item'))
+			:wikitext( string.format('&lt;span class="nowrap"&gt;[[File:%s|%s]] &lt;/span&gt;[[Portal:%s|%s]]',
+					getImageName(portal,true), size, portal, portal))
+	end
+	
+	local styleFile = 'Module:Portal bar'..sandbox..'/styles.css'
+	return mw.getCurrentFrame():extensionTag{
+		name = 'templatestyles', args = { src = styleFile }
+	} .. tostring( nav ) 
+end
+
+-- Processes external arguments and sends them to the other functions.
+function p.main( frame )
+	local origArgs = getArgs(frame)
+	local portals, args = processPortalArgs(origArgs)
+	return p._main( portals, args )
+end
+
+return p</text>
+      <sha1>n9t3v7g125fo0dprrdmvkb65kuqo7u5</sha1>
+    </revision>
+    <revision>
+      <id>3407600</id>
+      <parentid>624</parentid>
+      <timestamp>2026-03-12T20:23:09Z</timestamp>
+      <contributor>
+        <username>en&gt;Hike395</username>
+        <id>0</id>
+      </contributor>
+      <comment>make "related" aspect ratio match other portal icons</comment>
+      <origin>3407600</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2829" sha1="c7p57p1u4f7i16ztm0ndswnq2g77epa" xml:space="preserve">-- This module implements {{portal bar}}.
+
+require('strict')
+
+-- determine whether we're being called from a sandbox
+local isSandbox = mw.getCurrentFrame():getTitle():find('sandbox', 1, true)
+local sandbox = isSandbox and '/sandbox' or ''
+
+local portalModule = require('Module:Portal'..sandbox)
+local getImageName = portalModule._image
+local checkPortals = portalModule._checkPortals
+local processPortalArgs = portalModule._processPortalArgs
+local yesno = require( 'Module:Yesno' )
+local getArgs = require('Module:Arguments').getArgs
+local p = {}
+
+local function sandboxVersion(s)
+	return isSandbox and s.."-sand" or s
+end
+
+-- Builds the portal bar used by {{portal bar}}.
+function p._main( portals, args )
+	
+	-- check for sensible args
+	args = type(args) == "table" and args or {}
+	
+	-- Normalize arguments
+	for key, default in pairs({border=true,redlinks=false,tracking=true}) do
+		if args[key] == nil then args[key] = default end
+		args[key] = yesno(args[key], default)
+	end
+
+	local nav = mw.html.create( 'div' )
+		:addClass(sandboxVersion('portal-bar'))
+		:addClass( 'noprint metadata noviewer' )
+		:attr( 'role', 'navigation' )
+		:attr( 'aria-label' , 'Portals' )
+		:addClass(sandboxVersion(args.border and 'portal-bar-bordered' or 'portal-bar-unbordered'))
+	
+	local trackingCat = ''
+	-- Allow any number of portals
+	args.minPortals = 0
+	args.maxPortals = -1
+	-- Check to see whether there are redlinks, filter out unless args.redlink is true
+	portals, trackingCat = checkPortals(portals, args)
+	nav:wikitext(trackingCat)
+	if #portals == 0 then
+		return trackingCat
+	end
+
+	local related = yesno(args.related)
+	if related then
+		nav:addClass(sandboxVersion('portal-bar-related'))
+	else
+		local header = nav:tag('span')
+		header:addClass(sandboxVersion('portal-bar-header'))
+		header:wikitext('[[Wikipedia:Contents/Portals|Portal]]')
+		if #portals &gt; 1 then
+			header:wikitext('s')
+		end
+		header:wikitext(':')
+	end
+	local container = nav:tag('ul')
+	container:addClass(sandboxVersion('portal-bar-content'))
+	if related then
+		container:addClass(sandboxVersion('portal-bar-content-related'))
+	end
+	local size = related and '28x24px' or '21x19px'
+	for _, portal in ipairs( portals ) do
+		container
+			:tag( 'li' )
+			:addClass(sandboxVersion('portal-bar-item'))
+			:wikitext( string.format('&lt;span class="nowrap"&gt;[[File:%s|%s]] &lt;/span&gt;[[Portal:%s|%s]]',
+					getImageName(portal,true), size, portal, portal))
+	end
+	
+	local styleFile = 'Module:Portal bar'..sandbox..'/styles.css'
+	return mw.getCurrentFrame():extensionTag{
+		name = 'templatestyles', args = { src = styleFile }
+	} .. tostring( nav ) 
+end
+
+-- Processes external arguments and sends them to the other functions.
+function p.main( frame )
+	local origArgs = getArgs(frame)
+	local portals, args = processPortalArgs(origArgs)
+	return p._main( portals, args )
+end
+
+return p</text>
+      <sha1>c7p57p1u4f7i16ztm0ndswnq2g77epa</sha1>
+    </revision>
+    <revision>
+      <id>3407601</id>
+      <parentid>3407600</parentid>
+      <timestamp>2026-03-12T20:23:09Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3407600</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2829" sha1="c7p57p1u4f7i16ztm0ndswnq2g77epa" xml:space="preserve">-- This module implements {{portal bar}}.
+
+require('strict')
+
+-- determine whether we're being called from a sandbox
+local isSandbox = mw.getCurrentFrame():getTitle():find('sandbox', 1, true)
+local sandbox = isSandbox and '/sandbox' or ''
+
+local portalModule = require('Module:Portal'..sandbox)
+local getImageName = portalModule._image
+local checkPortals = portalModule._checkPortals
+local processPortalArgs = portalModule._processPortalArgs
+local yesno = require( 'Module:Yesno' )
+local getArgs = require('Module:Arguments').getArgs
+local p = {}
+
+local function sandboxVersion(s)
+	return isSandbox and s.."-sand" or s
+end
+
+-- Builds the portal bar used by {{portal bar}}.
+function p._main( portals, args )
+	
+	-- check for sensible args
+	args = type(args) == "table" and args or {}
+	
+	-- Normalize arguments
+	for key, default in pairs({border=true,redlinks=false,tracking=true}) do
+		if args[key] == nil then args[key] = default end
+		args[key] = yesno(args[key], default)
+	end
+
+	local nav = mw.html.create( 'div' )
+		:addClass(sandboxVersion('portal-bar'))
+		:addClass( 'noprint metadata noviewer' )
+		:attr( 'role', 'navigation' )
+		:attr( 'aria-label' , 'Portals' )
+		:addClass(sandboxVersion(args.border and 'portal-bar-bordered' or 'portal-bar-unbordered'))
+	
+	local trackingCat = ''
+	-- Allow any number of portals
+	args.minPortals = 0
+	args.maxPortals = -1
+	-- Check to see whether there are redlinks, filter out unless args.redlink is true
+	portals, trackingCat = checkPortals(portals, args)
+	nav:wikitext(trackingCat)
+	if #portals == 0 then
+		return trackingCat
+	end
+
+	local related = yesno(args.related)
+	if related then
+		nav:addClass(sandboxVersion('portal-bar-related'))
+	else
+		local header = nav:tag('span')
+		header:addClass(sandboxVersion('portal-bar-header'))
+		header:wikitext('[[Wikipedia:Contents/Portals|Portal]]')
+		if #portals &gt; 1 then
+			header:wikitext('s')
+		end
+		header:wikitext(':')
+	end
+	local container = nav:tag('ul')
+	container:addClass(sandboxVersion('portal-bar-content'))
+	if related then
+		container:addClass(sandboxVersion('portal-bar-content-related'))
+	end
+	local size = related and '28x24px' or '21x19px'
+	for _, portal in ipairs( portals ) do
+		container
+			:tag( 'li' )
+			:addClass(sandboxVersion('portal-bar-item'))
+			:wikitext( string.format('&lt;span class="nowrap"&gt;[[File:%s|%s]] &lt;/span&gt;[[Portal:%s|%s]]',
+					getImageName(portal,true), size, portal, portal))
+	end
+	
+	local styleFile = 'Module:Portal bar'..sandbox..'/styles.css'
+	return mw.getCurrentFrame():extensionTag{
+		name = 'templatestyles', args = { src = styleFile }
+	} .. tostring( nav ) 
+end
+
+-- Processes external arguments and sends them to the other functions.
+function p.main( frame )
+	local origArgs = getArgs(frame)
+	local portals, args = processPortalArgs(origArgs)
+	return p._main( portals, args )
+end
+
+return p</text>
+      <sha1>c7p57p1u4f7i16ztm0ndswnq2g77epa</sha1>
+    </revision>
+  </page>
+</mediawiki>

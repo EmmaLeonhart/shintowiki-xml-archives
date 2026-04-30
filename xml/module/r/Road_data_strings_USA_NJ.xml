@@ -1,0 +1,721 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Road data/strings/USA/NJ</title>
+    <ns>828</ns>
+    <id>17339</id>
+    <revision>
+      <id>1165250</id>
+      <timestamp>2025-04-25T22:09:38Z</timestamp>
+      <contributor>
+        <username>Fredddie</username>
+        <id>52</id>
+      </contributor>
+      <comment>heh</comment>
+      <origin>1165250</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="10311" sha1="2qkwbai36sduiroz9cxycvfzdpcow20" xml:space="preserve">--[==[
+To inspect the content of this data module, use [[Special:ExpandTemplates]]
+and enter the following input text:
+  {{#invoke:Road data/dump|dump|module=Module:&lt;name-of-this-module&gt;}}
+
+To inspect the content of this data module when editing, enter the following
+into the Debug console:
+  local util = require("Module:Road data/util")
+  print(util.arrayToString(p))
+To inspect a particular route type, change `p` above to include the route type,
+e.g., `p.I` and `p["US-Hist"]`.
+]==]
+
+-- New Jersey
+local NJ = require("Module:Road data/strings/USA")
+
+local util = require("Module:Road data/util")
+local format = mw.ustring.format
+
+local suffix = " ([dab||%dab%, |]New Jersey)"
+local suffix2 = " [dab||(%dab%)|]"
+local maint = "[[New Jersey Department of Transportation|NJDOT]]"
+
+NJ.I.link = {["87"] = "Interstate 87 (New York)",
+        	    ["276"] = "Interstate 276",
+         default = {hook = "split",
+       split = 100,
+       above = "Interstate %route% (New Jersey)",
+       below = "Interstate %route% in New Jersey"}}
+
+for k, v in pairs(NJ) do if k:find ("^I") then 
+	v.link = NJ.I.link
+	end
+end
+
+NJ["I-Alt"].banner = "Alt plate blue.svg"
+
+NJ.US.shield = {
+	["1/9"] = "US 1-9.svg",
+	["1-9"] = "US 1-9.svg",
+	default = "US %route%.svg"
+}
+NJ.US.link = {
+	["1/9"] = "U.S. Route 1/9",
+	["1-9"] = "U.S. Route 1/9",
+	default = "U.S. Route %route% in New Jersey"
+}
+         
+for _,auxType in ipairs({"Alt", "Bus", "Byp", "City", "Conn", "Emerg", "Opt", "Scenic", "Spur", "Temp", "Toll", "Truck"}) do
+	local spec = NJ[" aux "][auxType]
+		for k, v in pairs(NJ) do if k:find (auxType) then if k:find ("^US") then
+			v.shield = NJ.US.shield
+			v.link = NJ.US.base .. " " .. spec.name .. suffix
+			end
+		end
+	end
+end
+
+for k, v in pairs(NJ) do if k:find ("^US %d") then 
+	v.link = NJ.US.link
+	end
+end
+
+for _,year in ipairs({"1926", "1948", "1961"}) do
+	for _,auxType in ipairs({"Alt", "Bus", "Byp", "City", "Conn", "Emerg", "Opt", "Scenic", "Spur", "Temp", "Toll", "Truck"}) do
+		local spec = NJ[" aux "][auxType]
+		NJ["US " .. year .. "-" .. auxType] = {
+		    shield = NJ["US " .. year].shield,
+		    shieldmain = NJ["US " .. year].shieldmain,
+		    base = NJ["US-" .. auxType].base,
+		    name = NJ["US-" .. auxType].name,
+		    link = NJ["US-" .. auxType].link,
+		    abbr = NJ["US-" .. auxType].abbr,
+		    banner = format("%s plate %s.svg", spec.banneralt, year),
+		    width = "square",
+		}
+	end
+end
+    
+NJ.SR = {
+	shield = {
+		hook = "between",
+		lower = 20,
+		upper = 100,
+		yes = "Elongated circle %route%.svg",
+		no = "Ellipse sign %route%.svg"
+		},
+	base = "New Jersey Route %route%",
+	name = "Route %route%",
+	link = "New Jersey Route %route% [dab||(%dab%)|]",
+	abbr = "Route&amp;nbsp;%route%",
+	width = "expand"
+}
+NJ.NJ = NJ.SR
+NJ.Route = NJ.SR
+
+for _,type in ipairs({'SR', 'NJ', 'Route'}) do
+	for _,auxType in ipairs({"Alt", "Bus", "Byp"}) do
+		local spec = NJ[" aux "][auxType]
+		NJ[type .. "-" .. auxType] = {
+		    shield = NJ.SR.shield,
+		    name = NJ.SR.name .. " " .. spec.name,
+		    link = NJ.SR.base .. " " .. spec.name .. suffix2,
+		    abbr = NJ.SR.abbr .. " " .. spec.abbrsuffix,
+		    banner = spec.banneralt .. " plate.svg",
+		    aux = spec.aux,
+		    width = "expand"
+		}
+	end
+end 
+
+NJ["SR 1956"] = {
+	shield = "NJ %route% (1956).svg",
+	bannersuffix = "green"
+}
+NJ["NJ 1956"] =  NJ["SR 1956"]  
+
+NJ["SR 1926"] = {	
+	shield = "NJ %route% (1926).svg",
+	bannersuffix = "1926"
+}
+NJ["NJ 1926"] = NJ["SR 1926"]
+NJ["NJ-old"] = NJ["SR 1926"]
+NJ["SR-old"] = NJ["SR 1926"]
+
+for k, v in pairs(NJ) do if k:find ("^SR %d") then 
+	v.name = NJ.SR.name
+	v.link = NJ.SR.link
+	v.abbr = NJ.SR.abbr
+	end
+end
+
+NJ["SRS 1926"] = {
+	shield = "NJ S%route% (1926).svg", --workaround because the Route Snn routes throw an error
+	name = "Route S%route%",
+	link = "New Jersey Route S%route% [dab||(%dab%)|]",
+	abbr = "Route&amp;nbsp;S%route%"
+	
+}
+
+NJ["NJS 1926"] = NJ["SRS 1926"]
+
+NJ.Byway = {
+	shield = "",
+	name = "%route%",
+	link = "List of New Jersey Scenic Byways#%route%",
+	abbr = "%route%",
+	color = "hist"
+	
+}
+
+-- add new types above this line if you want it to have the state highway browse and maint
+for k, v in pairs(NJ) do if k:find ("^%a") then
+	v.maint = "[[New Jersey Department of Transportation|NJDOT]]"
+	v.browse = "[[State highways in New Jersey|New Jersey State Highway Routes]]"
+	v.browselinks = {
+		[1] = "[[List of Interstate Highways in New Jersey|Interstate]]",
+		[2] = "[[List of U.S. Routes in New Jersey|US]]",
+		[3] = "[[List of state highways in New Jersey|State]]",
+		[4] = "[[New Jersey Scenic Byways|Scenic Byways]]"
+	}
+	end
+end
+
+NJ.NJTP = {
+	shield = "New Jersey Turnpike Shield.svg",
+    name = "New Jersey Turnpike",
+    link = "New Jersey Turnpike",
+    abbr = "N.J. Turnpike",
+    bannersuffix = "green",
+    maint = "[[New Jersey Turnpike Authority|NJTA]]"
+	
+}
+
+NJ.NBEX = {
+	shield = "New Jersey Turnpike Shield.svg",
+    name = "Newark Bay Extension",
+    link = "Interstate 78 in New Jersey",
+    abbr = "Newark Bay Extension",
+	bannersuffix = "green",
+    maint = NJ.NJTP.maint
+	
+}
+
+NJ.PAEX = {
+	shield = "New Jersey Turnpike Shield.svg",
+    name = "Pearl Harbor Extension",
+    link = "Pearl Harbor Memorial Turnpike Extension",
+    abbr = "Pearl Harbor Extension",
+	bannersuffix = "green",
+    maint = NJ.NJTP.maint
+	
+}
+
+NJ.GSP = {
+	shield = "GSPkwy Shield.svg",
+    name = "Garden State Parkway",
+    link = "Garden State Parkway",
+    abbr = "G.S. Parkway",
+    bannersuffix = "GSP",
+    maint = NJ.NJTP.maint
+	
+}
+
+NJ.ACE = {
+	shield = "Atlantic City Expressway.svg",
+    name = "Atlantic City Expressway",
+    link = "Atlantic City Expressway",
+    abbr = "A.C. Expressway",
+    bannersuffix = "blue",
+    maint = "[[South Jersey Transportation Authority|SJTA]]"
+	
+}
+
+for _,type in ipairs({"NJTP", "NBEX", "PAEX", "GSP", "ACE"}) do
+	NJ[type .. "2"] = {
+	    shield = NJ[type].shield,
+	    name = NJ[type].name,
+	    link = NJ[type].link,
+	    abbr = NJ[type].abbr,
+    	bannersuffix = NJ[type].bannersuffix,
+	    banner = "Toll plate yellow.svg",
+	    maint = NJ[type].maint
+	    
+	}
+end
+
+NJ.ACBC = {shield = "Atlantic City Expy Connector.svg",
+    name = "Atlantic City–Brigantine Connector",
+    link = "Atlantic City–Brigantine Connector",
+    abbr = "A.C.–Brigantine Connector",
+    bannersuffix = "blue",
+    maint = NJ.ACE.maint
+	
+}
+
+NJ.PIP = {
+	shield = "Palisades Interstate Pkwy.svg",
+	name = "Palisades Interstate Parkway",
+	link = "Palisades Interstate Parkway",
+	abbr = "Palisades Parkway",
+	bannersuffix = "brown",
+	color = "hist",
+	maint = "[[Palisades Interstate Park Commission]]"
+	
+}
+
+NJ.OD = {shield = "Ocean Drive NJ.svg",
+         name = "Ocean Drive",
+         link = "Ocean Drive (New Jersey)",
+         abbr = "Ocean Drive"
+}
+
+local countybrowse = {
+	arg = "county",
+	default = "County routes in New Jersey",
+	Atlantic = "[[List of county routes in Atlantic County, New Jersey|County routes in Atlantic County]]",
+	Bergen = "[[List of county routes in Bergen County, New Jersey|County routes in Bergen County]]",
+	Burlington = "[[List of county routes in Burlington County, New Jersey|County routes in Burlington County]]",
+	Camden = "[[List of county routes in Camden County, New Jersey|County routes in Camden County]]",
+	["Cape May"] = "[[List of county routes in Cape May County, New Jersey|County routes in Cape May County]]",
+	Cumberland = "[[List of county routes in Cumberland County, New Jersey|County routes in Cumberland County]]",
+	Essex = "[[List of county routes in Essex County, New Jersey|County routes in Essex County]]",
+	Gloucester = "[[List of county routes in Gloucester County, New Jersey|County routes in Gloucester County]]",
+	Hudson = "[[List of county routes in Hudson County, New Jersey|County routes in Hudson County]]",
+	Hunterdon = "[[List of county routes in Hunterdon County, New Jersey|County routes in Hunterdon County]]",
+	Mercer = "[[List of county routes in Mercer County, New Jersey|County routes in Mercer County]]",
+	Middlesex = "[[List of county routes in Middlesex County, New Jersey|County routes in Middlesex County]]",
+	Monmouth = "[[List of county routes in Monmouth County, New Jersey|County routes in Monmouth County]]",
+	Morris = "[[List of county routes in Morris County, New Jersey|County routes in Morris County]]",
+	Ocean = "[[List of county routes in Ocean County, New Jersey|County routes in Ocean County]]",
+	Passaic = "[[List of county routes in Passaic County, New Jersey|County routes in Passaic County]]",
+	Salem = "[[List of county routes in Salem County, New Jersey|County routes in Salem County]]",
+	Somerset = "[[List of county routes in Somerset County, New Jersey|County routes in Somerset County]]",
+	Sussex = "[[List of county routes in Sussex County, New Jersey|County routes in Sussex County]]",
+	Union = "[[List of county routes in Union County, New Jersey|County routes in Union County]]",
+	Warren = "[[List of county routes in Warren County, New Jersey|County routes in Warren County]]",
+}
+
+NJ.CR = {
+	shield = "[county|Bergen|Bergen County %route% NJ.svg|CR %route% jct.svg]",
+	shieldmain = {
+		default = "[county||%county% |]County %route%.svg",
+		arg = "county",
+		Bergen = "Bergen County %route% NJ.svg"
+		},
+	name = "County Route %route%",
+	link = {
+		hook = "between",
+		lower = 500,
+		upper = 600,
+		yes = "County Route %route% (New Jersey)",
+		no = "County Route %route% (%county% County, New Jersey)"
+	},
+	abbr = "CR %route%",
+	maint = "none",
+	browse = countybrowse,
+	browselinks = {
+		[1] = "[[County routes in New Jersey|System]]",
+		[2] = "[[List of 500-series county routes in New Jersey|500-series routes]]"
+	}
+}
+
+for _,type in ipairs({'CR'}) do
+	for _,auxType in ipairs({"Alt", "Byp", "Spur", "Truck"}) do
+		local spec = NJ[" aux "][auxType]
+		NJ["CR-" .. auxType] = {
+		    shield = NJ.CR.shield,
+		    shieldmain = NJ.CR.shieldmain,
+		    name = NJ.CR.name .. " " .. spec.name,
+		    link = NJ.CR.name .. " " .. spec.name ..  " ([county||%county% County, |]New Jersey)",
+		    abbr = NJ.CR.abbr .. " " .. spec.abbrsuffix,
+		    banner = spec.banneralt .. " plate county.svg",
+		    aux = spec.aux,
+		    width = "square",
+		    bannersuffix = "county",
+		    browse = NJ.CR.browse,
+		    browselinks = NJ.CR.browselinks,
+		}
+	end
+end
+
+NJ.PA = {alias = {module = "USA/PA", type = "PA"}}
+NJ.NY = {alias = {module = "USA/NY", type = "NY"}}
+
+return NJ</text>
+      <sha1>2qkwbai36sduiroz9cxycvfzdpcow20</sha1>
+    </revision>
+    <revision>
+      <id>17340</id>
+      <timestamp>2025-04-25T22:09:39Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: fixing this template</comment>
+      <origin>17340</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="10311" sha1="2qkwbai36sduiroz9cxycvfzdpcow20" xml:space="preserve">--[==[
+To inspect the content of this data module, use [[Special:ExpandTemplates]]
+and enter the following input text:
+  {{#invoke:Road data/dump|dump|module=Module:&lt;name-of-this-module&gt;}}
+
+To inspect the content of this data module when editing, enter the following
+into the Debug console:
+  local util = require("Module:Road data/util")
+  print(util.arrayToString(p))
+To inspect a particular route type, change `p` above to include the route type,
+e.g., `p.I` and `p["US-Hist"]`.
+]==]
+
+-- New Jersey
+local NJ = require("Module:Road data/strings/USA")
+
+local util = require("Module:Road data/util")
+local format = mw.ustring.format
+
+local suffix = " ([dab||%dab%, |]New Jersey)"
+local suffix2 = " [dab||(%dab%)|]"
+local maint = "[[New Jersey Department of Transportation|NJDOT]]"
+
+NJ.I.link = {["87"] = "Interstate 87 (New York)",
+        	    ["276"] = "Interstate 276",
+         default = {hook = "split",
+       split = 100,
+       above = "Interstate %route% (New Jersey)",
+       below = "Interstate %route% in New Jersey"}}
+
+for k, v in pairs(NJ) do if k:find ("^I") then 
+	v.link = NJ.I.link
+	end
+end
+
+NJ["I-Alt"].banner = "Alt plate blue.svg"
+
+NJ.US.shield = {
+	["1/9"] = "US 1-9.svg",
+	["1-9"] = "US 1-9.svg",
+	default = "US %route%.svg"
+}
+NJ.US.link = {
+	["1/9"] = "U.S. Route 1/9",
+	["1-9"] = "U.S. Route 1/9",
+	default = "U.S. Route %route% in New Jersey"
+}
+         
+for _,auxType in ipairs({"Alt", "Bus", "Byp", "City", "Conn", "Emerg", "Opt", "Scenic", "Spur", "Temp", "Toll", "Truck"}) do
+	local spec = NJ[" aux "][auxType]
+		for k, v in pairs(NJ) do if k:find (auxType) then if k:find ("^US") then
+			v.shield = NJ.US.shield
+			v.link = NJ.US.base .. " " .. spec.name .. suffix
+			end
+		end
+	end
+end
+
+for k, v in pairs(NJ) do if k:find ("^US %d") then 
+	v.link = NJ.US.link
+	end
+end
+
+for _,year in ipairs({"1926", "1948", "1961"}) do
+	for _,auxType in ipairs({"Alt", "Bus", "Byp", "City", "Conn", "Emerg", "Opt", "Scenic", "Spur", "Temp", "Toll", "Truck"}) do
+		local spec = NJ[" aux "][auxType]
+		NJ["US " .. year .. "-" .. auxType] = {
+		    shield = NJ["US " .. year].shield,
+		    shieldmain = NJ["US " .. year].shieldmain,
+		    base = NJ["US-" .. auxType].base,
+		    name = NJ["US-" .. auxType].name,
+		    link = NJ["US-" .. auxType].link,
+		    abbr = NJ["US-" .. auxType].abbr,
+		    banner = format("%s plate %s.svg", spec.banneralt, year),
+		    width = "square",
+		}
+	end
+end
+    
+NJ.SR = {
+	shield = {
+		hook = "between",
+		lower = 20,
+		upper = 100,
+		yes = "Elongated circle %route%.svg",
+		no = "Ellipse sign %route%.svg"
+		},
+	base = "New Jersey Route %route%",
+	name = "Route %route%",
+	link = "New Jersey Route %route% [dab||(%dab%)|]",
+	abbr = "Route&amp;nbsp;%route%",
+	width = "expand"
+}
+NJ.NJ = NJ.SR
+NJ.Route = NJ.SR
+
+for _,type in ipairs({'SR', 'NJ', 'Route'}) do
+	for _,auxType in ipairs({"Alt", "Bus", "Byp"}) do
+		local spec = NJ[" aux "][auxType]
+		NJ[type .. "-" .. auxType] = {
+		    shield = NJ.SR.shield,
+		    name = NJ.SR.name .. " " .. spec.name,
+		    link = NJ.SR.base .. " " .. spec.name .. suffix2,
+		    abbr = NJ.SR.abbr .. " " .. spec.abbrsuffix,
+		    banner = spec.banneralt .. " plate.svg",
+		    aux = spec.aux,
+		    width = "expand"
+		}
+	end
+end 
+
+NJ["SR 1956"] = {
+	shield = "NJ %route% (1956).svg",
+	bannersuffix = "green"
+}
+NJ["NJ 1956"] =  NJ["SR 1956"]  
+
+NJ["SR 1926"] = {	
+	shield = "NJ %route% (1926).svg",
+	bannersuffix = "1926"
+}
+NJ["NJ 1926"] = NJ["SR 1926"]
+NJ["NJ-old"] = NJ["SR 1926"]
+NJ["SR-old"] = NJ["SR 1926"]
+
+for k, v in pairs(NJ) do if k:find ("^SR %d") then 
+	v.name = NJ.SR.name
+	v.link = NJ.SR.link
+	v.abbr = NJ.SR.abbr
+	end
+end
+
+NJ["SRS 1926"] = {
+	shield = "NJ S%route% (1926).svg", --workaround because the Route Snn routes throw an error
+	name = "Route S%route%",
+	link = "New Jersey Route S%route% [dab||(%dab%)|]",
+	abbr = "Route&amp;nbsp;S%route%"
+	
+}
+
+NJ["NJS 1926"] = NJ["SRS 1926"]
+
+NJ.Byway = {
+	shield = "",
+	name = "%route%",
+	link = "List of New Jersey Scenic Byways#%route%",
+	abbr = "%route%",
+	color = "hist"
+	
+}
+
+-- add new types above this line if you want it to have the state highway browse and maint
+for k, v in pairs(NJ) do if k:find ("^%a") then
+	v.maint = "[[New Jersey Department of Transportation|NJDOT]]"
+	v.browse = "[[State highways in New Jersey|New Jersey State Highway Routes]]"
+	v.browselinks = {
+		[1] = "[[List of Interstate Highways in New Jersey|Interstate]]",
+		[2] = "[[List of U.S. Routes in New Jersey|US]]",
+		[3] = "[[List of state highways in New Jersey|State]]",
+		[4] = "[[New Jersey Scenic Byways|Scenic Byways]]"
+	}
+	end
+end
+
+NJ.NJTP = {
+	shield = "New Jersey Turnpike Shield.svg",
+    name = "New Jersey Turnpike",
+    link = "New Jersey Turnpike",
+    abbr = "N.J. Turnpike",
+    bannersuffix = "green",
+    maint = "[[New Jersey Turnpike Authority|NJTA]]"
+	
+}
+
+NJ.NBEX = {
+	shield = "New Jersey Turnpike Shield.svg",
+    name = "Newark Bay Extension",
+    link = "Interstate 78 in New Jersey",
+    abbr = "Newark Bay Extension",
+	bannersuffix = "green",
+    maint = NJ.NJTP.maint
+	
+}
+
+NJ.PAEX = {
+	shield = "New Jersey Turnpike Shield.svg",
+    name = "Pearl Harbor Extension",
+    link = "Pearl Harbor Memorial Turnpike Extension",
+    abbr = "Pearl Harbor Extension",
+	bannersuffix = "green",
+    maint = NJ.NJTP.maint
+	
+}
+
+NJ.GSP = {
+	shield = "GSPkwy Shield.svg",
+    name = "Garden State Parkway",
+    link = "Garden State Parkway",
+    abbr = "G.S. Parkway",
+    bannersuffix = "GSP",
+    maint = NJ.NJTP.maint
+	
+}
+
+NJ.ACE = {
+	shield = "Atlantic City Expressway.svg",
+    name = "Atlantic City Expressway",
+    link = "Atlantic City Expressway",
+    abbr = "A.C. Expressway",
+    bannersuffix = "blue",
+    maint = "[[South Jersey Transportation Authority|SJTA]]"
+	
+}
+
+for _,type in ipairs({"NJTP", "NBEX", "PAEX", "GSP", "ACE"}) do
+	NJ[type .. "2"] = {
+	    shield = NJ[type].shield,
+	    name = NJ[type].name,
+	    link = NJ[type].link,
+	    abbr = NJ[type].abbr,
+    	bannersuffix = NJ[type].bannersuffix,
+	    banner = "Toll plate yellow.svg",
+	    maint = NJ[type].maint
+	    
+	}
+end
+
+NJ.ACBC = {shield = "Atlantic City Expy Connector.svg",
+    name = "Atlantic City–Brigantine Connector",
+    link = "Atlantic City–Brigantine Connector",
+    abbr = "A.C.–Brigantine Connector",
+    bannersuffix = "blue",
+    maint = NJ.ACE.maint
+	
+}
+
+NJ.PIP = {
+	shield = "Palisades Interstate Pkwy.svg",
+	name = "Palisades Interstate Parkway",
+	link = "Palisades Interstate Parkway",
+	abbr = "Palisades Parkway",
+	bannersuffix = "brown",
+	color = "hist",
+	maint = "[[Palisades Interstate Park Commission]]"
+	
+}
+
+NJ.OD = {shield = "Ocean Drive NJ.svg",
+         name = "Ocean Drive",
+         link = "Ocean Drive (New Jersey)",
+         abbr = "Ocean Drive"
+}
+
+local countybrowse = {
+	arg = "county",
+	default = "County routes in New Jersey",
+	Atlantic = "[[List of county routes in Atlantic County, New Jersey|County routes in Atlantic County]]",
+	Bergen = "[[List of county routes in Bergen County, New Jersey|County routes in Bergen County]]",
+	Burlington = "[[List of county routes in Burlington County, New Jersey|County routes in Burlington County]]",
+	Camden = "[[List of county routes in Camden County, New Jersey|County routes in Camden County]]",
+	["Cape May"] = "[[List of county routes in Cape May County, New Jersey|County routes in Cape May County]]",
+	Cumberland = "[[List of county routes in Cumberland County, New Jersey|County routes in Cumberland County]]",
+	Essex = "[[List of county routes in Essex County, New Jersey|County routes in Essex County]]",
+	Gloucester = "[[List of county routes in Gloucester County, New Jersey|County routes in Gloucester County]]",
+	Hudson = "[[List of county routes in Hudson County, New Jersey|County routes in Hudson County]]",
+	Hunterdon = "[[List of county routes in Hunterdon County, New Jersey|County routes in Hunterdon County]]",
+	Mercer = "[[List of county routes in Mercer County, New Jersey|County routes in Mercer County]]",
+	Middlesex = "[[List of county routes in Middlesex County, New Jersey|County routes in Middlesex County]]",
+	Monmouth = "[[List of county routes in Monmouth County, New Jersey|County routes in Monmouth County]]",
+	Morris = "[[List of county routes in Morris County, New Jersey|County routes in Morris County]]",
+	Ocean = "[[List of county routes in Ocean County, New Jersey|County routes in Ocean County]]",
+	Passaic = "[[List of county routes in Passaic County, New Jersey|County routes in Passaic County]]",
+	Salem = "[[List of county routes in Salem County, New Jersey|County routes in Salem County]]",
+	Somerset = "[[List of county routes in Somerset County, New Jersey|County routes in Somerset County]]",
+	Sussex = "[[List of county routes in Sussex County, New Jersey|County routes in Sussex County]]",
+	Union = "[[List of county routes in Union County, New Jersey|County routes in Union County]]",
+	Warren = "[[List of county routes in Warren County, New Jersey|County routes in Warren County]]",
+}
+
+NJ.CR = {
+	shield = "[county|Bergen|Bergen County %route% NJ.svg|CR %route% jct.svg]",
+	shieldmain = {
+		default = "[county||%county% |]County %route%.svg",
+		arg = "county",
+		Bergen = "Bergen County %route% NJ.svg"
+		},
+	name = "County Route %route%",
+	link = {
+		hook = "between",
+		lower = 500,
+		upper = 600,
+		yes = "County Route %route% (New Jersey)",
+		no = "County Route %route% (%county% County, New Jersey)"
+	},
+	abbr = "CR %route%",
+	maint = "none",
+	browse = countybrowse,
+	browselinks = {
+		[1] = "[[County routes in New Jersey|System]]",
+		[2] = "[[List of 500-series county routes in New Jersey|500-series routes]]"
+	}
+}
+
+for _,type in ipairs({'CR'}) do
+	for _,auxType in ipairs({"Alt", "Byp", "Spur", "Truck"}) do
+		local spec = NJ[" aux "][auxType]
+		NJ["CR-" .. auxType] = {
+		    shield = NJ.CR.shield,
+		    shieldmain = NJ.CR.shieldmain,
+		    name = NJ.CR.name .. " " .. spec.name,
+		    link = NJ.CR.name .. " " .. spec.name ..  " ([county||%county% County, |]New Jersey)",
+		    abbr = NJ.CR.abbr .. " " .. spec.abbrsuffix,
+		    banner = spec.banneralt .. " plate county.svg",
+		    aux = spec.aux,
+		    width = "square",
+		    bannersuffix = "county",
+		    browse = NJ.CR.browse,
+		    browselinks = NJ.CR.browselinks,
+		}
+	end
+end
+
+NJ.PA = {alias = {module = "USA/PA", type = "PA"}}
+NJ.NY = {alias = {module = "USA/NY", type = "NY"}}
+
+return NJ</text>
+      <sha1>2qkwbai36sduiroz9cxycvfzdpcow20</sha1>
+    </revision>
+  </page>
+</mediawiki>

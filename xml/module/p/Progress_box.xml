@@ -1,0 +1,1809 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Progress box</title>
+    <ns>828</ns>
+    <id>5466</id>
+    <revision>
+      <id>811059</id>
+      <timestamp>2023-03-01T04:23:23Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Izno</username>
+        <id>0</id>
+      </contributor>
+      <comment>-silly implements line, it's in the /doc</comment>
+      <origin>811059</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="8739" sha1="dkqxr21zsvmxigt428fk6q6gm229x6u" xml:space="preserve">local makePurgeLink = require('Module:Purge')._main
+local lang = mw.language.getContentLanguage()
+local CONFIG_MODULE = 'Module:Progress box/config'
+
+-------------------------------------------------------------------------------
+-- Message mixin
+-- 
+-- This function is mixed into all of the other classes
+-------------------------------------------------------------------------------
+
+local function message(self, key, ...)
+	local msg = self._cfg[key]
+	if not msg then
+		error(string.format("no message found with key '%s'", tostring(key)), 2)
+	end
+	if select('#', ...) &gt; 0 then
+		return mw.message.newRawMessage(msg, ...):plain()
+	else
+		return msg
+	end
+end
+
+-------------------------------------------------------------------------------
+-- Category class
+-------------------------------------------------------------------------------
+
+local Category = {}
+Category.__index = Category
+Category.message = message
+
+function Category.new(data)
+	local self = setmetatable({}, Category)
+	self._cfg = data.cfg
+	self._whatToCount = data.whatToCount
+	self:setCategory(data.category)
+	return self
+end
+
+function Category:setCategory(category)
+	self._category = category
+end
+
+function Category:getCategory()
+	return self._category
+end
+
+function Category:makeCategoryLink(display)
+	local cat = self:getCategory()
+	display = display or cat
+	return string.format('[[:Category:%s|%s]]', cat, display)
+end
+
+function Category:getCount()
+	if not self._count then
+		local counts = mw.site.stats.pagesInCategory(self:getCategory(), '*')
+		self._count = counts[self._whatToCount or 'pages']
+		if not self._count then
+			error("the count type must be one of 'pages', 'subcats', 'files' or 'all'")
+		end
+	end
+	return self._count
+end
+
+function Category:getFormattedCount()
+	return lang:formatNum(self:getCount())
+end
+
+function Category:exists()
+	return mw.title.makeTitle(14, self:getCategory()).exists
+end
+
+-------------------------------------------------------------------------------
+-- DatedCategory class
+-- Inherits from Category
+-------------------------------------------------------------------------------
+
+local DatedCategory = {}
+DatedCategory.__index = DatedCategory
+setmetatable(DatedCategory, Category)
+
+function DatedCategory.new(data)
+	local self = setmetatable(Category.new(data), {__index = DatedCategory})
+	self._date = data.date
+	self._dateFormat = data.dateFormat or self:message('date-format')
+	self._formattedDate = self:formatDate(self._date)
+	do
+		local category = self:message(
+			'dated-category-format',
+			data.baseCategory,
+			self._formattedDate,
+			data.from or self:message('dated-category-format-from'),
+			data.suffix or ''
+		)
+		category = category:match('^%s*(.-)%s*$') -- trim whitespace
+		self:setCategory(category)
+	end
+	return self
+end
+
+function DatedCategory:formatDate(date)
+	return lang:formatDate(self._dateFormat, date)
+end
+
+function DatedCategory:getDate()
+	return self._date
+end
+
+function DatedCategory:getFormattedDate()
+	return self._formattedDate
+end
+
+-------------------------------------------------------------------------------
+-- ProgressBox class
+-------------------------------------------------------------------------------
+
+local ProgressBox = {}
+ProgressBox.__index = ProgressBox
+ProgressBox.message = message
+
+function ProgressBox.new(args, cfg, title)
+	local self = setmetatable({}, ProgressBox)
+
+	-- Argument defaults
+	args = args or {}
+	self._cfg = cfg or mw.loadData(CONFIG_MODULE)
+	self._title = title or mw.title.getCurrentTitle()
+
+	-- Set data
+	if not args.float or (args.float and (args.float == 'left' or args.float == '')) then
+		self._float_class = 'maint-cat-progress-left'
+	elseif args.float == 'right' then
+		self._float_class = 'maint-cat-progress-right'
+	elseif args.float == 'none' then
+		-- 'none' is actually 'center'ed
+		self._float_class = 'maint-cat-progress-center'
+	end
+	
+	self._header = args[1]
+	self._frame = mw.getCurrentFrame()
+
+	-- Make the base category object
+	if not args[1] then
+		error('no base category specified', 3)
+	end
+	self._baseCategoryObj = Category.new{
+		cfg = self._cfg,
+		category = args[1],
+	}
+
+	-- Make datedCategory objects
+	self._datedCategories = {}
+	do
+		local cfg = self._cfg
+		local baseCategory = args[2] or self._baseCategoryObj:getCategory()
+		local whatToCount = args.count
+		local from = args.from or self:message('dated-category-format-from')
+		local suffix = args.suffix
+		local currentDate = lang:formatDate('Y-m')
+		local date = self:findEarliestCategoryDate()
+		local dateFormat = self:message('date-format')
+		while date &lt;= currentDate do
+			local datedCategoryObj = DatedCategory.new{
+				cfg = cfg,
+				baseCategory = baseCategory,
+				whatToCount = whatToCount,
+				from = from,
+				suffix = suffix,
+				date = date,
+				dateFormat = dateFormat,
+			}
+			if datedCategoryObj:getCount() &gt; 0 then
+				table.insert(self._datedCategories, datedCategoryObj)
+			end
+			date = ProgressBox.incrementDate(date)
+		end
+	end
+
+	-- Make all-article category object
+	do
+		local allCategory
+		if args[3] then
+			allCategory = args[3]
+		else
+			allCategory = self:message(
+				'all-articles-category-format',
+				self._baseCategoryObj:getCategory()
+			)
+			allCategory = self._frame:preprocess(allCategory)
+		end
+		self._allCategoryObj = Category.new{
+			cfg = self._cfg,
+			category = allCategory,
+		}
+	end
+
+	return self
+end
+
+-- Increments a date in the format YYYY-MM
+function ProgressBox.incrementDate(date)
+	local year, month = date:match('^(%d%d%d%d)%-(%d%d)$')
+	year = tonumber(year)
+	month = tonumber(month)
+	if not year or not month then
+		error(string.format("error parsing date '%s'", tostring(date)), 2)
+	end
+	month = month + 1
+	if month &gt; 12 then
+		month = 1
+		year = year + 1
+	end
+	return string.format('%04d-%02d', year, month)
+end
+
+function ProgressBox:findEarliestCategoryDate()
+	return self:message('start-date')
+end
+
+function ProgressBox:isCollapsed()
+	return self._title.namespace ~= 10 -- is not in template namespace
+end
+
+function ProgressBox:makeTotalLabel()
+	local display = self:message('all-articles-label')
+	if self._allCategoryObj:exists() then
+		return self._allCategoryObj:makeCategoryLink(display)
+	else
+		return display
+	end
+end
+
+function ProgressBox:getTotalCount()
+	local count = 0
+	for i, obj in ipairs(self._datedCategories) do
+		count = count + obj:getCount()
+	end
+	count = count + self._baseCategoryObj:getCount()
+	return count
+end
+
+function ProgressBox:getFormattedTotalCount()
+	return lang:formatNum(self:getTotalCount())
+end
+
+function ProgressBox:__tostring()
+	data = data or {}
+	local root = mw.html.create('div')
+	
+	-- Base classes and styles
+	root
+		:addClass('maint-cat-progress')
+		:addClass(self._float_class)
+
+	-- Header row
+	root:tag('div')
+		:addClass('maint-cat-progress-header')
+		:wikitext(self._header)
+
+	-- Refresh row
+	root:tag('div')
+		:addClass('maint-cat-progress-refresh')
+		:wikitext(makePurgeLink{self:message('purge-link-display')})
+
+	-- Subtotals
+	local subtotalTable = mw.html.create('table')
+	subtotalTable
+		:addClass('maint-cat-progress-subtotals mw-collapsible')
+		:addClass(self:isCollapsed() and 'mw-collapsed' or nil)
+		:tag('caption')
+			:wikitext(self:message('subtotal-heading'))
+				
+	for i, datedCategoryObj in ipairs(self._datedCategories) do
+		subtotalTable
+			:tag('tr')
+				:tag('td')
+					:wikitext(datedCategoryObj:makeCategoryLink(
+						datedCategoryObj:getFormattedDate()
+					))
+					:done()
+				:tag('td')
+					:wikitext(datedCategoryObj:getFormattedCount())
+	end
+
+	-- Undated articles
+	subtotalTable
+		:tag('tr')
+			:tag('td')
+				:wikitext(self._baseCategoryObj:makeCategoryLink(
+					self:message('undated-articles-label')
+				))
+				:done()
+			:tag('td')
+				:wikitext(self._baseCategoryObj:getFormattedCount())
+				:allDone()
+
+	-- Total
+	root
+		:node(subtotalTable)
+		:tag('div')
+			:addClass('maint-cat-progress-total-row')
+			:tag('div')
+				:addClass('maint-cat-progress-total-label')
+				:wikitext(self:makeTotalLabel())
+				:done()
+			:tag('div')
+				:addClass('maint-cat-progress-total')
+				:wikitext(self:getFormattedTotalCount())
+
+	return mw.getCurrentFrame():extensionTag{
+		name = 'templatestyles', args = {src = 'Module:Progress box/styles.css'}
+	} .. tostring(root)
+end
+
+-------------------------------------------------------------------------------
+-- Exports
+-------------------------------------------------------------------------------
+
+local p = {}
+
+function p._exportClasses()
+	return {
+		Category = Category,
+		DatedCategory = DatedCategory,
+		ProgressBox = ProgressBox,
+	}
+end
+
+function p._main(args, cfg, title)
+	return tostring(ProgressBox.new(args, cfg, title))
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {
+		wrappers = 'Template:Progress box'
+	})
+	return p._main(args)
+end
+
+return p</text>
+      <sha1>dkqxr21zsvmxigt428fk6q6gm229x6u</sha1>
+    </revision>
+    <revision>
+      <id>811060</id>
+      <parentid>811059</parentid>
+      <timestamp>2024-12-27T08:25:47Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:Progress_box]]: importing wikipedia</comment>
+      <origin>811059</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="8739" sha1="dkqxr21zsvmxigt428fk6q6gm229x6u" xml:space="preserve">local makePurgeLink = require('Module:Purge')._main
+local lang = mw.language.getContentLanguage()
+local CONFIG_MODULE = 'Module:Progress box/config'
+
+-------------------------------------------------------------------------------
+-- Message mixin
+-- 
+-- This function is mixed into all of the other classes
+-------------------------------------------------------------------------------
+
+local function message(self, key, ...)
+	local msg = self._cfg[key]
+	if not msg then
+		error(string.format("no message found with key '%s'", tostring(key)), 2)
+	end
+	if select('#', ...) &gt; 0 then
+		return mw.message.newRawMessage(msg, ...):plain()
+	else
+		return msg
+	end
+end
+
+-------------------------------------------------------------------------------
+-- Category class
+-------------------------------------------------------------------------------
+
+local Category = {}
+Category.__index = Category
+Category.message = message
+
+function Category.new(data)
+	local self = setmetatable({}, Category)
+	self._cfg = data.cfg
+	self._whatToCount = data.whatToCount
+	self:setCategory(data.category)
+	return self
+end
+
+function Category:setCategory(category)
+	self._category = category
+end
+
+function Category:getCategory()
+	return self._category
+end
+
+function Category:makeCategoryLink(display)
+	local cat = self:getCategory()
+	display = display or cat
+	return string.format('[[:Category:%s|%s]]', cat, display)
+end
+
+function Category:getCount()
+	if not self._count then
+		local counts = mw.site.stats.pagesInCategory(self:getCategory(), '*')
+		self._count = counts[self._whatToCount or 'pages']
+		if not self._count then
+			error("the count type must be one of 'pages', 'subcats', 'files' or 'all'")
+		end
+	end
+	return self._count
+end
+
+function Category:getFormattedCount()
+	return lang:formatNum(self:getCount())
+end
+
+function Category:exists()
+	return mw.title.makeTitle(14, self:getCategory()).exists
+end
+
+-------------------------------------------------------------------------------
+-- DatedCategory class
+-- Inherits from Category
+-------------------------------------------------------------------------------
+
+local DatedCategory = {}
+DatedCategory.__index = DatedCategory
+setmetatable(DatedCategory, Category)
+
+function DatedCategory.new(data)
+	local self = setmetatable(Category.new(data), {__index = DatedCategory})
+	self._date = data.date
+	self._dateFormat = data.dateFormat or self:message('date-format')
+	self._formattedDate = self:formatDate(self._date)
+	do
+		local category = self:message(
+			'dated-category-format',
+			data.baseCategory,
+			self._formattedDate,
+			data.from or self:message('dated-category-format-from'),
+			data.suffix or ''
+		)
+		category = category:match('^%s*(.-)%s*$') -- trim whitespace
+		self:setCategory(category)
+	end
+	return self
+end
+
+function DatedCategory:formatDate(date)
+	return lang:formatDate(self._dateFormat, date)
+end
+
+function DatedCategory:getDate()
+	return self._date
+end
+
+function DatedCategory:getFormattedDate()
+	return self._formattedDate
+end
+
+-------------------------------------------------------------------------------
+-- ProgressBox class
+-------------------------------------------------------------------------------
+
+local ProgressBox = {}
+ProgressBox.__index = ProgressBox
+ProgressBox.message = message
+
+function ProgressBox.new(args, cfg, title)
+	local self = setmetatable({}, ProgressBox)
+
+	-- Argument defaults
+	args = args or {}
+	self._cfg = cfg or mw.loadData(CONFIG_MODULE)
+	self._title = title or mw.title.getCurrentTitle()
+
+	-- Set data
+	if not args.float or (args.float and (args.float == 'left' or args.float == '')) then
+		self._float_class = 'maint-cat-progress-left'
+	elseif args.float == 'right' then
+		self._float_class = 'maint-cat-progress-right'
+	elseif args.float == 'none' then
+		-- 'none' is actually 'center'ed
+		self._float_class = 'maint-cat-progress-center'
+	end
+	
+	self._header = args[1]
+	self._frame = mw.getCurrentFrame()
+
+	-- Make the base category object
+	if not args[1] then
+		error('no base category specified', 3)
+	end
+	self._baseCategoryObj = Category.new{
+		cfg = self._cfg,
+		category = args[1],
+	}
+
+	-- Make datedCategory objects
+	self._datedCategories = {}
+	do
+		local cfg = self._cfg
+		local baseCategory = args[2] or self._baseCategoryObj:getCategory()
+		local whatToCount = args.count
+		local from = args.from or self:message('dated-category-format-from')
+		local suffix = args.suffix
+		local currentDate = lang:formatDate('Y-m')
+		local date = self:findEarliestCategoryDate()
+		local dateFormat = self:message('date-format')
+		while date &lt;= currentDate do
+			local datedCategoryObj = DatedCategory.new{
+				cfg = cfg,
+				baseCategory = baseCategory,
+				whatToCount = whatToCount,
+				from = from,
+				suffix = suffix,
+				date = date,
+				dateFormat = dateFormat,
+			}
+			if datedCategoryObj:getCount() &gt; 0 then
+				table.insert(self._datedCategories, datedCategoryObj)
+			end
+			date = ProgressBox.incrementDate(date)
+		end
+	end
+
+	-- Make all-article category object
+	do
+		local allCategory
+		if args[3] then
+			allCategory = args[3]
+		else
+			allCategory = self:message(
+				'all-articles-category-format',
+				self._baseCategoryObj:getCategory()
+			)
+			allCategory = self._frame:preprocess(allCategory)
+		end
+		self._allCategoryObj = Category.new{
+			cfg = self._cfg,
+			category = allCategory,
+		}
+	end
+
+	return self
+end
+
+-- Increments a date in the format YYYY-MM
+function ProgressBox.incrementDate(date)
+	local year, month = date:match('^(%d%d%d%d)%-(%d%d)$')
+	year = tonumber(year)
+	month = tonumber(month)
+	if not year or not month then
+		error(string.format("error parsing date '%s'", tostring(date)), 2)
+	end
+	month = month + 1
+	if month &gt; 12 then
+		month = 1
+		year = year + 1
+	end
+	return string.format('%04d-%02d', year, month)
+end
+
+function ProgressBox:findEarliestCategoryDate()
+	return self:message('start-date')
+end
+
+function ProgressBox:isCollapsed()
+	return self._title.namespace ~= 10 -- is not in template namespace
+end
+
+function ProgressBox:makeTotalLabel()
+	local display = self:message('all-articles-label')
+	if self._allCategoryObj:exists() then
+		return self._allCategoryObj:makeCategoryLink(display)
+	else
+		return display
+	end
+end
+
+function ProgressBox:getTotalCount()
+	local count = 0
+	for i, obj in ipairs(self._datedCategories) do
+		count = count + obj:getCount()
+	end
+	count = count + self._baseCategoryObj:getCount()
+	return count
+end
+
+function ProgressBox:getFormattedTotalCount()
+	return lang:formatNum(self:getTotalCount())
+end
+
+function ProgressBox:__tostring()
+	data = data or {}
+	local root = mw.html.create('div')
+	
+	-- Base classes and styles
+	root
+		:addClass('maint-cat-progress')
+		:addClass(self._float_class)
+
+	-- Header row
+	root:tag('div')
+		:addClass('maint-cat-progress-header')
+		:wikitext(self._header)
+
+	-- Refresh row
+	root:tag('div')
+		:addClass('maint-cat-progress-refresh')
+		:wikitext(makePurgeLink{self:message('purge-link-display')})
+
+	-- Subtotals
+	local subtotalTable = mw.html.create('table')
+	subtotalTable
+		:addClass('maint-cat-progress-subtotals mw-collapsible')
+		:addClass(self:isCollapsed() and 'mw-collapsed' or nil)
+		:tag('caption')
+			:wikitext(self:message('subtotal-heading'))
+				
+	for i, datedCategoryObj in ipairs(self._datedCategories) do
+		subtotalTable
+			:tag('tr')
+				:tag('td')
+					:wikitext(datedCategoryObj:makeCategoryLink(
+						datedCategoryObj:getFormattedDate()
+					))
+					:done()
+				:tag('td')
+					:wikitext(datedCategoryObj:getFormattedCount())
+	end
+
+	-- Undated articles
+	subtotalTable
+		:tag('tr')
+			:tag('td')
+				:wikitext(self._baseCategoryObj:makeCategoryLink(
+					self:message('undated-articles-label')
+				))
+				:done()
+			:tag('td')
+				:wikitext(self._baseCategoryObj:getFormattedCount())
+				:allDone()
+
+	-- Total
+	root
+		:node(subtotalTable)
+		:tag('div')
+			:addClass('maint-cat-progress-total-row')
+			:tag('div')
+				:addClass('maint-cat-progress-total-label')
+				:wikitext(self:makeTotalLabel())
+				:done()
+			:tag('div')
+				:addClass('maint-cat-progress-total')
+				:wikitext(self:getFormattedTotalCount())
+
+	return mw.getCurrentFrame():extensionTag{
+		name = 'templatestyles', args = {src = 'Module:Progress box/styles.css'}
+	} .. tostring(root)
+end
+
+-------------------------------------------------------------------------------
+-- Exports
+-------------------------------------------------------------------------------
+
+local p = {}
+
+function p._exportClasses()
+	return {
+		Category = Category,
+		DatedCategory = DatedCategory,
+		ProgressBox = ProgressBox,
+	}
+end
+
+function p._main(args, cfg, title)
+	return tostring(ProgressBox.new(args, cfg, title))
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {
+		wrappers = 'Template:Progress box'
+	})
+	return p._main(args)
+end
+
+return p</text>
+      <sha1>dkqxr21zsvmxigt428fk6q6gm229x6u</sha1>
+    </revision>
+    <revision>
+      <id>811061</id>
+      <parentid>811060</parentid>
+      <timestamp>2025-01-26T23:11:10Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Adding [[Category:refreshing imported pages]] on using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>811061</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="8779" sha1="sbl3pbtkhf1czxq699aumz766siryfq" xml:space="preserve">local makePurgeLink = require('Module:Purge')._main
+local lang = mw.language.getContentLanguage()
+local CONFIG_MODULE = 'Module:Progress box/config'
+
+-------------------------------------------------------------------------------
+-- Message mixin
+-- 
+-- This function is mixed into all of the other classes
+-------------------------------------------------------------------------------
+
+local function message(self, key, ...)
+	local msg = self._cfg[key]
+	if not msg then
+		error(string.format("no message found with key '%s'", tostring(key)), 2)
+	end
+	if select('#', ...) &gt; 0 then
+		return mw.message.newRawMessage(msg, ...):plain()
+	else
+		return msg
+	end
+end
+
+-------------------------------------------------------------------------------
+-- Category class
+-------------------------------------------------------------------------------
+
+local Category = {}
+Category.__index = Category
+Category.message = message
+
+function Category.new(data)
+	local self = setmetatable({}, Category)
+	self._cfg = data.cfg
+	self._whatToCount = data.whatToCount
+	self:setCategory(data.category)
+	return self
+end
+
+function Category:setCategory(category)
+	self._category = category
+end
+
+function Category:getCategory()
+	return self._category
+end
+
+function Category:makeCategoryLink(display)
+	local cat = self:getCategory()
+	display = display or cat
+	return string.format('[[:Category:%s|%s]]', cat, display)
+end
+
+function Category:getCount()
+	if not self._count then
+		local counts = mw.site.stats.pagesInCategory(self:getCategory(), '*')
+		self._count = counts[self._whatToCount or 'pages']
+		if not self._count then
+			error("the count type must be one of 'pages', 'subcats', 'files' or 'all'")
+		end
+	end
+	return self._count
+end
+
+function Category:getFormattedCount()
+	return lang:formatNum(self:getCount())
+end
+
+function Category:exists()
+	return mw.title.makeTitle(14, self:getCategory()).exists
+end
+
+-------------------------------------------------------------------------------
+-- DatedCategory class
+-- Inherits from Category
+-------------------------------------------------------------------------------
+
+local DatedCategory = {}
+DatedCategory.__index = DatedCategory
+setmetatable(DatedCategory, Category)
+
+function DatedCategory.new(data)
+	local self = setmetatable(Category.new(data), {__index = DatedCategory})
+	self._date = data.date
+	self._dateFormat = data.dateFormat or self:message('date-format')
+	self._formattedDate = self:formatDate(self._date)
+	do
+		local category = self:message(
+			'dated-category-format',
+			data.baseCategory,
+			self._formattedDate,
+			data.from or self:message('dated-category-format-from'),
+			data.suffix or ''
+		)
+		category = category:match('^%s*(.-)%s*$') -- trim whitespace
+		self:setCategory(category)
+	end
+	return self
+end
+
+function DatedCategory:formatDate(date)
+	return lang:formatDate(self._dateFormat, date)
+end
+
+function DatedCategory:getDate()
+	return self._date
+end
+
+function DatedCategory:getFormattedDate()
+	return self._formattedDate
+end
+
+-------------------------------------------------------------------------------
+-- ProgressBox class
+-------------------------------------------------------------------------------
+
+local ProgressBox = {}
+ProgressBox.__index = ProgressBox
+ProgressBox.message = message
+
+function ProgressBox.new(args, cfg, title)
+	local self = setmetatable({}, ProgressBox)
+
+	-- Argument defaults
+	args = args or {}
+	self._cfg = cfg or mw.loadData(CONFIG_MODULE)
+	self._title = title or mw.title.getCurrentTitle()
+
+	-- Set data
+	if not args.float or (args.float and (args.float == 'left' or args.float == '')) then
+		self._float_class = 'maint-cat-progress-left'
+	elseif args.float == 'right' then
+		self._float_class = 'maint-cat-progress-right'
+	elseif args.float == 'none' then
+		-- 'none' is actually 'center'ed
+		self._float_class = 'maint-cat-progress-center'
+	end
+	
+	self._header = args[1]
+	self._frame = mw.getCurrentFrame()
+
+	-- Make the base category object
+	if not args[1] then
+		error('no base category specified', 3)
+	end
+	self._baseCategoryObj = Category.new{
+		cfg = self._cfg,
+		category = args[1],
+	}
+
+	-- Make datedCategory objects
+	self._datedCategories = {}
+	do
+		local cfg = self._cfg
+		local baseCategory = args[2] or self._baseCategoryObj:getCategory()
+		local whatToCount = args.count
+		local from = args.from or self:message('dated-category-format-from')
+		local suffix = args.suffix
+		local currentDate = lang:formatDate('Y-m')
+		local date = self:findEarliestCategoryDate()
+		local dateFormat = self:message('date-format')
+		while date &lt;= currentDate do
+			local datedCategoryObj = DatedCategory.new{
+				cfg = cfg,
+				baseCategory = baseCategory,
+				whatToCount = whatToCount,
+				from = from,
+				suffix = suffix,
+				date = date,
+				dateFormat = dateFormat,
+			}
+			if datedCategoryObj:getCount() &gt; 0 then
+				table.insert(self._datedCategories, datedCategoryObj)
+			end
+			date = ProgressBox.incrementDate(date)
+		end
+	end
+
+	-- Make all-article category object
+	do
+		local allCategory
+		if args[3] then
+			allCategory = args[3]
+		else
+			allCategory = self:message(
+				'all-articles-category-format',
+				self._baseCategoryObj:getCategory()
+			)
+			allCategory = self._frame:preprocess(allCategory)
+		end
+		self._allCategoryObj = Category.new{
+			cfg = self._cfg,
+			category = allCategory,
+		}
+	end
+
+	return self
+end
+
+-- Increments a date in the format YYYY-MM
+function ProgressBox.incrementDate(date)
+	local year, month = date:match('^(%d%d%d%d)%-(%d%d)$')
+	year = tonumber(year)
+	month = tonumber(month)
+	if not year or not month then
+		error(string.format("error parsing date '%s'", tostring(date)), 2)
+	end
+	month = month + 1
+	if month &gt; 12 then
+		month = 1
+		year = year + 1
+	end
+	return string.format('%04d-%02d', year, month)
+end
+
+function ProgressBox:findEarliestCategoryDate()
+	return self:message('start-date')
+end
+
+function ProgressBox:isCollapsed()
+	return self._title.namespace ~= 10 -- is not in template namespace
+end
+
+function ProgressBox:makeTotalLabel()
+	local display = self:message('all-articles-label')
+	if self._allCategoryObj:exists() then
+		return self._allCategoryObj:makeCategoryLink(display)
+	else
+		return display
+	end
+end
+
+function ProgressBox:getTotalCount()
+	local count = 0
+	for i, obj in ipairs(self._datedCategories) do
+		count = count + obj:getCount()
+	end
+	count = count + self._baseCategoryObj:getCount()
+	return count
+end
+
+function ProgressBox:getFormattedTotalCount()
+	return lang:formatNum(self:getTotalCount())
+end
+
+function ProgressBox:__tostring()
+	data = data or {}
+	local root = mw.html.create('div')
+	
+	-- Base classes and styles
+	root
+		:addClass('maint-cat-progress')
+		:addClass(self._float_class)
+
+	-- Header row
+	root:tag('div')
+		:addClass('maint-cat-progress-header')
+		:wikitext(self._header)
+
+	-- Refresh row
+	root:tag('div')
+		:addClass('maint-cat-progress-refresh')
+		:wikitext(makePurgeLink{self:message('purge-link-display')})
+
+	-- Subtotals
+	local subtotalTable = mw.html.create('table')
+	subtotalTable
+		:addClass('maint-cat-progress-subtotals mw-collapsible')
+		:addClass(self:isCollapsed() and 'mw-collapsed' or nil)
+		:tag('caption')
+			:wikitext(self:message('subtotal-heading'))
+				
+	for i, datedCategoryObj in ipairs(self._datedCategories) do
+		subtotalTable
+			:tag('tr')
+				:tag('td')
+					:wikitext(datedCategoryObj:makeCategoryLink(
+						datedCategoryObj:getFormattedDate()
+					))
+					:done()
+				:tag('td')
+					:wikitext(datedCategoryObj:getFormattedCount())
+	end
+
+	-- Undated articles
+	subtotalTable
+		:tag('tr')
+			:tag('td')
+				:wikitext(self._baseCategoryObj:makeCategoryLink(
+					self:message('undated-articles-label')
+				))
+				:done()
+			:tag('td')
+				:wikitext(self._baseCategoryObj:getFormattedCount())
+				:allDone()
+
+	-- Total
+	root
+		:node(subtotalTable)
+		:tag('div')
+			:addClass('maint-cat-progress-total-row')
+			:tag('div')
+				:addClass('maint-cat-progress-total-label')
+				:wikitext(self:makeTotalLabel())
+				:done()
+			:tag('div')
+				:addClass('maint-cat-progress-total')
+				:wikitext(self:getFormattedTotalCount())
+
+	return mw.getCurrentFrame():extensionTag{
+		name = 'templatestyles', args = {src = 'Module:Progress box/styles.css'}
+	} .. tostring(root)
+end
+
+-------------------------------------------------------------------------------
+-- Exports
+-------------------------------------------------------------------------------
+
+local p = {}
+
+function p._exportClasses()
+	return {
+		Category = Category,
+		DatedCategory = DatedCategory,
+		ProgressBox = ProgressBox,
+	}
+end
+
+function p._main(args, cfg, title)
+	return tostring(ProgressBox.new(args, cfg, title))
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {
+		wrappers = 'Template:Progress box'
+	})
+	return p._main(args)
+end
+
+return p
+
+[[Category:refreshing imported pages]]</text>
+      <sha1>sbl3pbtkhf1czxq699aumz766siryfq</sha1>
+    </revision>
+    <revision>
+      <id>811062</id>
+      <parentid>811061</parentid>
+      <timestamp>2025-01-26T23:22:45Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Removing from [[Category:refreshing imported pages]] on using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>811062</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="8739" sha1="dkqxr21zsvmxigt428fk6q6gm229x6u" xml:space="preserve">local makePurgeLink = require('Module:Purge')._main
+local lang = mw.language.getContentLanguage()
+local CONFIG_MODULE = 'Module:Progress box/config'
+
+-------------------------------------------------------------------------------
+-- Message mixin
+-- 
+-- This function is mixed into all of the other classes
+-------------------------------------------------------------------------------
+
+local function message(self, key, ...)
+	local msg = self._cfg[key]
+	if not msg then
+		error(string.format("no message found with key '%s'", tostring(key)), 2)
+	end
+	if select('#', ...) &gt; 0 then
+		return mw.message.newRawMessage(msg, ...):plain()
+	else
+		return msg
+	end
+end
+
+-------------------------------------------------------------------------------
+-- Category class
+-------------------------------------------------------------------------------
+
+local Category = {}
+Category.__index = Category
+Category.message = message
+
+function Category.new(data)
+	local self = setmetatable({}, Category)
+	self._cfg = data.cfg
+	self._whatToCount = data.whatToCount
+	self:setCategory(data.category)
+	return self
+end
+
+function Category:setCategory(category)
+	self._category = category
+end
+
+function Category:getCategory()
+	return self._category
+end
+
+function Category:makeCategoryLink(display)
+	local cat = self:getCategory()
+	display = display or cat
+	return string.format('[[:Category:%s|%s]]', cat, display)
+end
+
+function Category:getCount()
+	if not self._count then
+		local counts = mw.site.stats.pagesInCategory(self:getCategory(), '*')
+		self._count = counts[self._whatToCount or 'pages']
+		if not self._count then
+			error("the count type must be one of 'pages', 'subcats', 'files' or 'all'")
+		end
+	end
+	return self._count
+end
+
+function Category:getFormattedCount()
+	return lang:formatNum(self:getCount())
+end
+
+function Category:exists()
+	return mw.title.makeTitle(14, self:getCategory()).exists
+end
+
+-------------------------------------------------------------------------------
+-- DatedCategory class
+-- Inherits from Category
+-------------------------------------------------------------------------------
+
+local DatedCategory = {}
+DatedCategory.__index = DatedCategory
+setmetatable(DatedCategory, Category)
+
+function DatedCategory.new(data)
+	local self = setmetatable(Category.new(data), {__index = DatedCategory})
+	self._date = data.date
+	self._dateFormat = data.dateFormat or self:message('date-format')
+	self._formattedDate = self:formatDate(self._date)
+	do
+		local category = self:message(
+			'dated-category-format',
+			data.baseCategory,
+			self._formattedDate,
+			data.from or self:message('dated-category-format-from'),
+			data.suffix or ''
+		)
+		category = category:match('^%s*(.-)%s*$') -- trim whitespace
+		self:setCategory(category)
+	end
+	return self
+end
+
+function DatedCategory:formatDate(date)
+	return lang:formatDate(self._dateFormat, date)
+end
+
+function DatedCategory:getDate()
+	return self._date
+end
+
+function DatedCategory:getFormattedDate()
+	return self._formattedDate
+end
+
+-------------------------------------------------------------------------------
+-- ProgressBox class
+-------------------------------------------------------------------------------
+
+local ProgressBox = {}
+ProgressBox.__index = ProgressBox
+ProgressBox.message = message
+
+function ProgressBox.new(args, cfg, title)
+	local self = setmetatable({}, ProgressBox)
+
+	-- Argument defaults
+	args = args or {}
+	self._cfg = cfg or mw.loadData(CONFIG_MODULE)
+	self._title = title or mw.title.getCurrentTitle()
+
+	-- Set data
+	if not args.float or (args.float and (args.float == 'left' or args.float == '')) then
+		self._float_class = 'maint-cat-progress-left'
+	elseif args.float == 'right' then
+		self._float_class = 'maint-cat-progress-right'
+	elseif args.float == 'none' then
+		-- 'none' is actually 'center'ed
+		self._float_class = 'maint-cat-progress-center'
+	end
+	
+	self._header = args[1]
+	self._frame = mw.getCurrentFrame()
+
+	-- Make the base category object
+	if not args[1] then
+		error('no base category specified', 3)
+	end
+	self._baseCategoryObj = Category.new{
+		cfg = self._cfg,
+		category = args[1],
+	}
+
+	-- Make datedCategory objects
+	self._datedCategories = {}
+	do
+		local cfg = self._cfg
+		local baseCategory = args[2] or self._baseCategoryObj:getCategory()
+		local whatToCount = args.count
+		local from = args.from or self:message('dated-category-format-from')
+		local suffix = args.suffix
+		local currentDate = lang:formatDate('Y-m')
+		local date = self:findEarliestCategoryDate()
+		local dateFormat = self:message('date-format')
+		while date &lt;= currentDate do
+			local datedCategoryObj = DatedCategory.new{
+				cfg = cfg,
+				baseCategory = baseCategory,
+				whatToCount = whatToCount,
+				from = from,
+				suffix = suffix,
+				date = date,
+				dateFormat = dateFormat,
+			}
+			if datedCategoryObj:getCount() &gt; 0 then
+				table.insert(self._datedCategories, datedCategoryObj)
+			end
+			date = ProgressBox.incrementDate(date)
+		end
+	end
+
+	-- Make all-article category object
+	do
+		local allCategory
+		if args[3] then
+			allCategory = args[3]
+		else
+			allCategory = self:message(
+				'all-articles-category-format',
+				self._baseCategoryObj:getCategory()
+			)
+			allCategory = self._frame:preprocess(allCategory)
+		end
+		self._allCategoryObj = Category.new{
+			cfg = self._cfg,
+			category = allCategory,
+		}
+	end
+
+	return self
+end
+
+-- Increments a date in the format YYYY-MM
+function ProgressBox.incrementDate(date)
+	local year, month = date:match('^(%d%d%d%d)%-(%d%d)$')
+	year = tonumber(year)
+	month = tonumber(month)
+	if not year or not month then
+		error(string.format("error parsing date '%s'", tostring(date)), 2)
+	end
+	month = month + 1
+	if month &gt; 12 then
+		month = 1
+		year = year + 1
+	end
+	return string.format('%04d-%02d', year, month)
+end
+
+function ProgressBox:findEarliestCategoryDate()
+	return self:message('start-date')
+end
+
+function ProgressBox:isCollapsed()
+	return self._title.namespace ~= 10 -- is not in template namespace
+end
+
+function ProgressBox:makeTotalLabel()
+	local display = self:message('all-articles-label')
+	if self._allCategoryObj:exists() then
+		return self._allCategoryObj:makeCategoryLink(display)
+	else
+		return display
+	end
+end
+
+function ProgressBox:getTotalCount()
+	local count = 0
+	for i, obj in ipairs(self._datedCategories) do
+		count = count + obj:getCount()
+	end
+	count = count + self._baseCategoryObj:getCount()
+	return count
+end
+
+function ProgressBox:getFormattedTotalCount()
+	return lang:formatNum(self:getTotalCount())
+end
+
+function ProgressBox:__tostring()
+	data = data or {}
+	local root = mw.html.create('div')
+	
+	-- Base classes and styles
+	root
+		:addClass('maint-cat-progress')
+		:addClass(self._float_class)
+
+	-- Header row
+	root:tag('div')
+		:addClass('maint-cat-progress-header')
+		:wikitext(self._header)
+
+	-- Refresh row
+	root:tag('div')
+		:addClass('maint-cat-progress-refresh')
+		:wikitext(makePurgeLink{self:message('purge-link-display')})
+
+	-- Subtotals
+	local subtotalTable = mw.html.create('table')
+	subtotalTable
+		:addClass('maint-cat-progress-subtotals mw-collapsible')
+		:addClass(self:isCollapsed() and 'mw-collapsed' or nil)
+		:tag('caption')
+			:wikitext(self:message('subtotal-heading'))
+				
+	for i, datedCategoryObj in ipairs(self._datedCategories) do
+		subtotalTable
+			:tag('tr')
+				:tag('td')
+					:wikitext(datedCategoryObj:makeCategoryLink(
+						datedCategoryObj:getFormattedDate()
+					))
+					:done()
+				:tag('td')
+					:wikitext(datedCategoryObj:getFormattedCount())
+	end
+
+	-- Undated articles
+	subtotalTable
+		:tag('tr')
+			:tag('td')
+				:wikitext(self._baseCategoryObj:makeCategoryLink(
+					self:message('undated-articles-label')
+				))
+				:done()
+			:tag('td')
+				:wikitext(self._baseCategoryObj:getFormattedCount())
+				:allDone()
+
+	-- Total
+	root
+		:node(subtotalTable)
+		:tag('div')
+			:addClass('maint-cat-progress-total-row')
+			:tag('div')
+				:addClass('maint-cat-progress-total-label')
+				:wikitext(self:makeTotalLabel())
+				:done()
+			:tag('div')
+				:addClass('maint-cat-progress-total')
+				:wikitext(self:getFormattedTotalCount())
+
+	return mw.getCurrentFrame():extensionTag{
+		name = 'templatestyles', args = {src = 'Module:Progress box/styles.css'}
+	} .. tostring(root)
+end
+
+-------------------------------------------------------------------------------
+-- Exports
+-------------------------------------------------------------------------------
+
+local p = {}
+
+function p._exportClasses()
+	return {
+		Category = Category,
+		DatedCategory = DatedCategory,
+		ProgressBox = ProgressBox,
+	}
+end
+
+function p._main(args, cfg, title)
+	return tostring(ProgressBox.new(args, cfg, title))
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {
+		wrappers = 'Template:Progress box'
+	})
+	return p._main(args)
+end
+
+return p</text>
+      <sha1>dkqxr21zsvmxigt428fk6q6gm229x6u</sha1>
+    </revision>
+    <revision>
+      <id>5467</id>
+      <timestamp>2025-05-18T22:56:42Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Text replacement - "category:" to "Category:"</comment>
+      <origin>5467</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="8739" sha1="kbaecqenr53qz3cjl8591hta0u1ejkq" xml:space="preserve">local makePurgeLink = require('Module:Purge')._main
+local lang = mw.language.getContentLanguage()
+local CONFIG_MODULE = 'Module:Progress box/config'
+
+-------------------------------------------------------------------------------
+-- Message mixin
+-- 
+-- This function is mixed into all of the other classes
+-------------------------------------------------------------------------------
+
+local function message(self, key, ...)
+	local msg = self._cfg[key]
+	if not msg then
+		error(string.format("no message found with key '%s'", tostring(key)), 2)
+	end
+	if select('#', ...) &gt; 0 then
+		return mw.message.newRawMessage(msg, ...):plain()
+	else
+		return msg
+	end
+end
+
+-------------------------------------------------------------------------------
+-- Category class
+-------------------------------------------------------------------------------
+
+local Category = {}
+Category.__index = Category
+Category.message = message
+
+function Category.new(data)
+	local self = setmetatable({}, Category)
+	self._cfg = data.cfg
+	self._whatToCount = data.whatToCount
+	self:setCategory(data.category)
+	return self
+end
+
+function Category:setCategory(category)
+	self._category = category
+end
+
+function Category:getCategory()
+	return self._category
+end
+
+function Category:makeCategoryLink(display)
+	local cat = self:getCategory()
+	display = display or cat
+	return string.format('[[:Category:%s|%s]]', cat, display)
+end
+
+function Category:getCount()
+	if not self._count then
+		local counts = mw.site.stats.pagesInCategory(self:getCategory(), '*')
+		self._count = counts[self._whatToCount or 'pages']
+		if not self._count then
+			error("the count type must be one of 'pages', 'subcats', 'files' or 'all'")
+		end
+	end
+	return self._count
+end
+
+function Category:getFormattedCount()
+	return lang:formatNum(self:getCount())
+end
+
+function Category:exists()
+	return mw.title.makeTitle(14, self:getCategory()).exists
+end
+
+-------------------------------------------------------------------------------
+-- DatedCategory class
+-- Inherits from Category
+-------------------------------------------------------------------------------
+
+local DatedCategory = {}
+DatedCategory.__index = DatedCategory
+setmetatable(DatedCategory, Category)
+
+function DatedCategory.new(data)
+	local self = setmetatable(Category.new(data), {__index = DatedCategory})
+	self._date = data.date
+	self._dateFormat = data.dateFormat or self:message('date-format')
+	self._formattedDate = self:formatDate(self._date)
+	do
+		local category = self:message(
+			'dated-category-format',
+			data.baseCategory,
+			self._formattedDate,
+			data.from or self:message('dated-category-format-from'),
+			data.suffix or ''
+		)
+		category = Category:match('^%s*(.-)%s*$') -- trim whitespace
+		self:setCategory(category)
+	end
+	return self
+end
+
+function DatedCategory:formatDate(date)
+	return lang:formatDate(self._dateFormat, date)
+end
+
+function DatedCategory:getDate()
+	return self._date
+end
+
+function DatedCategory:getFormattedDate()
+	return self._formattedDate
+end
+
+-------------------------------------------------------------------------------
+-- ProgressBox class
+-------------------------------------------------------------------------------
+
+local ProgressBox = {}
+ProgressBox.__index = ProgressBox
+ProgressBox.message = message
+
+function ProgressBox.new(args, cfg, title)
+	local self = setmetatable({}, ProgressBox)
+
+	-- Argument defaults
+	args = args or {}
+	self._cfg = cfg or mw.loadData(CONFIG_MODULE)
+	self._title = title or mw.title.getCurrentTitle()
+
+	-- Set data
+	if not args.float or (args.float and (args.float == 'left' or args.float == '')) then
+		self._float_class = 'maint-cat-progress-left'
+	elseif args.float == 'right' then
+		self._float_class = 'maint-cat-progress-right'
+	elseif args.float == 'none' then
+		-- 'none' is actually 'center'ed
+		self._float_class = 'maint-cat-progress-center'
+	end
+	
+	self._header = args[1]
+	self._frame = mw.getCurrentFrame()
+
+	-- Make the base category object
+	if not args[1] then
+		error('no base category specified', 3)
+	end
+	self._baseCategoryObj = Category.new{
+		cfg = self._cfg,
+		category = args[1],
+	}
+
+	-- Make datedCategory objects
+	self._datedCategories = {}
+	do
+		local cfg = self._cfg
+		local baseCategory = args[2] or self._baseCategoryObj:getCategory()
+		local whatToCount = args.count
+		local from = args.from or self:message('dated-category-format-from')
+		local suffix = args.suffix
+		local currentDate = lang:formatDate('Y-m')
+		local date = self:findEarliestCategoryDate()
+		local dateFormat = self:message('date-format')
+		while date &lt;= currentDate do
+			local datedCategoryObj = DatedCategory.new{
+				cfg = cfg,
+				baseCategory = baseCategory,
+				whatToCount = whatToCount,
+				from = from,
+				suffix = suffix,
+				date = date,
+				dateFormat = dateFormat,
+			}
+			if datedCategoryObj:getCount() &gt; 0 then
+				table.insert(self._datedCategories, datedCategoryObj)
+			end
+			date = ProgressBox.incrementDate(date)
+		end
+	end
+
+	-- Make all-article category object
+	do
+		local allCategory
+		if args[3] then
+			allCategory = args[3]
+		else
+			allCategory = self:message(
+				'all-articles-category-format',
+				self._baseCategoryObj:getCategory()
+			)
+			allCategory = self._frame:preprocess(allCategory)
+		end
+		self._allCategoryObj = Category.new{
+			cfg = self._cfg,
+			category = allCategory,
+		}
+	end
+
+	return self
+end
+
+-- Increments a date in the format YYYY-MM
+function ProgressBox.incrementDate(date)
+	local year, month = date:match('^(%d%d%d%d)%-(%d%d)$')
+	year = tonumber(year)
+	month = tonumber(month)
+	if not year or not month then
+		error(string.format("error parsing date '%s'", tostring(date)), 2)
+	end
+	month = month + 1
+	if month &gt; 12 then
+		month = 1
+		year = year + 1
+	end
+	return string.format('%04d-%02d', year, month)
+end
+
+function ProgressBox:findEarliestCategoryDate()
+	return self:message('start-date')
+end
+
+function ProgressBox:isCollapsed()
+	return self._title.namespace ~= 10 -- is not in template namespace
+end
+
+function ProgressBox:makeTotalLabel()
+	local display = self:message('all-articles-label')
+	if self._allCategoryObj:exists() then
+		return self._allCategoryObj:makeCategoryLink(display)
+	else
+		return display
+	end
+end
+
+function ProgressBox:getTotalCount()
+	local count = 0
+	for i, obj in ipairs(self._datedCategories) do
+		count = count + obj:getCount()
+	end
+	count = count + self._baseCategoryObj:getCount()
+	return count
+end
+
+function ProgressBox:getFormattedTotalCount()
+	return lang:formatNum(self:getTotalCount())
+end
+
+function ProgressBox:__tostring()
+	data = data or {}
+	local root = mw.html.create('div')
+	
+	-- Base classes and styles
+	root
+		:addClass('maint-cat-progress')
+		:addClass(self._float_class)
+
+	-- Header row
+	root:tag('div')
+		:addClass('maint-cat-progress-header')
+		:wikitext(self._header)
+
+	-- Refresh row
+	root:tag('div')
+		:addClass('maint-cat-progress-refresh')
+		:wikitext(makePurgeLink{self:message('purge-link-display')})
+
+	-- Subtotals
+	local subtotalTable = mw.html.create('table')
+	subtotalTable
+		:addClass('maint-cat-progress-subtotals mw-collapsible')
+		:addClass(self:isCollapsed() and 'mw-collapsed' or nil)
+		:tag('caption')
+			:wikitext(self:message('subtotal-heading'))
+				
+	for i, datedCategoryObj in ipairs(self._datedCategories) do
+		subtotalTable
+			:tag('tr')
+				:tag('td')
+					:wikitext(datedCategoryObj:makeCategoryLink(
+						datedCategoryObj:getFormattedDate()
+					))
+					:done()
+				:tag('td')
+					:wikitext(datedCategoryObj:getFormattedCount())
+	end
+
+	-- Undated articles
+	subtotalTable
+		:tag('tr')
+			:tag('td')
+				:wikitext(self._baseCategoryObj:makeCategoryLink(
+					self:message('undated-articles-label')
+				))
+				:done()
+			:tag('td')
+				:wikitext(self._baseCategoryObj:getFormattedCount())
+				:allDone()
+
+	-- Total
+	root
+		:node(subtotalTable)
+		:tag('div')
+			:addClass('maint-cat-progress-total-row')
+			:tag('div')
+				:addClass('maint-cat-progress-total-label')
+				:wikitext(self:makeTotalLabel())
+				:done()
+			:tag('div')
+				:addClass('maint-cat-progress-total')
+				:wikitext(self:getFormattedTotalCount())
+
+	return mw.getCurrentFrame():extensionTag{
+		name = 'templatestyles', args = {src = 'Module:Progress box/styles.css'}
+	} .. tostring(root)
+end
+
+-------------------------------------------------------------------------------
+-- Exports
+-------------------------------------------------------------------------------
+
+local p = {}
+
+function p._exportClasses()
+	return {
+		Category = Category,
+		DatedCategory = DatedCategory,
+		ProgressBox = ProgressBox,
+	}
+end
+
+function p._main(args, cfg, title)
+	return tostring(ProgressBox.new(args, cfg, title))
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {
+		wrappers = 'Template:Progress box'
+	})
+	return p._main(args)
+end
+
+return p</text>
+      <sha1>kbaecqenr53qz3cjl8591hta0u1ejkq</sha1>
+    </revision>
+  </page>
+</mediawiki>

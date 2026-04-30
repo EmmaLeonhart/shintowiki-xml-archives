@@ -1,0 +1,4454 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:ParameterCount</title>
+    <ns>828</ns>
+    <id>176</id>
+    <revision>
+      <id>463808</id>
+      <timestamp>2015-11-24T05:26:15Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Mr. Stradivarius</username>
+        <id>0</id>
+      </contributor>
+      <comment>create module for counting parameters</comment>
+      <origin>463808</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2427" sha1="cgrmy53y7dwezig4i5g88hd0m2g1kdv" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for i, arg in pairs(args) do
+		if testFunc(arg) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		testFunc = function (arg)
+			if not isBlank(arg) then
+				return testFunc(arg)
+			end
+		end
+	end
+	return count(frame:getParent().args, testFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all|blank=yes}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main|blank=yes}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return '^' .. pattern .. '$'
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (arg)
+			if keys[arg] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(arg, pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>cgrmy53y7dwezig4i5g88hd0m2g1kdv</sha1>
+    </revision>
+    <revision>
+      <id>463809</id>
+      <parentid>463808</parentid>
+      <timestamp>2015-11-24T05:33:45Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Mr. Stradivarius</username>
+        <id>0</id>
+      </contributor>
+      <comment>fix variable clash</comment>
+      <origin>463809</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2511" sha1="2p0kwum8ncpcm3zovke1h6zk9fuvr4a" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for i, arg in pairs(args) do
+		if testFunc(arg) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (arg)
+			if not isBlank(arg) then
+				return testFunc(arg)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all|blank=yes}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main|blank=yes}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return '^' .. pattern .. '$'
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (arg)
+			if keys[arg] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(arg, pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>2p0kwum8ncpcm3zovke1h6zk9fuvr4a</sha1>
+    </revision>
+    <revision>
+      <id>463810</id>
+      <parentid>463809</parentid>
+      <timestamp>2015-11-24T05:36:34Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Mr. Stradivarius</username>
+        <id>0</id>
+      </contributor>
+      <comment>don't anchor patterns, as it may not always be desirable</comment>
+      <origin>463810</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2497" sha1="5wemzmrwl2s13e5kh49lw0kxg9c7dn0" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for i, arg in pairs(args) do
+		if testFunc(arg) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (arg)
+			if not isBlank(arg) then
+				return testFunc(arg)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all|blank=yes}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main|blank=yes}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (arg)
+			if keys[arg] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(arg, pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>5wemzmrwl2s13e5kh49lw0kxg9c7dn0</sha1>
+    </revision>
+    <revision>
+      <id>463811</id>
+      <parentid>463810</parentid>
+      <timestamp>2015-11-24T05:45:00Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Mr. Stradivarius</username>
+        <id>0</id>
+      </contributor>
+      <comment>convert keys to strings when checking patterns</comment>
+      <origin>463811</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2507" sha1="kjcc3jtsp824zo416ehlnmmqb78vbvr" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for i, arg in pairs(args) do
+		if testFunc(arg) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (arg)
+			if not isBlank(arg) then
+				return testFunc(arg)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all|blank=yes}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main|blank=yes}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (arg)
+			if keys[arg] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(arg), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>kjcc3jtsp824zo416ehlnmmqb78vbvr</sha1>
+    </revision>
+    <revision>
+      <id>463812</id>
+      <parentid>463811</parentid>
+      <timestamp>2015-11-24T06:28:10Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Mr. Stradivarius</username>
+        <id>0</id>
+      </contributor>
+      <comment>don't confuse keys and values</comment>
+      <origin>463812</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2529" sha1="5f0un62hd1lh3ctwal5nhk9bvipy551" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all|blank=yes}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main|blank=yes}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>5f0un62hd1lh3ctwal5nhk9bvipy551</sha1>
+    </revision>
+    <revision>
+      <id>463813</id>
+      <parentid>463812</parentid>
+      <timestamp>2015-11-24T09:30:12Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Mr. Stradivarius</username>
+        <id>0</id>
+      </contributor>
+      <comment>remove the "blank=yes" from the comments - it's the wrong parameter name, and it's not necessary anyway</comment>
+      <origin>463813</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>463804</id>
+      <timestamp>2017-02-11T14:32:57Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Mr. Stradivarius</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:ParameterCount]]": [[WP:High-risk templates|High-risk Lua module]]: 20,000+ transclusions ([Edit=Require template editor access] (indefinite) [Move=Require template editor access] (indefinite))</comment>
+      <origin>463804</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>463805</id>
+      <parentid>463804</parentid>
+      <timestamp>2024-06-25T11:00:51Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:ParameterCount]]: importing template for usage on this wiki. It is used a lot</comment>
+      <origin>463804</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>463806</id>
+      <parentid>463805</parentid>
+      <timestamp>2025-03-15T19:26:03Z</timestamp>
+      <contributor>
+        <username>en&gt;Unknown user</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:ParameterCount]]": [[WP:High-risk templates|High-risk Lua module]]: 20,000+ transclusions ([Edit=Require template editor access] (indefinite) [Move=Require template editor access] (indefinite))</comment>
+      <origin>463804</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>463807</id>
+      <parentid>463806</parentid>
+      <timestamp>2025-03-15T19:26:04Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: I hope this actually fixes things</comment>
+      <origin>463804</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>463814</id>
+      <parentid>463807</parentid>
+      <timestamp>2025-03-25T05:24:08Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>6 revisions imported from [[:wikipedia:Module:ParameterCount]]</comment>
+      <origin>463804</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>463815</id>
+      <parentid>463814</parentid>
+      <timestamp>2025-11-21T03:32:09Z</timestamp>
+      <contributor>
+        <username>en&gt;Mr. Stradivarius</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:ParameterCount]]": [[WP:High-risk templates|High-risk Lua module]]: 20,000+ transclusions ([Edit=Require template editor access] (indefinite) [Move=Require template editor access] (indefinite))</comment>
+      <origin>463804</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>463816</id>
+      <parentid>463815</parentid>
+      <timestamp>2025-11-21T05:33:43Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: Reverting edits from past 90 minutes</comment>
+      <origin>463816</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2427" sha1="cgrmy53y7dwezig4i5g88hd0m2g1kdv" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for i, arg in pairs(args) do
+		if testFunc(arg) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		testFunc = function (arg)
+			if not isBlank(arg) then
+				return testFunc(arg)
+			end
+		end
+	end
+	return count(frame:getParent().args, testFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all|blank=yes}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main|blank=yes}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return '^' .. pattern .. '$'
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (arg)
+			if keys[arg] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(arg, pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>cgrmy53y7dwezig4i5g88hd0m2g1kdv</sha1>
+    </revision>
+    <revision>
+      <id>177</id>
+      <timestamp>2025-11-21T05:50:05Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: re-importing and overwriting due to the weird script failure </comment>
+      <origin>177</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>219296</id>
+      <parentid>177</parentid>
+      <timestamp>2026-02-16T18:54:08Z</timestamp>
+      <contributor>
+        <username>en&gt;Mr. Stradivarius</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:ParameterCount]]": [[WP:High-risk templates|High-risk Lua module]]: 20,000+ transclusions ([Edit=Require template editor access] (indefinite) [Move=Require template editor access] (indefinite))</comment>
+      <origin>177</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>219298</id>
+      <parentid>219296</parentid>
+      <timestamp>2026-02-16T18:54:09Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting this template since it seems broken in how it treats unknown parameters in [[Category:Wikidata generated shikinaisha pages]]</comment>
+      <origin>177</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>3408194</id>
+      <parentid>219298</parentid>
+      <timestamp>2026-03-12T20:30:44Z</timestamp>
+      <contributor>
+        <username>en&gt;Mr. Stradivarius</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:ParameterCount]]": [[WP:High-risk templates|High-risk Lua module]]: 20,000+ transclusions ([Edit=Require template editor access] (indefinite) [Move=Require template editor access] (indefinite))</comment>
+      <origin>177</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>3408195</id>
+      <parentid>3408194</parentid>
+      <timestamp>2026-03-12T20:30:44Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>177</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>3439406</id>
+      <parentid>3408195</parentid>
+      <timestamp>2026-03-13T15:59:13Z</timestamp>
+      <contributor>
+        <username>en&gt;Mr. Stradivarius</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:ParameterCount]]": [[WP:High-risk templates|High-risk Lua module]]: 20,000+ transclusions ([Edit=Require template editor access] (indefinite) [Move=Require template editor access] (indefinite))</comment>
+      <origin>177</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>3439407</id>
+      <parentid>3439406</parentid>
+      <timestamp>2026-03-13T15:59:13Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Bot: reimport from enwiki to fix erroneous transclusions [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23052491609|manual triggered pipeline]]</comment>
+      <origin>177</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>3439484</id>
+      <parentid>3439407</parentid>
+      <timestamp>2026-03-13T15:59:41Z</timestamp>
+      <contributor>
+        <username>en&gt;Mr. Stradivarius</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:ParameterCount]]": [[WP:High-risk templates|High-risk Lua module]]: 20,000+ transclusions ([Edit=Require template editor access] (indefinite) [Move=Require template editor access] (indefinite))</comment>
+      <origin>177</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>3439485</id>
+      <parentid>3439484</parentid>
+      <timestamp>2026-03-13T15:59:41Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Bot: reimport from enwiki to fix erroneous transclusions [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23052491609|manual triggered pipeline]]</comment>
+      <origin>177</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>3439562</id>
+      <parentid>3439485</parentid>
+      <timestamp>2026-03-13T16:00:39Z</timestamp>
+      <contributor>
+        <username>en&gt;Mr. Stradivarius</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:ParameterCount]]": [[WP:High-risk templates|High-risk Lua module]]: 20,000+ transclusions ([Edit=Require template editor access] (indefinite) [Move=Require template editor access] (indefinite))</comment>
+      <origin>177</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>3439563</id>
+      <parentid>3439562</parentid>
+      <timestamp>2026-03-13T16:00:39Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Bot: reimport from enwiki to fix erroneous transclusions [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23052491609|manual triggered pipeline]]</comment>
+      <origin>177</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>3449701</id>
+      <parentid>3439563</parentid>
+      <timestamp>2026-03-13T19:47:56Z</timestamp>
+      <contributor>
+        <username>en&gt;Mr. Stradivarius</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:ParameterCount]]": [[WP:High-risk templates|High-risk Lua module]]: 20,000+ transclusions ([Edit=Require template editor access] (indefinite) [Move=Require template editor access] (indefinite))</comment>
+      <origin>177</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>3449702</id>
+      <parentid>3449701</parentid>
+      <timestamp>2026-03-13T19:47:56Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Bot: reimport from enwiki to fix erroneous transclusions [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23053570201|commit triggered pipeline]]</comment>
+      <origin>177</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>3449779</id>
+      <parentid>3449702</parentid>
+      <timestamp>2026-03-13T19:48:27Z</timestamp>
+      <contributor>
+        <username>en&gt;Mr. Stradivarius</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:ParameterCount]]": [[WP:High-risk templates|High-risk Lua module]]: 20,000+ transclusions ([Edit=Require template editor access] (indefinite) [Move=Require template editor access] (indefinite))</comment>
+      <origin>177</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>3449780</id>
+      <parentid>3449779</parentid>
+      <timestamp>2026-03-13T19:48:27Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Bot: reimport from enwiki to fix erroneous transclusions [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23053570201|commit triggered pipeline]]</comment>
+      <origin>177</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>3449857</id>
+      <parentid>3449780</parentid>
+      <timestamp>2026-03-13T19:49:28Z</timestamp>
+      <contributor>
+        <username>en&gt;Mr. Stradivarius</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:ParameterCount]]": [[WP:High-risk templates|High-risk Lua module]]: 20,000+ transclusions ([Edit=Require template editor access] (indefinite) [Move=Require template editor access] (indefinite))</comment>
+      <origin>177</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>3449858</id>
+      <parentid>3449857</parentid>
+      <timestamp>2026-03-13T19:49:28Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Bot: reimport from enwiki to fix erroneous transclusions [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23053570201|commit triggered pipeline]]</comment>
+      <origin>177</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>3449935</id>
+      <parentid>3449858</parentid>
+      <timestamp>2026-03-13T19:50:58Z</timestamp>
+      <contributor>
+        <username>en&gt;Mr. Stradivarius</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:ParameterCount]]": [[WP:High-risk templates|High-risk Lua module]]: 20,000+ transclusions ([Edit=Require template editor access] (indefinite) [Move=Require template editor access] (indefinite))</comment>
+      <origin>177</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>3449936</id>
+      <parentid>3449935</parentid>
+      <timestamp>2026-03-13T19:50:58Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Bot: reimport from enwiki to fix erroneous transclusions [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23053570201|commit triggered pipeline]]</comment>
+      <origin>177</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>3450013</id>
+      <parentid>3449936</parentid>
+      <timestamp>2026-03-13T19:52:56Z</timestamp>
+      <contributor>
+        <username>en&gt;Mr. Stradivarius</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:ParameterCount]]": [[WP:High-risk templates|High-risk Lua module]]: 20,000+ transclusions ([Edit=Require template editor access] (indefinite) [Move=Require template editor access] (indefinite))</comment>
+      <origin>177</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>3450014</id>
+      <parentid>3450013</parentid>
+      <timestamp>2026-03-13T19:52:56Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Bot: reimport from enwiki to fix erroneous transclusions [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23053570201|commit triggered pipeline]]</comment>
+      <origin>177</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>3647021</id>
+      <parentid>3450014</parentid>
+      <timestamp>2026-04-24T16:34:17Z</timestamp>
+      <contributor>
+        <username>en&gt;Mr. Stradivarius</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:ParameterCount]]": [[WP:High-risk templates|High-risk Lua module]]: 20,000+ transclusions ([Edit=Require template editor access] (indefinite) [Move=Require template editor access] (indefinite))</comment>
+      <origin>177</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+    <revision>
+      <id>3647022</id>
+      <parentid>3647021</parentid>
+      <timestamp>2026-04-24T16:34:17Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: en</comment>
+      <origin>177</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2509" sha1="bo1vhgb6r7zni8qgcvzfnnphlmq92ml" xml:space="preserve">-- This module produces a count of all the arguments passed to it.
+
+local yesno = require('Module:Yesno')
+
+-- Trim a string
+local function trim(s)
+	return s:match('^%s*(.-)%s*$')
+end
+
+-- Test whether a string is blank
+local function isBlank(s)
+	return not s:find('%S')
+end
+
+-- Tests whether a string is a valid positional key, and if so, returns it. If
+-- the key is invalid, this returns nil.
+local function isPositionalKey(s)
+	s = trim(s)
+	if s:find('^[1-9][0-9]*$') then
+		return tonumber(s)
+	end
+end
+
+-- Return the count of all arguments for which testFunc returns a truthy value.
+local function count(args, testFunc)
+	local ret = 0
+	for key, val in pairs(args) do
+		if testFunc(key, val) then
+			ret = ret + 1
+		end
+	end
+	return ret
+end
+
+-- Check shared arguments and get the parent argument count.
+local function main(frame, testFunc)
+	local blankifiedTestFunc
+	if yesno(frame.args.checkblanks) ~= false then
+		-- Extend the test function to check for blanks as well.
+		blankifiedTestFunc = function (key, val)
+			if not isBlank(val) then
+				return testFunc(key, val)
+			end
+		end
+	else
+		blankifiedTestFunc = testFunc
+	end
+	return count(frame:getParent().args, blankifiedTestFunc)
+end
+
+return {
+	-- Called with {{#invoke:ParameterCount|all}}
+	-- All specified parameters are counted, even those not supported by the
+	-- template.
+	all = function (frame)
+		return main(frame, function () return true end)
+	end,
+
+	-- Called with {{#invoke:ParameterCount|main}}
+	-- Users can specify a list of parameters to check, and a list of Lua
+	-- Ustring patterns to check each parameter against.
+	main = function (frame)
+		local args = frame.args
+		local keys, patterns = {}, {}
+		
+		-- Get key list
+		for i, key in ipairs(args) do
+			local positionalKey = isPositionalKey(key)
+			if positionalKey then
+				keys[positionalKey] = true
+			else
+				keys[trim(key)] = true
+			end
+		end
+
+		-- Get patterns
+		do
+			local function getPattern(i)
+				local pattern = args['pattern' .. tostring(i)]
+				if pattern and pattern ~= '' then
+					return pattern
+				end
+			end
+			local i = 1
+			local pattern = getPattern(i)
+			while pattern do
+				patterns[i] = pattern
+				i = i + 1
+				pattern = getPattern(i)
+			end
+		end
+
+		-- Construct the test function
+		local testFunc = function (key, val)
+			if keys[key] then
+				return true
+			end
+			for i, pattern in ipairs(patterns) do
+				if mw.ustring.find(tostring(key), pattern) then
+					return true
+				end
+			end
+			return false
+		end
+
+		return main(frame, testFunc)
+	end
+}</text>
+      <sha1>bo1vhgb6r7zni8qgcvzfnnphlmq92ml</sha1>
+    </revision>
+  </page>
+</mediawiki>

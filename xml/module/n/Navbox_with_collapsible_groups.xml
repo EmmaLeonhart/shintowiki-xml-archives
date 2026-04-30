@@ -1,0 +1,1890 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Navbox with collapsible groups</title>
+    <ns>828</ns>
+    <id>61</id>
+    <revision>
+      <id>436601</id>
+      <timestamp>2019-01-24T21:07:28Z</timestamp>
+      <contributor>
+        <username>MusikAnimal</username>
+        <id>53</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:Navbox with collapsible groups]]": [[WP:High-risk templates|High-risk Lua module]] ([Edit=Require template editor access] (indefinite) [Move=Require template editor access] (indefinite))</comment>
+      <origin>436601</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3662" sha1="4puv4ujrzakwzfosg5awaov15wcgryv" xml:space="preserve">-- This module implements {{Navbox with collapsible groups}}
+local q = {}
+local Navbox = require('Module:Navbox')
+
+-- helper functions
+local function concatstrings(s)
+	local r = table.concat(s, '')
+	if r:match('^%s*$') then r = nil end
+	return r
+end
+
+local function concatstyles(s)
+	local r = table.concat(s, ';')
+	while r:match(';%s*;') do
+		r = mw.ustring.gsub(r, ';%s*;', ';')
+	end
+	if r:match('^%s*;%s*$') then r = nil end
+	return r
+end
+
+function q._navbox(pargs)
+	-- table for args passed to navbox
+	local targs = {}
+
+	-- process args
+	local passthrough = {
+		['name']=true,['navbar']=true,['state']=true,['border']=true,
+		['bodyclass']=true,['groupclass']=true,['listclass']=true,
+		['style']=true,['bodystyle']=true,['basestyle']=true,
+		['title']=true,['titleclass']=true,['titlestyle']=true,
+		['above']=true,['aboveclass']=true,['abovestyle']=true,
+		['below']=true,['belowclass']=true,['belowstyle']=true,
+		['image']=true,['imageclass']=true,['imagestyle']=true,
+		['imageleft']=true,['imageleftstyle']=true
+	}
+	for k,v in pairs(pargs) do
+		if k and type(k) == 'string' then
+			if passthrough[k] then
+				targs[k] = v
+			elseif (k:match('^list[0-9][0-9]*$') 
+					or k:match('^content[0-9][0-9]*$') ) then
+				local n = mw.ustring.gsub(k, '^[a-z]*([0-9]*)$', '%1')
+				if (targs['list' .. n] == nil and pargs['group' .. n] == nil
+					and pargs['sect' .. n] == nil and pargs['section' .. n] == nil) then
+					targs['list' .. n] = concatstrings(
+						{pargs['list' .. n] or '', pargs['content' .. n] or ''})
+				end
+			elseif (k:match('^group[0-9][0-9]*$') 
+					or k:match('^sect[0-9][0-9]*$') 
+					or k:match('^section[0-9][0-9]*$') ) then
+				local n = mw.ustring.gsub(k, '^[a-z]*([0-9]*)$', '%1')
+				if targs['list' .. n] == nil then
+					local titlestyle = concatstyles(
+						{pargs['groupstyle'] or '',pargs['secttitlestyle'] or '', 
+							pargs['group' .. n .. 'style'] or '', 
+							pargs['section' .. n ..'titlestyle'] or ''})
+					local liststyle = concatstyles(
+						{pargs['liststyle'] or '', pargs['contentstyle'] or '', 
+							pargs['list' .. n .. 'style'] or '', 
+							pargs['content' .. n .. 'style'] or ''})
+					local title = concatstrings(
+						{pargs['group' .. n] or '', 
+							pargs['sect' .. n] or '',
+							pargs['section' .. n] or ''})
+					local list = concatstrings(
+						{pargs['list' .. n] or '', 
+							pargs['content' .. n] or ''})
+					local state = (pargs['abbr' .. n] and pargs['abbr' .. n] == pargs['selected']) 
+						and 'uncollapsed' or pargs['state' .. n] or 'collapsed'
+					
+					targs['list' .. n] = Navbox._navbox(
+						{'child', navbar = 'plain', state = state,
+						basestyle = pargs['basestyle'],
+						title = title, titlestyle = titlestyle,
+						list1 = list, liststyle = liststyle,
+						listclass = pargs['list' .. n .. 'class'],
+						image = pargs['image' .. n],
+						imageleft = pargs['imageleft' .. n],
+						listpadding = pargs['listpadding']})
+				end
+			end
+		end
+	end
+	-- ordering of style and bodystyle
+	targs['style'] = concatstyles({targs['style'] or '', targs['bodystyle'] or ''})
+	targs['bodystyle'] = nil
+	
+	-- child or subgroup
+	if targs['border'] == nil then targs['border'] = pargs[1] end
+
+	return Navbox._navbox(targs)
+end
+
+function q.navbox(frame)
+	local pargs = require('Module:Arguments').getArgs(frame, {wrappers = {'Template:Navbox with collapsible groups'}})
+
+	-- Read the arguments in the order they'll be output in, to make references number in the right order.
+	local _
+	_ = pargs.title
+	_ = pargs.above
+	for i = 1, 20 do
+		_ = pargs["group" .. tostring(i)]
+		_ = pargs["list" .. tostring(i)]
+	end
+	_ = pargs.below
+
+	return q._navbox(pargs)
+end
+
+return q</text>
+      <sha1>4puv4ujrzakwzfosg5awaov15wcgryv</sha1>
+    </revision>
+    <revision>
+      <id>436602</id>
+      <parentid>436601</parentid>
+      <timestamp>2024-06-25T10:18:14Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:Navbox_with_collapsible_groups]]: importing for the list. This is a canonical list of Shrines to work with</comment>
+      <origin>436601</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3662" sha1="4puv4ujrzakwzfosg5awaov15wcgryv" xml:space="preserve">-- This module implements {{Navbox with collapsible groups}}
+local q = {}
+local Navbox = require('Module:Navbox')
+
+-- helper functions
+local function concatstrings(s)
+	local r = table.concat(s, '')
+	if r:match('^%s*$') then r = nil end
+	return r
+end
+
+local function concatstyles(s)
+	local r = table.concat(s, ';')
+	while r:match(';%s*;') do
+		r = mw.ustring.gsub(r, ';%s*;', ';')
+	end
+	if r:match('^%s*;%s*$') then r = nil end
+	return r
+end
+
+function q._navbox(pargs)
+	-- table for args passed to navbox
+	local targs = {}
+
+	-- process args
+	local passthrough = {
+		['name']=true,['navbar']=true,['state']=true,['border']=true,
+		['bodyclass']=true,['groupclass']=true,['listclass']=true,
+		['style']=true,['bodystyle']=true,['basestyle']=true,
+		['title']=true,['titleclass']=true,['titlestyle']=true,
+		['above']=true,['aboveclass']=true,['abovestyle']=true,
+		['below']=true,['belowclass']=true,['belowstyle']=true,
+		['image']=true,['imageclass']=true,['imagestyle']=true,
+		['imageleft']=true,['imageleftstyle']=true
+	}
+	for k,v in pairs(pargs) do
+		if k and type(k) == 'string' then
+			if passthrough[k] then
+				targs[k] = v
+			elseif (k:match('^list[0-9][0-9]*$') 
+					or k:match('^content[0-9][0-9]*$') ) then
+				local n = mw.ustring.gsub(k, '^[a-z]*([0-9]*)$', '%1')
+				if (targs['list' .. n] == nil and pargs['group' .. n] == nil
+					and pargs['sect' .. n] == nil and pargs['section' .. n] == nil) then
+					targs['list' .. n] = concatstrings(
+						{pargs['list' .. n] or '', pargs['content' .. n] or ''})
+				end
+			elseif (k:match('^group[0-9][0-9]*$') 
+					or k:match('^sect[0-9][0-9]*$') 
+					or k:match('^section[0-9][0-9]*$') ) then
+				local n = mw.ustring.gsub(k, '^[a-z]*([0-9]*)$', '%1')
+				if targs['list' .. n] == nil then
+					local titlestyle = concatstyles(
+						{pargs['groupstyle'] or '',pargs['secttitlestyle'] or '', 
+							pargs['group' .. n .. 'style'] or '', 
+							pargs['section' .. n ..'titlestyle'] or ''})
+					local liststyle = concatstyles(
+						{pargs['liststyle'] or '', pargs['contentstyle'] or '', 
+							pargs['list' .. n .. 'style'] or '', 
+							pargs['content' .. n .. 'style'] or ''})
+					local title = concatstrings(
+						{pargs['group' .. n] or '', 
+							pargs['sect' .. n] or '',
+							pargs['section' .. n] or ''})
+					local list = concatstrings(
+						{pargs['list' .. n] or '', 
+							pargs['content' .. n] or ''})
+					local state = (pargs['abbr' .. n] and pargs['abbr' .. n] == pargs['selected']) 
+						and 'uncollapsed' or pargs['state' .. n] or 'collapsed'
+					
+					targs['list' .. n] = Navbox._navbox(
+						{'child', navbar = 'plain', state = state,
+						basestyle = pargs['basestyle'],
+						title = title, titlestyle = titlestyle,
+						list1 = list, liststyle = liststyle,
+						listclass = pargs['list' .. n .. 'class'],
+						image = pargs['image' .. n],
+						imageleft = pargs['imageleft' .. n],
+						listpadding = pargs['listpadding']})
+				end
+			end
+		end
+	end
+	-- ordering of style and bodystyle
+	targs['style'] = concatstyles({targs['style'] or '', targs['bodystyle'] or ''})
+	targs['bodystyle'] = nil
+	
+	-- child or subgroup
+	if targs['border'] == nil then targs['border'] = pargs[1] end
+
+	return Navbox._navbox(targs)
+end
+
+function q.navbox(frame)
+	local pargs = require('Module:Arguments').getArgs(frame, {wrappers = {'Template:Navbox with collapsible groups'}})
+
+	-- Read the arguments in the order they'll be output in, to make references number in the right order.
+	local _
+	_ = pargs.title
+	_ = pargs.above
+	for i = 1, 20 do
+		_ = pargs["group" .. tostring(i)]
+		_ = pargs["list" .. tostring(i)]
+	end
+	_ = pargs.below
+
+	return q._navbox(pargs)
+end
+
+return q</text>
+      <sha1>4puv4ujrzakwzfosg5awaov15wcgryv</sha1>
+    </revision>
+    <revision>
+      <id>436603</id>
+      <parentid>436602</parentid>
+      <timestamp>2024-09-17T20:06:30Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Ahecht</username>
+        <id>0</id>
+      </contributor>
+      <comment>pseudo-ternary operator doesn't work with "and nil"</comment>
+      <origin>436603</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="6406" sha1="eht1ky57dua4ak8akt6ahowqwcw6dct" xml:space="preserve">-- This module implements {{Navbox with collapsible groups}}
+
+require('strict')
+local p = {}
+local parentCfg = mw.loadData('Module:Navbox/configuration')
+local thisCfg = mw.loadData('Module:Navbox with collapsible groups/configuration')
+local cfg = {}
+for k, v in pairs(thisCfg) do
+	if type(v) == 'table' then
+		cfg[k] = {}
+		if type(parentCfg[k]) == 'table' then
+			for kk, vv in pairs(parentCfg[k]) do cfg[k][kk] = vv end
+		end
+		for kk, vv in pairs(v) do cfg[k][kk] = vv end
+	end
+end
+local inArray = require("Module:TableTools").inArray
+local getArgs -- lazily initialized
+
+-- helper functions
+local andnum = function(s, n) return string.format(cfg.arg[s..'_and_num'], n) end
+	
+local isblank = function(v) return (v or '') == '' end
+
+local function concatstrings(s)
+	local r = table.concat(s, '')
+	if r:match('^%s*$') then return nil end
+	return r
+end
+	
+local function concatstyles(s)
+	local r = ''
+	for _, v in ipairs(s) do
+		v = mw.text.trim(v, "%s;")
+		if not isblank(v) then r = r .. v .. ';' end
+	end
+	if isblank(r) then return nil end
+	return r
+end
+	
+local function getSubgroup(args, listnum, listText)
+	local subArgs = {
+		[cfg.arg.border] = cfg.keyword.border_subgroup,
+		[cfg.arg.navbar] = cfg.keyword.navbar_plain
+	}
+	local hasSubArgs = false
+	for k, v in pairs(args) do
+		k = tostring(k)
+		for _, w in ipairs(cfg.keyword.subgroups) do
+			w = w .. listnum .. "_"
+			if (#k &gt; #w) and (k:sub(1, #w) == w) then
+				subArgs[k:sub(#w + 1)] = v
+				hasSubArgs = true
+			end
+		end
+	end
+	return hasSubArgs and p._navbox(subArgs) or listText
+end
+
+-- Main functions
+p._navbox = require('Module:Navbox')._navbox
+
+function p._withCollapsibleGroups(pargs)
+	-- table for args passed to navbox
+	local targs = {}
+
+	-- process args
+	local passthrough = {
+		[cfg.arg.above]=true,[cfg.arg.aboveclass]=true,[cfg.arg.abovestyle]=true,
+		[cfg.arg.basestyle]=true,
+		[cfg.arg.below]=true,[cfg.arg.belowclass]=true,[cfg.arg.belowstyle]=true,
+		[cfg.arg.bodyclass]=true,[cfg.arg.bodystyle]=true,
+		[cfg.arg.border]=true,
+		[cfg.arg.groupclass]=true,
+		[cfg.arg.image]=true,[cfg.arg.imageclass]=true,[cfg.arg.imagestyle]=true,
+		[cfg.arg.imageleft]=true,[cfg.arg.imageleftstyle]=true,
+		[cfg.arg.listclass]=true,
+		[cfg.arg.name]=true,
+		[cfg.arg.navbar]=true,
+		[cfg.arg.state]=true,
+		[cfg.arg.style]=true,
+		[cfg.arg.title]=true,[cfg.arg.titleclass]=true,[cfg.arg.titlestyle]=true
+	}
+	for k,v in pairs(pargs) do
+		if k and type(k) == 'string' then
+			if passthrough[k] then
+				targs[k] = v
+			elseif (k:match(cfg.pattern.num)) then
+				local n = k:match(cfg.pattern.num)
+				local list_and_num = andnum('list', n)
+				if ((k:match(cfg.pattern.listnum) or k:match(cfg.pattern.contentnum))
+						and targs[list_and_num] == nil
+						and pargs[andnum('group', n)] == nil
+						and pargs[andnum('sect', n)] == nil
+						and pargs[andnum('section', n)] == nil) then
+					targs[list_and_num] = concatstrings({
+						pargs[list_and_num] or '',
+						pargs[andnum('content', n)] or ''
+					})
+					if (targs[list_and_num] and inArray(cfg.keyword.subgroups, targs[list_and_num])) then
+						targs[list_and_num] = getSubgroup(pargs, n, targs[list_and_num])
+					end
+				elseif ((k:match(cfg.pattern.groupnum) or k:match(cfg.pattern.sectnum) or k:match(cfg.pattern.sectionnum))
+						and targs[list_and_num] == nil) then
+					local titlestyle = concatstyles({
+						pargs[cfg.arg.groupstyle] or '',
+						pargs[cfg.arg.secttitlestyle] or '', 
+						pargs[andnum('groupstyle', n)] or '', 
+						pargs[andnum('sectiontitlestyle', n)] or ''
+					})
+					local liststyle = concatstyles({
+						pargs[cfg.arg.liststyle] or '',
+						pargs[cfg.arg.contentstyle] or '', 
+						pargs[andnum('liststyle', n)] or '', 
+						pargs[andnum('contentstyle', n)] or ''
+					})
+					local title = concatstrings({
+						pargs[andnum('group', n)] or '',
+						pargs[andnum('sect', n)] or '',
+						pargs[andnum('section', n)] or ''
+					})
+					local list = concatstrings({
+						pargs[list_and_num] or '', 
+						pargs[andnum('content', n)] or ''
+					})
+					if list and inArray(cfg.keyword.subgroups, list) then
+						list = getSubgroup(pargs, n, list)
+					end
+					local abbr_and_num = andnum('abbr', n)
+					local state = (pargs[abbr_and_num] and pargs[abbr_and_num] == pargs[cfg.arg.selected]) 
+						and cfg.keyword.state_uncollapsed
+						or (pargs[andnum('state', n)] or cfg.keyword.state_collapsed)
+					
+					targs[list_and_num] =p._navbox({
+						cfg.keyword.border_child,
+						[cfg.arg.navbar] = cfg.keyword.navbar_plain,
+						[cfg.arg.state] = state,
+						[cfg.arg.basestyle] = pargs[cfg.arg.basestyle],
+						[cfg.arg.title] = title,
+						[cfg.arg.titlestyle] = titlestyle,
+						[andnum('list', 1)] = list,
+						[cfg.arg.liststyle] = liststyle,
+						[cfg.arg.listclass] = pargs[andnum('listclass', n)],
+						[cfg.arg.image] = pargs[andnum('image', n)],
+						[cfg.arg.imageleft] = pargs[andnum('imageleft', n)],
+						[cfg.arg.listpadding] = pargs[cfg.arg.listpadding]
+					})
+				end
+			end
+		end
+	end
+	-- ordering of style and bodystyle
+	targs[cfg.arg.style] = concatstyles({targs[cfg.arg.style] or '', targs[cfg.arg.bodystyle] or ''})
+	targs[cfg.arg.bodystyle] = nil
+	
+	-- child or subgroup
+	if targs[cfg.arg.border] == nil then targs[cfg.arg.border] = pargs[1] end
+
+	return p._navbox(targs)
+end
+
+-- Template entry points
+function p.navbox (frame, boxtype)
+	local function readArgs(args, prefix)
+		-- Read the arguments in the order they'll be output in, to make references
+		-- number in the right order.
+		local _
+		_ = args[prefix .. cfg.arg.title]
+		_ = args[prefix .. cfg.arg.above]
+		-- Limit this to 20 as covering 'most' cases (that's a SWAG) and because
+		-- iterator approach won't work here
+		for i = 1, 20 do
+			_ = args[prefix .. andnum('group', i)]
+			if inArray(cfg.keyword.subgroups, args[prefix .. andnum('list', i)]) then
+				for _, v in ipairs(cfg.keyword.subgroups) do
+					readArgs(args, prefix .. v .. i .. "_")
+				end
+			end
+		end
+		_ = args[prefix .. cfg.arg.below]
+	end
+
+	if not getArgs then
+		getArgs = require('Module:Arguments').getArgs
+	end
+	local args = getArgs(frame, {wrappers = {cfg.pattern[boxtype or 'navbox']}})
+	readArgs(args, "")
+	return p['_'..(boxtype or 'navbox')](args)
+end
+
+p['with collapsible groups'] = function (frame)
+	return p.navbox(frame, 'withCollapsibleGroups')
+end
+
+local q = {}
+q._navbox = p._withCollapsibleGroups
+q.navbox = p['with collapsible groups']
+return q</text>
+      <sha1>eht1ky57dua4ak8akt6ahowqwcw6dct</sha1>
+    </revision>
+    <revision>
+      <id>436604</id>
+      <parentid>436603</parentid>
+      <timestamp>2025-01-02T06:49:35Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:Navbox_with_collapsible_groups]]</comment>
+      <origin>436603</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="6406" sha1="eht1ky57dua4ak8akt6ahowqwcw6dct" xml:space="preserve">-- This module implements {{Navbox with collapsible groups}}
+
+require('strict')
+local p = {}
+local parentCfg = mw.loadData('Module:Navbox/configuration')
+local thisCfg = mw.loadData('Module:Navbox with collapsible groups/configuration')
+local cfg = {}
+for k, v in pairs(thisCfg) do
+	if type(v) == 'table' then
+		cfg[k] = {}
+		if type(parentCfg[k]) == 'table' then
+			for kk, vv in pairs(parentCfg[k]) do cfg[k][kk] = vv end
+		end
+		for kk, vv in pairs(v) do cfg[k][kk] = vv end
+	end
+end
+local inArray = require("Module:TableTools").inArray
+local getArgs -- lazily initialized
+
+-- helper functions
+local andnum = function(s, n) return string.format(cfg.arg[s..'_and_num'], n) end
+	
+local isblank = function(v) return (v or '') == '' end
+
+local function concatstrings(s)
+	local r = table.concat(s, '')
+	if r:match('^%s*$') then return nil end
+	return r
+end
+	
+local function concatstyles(s)
+	local r = ''
+	for _, v in ipairs(s) do
+		v = mw.text.trim(v, "%s;")
+		if not isblank(v) then r = r .. v .. ';' end
+	end
+	if isblank(r) then return nil end
+	return r
+end
+	
+local function getSubgroup(args, listnum, listText)
+	local subArgs = {
+		[cfg.arg.border] = cfg.keyword.border_subgroup,
+		[cfg.arg.navbar] = cfg.keyword.navbar_plain
+	}
+	local hasSubArgs = false
+	for k, v in pairs(args) do
+		k = tostring(k)
+		for _, w in ipairs(cfg.keyword.subgroups) do
+			w = w .. listnum .. "_"
+			if (#k &gt; #w) and (k:sub(1, #w) == w) then
+				subArgs[k:sub(#w + 1)] = v
+				hasSubArgs = true
+			end
+		end
+	end
+	return hasSubArgs and p._navbox(subArgs) or listText
+end
+
+-- Main functions
+p._navbox = require('Module:Navbox')._navbox
+
+function p._withCollapsibleGroups(pargs)
+	-- table for args passed to navbox
+	local targs = {}
+
+	-- process args
+	local passthrough = {
+		[cfg.arg.above]=true,[cfg.arg.aboveclass]=true,[cfg.arg.abovestyle]=true,
+		[cfg.arg.basestyle]=true,
+		[cfg.arg.below]=true,[cfg.arg.belowclass]=true,[cfg.arg.belowstyle]=true,
+		[cfg.arg.bodyclass]=true,[cfg.arg.bodystyle]=true,
+		[cfg.arg.border]=true,
+		[cfg.arg.groupclass]=true,
+		[cfg.arg.image]=true,[cfg.arg.imageclass]=true,[cfg.arg.imagestyle]=true,
+		[cfg.arg.imageleft]=true,[cfg.arg.imageleftstyle]=true,
+		[cfg.arg.listclass]=true,
+		[cfg.arg.name]=true,
+		[cfg.arg.navbar]=true,
+		[cfg.arg.state]=true,
+		[cfg.arg.style]=true,
+		[cfg.arg.title]=true,[cfg.arg.titleclass]=true,[cfg.arg.titlestyle]=true
+	}
+	for k,v in pairs(pargs) do
+		if k and type(k) == 'string' then
+			if passthrough[k] then
+				targs[k] = v
+			elseif (k:match(cfg.pattern.num)) then
+				local n = k:match(cfg.pattern.num)
+				local list_and_num = andnum('list', n)
+				if ((k:match(cfg.pattern.listnum) or k:match(cfg.pattern.contentnum))
+						and targs[list_and_num] == nil
+						and pargs[andnum('group', n)] == nil
+						and pargs[andnum('sect', n)] == nil
+						and pargs[andnum('section', n)] == nil) then
+					targs[list_and_num] = concatstrings({
+						pargs[list_and_num] or '',
+						pargs[andnum('content', n)] or ''
+					})
+					if (targs[list_and_num] and inArray(cfg.keyword.subgroups, targs[list_and_num])) then
+						targs[list_and_num] = getSubgroup(pargs, n, targs[list_and_num])
+					end
+				elseif ((k:match(cfg.pattern.groupnum) or k:match(cfg.pattern.sectnum) or k:match(cfg.pattern.sectionnum))
+						and targs[list_and_num] == nil) then
+					local titlestyle = concatstyles({
+						pargs[cfg.arg.groupstyle] or '',
+						pargs[cfg.arg.secttitlestyle] or '', 
+						pargs[andnum('groupstyle', n)] or '', 
+						pargs[andnum('sectiontitlestyle', n)] or ''
+					})
+					local liststyle = concatstyles({
+						pargs[cfg.arg.liststyle] or '',
+						pargs[cfg.arg.contentstyle] or '', 
+						pargs[andnum('liststyle', n)] or '', 
+						pargs[andnum('contentstyle', n)] or ''
+					})
+					local title = concatstrings({
+						pargs[andnum('group', n)] or '',
+						pargs[andnum('sect', n)] or '',
+						pargs[andnum('section', n)] or ''
+					})
+					local list = concatstrings({
+						pargs[list_and_num] or '', 
+						pargs[andnum('content', n)] or ''
+					})
+					if list and inArray(cfg.keyword.subgroups, list) then
+						list = getSubgroup(pargs, n, list)
+					end
+					local abbr_and_num = andnum('abbr', n)
+					local state = (pargs[abbr_and_num] and pargs[abbr_and_num] == pargs[cfg.arg.selected]) 
+						and cfg.keyword.state_uncollapsed
+						or (pargs[andnum('state', n)] or cfg.keyword.state_collapsed)
+					
+					targs[list_and_num] =p._navbox({
+						cfg.keyword.border_child,
+						[cfg.arg.navbar] = cfg.keyword.navbar_plain,
+						[cfg.arg.state] = state,
+						[cfg.arg.basestyle] = pargs[cfg.arg.basestyle],
+						[cfg.arg.title] = title,
+						[cfg.arg.titlestyle] = titlestyle,
+						[andnum('list', 1)] = list,
+						[cfg.arg.liststyle] = liststyle,
+						[cfg.arg.listclass] = pargs[andnum('listclass', n)],
+						[cfg.arg.image] = pargs[andnum('image', n)],
+						[cfg.arg.imageleft] = pargs[andnum('imageleft', n)],
+						[cfg.arg.listpadding] = pargs[cfg.arg.listpadding]
+					})
+				end
+			end
+		end
+	end
+	-- ordering of style and bodystyle
+	targs[cfg.arg.style] = concatstyles({targs[cfg.arg.style] or '', targs[cfg.arg.bodystyle] or ''})
+	targs[cfg.arg.bodystyle] = nil
+	
+	-- child or subgroup
+	if targs[cfg.arg.border] == nil then targs[cfg.arg.border] = pargs[1] end
+
+	return p._navbox(targs)
+end
+
+-- Template entry points
+function p.navbox (frame, boxtype)
+	local function readArgs(args, prefix)
+		-- Read the arguments in the order they'll be output in, to make references
+		-- number in the right order.
+		local _
+		_ = args[prefix .. cfg.arg.title]
+		_ = args[prefix .. cfg.arg.above]
+		-- Limit this to 20 as covering 'most' cases (that's a SWAG) and because
+		-- iterator approach won't work here
+		for i = 1, 20 do
+			_ = args[prefix .. andnum('group', i)]
+			if inArray(cfg.keyword.subgroups, args[prefix .. andnum('list', i)]) then
+				for _, v in ipairs(cfg.keyword.subgroups) do
+					readArgs(args, prefix .. v .. i .. "_")
+				end
+			end
+		end
+		_ = args[prefix .. cfg.arg.below]
+	end
+
+	if not getArgs then
+		getArgs = require('Module:Arguments').getArgs
+	end
+	local args = getArgs(frame, {wrappers = {cfg.pattern[boxtype or 'navbox']}})
+	readArgs(args, "")
+	return p['_'..(boxtype or 'navbox')](args)
+end
+
+p['with collapsible groups'] = function (frame)
+	return p.navbox(frame, 'withCollapsibleGroups')
+end
+
+local q = {}
+q._navbox = p._withCollapsibleGroups
+q.navbox = p['with collapsible groups']
+return q</text>
+      <sha1>eht1ky57dua4ak8akt6ahowqwcw6dct</sha1>
+    </revision>
+    <revision>
+      <id>436605</id>
+      <parentid>436604</parentid>
+      <timestamp>2025-01-02T07:02:54Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Adding [[Category:original pages]] using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>436605</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="6435" sha1="6w47tvqov5j5o6w7ts9uxy3hh8quew9" xml:space="preserve">-- This module implements {{Navbox with collapsible groups}}
+
+require('strict')
+local p = {}
+local parentCfg = mw.loadData('Module:Navbox/configuration')
+local thisCfg = mw.loadData('Module:Navbox with collapsible groups/configuration')
+local cfg = {}
+for k, v in pairs(thisCfg) do
+	if type(v) == 'table' then
+		cfg[k] = {}
+		if type(parentCfg[k]) == 'table' then
+			for kk, vv in pairs(parentCfg[k]) do cfg[k][kk] = vv end
+		end
+		for kk, vv in pairs(v) do cfg[k][kk] = vv end
+	end
+end
+local inArray = require("Module:TableTools").inArray
+local getArgs -- lazily initialized
+
+-- helper functions
+local andnum = function(s, n) return string.format(cfg.arg[s..'_and_num'], n) end
+	
+local isblank = function(v) return (v or '') == '' end
+
+local function concatstrings(s)
+	local r = table.concat(s, '')
+	if r:match('^%s*$') then return nil end
+	return r
+end
+	
+local function concatstyles(s)
+	local r = ''
+	for _, v in ipairs(s) do
+		v = mw.text.trim(v, "%s;")
+		if not isblank(v) then r = r .. v .. ';' end
+	end
+	if isblank(r) then return nil end
+	return r
+end
+	
+local function getSubgroup(args, listnum, listText)
+	local subArgs = {
+		[cfg.arg.border] = cfg.keyword.border_subgroup,
+		[cfg.arg.navbar] = cfg.keyword.navbar_plain
+	}
+	local hasSubArgs = false
+	for k, v in pairs(args) do
+		k = tostring(k)
+		for _, w in ipairs(cfg.keyword.subgroups) do
+			w = w .. listnum .. "_"
+			if (#k &gt; #w) and (k:sub(1, #w) == w) then
+				subArgs[k:sub(#w + 1)] = v
+				hasSubArgs = true
+			end
+		end
+	end
+	return hasSubArgs and p._navbox(subArgs) or listText
+end
+
+-- Main functions
+p._navbox = require('Module:Navbox')._navbox
+
+function p._withCollapsibleGroups(pargs)
+	-- table for args passed to navbox
+	local targs = {}
+
+	-- process args
+	local passthrough = {
+		[cfg.arg.above]=true,[cfg.arg.aboveclass]=true,[cfg.arg.abovestyle]=true,
+		[cfg.arg.basestyle]=true,
+		[cfg.arg.below]=true,[cfg.arg.belowclass]=true,[cfg.arg.belowstyle]=true,
+		[cfg.arg.bodyclass]=true,[cfg.arg.bodystyle]=true,
+		[cfg.arg.border]=true,
+		[cfg.arg.groupclass]=true,
+		[cfg.arg.image]=true,[cfg.arg.imageclass]=true,[cfg.arg.imagestyle]=true,
+		[cfg.arg.imageleft]=true,[cfg.arg.imageleftstyle]=true,
+		[cfg.arg.listclass]=true,
+		[cfg.arg.name]=true,
+		[cfg.arg.navbar]=true,
+		[cfg.arg.state]=true,
+		[cfg.arg.style]=true,
+		[cfg.arg.title]=true,[cfg.arg.titleclass]=true,[cfg.arg.titlestyle]=true
+	}
+	for k,v in pairs(pargs) do
+		if k and type(k) == 'string' then
+			if passthrough[k] then
+				targs[k] = v
+			elseif (k:match(cfg.pattern.num)) then
+				local n = k:match(cfg.pattern.num)
+				local list_and_num = andnum('list', n)
+				if ((k:match(cfg.pattern.listnum) or k:match(cfg.pattern.contentnum))
+						and targs[list_and_num] == nil
+						and pargs[andnum('group', n)] == nil
+						and pargs[andnum('sect', n)] == nil
+						and pargs[andnum('section', n)] == nil) then
+					targs[list_and_num] = concatstrings({
+						pargs[list_and_num] or '',
+						pargs[andnum('content', n)] or ''
+					})
+					if (targs[list_and_num] and inArray(cfg.keyword.subgroups, targs[list_and_num])) then
+						targs[list_and_num] = getSubgroup(pargs, n, targs[list_and_num])
+					end
+				elseif ((k:match(cfg.pattern.groupnum) or k:match(cfg.pattern.sectnum) or k:match(cfg.pattern.sectionnum))
+						and targs[list_and_num] == nil) then
+					local titlestyle = concatstyles({
+						pargs[cfg.arg.groupstyle] or '',
+						pargs[cfg.arg.secttitlestyle] or '', 
+						pargs[andnum('groupstyle', n)] or '', 
+						pargs[andnum('sectiontitlestyle', n)] or ''
+					})
+					local liststyle = concatstyles({
+						pargs[cfg.arg.liststyle] or '',
+						pargs[cfg.arg.contentstyle] or '', 
+						pargs[andnum('liststyle', n)] or '', 
+						pargs[andnum('contentstyle', n)] or ''
+					})
+					local title = concatstrings({
+						pargs[andnum('group', n)] or '',
+						pargs[andnum('sect', n)] or '',
+						pargs[andnum('section', n)] or ''
+					})
+					local list = concatstrings({
+						pargs[list_and_num] or '', 
+						pargs[andnum('content', n)] or ''
+					})
+					if list and inArray(cfg.keyword.subgroups, list) then
+						list = getSubgroup(pargs, n, list)
+					end
+					local abbr_and_num = andnum('abbr', n)
+					local state = (pargs[abbr_and_num] and pargs[abbr_and_num] == pargs[cfg.arg.selected]) 
+						and cfg.keyword.state_uncollapsed
+						or (pargs[andnum('state', n)] or cfg.keyword.state_collapsed)
+					
+					targs[list_and_num] =p._navbox({
+						cfg.keyword.border_child,
+						[cfg.arg.navbar] = cfg.keyword.navbar_plain,
+						[cfg.arg.state] = state,
+						[cfg.arg.basestyle] = pargs[cfg.arg.basestyle],
+						[cfg.arg.title] = title,
+						[cfg.arg.titlestyle] = titlestyle,
+						[andnum('list', 1)] = list,
+						[cfg.arg.liststyle] = liststyle,
+						[cfg.arg.listclass] = pargs[andnum('listclass', n)],
+						[cfg.arg.image] = pargs[andnum('image', n)],
+						[cfg.arg.imageleft] = pargs[andnum('imageleft', n)],
+						[cfg.arg.listpadding] = pargs[cfg.arg.listpadding]
+					})
+				end
+			end
+		end
+	end
+	-- ordering of style and bodystyle
+	targs[cfg.arg.style] = concatstyles({targs[cfg.arg.style] or '', targs[cfg.arg.bodystyle] or ''})
+	targs[cfg.arg.bodystyle] = nil
+	
+	-- child or subgroup
+	if targs[cfg.arg.border] == nil then targs[cfg.arg.border] = pargs[1] end
+
+	return p._navbox(targs)
+end
+
+-- Template entry points
+function p.navbox (frame, boxtype)
+	local function readArgs(args, prefix)
+		-- Read the arguments in the order they'll be output in, to make references
+		-- number in the right order.
+		local _
+		_ = args[prefix .. cfg.arg.title]
+		_ = args[prefix .. cfg.arg.above]
+		-- Limit this to 20 as covering 'most' cases (that's a SWAG) and because
+		-- iterator approach won't work here
+		for i = 1, 20 do
+			_ = args[prefix .. andnum('group', i)]
+			if inArray(cfg.keyword.subgroups, args[prefix .. andnum('list', i)]) then
+				for _, v in ipairs(cfg.keyword.subgroups) do
+					readArgs(args, prefix .. v .. i .. "_")
+				end
+			end
+		end
+		_ = args[prefix .. cfg.arg.below]
+	end
+
+	if not getArgs then
+		getArgs = require('Module:Arguments').getArgs
+	end
+	local args = getArgs(frame, {wrappers = {cfg.pattern[boxtype or 'navbox']}})
+	readArgs(args, "")
+	return p['_'..(boxtype or 'navbox')](args)
+end
+
+p['with collapsible groups'] = function (frame)
+	return p.navbox(frame, 'withCollapsibleGroups')
+end
+
+local q = {}
+q._navbox = p._withCollapsibleGroups
+q.navbox = p['with collapsible groups']
+return q
+
+[[Category:original pages]]</text>
+      <sha1>6w47tvqov5j5o6w7ts9uxy3hh8quew9</sha1>
+    </revision>
+    <revision>
+      <id>436606</id>
+      <parentid>436605</parentid>
+      <timestamp>2025-01-03T11:42:26Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Reverted edits by [[Special:Contributions/Immanuelle|Immanuelle]] ([[User talk:Immanuelle|talk]]) to last revision by [[User:wikipedia&gt;Ahecht|wikipedia&gt;Ahecht]]</comment>
+      <origin>436606</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="6406" sha1="eht1ky57dua4ak8akt6ahowqwcw6dct" xml:space="preserve">-- This module implements {{Navbox with collapsible groups}}
+
+require('strict')
+local p = {}
+local parentCfg = mw.loadData('Module:Navbox/configuration')
+local thisCfg = mw.loadData('Module:Navbox with collapsible groups/configuration')
+local cfg = {}
+for k, v in pairs(thisCfg) do
+	if type(v) == 'table' then
+		cfg[k] = {}
+		if type(parentCfg[k]) == 'table' then
+			for kk, vv in pairs(parentCfg[k]) do cfg[k][kk] = vv end
+		end
+		for kk, vv in pairs(v) do cfg[k][kk] = vv end
+	end
+end
+local inArray = require("Module:TableTools").inArray
+local getArgs -- lazily initialized
+
+-- helper functions
+local andnum = function(s, n) return string.format(cfg.arg[s..'_and_num'], n) end
+	
+local isblank = function(v) return (v or '') == '' end
+
+local function concatstrings(s)
+	local r = table.concat(s, '')
+	if r:match('^%s*$') then return nil end
+	return r
+end
+	
+local function concatstyles(s)
+	local r = ''
+	for _, v in ipairs(s) do
+		v = mw.text.trim(v, "%s;")
+		if not isblank(v) then r = r .. v .. ';' end
+	end
+	if isblank(r) then return nil end
+	return r
+end
+	
+local function getSubgroup(args, listnum, listText)
+	local subArgs = {
+		[cfg.arg.border] = cfg.keyword.border_subgroup,
+		[cfg.arg.navbar] = cfg.keyword.navbar_plain
+	}
+	local hasSubArgs = false
+	for k, v in pairs(args) do
+		k = tostring(k)
+		for _, w in ipairs(cfg.keyword.subgroups) do
+			w = w .. listnum .. "_"
+			if (#k &gt; #w) and (k:sub(1, #w) == w) then
+				subArgs[k:sub(#w + 1)] = v
+				hasSubArgs = true
+			end
+		end
+	end
+	return hasSubArgs and p._navbox(subArgs) or listText
+end
+
+-- Main functions
+p._navbox = require('Module:Navbox')._navbox
+
+function p._withCollapsibleGroups(pargs)
+	-- table for args passed to navbox
+	local targs = {}
+
+	-- process args
+	local passthrough = {
+		[cfg.arg.above]=true,[cfg.arg.aboveclass]=true,[cfg.arg.abovestyle]=true,
+		[cfg.arg.basestyle]=true,
+		[cfg.arg.below]=true,[cfg.arg.belowclass]=true,[cfg.arg.belowstyle]=true,
+		[cfg.arg.bodyclass]=true,[cfg.arg.bodystyle]=true,
+		[cfg.arg.border]=true,
+		[cfg.arg.groupclass]=true,
+		[cfg.arg.image]=true,[cfg.arg.imageclass]=true,[cfg.arg.imagestyle]=true,
+		[cfg.arg.imageleft]=true,[cfg.arg.imageleftstyle]=true,
+		[cfg.arg.listclass]=true,
+		[cfg.arg.name]=true,
+		[cfg.arg.navbar]=true,
+		[cfg.arg.state]=true,
+		[cfg.arg.style]=true,
+		[cfg.arg.title]=true,[cfg.arg.titleclass]=true,[cfg.arg.titlestyle]=true
+	}
+	for k,v in pairs(pargs) do
+		if k and type(k) == 'string' then
+			if passthrough[k] then
+				targs[k] = v
+			elseif (k:match(cfg.pattern.num)) then
+				local n = k:match(cfg.pattern.num)
+				local list_and_num = andnum('list', n)
+				if ((k:match(cfg.pattern.listnum) or k:match(cfg.pattern.contentnum))
+						and targs[list_and_num] == nil
+						and pargs[andnum('group', n)] == nil
+						and pargs[andnum('sect', n)] == nil
+						and pargs[andnum('section', n)] == nil) then
+					targs[list_and_num] = concatstrings({
+						pargs[list_and_num] or '',
+						pargs[andnum('content', n)] or ''
+					})
+					if (targs[list_and_num] and inArray(cfg.keyword.subgroups, targs[list_and_num])) then
+						targs[list_and_num] = getSubgroup(pargs, n, targs[list_and_num])
+					end
+				elseif ((k:match(cfg.pattern.groupnum) or k:match(cfg.pattern.sectnum) or k:match(cfg.pattern.sectionnum))
+						and targs[list_and_num] == nil) then
+					local titlestyle = concatstyles({
+						pargs[cfg.arg.groupstyle] or '',
+						pargs[cfg.arg.secttitlestyle] or '', 
+						pargs[andnum('groupstyle', n)] or '', 
+						pargs[andnum('sectiontitlestyle', n)] or ''
+					})
+					local liststyle = concatstyles({
+						pargs[cfg.arg.liststyle] or '',
+						pargs[cfg.arg.contentstyle] or '', 
+						pargs[andnum('liststyle', n)] or '', 
+						pargs[andnum('contentstyle', n)] or ''
+					})
+					local title = concatstrings({
+						pargs[andnum('group', n)] or '',
+						pargs[andnum('sect', n)] or '',
+						pargs[andnum('section', n)] or ''
+					})
+					local list = concatstrings({
+						pargs[list_and_num] or '', 
+						pargs[andnum('content', n)] or ''
+					})
+					if list and inArray(cfg.keyword.subgroups, list) then
+						list = getSubgroup(pargs, n, list)
+					end
+					local abbr_and_num = andnum('abbr', n)
+					local state = (pargs[abbr_and_num] and pargs[abbr_and_num] == pargs[cfg.arg.selected]) 
+						and cfg.keyword.state_uncollapsed
+						or (pargs[andnum('state', n)] or cfg.keyword.state_collapsed)
+					
+					targs[list_and_num] =p._navbox({
+						cfg.keyword.border_child,
+						[cfg.arg.navbar] = cfg.keyword.navbar_plain,
+						[cfg.arg.state] = state,
+						[cfg.arg.basestyle] = pargs[cfg.arg.basestyle],
+						[cfg.arg.title] = title,
+						[cfg.arg.titlestyle] = titlestyle,
+						[andnum('list', 1)] = list,
+						[cfg.arg.liststyle] = liststyle,
+						[cfg.arg.listclass] = pargs[andnum('listclass', n)],
+						[cfg.arg.image] = pargs[andnum('image', n)],
+						[cfg.arg.imageleft] = pargs[andnum('imageleft', n)],
+						[cfg.arg.listpadding] = pargs[cfg.arg.listpadding]
+					})
+				end
+			end
+		end
+	end
+	-- ordering of style and bodystyle
+	targs[cfg.arg.style] = concatstyles({targs[cfg.arg.style] or '', targs[cfg.arg.bodystyle] or ''})
+	targs[cfg.arg.bodystyle] = nil
+	
+	-- child or subgroup
+	if targs[cfg.arg.border] == nil then targs[cfg.arg.border] = pargs[1] end
+
+	return p._navbox(targs)
+end
+
+-- Template entry points
+function p.navbox (frame, boxtype)
+	local function readArgs(args, prefix)
+		-- Read the arguments in the order they'll be output in, to make references
+		-- number in the right order.
+		local _
+		_ = args[prefix .. cfg.arg.title]
+		_ = args[prefix .. cfg.arg.above]
+		-- Limit this to 20 as covering 'most' cases (that's a SWAG) and because
+		-- iterator approach won't work here
+		for i = 1, 20 do
+			_ = args[prefix .. andnum('group', i)]
+			if inArray(cfg.keyword.subgroups, args[prefix .. andnum('list', i)]) then
+				for _, v in ipairs(cfg.keyword.subgroups) do
+					readArgs(args, prefix .. v .. i .. "_")
+				end
+			end
+		end
+		_ = args[prefix .. cfg.arg.below]
+	end
+
+	if not getArgs then
+		getArgs = require('Module:Arguments').getArgs
+	end
+	local args = getArgs(frame, {wrappers = {cfg.pattern[boxtype or 'navbox']}})
+	readArgs(args, "")
+	return p['_'..(boxtype or 'navbox')](args)
+end
+
+p['with collapsible groups'] = function (frame)
+	return p.navbox(frame, 'withCollapsibleGroups')
+end
+
+local q = {}
+q._navbox = p._withCollapsibleGroups
+q.navbox = p['with collapsible groups']
+return q</text>
+      <sha1>eht1ky57dua4ak8akt6ahowqwcw6dct</sha1>
+    </revision>
+    <revision>
+      <id>436609</id>
+      <parentid>436606</parentid>
+      <timestamp>2025-01-24T14:37:18Z</timestamp>
+      <contributor>
+        <username>Ahecht</username>
+        <id>54</id>
+      </contributor>
+      <comment>Undid revision [[Special:Diff/1271146156|1271146156]] by [[Special:Contributions/Ahecht|Ahecht]] ([[User talk:Ahecht|talk]]) Retry consolidation</comment>
+      <origin>436609</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="268" sha1="ng0la1ph7wj8dsi20vxiv6krwhshvkh" xml:space="preserve">-- This module implements {{Navbox with collapsible groups}}
+
+local Navbox = require('Module:Navbox')
+return {
+	_navbox = function (frame) return Navbox._withCollapsibleGroups(frame) end,
+	navbox = function (frame) return Navbox['with collapsible groups'](frame) end
+}</text>
+      <sha1>ng0la1ph7wj8dsi20vxiv6krwhshvkh</sha1>
+    </revision>
+    <revision>
+      <id>436607</id>
+      <parentid>436606</parentid>
+      <timestamp>2025-01-28T03:03:44Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Adding [[Category:second attempt at refreshing on January 27 2024]][[Category:{{subst:FULLPAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]] on using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>436607</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="6563" sha1="2emnd8t75z1rrfyf4nmw6xmajjl3d31" xml:space="preserve">-- This module implements {{Navbox with collapsible groups}}
+
+require('strict')
+local p = {}
+local parentCfg = mw.loadData('Module:Navbox/configuration')
+local thisCfg = mw.loadData('Module:Navbox with collapsible groups/configuration')
+local cfg = {}
+for k, v in pairs(thisCfg) do
+	if type(v) == 'table' then
+		cfg[k] = {}
+		if type(parentCfg[k]) == 'table' then
+			for kk, vv in pairs(parentCfg[k]) do cfg[k][kk] = vv end
+		end
+		for kk, vv in pairs(v) do cfg[k][kk] = vv end
+	end
+end
+local inArray = require("Module:TableTools").inArray
+local getArgs -- lazily initialized
+
+-- helper functions
+local andnum = function(s, n) return string.format(cfg.arg[s..'_and_num'], n) end
+	
+local isblank = function(v) return (v or '') == '' end
+
+local function concatstrings(s)
+	local r = table.concat(s, '')
+	if r:match('^%s*$') then return nil end
+	return r
+end
+	
+local function concatstyles(s)
+	local r = ''
+	for _, v in ipairs(s) do
+		v = mw.text.trim(v, "%s;")
+		if not isblank(v) then r = r .. v .. ';' end
+	end
+	if isblank(r) then return nil end
+	return r
+end
+	
+local function getSubgroup(args, listnum, listText)
+	local subArgs = {
+		[cfg.arg.border] = cfg.keyword.border_subgroup,
+		[cfg.arg.navbar] = cfg.keyword.navbar_plain
+	}
+	local hasSubArgs = false
+	for k, v in pairs(args) do
+		k = tostring(k)
+		for _, w in ipairs(cfg.keyword.subgroups) do
+			w = w .. listnum .. "_"
+			if (#k &gt; #w) and (k:sub(1, #w) == w) then
+				subArgs[k:sub(#w + 1)] = v
+				hasSubArgs = true
+			end
+		end
+	end
+	return hasSubArgs and p._navbox(subArgs) or listText
+end
+
+-- Main functions
+p._navbox = require('Module:Navbox')._navbox
+
+function p._withCollapsibleGroups(pargs)
+	-- table for args passed to navbox
+	local targs = {}
+
+	-- process args
+	local passthrough = {
+		[cfg.arg.above]=true,[cfg.arg.aboveclass]=true,[cfg.arg.abovestyle]=true,
+		[cfg.arg.basestyle]=true,
+		[cfg.arg.below]=true,[cfg.arg.belowclass]=true,[cfg.arg.belowstyle]=true,
+		[cfg.arg.bodyclass]=true,[cfg.arg.bodystyle]=true,
+		[cfg.arg.border]=true,
+		[cfg.arg.groupclass]=true,
+		[cfg.arg.image]=true,[cfg.arg.imageclass]=true,[cfg.arg.imagestyle]=true,
+		[cfg.arg.imageleft]=true,[cfg.arg.imageleftstyle]=true,
+		[cfg.arg.listclass]=true,
+		[cfg.arg.name]=true,
+		[cfg.arg.navbar]=true,
+		[cfg.arg.state]=true,
+		[cfg.arg.style]=true,
+		[cfg.arg.title]=true,[cfg.arg.titleclass]=true,[cfg.arg.titlestyle]=true
+	}
+	for k,v in pairs(pargs) do
+		if k and type(k) == 'string' then
+			if passthrough[k] then
+				targs[k] = v
+			elseif (k:match(cfg.pattern.num)) then
+				local n = k:match(cfg.pattern.num)
+				local list_and_num = andnum('list', n)
+				if ((k:match(cfg.pattern.listnum) or k:match(cfg.pattern.contentnum))
+						and targs[list_and_num] == nil
+						and pargs[andnum('group', n)] == nil
+						and pargs[andnum('sect', n)] == nil
+						and pargs[andnum('section', n)] == nil) then
+					targs[list_and_num] = concatstrings({
+						pargs[list_and_num] or '',
+						pargs[andnum('content', n)] or ''
+					})
+					if (targs[list_and_num] and inArray(cfg.keyword.subgroups, targs[list_and_num])) then
+						targs[list_and_num] = getSubgroup(pargs, n, targs[list_and_num])
+					end
+				elseif ((k:match(cfg.pattern.groupnum) or k:match(cfg.pattern.sectnum) or k:match(cfg.pattern.sectionnum))
+						and targs[list_and_num] == nil) then
+					local titlestyle = concatstyles({
+						pargs[cfg.arg.groupstyle] or '',
+						pargs[cfg.arg.secttitlestyle] or '', 
+						pargs[andnum('groupstyle', n)] or '', 
+						pargs[andnum('sectiontitlestyle', n)] or ''
+					})
+					local liststyle = concatstyles({
+						pargs[cfg.arg.liststyle] or '',
+						pargs[cfg.arg.contentstyle] or '', 
+						pargs[andnum('liststyle', n)] or '', 
+						pargs[andnum('contentstyle', n)] or ''
+					})
+					local title = concatstrings({
+						pargs[andnum('group', n)] or '',
+						pargs[andnum('sect', n)] or '',
+						pargs[andnum('section', n)] or ''
+					})
+					local list = concatstrings({
+						pargs[list_and_num] or '', 
+						pargs[andnum('content', n)] or ''
+					})
+					if list and inArray(cfg.keyword.subgroups, list) then
+						list = getSubgroup(pargs, n, list)
+					end
+					local abbr_and_num = andnum('abbr', n)
+					local state = (pargs[abbr_and_num] and pargs[abbr_and_num] == pargs[cfg.arg.selected]) 
+						and cfg.keyword.state_uncollapsed
+						or (pargs[andnum('state', n)] or cfg.keyword.state_collapsed)
+					
+					targs[list_and_num] =p._navbox({
+						cfg.keyword.border_child,
+						[cfg.arg.navbar] = cfg.keyword.navbar_plain,
+						[cfg.arg.state] = state,
+						[cfg.arg.basestyle] = pargs[cfg.arg.basestyle],
+						[cfg.arg.title] = title,
+						[cfg.arg.titlestyle] = titlestyle,
+						[andnum('list', 1)] = list,
+						[cfg.arg.liststyle] = liststyle,
+						[cfg.arg.listclass] = pargs[andnum('listclass', n)],
+						[cfg.arg.image] = pargs[andnum('image', n)],
+						[cfg.arg.imageleft] = pargs[andnum('imageleft', n)],
+						[cfg.arg.listpadding] = pargs[cfg.arg.listpadding]
+					})
+				end
+			end
+		end
+	end
+	-- ordering of style and bodystyle
+	targs[cfg.arg.style] = concatstyles({targs[cfg.arg.style] or '', targs[cfg.arg.bodystyle] or ''})
+	targs[cfg.arg.bodystyle] = nil
+	
+	-- child or subgroup
+	if targs[cfg.arg.border] == nil then targs[cfg.arg.border] = pargs[1] end
+
+	return p._navbox(targs)
+end
+
+-- Template entry points
+function p.navbox (frame, boxtype)
+	local function readArgs(args, prefix)
+		-- Read the arguments in the order they'll be output in, to make references
+		-- number in the right order.
+		local _
+		_ = args[prefix .. cfg.arg.title]
+		_ = args[prefix .. cfg.arg.above]
+		-- Limit this to 20 as covering 'most' cases (that's a SWAG) and because
+		-- iterator approach won't work here
+		for i = 1, 20 do
+			_ = args[prefix .. andnum('group', i)]
+			if inArray(cfg.keyword.subgroups, args[prefix .. andnum('list', i)]) then
+				for _, v in ipairs(cfg.keyword.subgroups) do
+					readArgs(args, prefix .. v .. i .. "_")
+				end
+			end
+		end
+		_ = args[prefix .. cfg.arg.below]
+	end
+
+	if not getArgs then
+		getArgs = require('Module:Arguments').getArgs
+	end
+	local args = getArgs(frame, {wrappers = {cfg.pattern[boxtype or 'navbox']}})
+	readArgs(args, "")
+	return p['_'..(boxtype or 'navbox')](args)
+end
+
+p['with collapsible groups'] = function (frame)
+	return p.navbox(frame, 'withCollapsibleGroups')
+end
+
+local q = {}
+q._navbox = p._withCollapsibleGroups
+q.navbox = p['with collapsible groups']
+return q
+
+[[Category:second attempt at refreshing on January 27 2024]][[Category:{{subst:FULLPAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]]</text>
+      <sha1>2emnd8t75z1rrfyf4nmw6xmajjl3d31</sha1>
+    </revision>
+    <revision>
+      <id>436608</id>
+      <parentid>436607</parentid>
+      <timestamp>2025-01-28T13:01:05Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Reverted edits by [[Special:Contributions/Immanuelle|Immanuelle]] ([[User talk:Immanuelle|talk]]) to last revision by [[User:wikipedia&gt;Ahecht|wikipedia&gt;Ahecht]]</comment>
+      <origin>436608</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="6406" sha1="eht1ky57dua4ak8akt6ahowqwcw6dct" xml:space="preserve">-- This module implements {{Navbox with collapsible groups}}
+
+require('strict')
+local p = {}
+local parentCfg = mw.loadData('Module:Navbox/configuration')
+local thisCfg = mw.loadData('Module:Navbox with collapsible groups/configuration')
+local cfg = {}
+for k, v in pairs(thisCfg) do
+	if type(v) == 'table' then
+		cfg[k] = {}
+		if type(parentCfg[k]) == 'table' then
+			for kk, vv in pairs(parentCfg[k]) do cfg[k][kk] = vv end
+		end
+		for kk, vv in pairs(v) do cfg[k][kk] = vv end
+	end
+end
+local inArray = require("Module:TableTools").inArray
+local getArgs -- lazily initialized
+
+-- helper functions
+local andnum = function(s, n) return string.format(cfg.arg[s..'_and_num'], n) end
+	
+local isblank = function(v) return (v or '') == '' end
+
+local function concatstrings(s)
+	local r = table.concat(s, '')
+	if r:match('^%s*$') then return nil end
+	return r
+end
+	
+local function concatstyles(s)
+	local r = ''
+	for _, v in ipairs(s) do
+		v = mw.text.trim(v, "%s;")
+		if not isblank(v) then r = r .. v .. ';' end
+	end
+	if isblank(r) then return nil end
+	return r
+end
+	
+local function getSubgroup(args, listnum, listText)
+	local subArgs = {
+		[cfg.arg.border] = cfg.keyword.border_subgroup,
+		[cfg.arg.navbar] = cfg.keyword.navbar_plain
+	}
+	local hasSubArgs = false
+	for k, v in pairs(args) do
+		k = tostring(k)
+		for _, w in ipairs(cfg.keyword.subgroups) do
+			w = w .. listnum .. "_"
+			if (#k &gt; #w) and (k:sub(1, #w) == w) then
+				subArgs[k:sub(#w + 1)] = v
+				hasSubArgs = true
+			end
+		end
+	end
+	return hasSubArgs and p._navbox(subArgs) or listText
+end
+
+-- Main functions
+p._navbox = require('Module:Navbox')._navbox
+
+function p._withCollapsibleGroups(pargs)
+	-- table for args passed to navbox
+	local targs = {}
+
+	-- process args
+	local passthrough = {
+		[cfg.arg.above]=true,[cfg.arg.aboveclass]=true,[cfg.arg.abovestyle]=true,
+		[cfg.arg.basestyle]=true,
+		[cfg.arg.below]=true,[cfg.arg.belowclass]=true,[cfg.arg.belowstyle]=true,
+		[cfg.arg.bodyclass]=true,[cfg.arg.bodystyle]=true,
+		[cfg.arg.border]=true,
+		[cfg.arg.groupclass]=true,
+		[cfg.arg.image]=true,[cfg.arg.imageclass]=true,[cfg.arg.imagestyle]=true,
+		[cfg.arg.imageleft]=true,[cfg.arg.imageleftstyle]=true,
+		[cfg.arg.listclass]=true,
+		[cfg.arg.name]=true,
+		[cfg.arg.navbar]=true,
+		[cfg.arg.state]=true,
+		[cfg.arg.style]=true,
+		[cfg.arg.title]=true,[cfg.arg.titleclass]=true,[cfg.arg.titlestyle]=true
+	}
+	for k,v in pairs(pargs) do
+		if k and type(k) == 'string' then
+			if passthrough[k] then
+				targs[k] = v
+			elseif (k:match(cfg.pattern.num)) then
+				local n = k:match(cfg.pattern.num)
+				local list_and_num = andnum('list', n)
+				if ((k:match(cfg.pattern.listnum) or k:match(cfg.pattern.contentnum))
+						and targs[list_and_num] == nil
+						and pargs[andnum('group', n)] == nil
+						and pargs[andnum('sect', n)] == nil
+						and pargs[andnum('section', n)] == nil) then
+					targs[list_and_num] = concatstrings({
+						pargs[list_and_num] or '',
+						pargs[andnum('content', n)] or ''
+					})
+					if (targs[list_and_num] and inArray(cfg.keyword.subgroups, targs[list_and_num])) then
+						targs[list_and_num] = getSubgroup(pargs, n, targs[list_and_num])
+					end
+				elseif ((k:match(cfg.pattern.groupnum) or k:match(cfg.pattern.sectnum) or k:match(cfg.pattern.sectionnum))
+						and targs[list_and_num] == nil) then
+					local titlestyle = concatstyles({
+						pargs[cfg.arg.groupstyle] or '',
+						pargs[cfg.arg.secttitlestyle] or '', 
+						pargs[andnum('groupstyle', n)] or '', 
+						pargs[andnum('sectiontitlestyle', n)] or ''
+					})
+					local liststyle = concatstyles({
+						pargs[cfg.arg.liststyle] or '',
+						pargs[cfg.arg.contentstyle] or '', 
+						pargs[andnum('liststyle', n)] or '', 
+						pargs[andnum('contentstyle', n)] or ''
+					})
+					local title = concatstrings({
+						pargs[andnum('group', n)] or '',
+						pargs[andnum('sect', n)] or '',
+						pargs[andnum('section', n)] or ''
+					})
+					local list = concatstrings({
+						pargs[list_and_num] or '', 
+						pargs[andnum('content', n)] or ''
+					})
+					if list and inArray(cfg.keyword.subgroups, list) then
+						list = getSubgroup(pargs, n, list)
+					end
+					local abbr_and_num = andnum('abbr', n)
+					local state = (pargs[abbr_and_num] and pargs[abbr_and_num] == pargs[cfg.arg.selected]) 
+						and cfg.keyword.state_uncollapsed
+						or (pargs[andnum('state', n)] or cfg.keyword.state_collapsed)
+					
+					targs[list_and_num] =p._navbox({
+						cfg.keyword.border_child,
+						[cfg.arg.navbar] = cfg.keyword.navbar_plain,
+						[cfg.arg.state] = state,
+						[cfg.arg.basestyle] = pargs[cfg.arg.basestyle],
+						[cfg.arg.title] = title,
+						[cfg.arg.titlestyle] = titlestyle,
+						[andnum('list', 1)] = list,
+						[cfg.arg.liststyle] = liststyle,
+						[cfg.arg.listclass] = pargs[andnum('listclass', n)],
+						[cfg.arg.image] = pargs[andnum('image', n)],
+						[cfg.arg.imageleft] = pargs[andnum('imageleft', n)],
+						[cfg.arg.listpadding] = pargs[cfg.arg.listpadding]
+					})
+				end
+			end
+		end
+	end
+	-- ordering of style and bodystyle
+	targs[cfg.arg.style] = concatstyles({targs[cfg.arg.style] or '', targs[cfg.arg.bodystyle] or ''})
+	targs[cfg.arg.bodystyle] = nil
+	
+	-- child or subgroup
+	if targs[cfg.arg.border] == nil then targs[cfg.arg.border] = pargs[1] end
+
+	return p._navbox(targs)
+end
+
+-- Template entry points
+function p.navbox (frame, boxtype)
+	local function readArgs(args, prefix)
+		-- Read the arguments in the order they'll be output in, to make references
+		-- number in the right order.
+		local _
+		_ = args[prefix .. cfg.arg.title]
+		_ = args[prefix .. cfg.arg.above]
+		-- Limit this to 20 as covering 'most' cases (that's a SWAG) and because
+		-- iterator approach won't work here
+		for i = 1, 20 do
+			_ = args[prefix .. andnum('group', i)]
+			if inArray(cfg.keyword.subgroups, args[prefix .. andnum('list', i)]) then
+				for _, v in ipairs(cfg.keyword.subgroups) do
+					readArgs(args, prefix .. v .. i .. "_")
+				end
+			end
+		end
+		_ = args[prefix .. cfg.arg.below]
+	end
+
+	if not getArgs then
+		getArgs = require('Module:Arguments').getArgs
+	end
+	local args = getArgs(frame, {wrappers = {cfg.pattern[boxtype or 'navbox']}})
+	readArgs(args, "")
+	return p['_'..(boxtype or 'navbox')](args)
+end
+
+p['with collapsible groups'] = function (frame)
+	return p.navbox(frame, 'withCollapsibleGroups')
+end
+
+local q = {}
+q._navbox = p._withCollapsibleGroups
+q.navbox = p['with collapsible groups']
+return q</text>
+      <sha1>eht1ky57dua4ak8akt6ahowqwcw6dct</sha1>
+    </revision>
+    <revision>
+      <id>62</id>
+      <timestamp>2025-06-13T06:14:18Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported from [[:wikipedia:Module:Navbox_with_collapsible_groups]]</comment>
+      <origin>62</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="6406" sha1="eht1ky57dua4ak8akt6ahowqwcw6dct" xml:space="preserve">-- This module implements {{Navbox with collapsible groups}}
+
+require('strict')
+local p = {}
+local parentCfg = mw.loadData('Module:Navbox/configuration')
+local thisCfg = mw.loadData('Module:Navbox with collapsible groups/configuration')
+local cfg = {}
+for k, v in pairs(thisCfg) do
+	if type(v) == 'table' then
+		cfg[k] = {}
+		if type(parentCfg[k]) == 'table' then
+			for kk, vv in pairs(parentCfg[k]) do cfg[k][kk] = vv end
+		end
+		for kk, vv in pairs(v) do cfg[k][kk] = vv end
+	end
+end
+local inArray = require("Module:TableTools").inArray
+local getArgs -- lazily initialized
+
+-- helper functions
+local andnum = function(s, n) return string.format(cfg.arg[s..'_and_num'], n) end
+	
+local isblank = function(v) return (v or '') == '' end
+
+local function concatstrings(s)
+	local r = table.concat(s, '')
+	if r:match('^%s*$') then return nil end
+	return r
+end
+	
+local function concatstyles(s)
+	local r = ''
+	for _, v in ipairs(s) do
+		v = mw.text.trim(v, "%s;")
+		if not isblank(v) then r = r .. v .. ';' end
+	end
+	if isblank(r) then return nil end
+	return r
+end
+	
+local function getSubgroup(args, listnum, listText)
+	local subArgs = {
+		[cfg.arg.border] = cfg.keyword.border_subgroup,
+		[cfg.arg.navbar] = cfg.keyword.navbar_plain
+	}
+	local hasSubArgs = false
+	for k, v in pairs(args) do
+		k = tostring(k)
+		for _, w in ipairs(cfg.keyword.subgroups) do
+			w = w .. listnum .. "_"
+			if (#k &gt; #w) and (k:sub(1, #w) == w) then
+				subArgs[k:sub(#w + 1)] = v
+				hasSubArgs = true
+			end
+		end
+	end
+	return hasSubArgs and p._navbox(subArgs) or listText
+end
+
+-- Main functions
+p._navbox = require('Module:Navbox')._navbox
+
+function p._withCollapsibleGroups(pargs)
+	-- table for args passed to navbox
+	local targs = {}
+
+	-- process args
+	local passthrough = {
+		[cfg.arg.above]=true,[cfg.arg.aboveclass]=true,[cfg.arg.abovestyle]=true,
+		[cfg.arg.basestyle]=true,
+		[cfg.arg.below]=true,[cfg.arg.belowclass]=true,[cfg.arg.belowstyle]=true,
+		[cfg.arg.bodyclass]=true,[cfg.arg.bodystyle]=true,
+		[cfg.arg.border]=true,
+		[cfg.arg.groupclass]=true,
+		[cfg.arg.image]=true,[cfg.arg.imageclass]=true,[cfg.arg.imagestyle]=true,
+		[cfg.arg.imageleft]=true,[cfg.arg.imageleftstyle]=true,
+		[cfg.arg.listclass]=true,
+		[cfg.arg.name]=true,
+		[cfg.arg.navbar]=true,
+		[cfg.arg.state]=true,
+		[cfg.arg.style]=true,
+		[cfg.arg.title]=true,[cfg.arg.titleclass]=true,[cfg.arg.titlestyle]=true
+	}
+	for k,v in pairs(pargs) do
+		if k and type(k) == 'string' then
+			if passthrough[k] then
+				targs[k] = v
+			elseif (k:match(cfg.pattern.num)) then
+				local n = k:match(cfg.pattern.num)
+				local list_and_num = andnum('list', n)
+				if ((k:match(cfg.pattern.listnum) or k:match(cfg.pattern.contentnum))
+						and targs[list_and_num] == nil
+						and pargs[andnum('group', n)] == nil
+						and pargs[andnum('sect', n)] == nil
+						and pargs[andnum('section', n)] == nil) then
+					targs[list_and_num] = concatstrings({
+						pargs[list_and_num] or '',
+						pargs[andnum('content', n)] or ''
+					})
+					if (targs[list_and_num] and inArray(cfg.keyword.subgroups, targs[list_and_num])) then
+						targs[list_and_num] = getSubgroup(pargs, n, targs[list_and_num])
+					end
+				elseif ((k:match(cfg.pattern.groupnum) or k:match(cfg.pattern.sectnum) or k:match(cfg.pattern.sectionnum))
+						and targs[list_and_num] == nil) then
+					local titlestyle = concatstyles({
+						pargs[cfg.arg.groupstyle] or '',
+						pargs[cfg.arg.secttitlestyle] or '', 
+						pargs[andnum('groupstyle', n)] or '', 
+						pargs[andnum('sectiontitlestyle', n)] or ''
+					})
+					local liststyle = concatstyles({
+						pargs[cfg.arg.liststyle] or '',
+						pargs[cfg.arg.contentstyle] or '', 
+						pargs[andnum('liststyle', n)] or '', 
+						pargs[andnum('contentstyle', n)] or ''
+					})
+					local title = concatstrings({
+						pargs[andnum('group', n)] or '',
+						pargs[andnum('sect', n)] or '',
+						pargs[andnum('section', n)] or ''
+					})
+					local list = concatstrings({
+						pargs[list_and_num] or '', 
+						pargs[andnum('content', n)] or ''
+					})
+					if list and inArray(cfg.keyword.subgroups, list) then
+						list = getSubgroup(pargs, n, list)
+					end
+					local abbr_and_num = andnum('abbr', n)
+					local state = (pargs[abbr_and_num] and pargs[abbr_and_num] == pargs[cfg.arg.selected]) 
+						and cfg.keyword.state_uncollapsed
+						or (pargs[andnum('state', n)] or cfg.keyword.state_collapsed)
+					
+					targs[list_and_num] =p._navbox({
+						cfg.keyword.border_child,
+						[cfg.arg.navbar] = cfg.keyword.navbar_plain,
+						[cfg.arg.state] = state,
+						[cfg.arg.basestyle] = pargs[cfg.arg.basestyle],
+						[cfg.arg.title] = title,
+						[cfg.arg.titlestyle] = titlestyle,
+						[andnum('list', 1)] = list,
+						[cfg.arg.liststyle] = liststyle,
+						[cfg.arg.listclass] = pargs[andnum('listclass', n)],
+						[cfg.arg.image] = pargs[andnum('image', n)],
+						[cfg.arg.imageleft] = pargs[andnum('imageleft', n)],
+						[cfg.arg.listpadding] = pargs[cfg.arg.listpadding]
+					})
+				end
+			end
+		end
+	end
+	-- ordering of style and bodystyle
+	targs[cfg.arg.style] = concatstyles({targs[cfg.arg.style] or '', targs[cfg.arg.bodystyle] or ''})
+	targs[cfg.arg.bodystyle] = nil
+	
+	-- child or subgroup
+	if targs[cfg.arg.border] == nil then targs[cfg.arg.border] = pargs[1] end
+
+	return p._navbox(targs)
+end
+
+-- Template entry points
+function p.navbox (frame, boxtype)
+	local function readArgs(args, prefix)
+		-- Read the arguments in the order they'll be output in, to make references
+		-- number in the right order.
+		local _
+		_ = args[prefix .. cfg.arg.title]
+		_ = args[prefix .. cfg.arg.above]
+		-- Limit this to 20 as covering 'most' cases (that's a SWAG) and because
+		-- iterator approach won't work here
+		for i = 1, 20 do
+			_ = args[prefix .. andnum('group', i)]
+			if inArray(cfg.keyword.subgroups, args[prefix .. andnum('list', i)]) then
+				for _, v in ipairs(cfg.keyword.subgroups) do
+					readArgs(args, prefix .. v .. i .. "_")
+				end
+			end
+		end
+		_ = args[prefix .. cfg.arg.below]
+	end
+
+	if not getArgs then
+		getArgs = require('Module:Arguments').getArgs
+	end
+	local args = getArgs(frame, {wrappers = {cfg.pattern[boxtype or 'navbox']}})
+	readArgs(args, "")
+	return p['_'..(boxtype or 'navbox')](args)
+end
+
+p['with collapsible groups'] = function (frame)
+	return p.navbox(frame, 'withCollapsibleGroups')
+end
+
+local q = {}
+q._navbox = p._withCollapsibleGroups
+q.navbox = p['with collapsible groups']
+return q</text>
+      <sha1>eht1ky57dua4ak8akt6ahowqwcw6dct</sha1>
+    </revision>
+    <revision>
+      <id>3303469</id>
+      <parentid>62</parentid>
+      <timestamp>2026-02-26T20:10:04Z</timestamp>
+      <contributor>
+        <username>Ahecht</username>
+        <id>54</id>
+      </contributor>
+      <comment>Undid revision [[Special:Diff/1271146156|1271146156]] by [[Special:Contributions/Ahecht|Ahecht]] ([[User talk:Ahecht|talk]]) Retry consolidation</comment>
+      <origin>3303469</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="268" sha1="ng0la1ph7wj8dsi20vxiv6krwhshvkh" xml:space="preserve">-- This module implements {{Navbox with collapsible groups}}
+
+local Navbox = require('Module:Navbox')
+return {
+	_navbox = function (frame) return Navbox._withCollapsibleGroups(frame) end,
+	navbox = function (frame) return Navbox['with collapsible groups'](frame) end
+}</text>
+      <sha1>ng0la1ph7wj8dsi20vxiv6krwhshvkh</sha1>
+    </revision>
+    <revision>
+      <id>3303470</id>
+      <parentid>3303469</parentid>
+      <timestamp>2026-02-26T20:10:04Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: reimporting these to fix older errors</comment>
+      <origin>3303469</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="268" sha1="ng0la1ph7wj8dsi20vxiv6krwhshvkh" xml:space="preserve">-- This module implements {{Navbox with collapsible groups}}
+
+local Navbox = require('Module:Navbox')
+return {
+	_navbox = function (frame) return Navbox._withCollapsibleGroups(frame) end,
+	navbox = function (frame) return Navbox['with collapsible groups'](frame) end
+}</text>
+      <sha1>ng0la1ph7wj8dsi20vxiv6krwhshvkh</sha1>
+    </revision>
+    <revision>
+      <id>3557621</id>
+      <parentid>3303470</parentid>
+      <timestamp>2026-03-20T19:43:07Z</timestamp>
+      <contributor>
+        <username>Ahecht</username>
+        <id>54</id>
+      </contributor>
+      <comment>Undid revision [[Special:Diff/1271146156|1271146156]] by [[Special:Contributions/Ahecht|Ahecht]] ([[User talk:Ahecht|talk]]) Retry consolidation</comment>
+      <origin>3303469</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="268" sha1="ng0la1ph7wj8dsi20vxiv6krwhshvkh" xml:space="preserve">-- This module implements {{Navbox with collapsible groups}}
+
+local Navbox = require('Module:Navbox')
+return {
+	_navbox = function (frame) return Navbox._withCollapsibleGroups(frame) end,
+	navbox = function (frame) return Navbox['with collapsible groups'](frame) end
+}</text>
+      <sha1>ng0la1ph7wj8dsi20vxiv6krwhshvkh</sha1>
+    </revision>
+    <revision>
+      <id>3557623</id>
+      <parentid>3557621</parentid>
+      <timestamp>2026-03-20T19:43:07Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3303469</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="268" sha1="ng0la1ph7wj8dsi20vxiv6krwhshvkh" xml:space="preserve">-- This module implements {{Navbox with collapsible groups}}
+
+local Navbox = require('Module:Navbox')
+return {
+	_navbox = function (frame) return Navbox._withCollapsibleGroups(frame) end,
+	navbox = function (frame) return Navbox['with collapsible groups'](frame) end
+}</text>
+      <sha1>ng0la1ph7wj8dsi20vxiv6krwhshvkh</sha1>
+    </revision>
+  </page>
+</mediawiki>

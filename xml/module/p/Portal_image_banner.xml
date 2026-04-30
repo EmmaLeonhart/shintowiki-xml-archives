@@ -1,0 +1,440 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Portal image banner</title>
+    <ns>828</ns>
+    <id>5495</id>
+    <revision>
+      <id>811618</id>
+      <timestamp>2023-04-02T20:55:58Z</timestamp>
+      <contributor>
+        <username>Lemondoge</username>
+        <id>131</id>
+      </contributor>
+      <minor/>
+      <comment>Simplified code by clearing out redundancy, using "elseif" instead of "else if", and improving formatting</comment>
+      <origin>811618</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3006" sha1="6pdim0d4nogd3ubzreuwwgxg43orwyh" xml:space="preserve">local p = {}
+local randomModule = require('Module:Random')
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+	local output = p._main(args)
+	return frame:preprocess(output)
+end
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+p._main = function(args)
+	if not args[1] then
+		return error('No page specified', 0)
+	end
+	local lines=makeGalleryLinesTable(args)
+	return makeOutput(lines, args.overflow, args.maxheight, args.mode, args.croptop)
+end
+
+function makeGalleryLine(file, caption, link)
+	local title = mw.title.new(file, "File" )
+	local linktext = ( link and '{{!}}link=' .. link  or '' )
+	local maxImageWidth = '{{!}}800px'
+	return '[[' .. title.prefixedText ..(caption and'{{!}}'..caption or '').. maxImageWidth .. linktext ..']]' .. (caption and '\n&lt;div style="text-align:center;"&gt;' .. caption ..'&lt;/div&gt;' or '\n') 
+end
+
+function makeGalleryLineSlideshow(file, caption)
+	local title = mw.title.new(file, "File" )
+	local captiontext= '[[File:OOjs_UI_icon_info-progressive.svg|link=:'..title.prefixedText..']]&amp;nbsp;&lt;span style="font-size:110%;"&gt;'..(caption or '')..'&lt;/span&gt;'
+	return title.prefixedText .. '{{!}}' .. captiontext 
+end
+
+function makeGalleryLinesTable(args)
+	local galleryLinesTable = {}
+	local i = 1
+	while args[i] do
+		if not args.mode then 
+			table.insert(galleryLinesTable, makeGalleryLine(args[i], args[i+1],args.link))
+		elseif args.mode == 'slideshow' then
+			table.insert(galleryLinesTable, makeGalleryLineSlideshow(args[i], args[i+1], args.link)) 
+		else 
+			error('Mode not supported')
+		end
+		i = i + 2
+	end
+	
+	return galleryLinesTable 
+end
+
+function makeOutput(imageLines, overflow, maxHeight, mode, croptop)
+	local randomiseArgs = {	['t'] = imageLines }
+	local randomisedLines = randomModule.main('array', randomiseArgs )
+	local output, galleryContent
+	if not mode then
+	    galleryContent = table.concat(randomisedLines, '\n',1,1)
+	    seperate=mw.text.split(galleryContent,'\n')
+		output = '&lt;div class="portal-banner-image" style="max-height:' .. (maxHeight or 'initial') .. '; overflow:'..(overflow or 'auto')..
+		';"&gt;&lt;div class="portal-banner-image-crop" style="position:relative; margin-top:-'..(croptop or '0')..'%;"&gt;'..seperate[1]..'&lt;/div&gt;&lt;/div&gt;'..seperate[2]
+	elseif mode == 'slideshow' then
+      	galleryContent = table.concat(randomisedLines, '\n')
+		output='&lt;div class="portal-banner-image-slideshow nomobile" style="max-height:' .. (maxHeight or 'initial') .. '; overflow:'..(overflow or 'auto')..
+		';"&gt;&lt;div class="portal-banner-image-crop" style="position:relative; margin-top:-'..(croptop or '0')..'%;"&gt;'..'{{#tag:gallery|'..galleryContent..'|mode=slideshow}}'..'&lt;/div&gt;&lt;/div&gt;'
+	else
+		error('Mode not supported')
+	end
+	
+	return output
+end
+
+return p</text>
+      <sha1>6pdim0d4nogd3ubzreuwwgxg43orwyh</sha1>
+    </revision>
+    <revision>
+      <id>811619</id>
+      <parentid>811618</parentid>
+      <timestamp>2024-12-27T08:45:32Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: impor5ting these because otherwise I might accidentally redirect them</comment>
+      <origin>811618</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3006" sha1="6pdim0d4nogd3ubzreuwwgxg43orwyh" xml:space="preserve">local p = {}
+local randomModule = require('Module:Random')
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+	local output = p._main(args)
+	return frame:preprocess(output)
+end
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+p._main = function(args)
+	if not args[1] then
+		return error('No page specified', 0)
+	end
+	local lines=makeGalleryLinesTable(args)
+	return makeOutput(lines, args.overflow, args.maxheight, args.mode, args.croptop)
+end
+
+function makeGalleryLine(file, caption, link)
+	local title = mw.title.new(file, "File" )
+	local linktext = ( link and '{{!}}link=' .. link  or '' )
+	local maxImageWidth = '{{!}}800px'
+	return '[[' .. title.prefixedText ..(caption and'{{!}}'..caption or '').. maxImageWidth .. linktext ..']]' .. (caption and '\n&lt;div style="text-align:center;"&gt;' .. caption ..'&lt;/div&gt;' or '\n') 
+end
+
+function makeGalleryLineSlideshow(file, caption)
+	local title = mw.title.new(file, "File" )
+	local captiontext= '[[File:OOjs_UI_icon_info-progressive.svg|link=:'..title.prefixedText..']]&amp;nbsp;&lt;span style="font-size:110%;"&gt;'..(caption or '')..'&lt;/span&gt;'
+	return title.prefixedText .. '{{!}}' .. captiontext 
+end
+
+function makeGalleryLinesTable(args)
+	local galleryLinesTable = {}
+	local i = 1
+	while args[i] do
+		if not args.mode then 
+			table.insert(galleryLinesTable, makeGalleryLine(args[i], args[i+1],args.link))
+		elseif args.mode == 'slideshow' then
+			table.insert(galleryLinesTable, makeGalleryLineSlideshow(args[i], args[i+1], args.link)) 
+		else 
+			error('Mode not supported')
+		end
+		i = i + 2
+	end
+	
+	return galleryLinesTable 
+end
+
+function makeOutput(imageLines, overflow, maxHeight, mode, croptop)
+	local randomiseArgs = {	['t'] = imageLines }
+	local randomisedLines = randomModule.main('array', randomiseArgs )
+	local output, galleryContent
+	if not mode then
+	    galleryContent = table.concat(randomisedLines, '\n',1,1)
+	    seperate=mw.text.split(galleryContent,'\n')
+		output = '&lt;div class="portal-banner-image" style="max-height:' .. (maxHeight or 'initial') .. '; overflow:'..(overflow or 'auto')..
+		';"&gt;&lt;div class="portal-banner-image-crop" style="position:relative; margin-top:-'..(croptop or '0')..'%;"&gt;'..seperate[1]..'&lt;/div&gt;&lt;/div&gt;'..seperate[2]
+	elseif mode == 'slideshow' then
+      	galleryContent = table.concat(randomisedLines, '\n')
+		output='&lt;div class="portal-banner-image-slideshow nomobile" style="max-height:' .. (maxHeight or 'initial') .. '; overflow:'..(overflow or 'auto')..
+		';"&gt;&lt;div class="portal-banner-image-crop" style="position:relative; margin-top:-'..(croptop or '0')..'%;"&gt;'..'{{#tag:gallery|'..galleryContent..'|mode=slideshow}}'..'&lt;/div&gt;&lt;/div&gt;'
+	else
+		error('Mode not supported')
+	end
+	
+	return output
+end
+
+return p</text>
+      <sha1>6pdim0d4nogd3ubzreuwwgxg43orwyh</sha1>
+    </revision>
+    <revision>
+      <id>811620</id>
+      <parentid>811619</parentid>
+      <timestamp>2025-01-26T22:57:51Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Adding [[Category:refreshing imported pages]] on using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>811620</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3046" sha1="oanaxgb503td51s4w36ytcy9fqltky6" xml:space="preserve">local p = {}
+local randomModule = require('Module:Random')
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+	local output = p._main(args)
+	return frame:preprocess(output)
+end
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+p._main = function(args)
+	if not args[1] then
+		return error('No page specified', 0)
+	end
+	local lines=makeGalleryLinesTable(args)
+	return makeOutput(lines, args.overflow, args.maxheight, args.mode, args.croptop)
+end
+
+function makeGalleryLine(file, caption, link)
+	local title = mw.title.new(file, "File" )
+	local linktext = ( link and '{{!}}link=' .. link  or '' )
+	local maxImageWidth = '{{!}}800px'
+	return '[[' .. title.prefixedText ..(caption and'{{!}}'..caption or '').. maxImageWidth .. linktext ..']]' .. (caption and '\n&lt;div style="text-align:center;"&gt;' .. caption ..'&lt;/div&gt;' or '\n') 
+end
+
+function makeGalleryLineSlideshow(file, caption)
+	local title = mw.title.new(file, "File" )
+	local captiontext= '[[File:OOjs_UI_icon_info-progressive.svg|link=:'..title.prefixedText..']]&amp;nbsp;&lt;span style="font-size:110%;"&gt;'..(caption or '')..'&lt;/span&gt;'
+	return title.prefixedText .. '{{!}}' .. captiontext 
+end
+
+function makeGalleryLinesTable(args)
+	local galleryLinesTable = {}
+	local i = 1
+	while args[i] do
+		if not args.mode then 
+			table.insert(galleryLinesTable, makeGalleryLine(args[i], args[i+1],args.link))
+		elseif args.mode == 'slideshow' then
+			table.insert(galleryLinesTable, makeGalleryLineSlideshow(args[i], args[i+1], args.link)) 
+		else 
+			error('Mode not supported')
+		end
+		i = i + 2
+	end
+	
+	return galleryLinesTable 
+end
+
+function makeOutput(imageLines, overflow, maxHeight, mode, croptop)
+	local randomiseArgs = {	['t'] = imageLines }
+	local randomisedLines = randomModule.main('array', randomiseArgs )
+	local output, galleryContent
+	if not mode then
+	    galleryContent = table.concat(randomisedLines, '\n',1,1)
+	    seperate=mw.text.split(galleryContent,'\n')
+		output = '&lt;div class="portal-banner-image" style="max-height:' .. (maxHeight or 'initial') .. '; overflow:'..(overflow or 'auto')..
+		';"&gt;&lt;div class="portal-banner-image-crop" style="position:relative; margin-top:-'..(croptop or '0')..'%;"&gt;'..seperate[1]..'&lt;/div&gt;&lt;/div&gt;'..seperate[2]
+	elseif mode == 'slideshow' then
+      	galleryContent = table.concat(randomisedLines, '\n')
+		output='&lt;div class="portal-banner-image-slideshow nomobile" style="max-height:' .. (maxHeight or 'initial') .. '; overflow:'..(overflow or 'auto')..
+		';"&gt;&lt;div class="portal-banner-image-crop" style="position:relative; margin-top:-'..(croptop or '0')..'%;"&gt;'..'{{#tag:gallery|'..galleryContent..'|mode=slideshow}}'..'&lt;/div&gt;&lt;/div&gt;'
+	else
+		error('Mode not supported')
+	end
+	
+	return output
+end
+
+return p
+
+[[Category:refreshing imported pages]]</text>
+      <sha1>oanaxgb503td51s4w36ytcy9fqltky6</sha1>
+    </revision>
+    <revision>
+      <id>5496</id>
+      <timestamp>2025-01-26T23:22:02Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Removing from [[Category:refreshing imported pages]] on using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>5496</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3006" sha1="6pdim0d4nogd3ubzreuwwgxg43orwyh" xml:space="preserve">local p = {}
+local randomModule = require('Module:Random')
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+	local output = p._main(args)
+	return frame:preprocess(output)
+end
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+p._main = function(args)
+	if not args[1] then
+		return error('No page specified', 0)
+	end
+	local lines=makeGalleryLinesTable(args)
+	return makeOutput(lines, args.overflow, args.maxheight, args.mode, args.croptop)
+end
+
+function makeGalleryLine(file, caption, link)
+	local title = mw.title.new(file, "File" )
+	local linktext = ( link and '{{!}}link=' .. link  or '' )
+	local maxImageWidth = '{{!}}800px'
+	return '[[' .. title.prefixedText ..(caption and'{{!}}'..caption or '').. maxImageWidth .. linktext ..']]' .. (caption and '\n&lt;div style="text-align:center;"&gt;' .. caption ..'&lt;/div&gt;' or '\n') 
+end
+
+function makeGalleryLineSlideshow(file, caption)
+	local title = mw.title.new(file, "File" )
+	local captiontext= '[[File:OOjs_UI_icon_info-progressive.svg|link=:'..title.prefixedText..']]&amp;nbsp;&lt;span style="font-size:110%;"&gt;'..(caption or '')..'&lt;/span&gt;'
+	return title.prefixedText .. '{{!}}' .. captiontext 
+end
+
+function makeGalleryLinesTable(args)
+	local galleryLinesTable = {}
+	local i = 1
+	while args[i] do
+		if not args.mode then 
+			table.insert(galleryLinesTable, makeGalleryLine(args[i], args[i+1],args.link))
+		elseif args.mode == 'slideshow' then
+			table.insert(galleryLinesTable, makeGalleryLineSlideshow(args[i], args[i+1], args.link)) 
+		else 
+			error('Mode not supported')
+		end
+		i = i + 2
+	end
+	
+	return galleryLinesTable 
+end
+
+function makeOutput(imageLines, overflow, maxHeight, mode, croptop)
+	local randomiseArgs = {	['t'] = imageLines }
+	local randomisedLines = randomModule.main('array', randomiseArgs )
+	local output, galleryContent
+	if not mode then
+	    galleryContent = table.concat(randomisedLines, '\n',1,1)
+	    seperate=mw.text.split(galleryContent,'\n')
+		output = '&lt;div class="portal-banner-image" style="max-height:' .. (maxHeight or 'initial') .. '; overflow:'..(overflow or 'auto')..
+		';"&gt;&lt;div class="portal-banner-image-crop" style="position:relative; margin-top:-'..(croptop or '0')..'%;"&gt;'..seperate[1]..'&lt;/div&gt;&lt;/div&gt;'..seperate[2]
+	elseif mode == 'slideshow' then
+      	galleryContent = table.concat(randomisedLines, '\n')
+		output='&lt;div class="portal-banner-image-slideshow nomobile" style="max-height:' .. (maxHeight or 'initial') .. '; overflow:'..(overflow or 'auto')..
+		';"&gt;&lt;div class="portal-banner-image-crop" style="position:relative; margin-top:-'..(croptop or '0')..'%;"&gt;'..'{{#tag:gallery|'..galleryContent..'|mode=slideshow}}'..'&lt;/div&gt;&lt;/div&gt;'
+	else
+		error('Mode not supported')
+	end
+	
+	return output
+end
+
+return p</text>
+      <sha1>6pdim0d4nogd3ubzreuwwgxg43orwyh</sha1>
+    </revision>
+  </page>
+</mediawiki>

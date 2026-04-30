@@ -1,0 +1,1444 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:TableTools/doc</title>
+    <ns>828</ns>
+    <id>8259</id>
+    <revision>
+      <id>916544</id>
+      <timestamp>2024-10-19T03:14:29Z</timestamp>
+      <contributor>
+        <username>en&gt;64.114 etc</username>
+        <id>0</id>
+      </contributor>
+      <origin>916544</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="11952" sha1="lewaytw1rfeodnvlov3c8m2q39atrzf" xml:space="preserve">{{used in system}}
+{{module rating|p}}
+{{cascade-protected template|page=module}}
+{{lua|Module:Exponential search|noprotcat=yes}}
+This module includes a number of functions for dealing with Lua tables. It is a meta-module, meant to be called from other Lua modules, and should not be called directly from #invoke.
+
+== Loading the module ==
+
+To use any of the functions, first you must load the module.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local TableTools = require('Module:TableTools')
+&lt;/syntaxhighlight&gt;
+
+== isPositiveInteger ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.isPositiveInteger(value)
+&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''value''&lt;/code&gt; is a positive integer, and &lt;code&gt;false&lt;/code&gt; if not. Although it doesn't operate on tables, it is included here as it is useful for determining whether a given table key is in the array part or the hash part of a table.
+
+== isNan ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.isNan(value)
+&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''value''&lt;/code&gt; is a [[NaN]] value, and &lt;code&gt;false&lt;/code&gt; if not. Although it doesn't operate on tables, it is included here as it is useful for determining whether a value can be a valid table key. (Lua will generate an error if a NaN value is used as a table key.)
+
+== shallowClone ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.shallowClone(t)
+&lt;/syntaxhighlight&gt;
+
+Returns a clone of a table. The value returned is a new table, but all subtables and functions are shared. Metamethods are respected, but the returned table will have no metatable of its own. If you want to make a new table with no shared subtables and with metatables transferred, you can use &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#mw.clone|mw.clone]]&lt;/code&gt; instead. If you want to make a new table with no shared subtables and without metatables transferred, use &lt;code&gt;[[#deepCopy|deepCopy]]&lt;/code&gt; with the &lt;code&gt;noMetatable&lt;/code&gt; option.
+
+== removeDuplicates ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.removeDuplicates(t)
+&lt;/syntaxhighlight&gt;
+
+Removes duplicate values from an array. This function is only designed to work with standard arrays: keys that are not positive integers are ignored, as are all values after the first &lt;code&gt;nil&lt;/code&gt; value. (For arrays containing &lt;code&gt;nil&lt;/code&gt; values, you can use &lt;code&gt;[[#compressSparseArray|compressSparseArray]]&lt;/code&gt; first.) The function tries to preserve the order of the array: the earliest non-unique value is kept, and all subsequent duplicate values are removed. For example, for the table {{code|code={5, 4, 4, 3, 4, 2, 2, 1}|lang=lua}} &lt;code&gt;removeDuplicates&lt;/code&gt; will return {{code|code={5, 4, 3, 2, 1}|lang=lua}}.
+
+== numKeys ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.numKeys(t)
+&lt;/syntaxhighlight&gt;
+
+Takes a table &lt;code&gt;''t''&lt;/code&gt; and returns an array containing the numbers of any positive integer keys that have non-nil values, sorted in numerical order. For example, for the table {{code|code={'foo', nil, 'bar', 'baz', a = 'b'}|lang=lua}}, &lt;code&gt;numKeys&lt;/code&gt; will return {{code|code={1, 3, 4}|lang=lua}}.
+
+== affixNums ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.affixNums(t, prefix, suffix)
+&lt;/syntaxhighlight&gt;
+
+Takes a table &lt;code&gt;''t''&lt;/code&gt; and returns an array containing the numbers of keys with the optional prefix &lt;code&gt;''prefix''&lt;/code&gt; and the optional suffix &lt;code&gt;''suffix''&lt;/code&gt;. For example, for the table {{code|code={a1 = 'foo', a3 = 'bar', a6 = 'baz'}|lang=lua}} and the prefix &lt;code&gt;'a'&lt;/code&gt;, &lt;code&gt;affixNums&lt;/code&gt; will return {{code|code={1, 3, 6}|lang=lua}}. All characters in &lt;code&gt;''prefix''&lt;/code&gt; and &lt;code&gt;''suffix''&lt;/code&gt; are interpreted literally.
+
+== numData ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.numData(t, compress)
+&lt;/syntaxhighlight&gt;
+
+Given a table with keys like &lt;code&gt;"foo1"&lt;/code&gt;, &lt;code&gt;"bar1"&lt;/code&gt;, &lt;code&gt;"foo2"&lt;/code&gt;, and &lt;code&gt;"baz2"&lt;/code&gt;, returns a table of subtables in the format {{code|code={ [1] = {foo = 'text', bar = 'text'}, [2] = {foo = 'text', baz = 'text'} }|lang=lua}}. Keys that don't end with an integer are stored in a subtable named &lt;code&gt;"other"&lt;/code&gt;. The compress option compresses the table so that it can be iterated over with &lt;code&gt;ipairs&lt;/code&gt;.
+
+== compressSparseArray ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.compressSparseArray(t)
+&lt;/syntaxhighlight&gt;
+
+Takes an array &lt;code&gt;''t''&lt;/code&gt; with one or more nil values, and removes the nil values while preserving the order, so that the array can be safely traversed with &lt;code&gt;ipairs&lt;/code&gt;. Any keys that are not positive integers are removed. For example, for the table {{code|code={1, nil, foo = 'bar', 3, 2}|lang=lua}}, &lt;code&gt;compressSparseArray&lt;/code&gt; will return {{code|code={1, 3, 2}|lang=lua}}.
+
+== sparseIpairs ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.sparseIpairs(t)
+&lt;/syntaxhighlight&gt;
+
+This is an iterator function for traversing a sparse array &lt;code&gt;''t''&lt;/code&gt;. It is similar to &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#ipairs|ipairs]]&lt;/code&gt;, but will continue to iterate until the highest numerical key, whereas &lt;code&gt;ipairs&lt;/code&gt; may stop after the first &lt;code&gt;nil&lt;/code&gt; value. Any keys that are not positive integers are ignored.
+
+Usually &lt;code&gt;sparseIpairs&lt;/code&gt; is used in a generic &lt;code&gt;for&lt;/code&gt; loop.
+
+&lt;syntaxhighlight lang="lua"&gt;
+for i, v in TableTools.sparseIpairs(t) do
+   -- code block
+end
+&lt;/syntaxhighlight&gt;
+
+Note that &lt;code&gt;sparseIpairs&lt;/code&gt; uses the &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#pairs|pairs]]&lt;/code&gt; function in its implementation. Although some table keys appear to be ignored, all table keys are accessed when it is run.
+
+== size ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.size(t)
+&lt;/syntaxhighlight&gt;
+
+Finds the size of a key/value pair table ([[associative array]]). For example, for {{code|code={foo = 'foo', bar = 'bar'}|lang=lua}}, &lt;code&gt;size&lt;/code&gt; will return &lt;code&gt;2&lt;/code&gt;. The function will also work on arrays, but for arrays it is more efficient to use the &lt;code&gt;#&lt;/code&gt; operator. Note that to find the size, this function uses the &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#pairs|pairs]]&lt;/code&gt; function to iterate through all of the keys.
+
+== keysToList ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.keysToList(t, keySort, checked)
+&lt;/syntaxhighlight&gt;
+
+Returns a list of the keys in a table, sorted using either a default comparison function or a custom &lt;code&gt;''keySort''&lt;/code&gt; function, which follows the same rules as the &lt;code&gt;comp&lt;/code&gt; function supplied to &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#table.sort|table.sort]]&lt;/code&gt;. If &lt;code&gt;''keySort''&lt;/code&gt; is &lt;code&gt;false&lt;/code&gt;, no sorting is done. Set &lt;code&gt;''checked''&lt;/code&gt; to &lt;code&gt;true&lt;/code&gt; to skip the internal type checking.
+
+== sortedPairs ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.sortedPairs(t, keySort)
+&lt;/syntaxhighlight&gt;
+
+Iterates through a table, with the keys sorted using the &lt;code&gt;keysToList&lt;/code&gt; function. If there are only numerical keys, &lt;code&gt;sparseIpairs&lt;/code&gt; is probably more efficient.
+
+== isArray ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.isArray(value)
+&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''value''&lt;/code&gt; is a table and all keys are consecutive integers starting at 1.
+
+== isArrayLike ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.isArrayLike(value)
+&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''value''&lt;/code&gt; is iterable and all keys are consecutive integers starting at 1.
+
+== invert ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.invert(arr)
+&lt;/syntaxhighlight&gt;
+
+Transposes the keys and values in an array. For example, {{code|invert{ "a", "b", "c" }|lua}} yields {{code|code={ a=1, b=2, c=3 }|lang=lua}}.
+
+== listToSet ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.listToSet(arr)
+&lt;/syntaxhighlight&gt;
+
+Creates a set from the array part of the table &lt;code&gt;''arr''&lt;/code&gt;. Indexing the set by any of the values of the array returns &lt;code&gt;true&lt;/code&gt;. For example, {{code|listToSet{ "a", "b", "c" }|lua}} yields {{code|code={ a=true, b=true, c=true }|lang=lua}}.
+
+== deepCopy ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.deepCopy(orig, noMetatable, alreadySeen)
+&lt;/syntaxhighlight&gt;
+
+Creates a copy of the table &lt;code&gt;''orig''&lt;/code&gt;. As with &lt;code&gt;mw.clone&lt;/code&gt;, all values that are not functions are duplicated and the identity of tables is preserved. If &lt;code&gt;''noMetatable''&lt;/code&gt; is &lt;code&gt;true&lt;/code&gt;, then the metatable (if any) is not copied. Can copy tables loaded with &lt;code&gt;mw.loadData&lt;/code&gt;.
+
+Similar to &lt;code&gt;mw.clone&lt;/code&gt;, but &lt;code&gt;mw.clone&lt;/code&gt; cannot copy tables loaded with &lt;code&gt;mw.loadData&lt;/code&gt; and does not allow metatables &lt;em&gt;not&lt;/em&gt; to be copied.
+
+== sparseConcat ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.sparseConcat(t, sep, i, j)
+&lt;/syntaxhighlight&gt;
+
+Concatenates all values in the table that are indexed by a positive integer, in order. For example, {{code|sparseConcat{ "a", nil, "c", "d" }|lua}} yields {{code|"acd"|lua}} and {{code|sparseConcat{ nil, "b", "c", "d" }|lua}} yields {{code|"bcd"|lua}}.
+
+== length ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.length(t, prefix)
+&lt;/syntaxhighlight&gt;
+
+Finds the length of an array or of a quasi-array with keys with an optional &lt;code&gt;''prefix''&lt;/code&gt; such as "data1", "data2", etc. It uses an [[exponential search]] algorithm to find the length, so as to use as few table lookups as possible.
+
+This algorithm is useful for arrays that use metatables (e.g. [[mw:Extension:Scribunto/Lua reference manual#frame.args|frame.args]]) and for quasi-arrays. For normal arrays, just use the [[mw:Extension:Scribunto/Lua reference manual#Length operator|# operator]], as it is implemented in [[C (programming language)|C]] and will be quicker.
+
+== inArray ==
+
+&lt;syntaxhighlight lang="lua"&gt;TableTools.inArray(array, searchElement)
+TableTools.inArray(array, searchElement, fromIndex)&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''searchElement''&lt;/code&gt; is a member of the array &lt;code&gt;''array''&lt;/code&gt;, and &lt;code&gt;false&lt;/code&gt; otherwise. Equivalent to the javascript [https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/includes Array.prototype.includes()] function, except fromIndex is 1-indexed instead of zero-indexed.
+
+=== fromIndex ===
+&lt;code&gt;fromIndex&lt;/code&gt; is the optional 1-based index at which to start searching. If &lt;code&gt;fromIndex&lt;/code&gt; is not present, all values in the array will be searched and the array will be treated as a table/[[associative array]] (it will be iterated over using &lt;syntaxhighlight lang="lua" inline&gt;pairs()&lt;/syntaxhighlight&gt;).
+
+If &lt;code&gt;fromIndex&lt;/code&gt; is present and an integer, the array is assumed to be a conventional array/sequence/list (indexed with consecutive integer keys starting at &lt;code&gt;1&lt;/code&gt;, and interated over using &lt;syntaxhighlight lang="lua" inline&gt;ipairs()&lt;/syntaxhighlight&gt;). Only the values whose index is &lt;code&gt;fromIndex&lt;/code&gt; or higher will be searched.
+
+In the following examples, &lt;code&gt;#array&lt;/code&gt; represents the length of the integer-keyed portion of the array.
+
+* If &lt;code&gt;fromIndex &lt; 0&lt;/code&gt; it will count back from the end of the array, e.g. a value of &lt;code&gt;-1&lt;/code&gt; will only search the last integer-keyed element in the array. If &lt;code&gt;fromIndex &lt;= (-1 * #array)&lt;/code&gt;, the entire integer-keyed portion of the array will be searched.
+* If &lt;code&gt;fromIndex = 0&lt;/code&gt; it will be treated as a &lt;code&gt;1&lt;/code&gt; and the entire integer-keyed portion of the array will be searched.
+* If &lt;code&gt;fromIndex &gt; #array&lt;/code&gt;, the array is not searched and &lt;code&gt;false&lt;/code&gt; is returned.
+
+== merge ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.merge(...)
+&lt;/syntaxhighlight&gt;
+
+Given the arrays, returns an array containing the elements of each input array in sequence.
+
+== extend ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.extend(arr1, arr2)
+&lt;/syntaxhighlight&gt;
+
+Extends the first array in place by appending all elements from the second array.
+
+== See also ==
+* {{ml|params|}}
+
+&lt;includeonly&gt;{{Sandbox other||
+[[Category:Lua metamodules|TableTools]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>lewaytw1rfeodnvlov3c8m2q39atrzf</sha1>
+    </revision>
+    <revision>
+      <id>916545</id>
+      <parentid>916544</parentid>
+      <timestamp>2025-01-10T09:34:35Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: IMPORTING ALL WANTED MODULES</comment>
+      <origin>916544</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="11952" sha1="lewaytw1rfeodnvlov3c8m2q39atrzf" xml:space="preserve">{{used in system}}
+{{module rating|p}}
+{{cascade-protected template|page=module}}
+{{lua|Module:Exponential search|noprotcat=yes}}
+This module includes a number of functions for dealing with Lua tables. It is a meta-module, meant to be called from other Lua modules, and should not be called directly from #invoke.
+
+== Loading the module ==
+
+To use any of the functions, first you must load the module.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local TableTools = require('Module:TableTools')
+&lt;/syntaxhighlight&gt;
+
+== isPositiveInteger ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.isPositiveInteger(value)
+&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''value''&lt;/code&gt; is a positive integer, and &lt;code&gt;false&lt;/code&gt; if not. Although it doesn't operate on tables, it is included here as it is useful for determining whether a given table key is in the array part or the hash part of a table.
+
+== isNan ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.isNan(value)
+&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''value''&lt;/code&gt; is a [[NaN]] value, and &lt;code&gt;false&lt;/code&gt; if not. Although it doesn't operate on tables, it is included here as it is useful for determining whether a value can be a valid table key. (Lua will generate an error if a NaN value is used as a table key.)
+
+== shallowClone ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.shallowClone(t)
+&lt;/syntaxhighlight&gt;
+
+Returns a clone of a table. The value returned is a new table, but all subtables and functions are shared. Metamethods are respected, but the returned table will have no metatable of its own. If you want to make a new table with no shared subtables and with metatables transferred, you can use &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#mw.clone|mw.clone]]&lt;/code&gt; instead. If you want to make a new table with no shared subtables and without metatables transferred, use &lt;code&gt;[[#deepCopy|deepCopy]]&lt;/code&gt; with the &lt;code&gt;noMetatable&lt;/code&gt; option.
+
+== removeDuplicates ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.removeDuplicates(t)
+&lt;/syntaxhighlight&gt;
+
+Removes duplicate values from an array. This function is only designed to work with standard arrays: keys that are not positive integers are ignored, as are all values after the first &lt;code&gt;nil&lt;/code&gt; value. (For arrays containing &lt;code&gt;nil&lt;/code&gt; values, you can use &lt;code&gt;[[#compressSparseArray|compressSparseArray]]&lt;/code&gt; first.) The function tries to preserve the order of the array: the earliest non-unique value is kept, and all subsequent duplicate values are removed. For example, for the table {{code|code={5, 4, 4, 3, 4, 2, 2, 1}|lang=lua}} &lt;code&gt;removeDuplicates&lt;/code&gt; will return {{code|code={5, 4, 3, 2, 1}|lang=lua}}.
+
+== numKeys ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.numKeys(t)
+&lt;/syntaxhighlight&gt;
+
+Takes a table &lt;code&gt;''t''&lt;/code&gt; and returns an array containing the numbers of any positive integer keys that have non-nil values, sorted in numerical order. For example, for the table {{code|code={'foo', nil, 'bar', 'baz', a = 'b'}|lang=lua}}, &lt;code&gt;numKeys&lt;/code&gt; will return {{code|code={1, 3, 4}|lang=lua}}.
+
+== affixNums ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.affixNums(t, prefix, suffix)
+&lt;/syntaxhighlight&gt;
+
+Takes a table &lt;code&gt;''t''&lt;/code&gt; and returns an array containing the numbers of keys with the optional prefix &lt;code&gt;''prefix''&lt;/code&gt; and the optional suffix &lt;code&gt;''suffix''&lt;/code&gt;. For example, for the table {{code|code={a1 = 'foo', a3 = 'bar', a6 = 'baz'}|lang=lua}} and the prefix &lt;code&gt;'a'&lt;/code&gt;, &lt;code&gt;affixNums&lt;/code&gt; will return {{code|code={1, 3, 6}|lang=lua}}. All characters in &lt;code&gt;''prefix''&lt;/code&gt; and &lt;code&gt;''suffix''&lt;/code&gt; are interpreted literally.
+
+== numData ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.numData(t, compress)
+&lt;/syntaxhighlight&gt;
+
+Given a table with keys like &lt;code&gt;"foo1"&lt;/code&gt;, &lt;code&gt;"bar1"&lt;/code&gt;, &lt;code&gt;"foo2"&lt;/code&gt;, and &lt;code&gt;"baz2"&lt;/code&gt;, returns a table of subtables in the format {{code|code={ [1] = {foo = 'text', bar = 'text'}, [2] = {foo = 'text', baz = 'text'} }|lang=lua}}. Keys that don't end with an integer are stored in a subtable named &lt;code&gt;"other"&lt;/code&gt;. The compress option compresses the table so that it can be iterated over with &lt;code&gt;ipairs&lt;/code&gt;.
+
+== compressSparseArray ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.compressSparseArray(t)
+&lt;/syntaxhighlight&gt;
+
+Takes an array &lt;code&gt;''t''&lt;/code&gt; with one or more nil values, and removes the nil values while preserving the order, so that the array can be safely traversed with &lt;code&gt;ipairs&lt;/code&gt;. Any keys that are not positive integers are removed. For example, for the table {{code|code={1, nil, foo = 'bar', 3, 2}|lang=lua}}, &lt;code&gt;compressSparseArray&lt;/code&gt; will return {{code|code={1, 3, 2}|lang=lua}}.
+
+== sparseIpairs ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.sparseIpairs(t)
+&lt;/syntaxhighlight&gt;
+
+This is an iterator function for traversing a sparse array &lt;code&gt;''t''&lt;/code&gt;. It is similar to &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#ipairs|ipairs]]&lt;/code&gt;, but will continue to iterate until the highest numerical key, whereas &lt;code&gt;ipairs&lt;/code&gt; may stop after the first &lt;code&gt;nil&lt;/code&gt; value. Any keys that are not positive integers are ignored.
+
+Usually &lt;code&gt;sparseIpairs&lt;/code&gt; is used in a generic &lt;code&gt;for&lt;/code&gt; loop.
+
+&lt;syntaxhighlight lang="lua"&gt;
+for i, v in TableTools.sparseIpairs(t) do
+   -- code block
+end
+&lt;/syntaxhighlight&gt;
+
+Note that &lt;code&gt;sparseIpairs&lt;/code&gt; uses the &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#pairs|pairs]]&lt;/code&gt; function in its implementation. Although some table keys appear to be ignored, all table keys are accessed when it is run.
+
+== size ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.size(t)
+&lt;/syntaxhighlight&gt;
+
+Finds the size of a key/value pair table ([[associative array]]). For example, for {{code|code={foo = 'foo', bar = 'bar'}|lang=lua}}, &lt;code&gt;size&lt;/code&gt; will return &lt;code&gt;2&lt;/code&gt;. The function will also work on arrays, but for arrays it is more efficient to use the &lt;code&gt;#&lt;/code&gt; operator. Note that to find the size, this function uses the &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#pairs|pairs]]&lt;/code&gt; function to iterate through all of the keys.
+
+== keysToList ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.keysToList(t, keySort, checked)
+&lt;/syntaxhighlight&gt;
+
+Returns a list of the keys in a table, sorted using either a default comparison function or a custom &lt;code&gt;''keySort''&lt;/code&gt; function, which follows the same rules as the &lt;code&gt;comp&lt;/code&gt; function supplied to &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#table.sort|table.sort]]&lt;/code&gt;. If &lt;code&gt;''keySort''&lt;/code&gt; is &lt;code&gt;false&lt;/code&gt;, no sorting is done. Set &lt;code&gt;''checked''&lt;/code&gt; to &lt;code&gt;true&lt;/code&gt; to skip the internal type checking.
+
+== sortedPairs ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.sortedPairs(t, keySort)
+&lt;/syntaxhighlight&gt;
+
+Iterates through a table, with the keys sorted using the &lt;code&gt;keysToList&lt;/code&gt; function. If there are only numerical keys, &lt;code&gt;sparseIpairs&lt;/code&gt; is probably more efficient.
+
+== isArray ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.isArray(value)
+&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''value''&lt;/code&gt; is a table and all keys are consecutive integers starting at 1.
+
+== isArrayLike ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.isArrayLike(value)
+&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''value''&lt;/code&gt; is iterable and all keys are consecutive integers starting at 1.
+
+== invert ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.invert(arr)
+&lt;/syntaxhighlight&gt;
+
+Transposes the keys and values in an array. For example, {{code|invert{ "a", "b", "c" }|lua}} yields {{code|code={ a=1, b=2, c=3 }|lang=lua}}.
+
+== listToSet ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.listToSet(arr)
+&lt;/syntaxhighlight&gt;
+
+Creates a set from the array part of the table &lt;code&gt;''arr''&lt;/code&gt;. Indexing the set by any of the values of the array returns &lt;code&gt;true&lt;/code&gt;. For example, {{code|listToSet{ "a", "b", "c" }|lua}} yields {{code|code={ a=true, b=true, c=true }|lang=lua}}.
+
+== deepCopy ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.deepCopy(orig, noMetatable, alreadySeen)
+&lt;/syntaxhighlight&gt;
+
+Creates a copy of the table &lt;code&gt;''orig''&lt;/code&gt;. As with &lt;code&gt;mw.clone&lt;/code&gt;, all values that are not functions are duplicated and the identity of tables is preserved. If &lt;code&gt;''noMetatable''&lt;/code&gt; is &lt;code&gt;true&lt;/code&gt;, then the metatable (if any) is not copied. Can copy tables loaded with &lt;code&gt;mw.loadData&lt;/code&gt;.
+
+Similar to &lt;code&gt;mw.clone&lt;/code&gt;, but &lt;code&gt;mw.clone&lt;/code&gt; cannot copy tables loaded with &lt;code&gt;mw.loadData&lt;/code&gt; and does not allow metatables &lt;em&gt;not&lt;/em&gt; to be copied.
+
+== sparseConcat ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.sparseConcat(t, sep, i, j)
+&lt;/syntaxhighlight&gt;
+
+Concatenates all values in the table that are indexed by a positive integer, in order. For example, {{code|sparseConcat{ "a", nil, "c", "d" }|lua}} yields {{code|"acd"|lua}} and {{code|sparseConcat{ nil, "b", "c", "d" }|lua}} yields {{code|"bcd"|lua}}.
+
+== length ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.length(t, prefix)
+&lt;/syntaxhighlight&gt;
+
+Finds the length of an array or of a quasi-array with keys with an optional &lt;code&gt;''prefix''&lt;/code&gt; such as "data1", "data2", etc. It uses an [[exponential search]] algorithm to find the length, so as to use as few table lookups as possible.
+
+This algorithm is useful for arrays that use metatables (e.g. [[mw:Extension:Scribunto/Lua reference manual#frame.args|frame.args]]) and for quasi-arrays. For normal arrays, just use the [[mw:Extension:Scribunto/Lua reference manual#Length operator|# operator]], as it is implemented in [[C (programming language)|C]] and will be quicker.
+
+== inArray ==
+
+&lt;syntaxhighlight lang="lua"&gt;TableTools.inArray(array, searchElement)
+TableTools.inArray(array, searchElement, fromIndex)&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''searchElement''&lt;/code&gt; is a member of the array &lt;code&gt;''array''&lt;/code&gt;, and &lt;code&gt;false&lt;/code&gt; otherwise. Equivalent to the javascript [https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/includes Array.prototype.includes()] function, except fromIndex is 1-indexed instead of zero-indexed.
+
+=== fromIndex ===
+&lt;code&gt;fromIndex&lt;/code&gt; is the optional 1-based index at which to start searching. If &lt;code&gt;fromIndex&lt;/code&gt; is not present, all values in the array will be searched and the array will be treated as a table/[[associative array]] (it will be iterated over using &lt;syntaxhighlight lang="lua" inline&gt;pairs()&lt;/syntaxhighlight&gt;).
+
+If &lt;code&gt;fromIndex&lt;/code&gt; is present and an integer, the array is assumed to be a conventional array/sequence/list (indexed with consecutive integer keys starting at &lt;code&gt;1&lt;/code&gt;, and interated over using &lt;syntaxhighlight lang="lua" inline&gt;ipairs()&lt;/syntaxhighlight&gt;). Only the values whose index is &lt;code&gt;fromIndex&lt;/code&gt; or higher will be searched.
+
+In the following examples, &lt;code&gt;#array&lt;/code&gt; represents the length of the integer-keyed portion of the array.
+
+* If &lt;code&gt;fromIndex &lt; 0&lt;/code&gt; it will count back from the end of the array, e.g. a value of &lt;code&gt;-1&lt;/code&gt; will only search the last integer-keyed element in the array. If &lt;code&gt;fromIndex &lt;= (-1 * #array)&lt;/code&gt;, the entire integer-keyed portion of the array will be searched.
+* If &lt;code&gt;fromIndex = 0&lt;/code&gt; it will be treated as a &lt;code&gt;1&lt;/code&gt; and the entire integer-keyed portion of the array will be searched.
+* If &lt;code&gt;fromIndex &gt; #array&lt;/code&gt;, the array is not searched and &lt;code&gt;false&lt;/code&gt; is returned.
+
+== merge ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.merge(...)
+&lt;/syntaxhighlight&gt;
+
+Given the arrays, returns an array containing the elements of each input array in sequence.
+
+== extend ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.extend(arr1, arr2)
+&lt;/syntaxhighlight&gt;
+
+Extends the first array in place by appending all elements from the second array.
+
+== See also ==
+* {{ml|params|}}
+
+&lt;includeonly&gt;{{Sandbox other||
+[[Category:Lua metamodules|TableTools]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>lewaytw1rfeodnvlov3c8m2q39atrzf</sha1>
+    </revision>
+    <revision>
+      <id>916546</id>
+      <parentid>916545</parentid>
+      <timestamp>2025-05-19T17:04:06Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>916546</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="11956" sha1="1jhwf857erz9g91c39odvkpwv9pihly" xml:space="preserve">{{used in system}}
+{{module rating|p}}
+{{cascade-protected template|page=module}}
+{{lua|Module:Exponential search|noprotcat=yes}}
+This module includes a number of functions for dealing with Lua tables. It is a meta-module, meant to be called from other Lua modules, and should not be called directly from #invoke.
+
+== Loading the module ==
+
+To use any of the functions, first you must load the module.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local TableTools = require('Module:TableTools')
+&lt;/syntaxhighlight&gt;
+
+== isPositiveInteger ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.isPositiveInteger(value)
+&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''value''&lt;/code&gt; is a positive integer, and &lt;code&gt;false&lt;/code&gt; if not. Although it doesn't operate on tables, it is included here as it is useful for determining whether a given table key is in the array part or the hash part of a table.
+
+== isNan ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.isNan(value)
+&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''value''&lt;/code&gt; is a [[NaN]] value, and &lt;code&gt;false&lt;/code&gt; if not. Although it doesn't operate on tables, it is included here as it is useful for determining whether a value can be a valid table key. (Lua will generate an error if a NaN value is used as a table key.)
+
+== shallowClone ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.shallowClone(t)
+&lt;/syntaxhighlight&gt;
+
+Returns a clone of a table. The value returned is a new table, but all subtables and functions are shared. Metamethods are respected, but the returned table will have no metatable of its own. If you want to make a new table with no shared subtables and with metatables transferred, you can use &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#mw.clone|mw.clone]]&lt;/code&gt; instead. If you want to make a new table with no shared subtables and without metatables transferred, use &lt;code&gt;[[#deepCopy|deepCopy]]&lt;/code&gt; with the &lt;code&gt;noMetatable&lt;/code&gt; option.
+
+== removeDuplicates ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.removeDuplicates(t)
+&lt;/syntaxhighlight&gt;
+
+Removes duplicate values from an array. This function is only designed to work with standard arrays: keys that are not positive integers are ignored, as are all values after the first &lt;code&gt;nil&lt;/code&gt; value. (For arrays containing &lt;code&gt;nil&lt;/code&gt; values, you can use &lt;code&gt;[[#compressSparseArray|compressSparseArray]]&lt;/code&gt; first.) The function tries to preserve the order of the array: the earliest non-unique value is kept, and all subsequent duplicate values are removed. For example, for the table {{code|code={5, 4, 4, 3, 4, 2, 2, 1}|lang=lua}} &lt;code&gt;removeDuplicates&lt;/code&gt; will return {{code|code={5, 4, 3, 2, 1}|lang=lua}}.
+
+== numKeys ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.numKeys(t)
+&lt;/syntaxhighlight&gt;
+
+Takes a table &lt;code&gt;''t''&lt;/code&gt; and returns an array containing the numbers of any positive integer keys that have non-nil values, sorted in numerical order. For example, for the table {{code|code={'foo', nil, 'bar', 'baz', a = 'b'}|lang=lua}}, &lt;code&gt;numKeys&lt;/code&gt; will return {{code|code={1, 3, 4}|lang=lua}}.
+
+== affixNums ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.affixNums(t, prefix, suffix)
+&lt;/syntaxhighlight&gt;
+
+Takes a table &lt;code&gt;''t''&lt;/code&gt; and returns an array containing the numbers of keys with the optional prefix &lt;code&gt;''prefix''&lt;/code&gt; and the optional suffix &lt;code&gt;''suffix''&lt;/code&gt;. For example, for the table {{code|code={a1 = 'foo', a3 = 'bar', a6 = 'baz'}|lang=lua}} and the prefix &lt;code&gt;'a'&lt;/code&gt;, &lt;code&gt;affixNums&lt;/code&gt; will return {{code|code={1, 3, 6}|lang=lua}}. All characters in &lt;code&gt;''prefix''&lt;/code&gt; and &lt;code&gt;''suffix''&lt;/code&gt; are interpreted literally.
+
+== numData ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.numData(t, compress)
+&lt;/syntaxhighlight&gt;
+
+Given a table with keys like &lt;code&gt;"foo1"&lt;/code&gt;, &lt;code&gt;"bar1"&lt;/code&gt;, &lt;code&gt;"foo2"&lt;/code&gt;, and &lt;code&gt;"baz2"&lt;/code&gt;, returns a table of subtables in the format {{code|code={ [1] = {foo = 'text', bar = 'text'}, [2] = {foo = 'text', baz = 'text'} }|lang=lua}}. Keys that don't end with an integer are stored in a subtable named &lt;code&gt;"other"&lt;/code&gt;. The compress option compresses the table so that it can be iterated over with &lt;code&gt;ipairs&lt;/code&gt;.
+
+== compressSparseArray ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.compressSparseArray(t)
+&lt;/syntaxhighlight&gt;
+
+Takes an array &lt;code&gt;''t''&lt;/code&gt; with one or more nil values, and removes the nil values while preserving the order, so that the array can be safely traversed with &lt;code&gt;ipairs&lt;/code&gt;. Any keys that are not positive integers are removed. For example, for the table {{code|code={1, nil, foo = 'bar', 3, 2}|lang=lua}}, &lt;code&gt;compressSparseArray&lt;/code&gt; will return {{code|code={1, 3, 2}|lang=lua}}.
+
+== sparseIpairs ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.sparseIpairs(t)
+&lt;/syntaxhighlight&gt;
+
+This is an iterator function for traversing a sparse array &lt;code&gt;''t''&lt;/code&gt;. It is similar to &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#ipairs|ipairs]]&lt;/code&gt;, but will continue to iterate until the highest numerical key, whereas &lt;code&gt;ipairs&lt;/code&gt; may stop after the first &lt;code&gt;nil&lt;/code&gt; value. Any keys that are not positive integers are ignored.
+
+Usually &lt;code&gt;sparseIpairs&lt;/code&gt; is used in a generic &lt;code&gt;for&lt;/code&gt; loop.
+
+&lt;syntaxhighlight lang="lua"&gt;
+for i, v in TableTools.sparseIpairs(t) do
+   -- code block
+end
+&lt;/syntaxhighlight&gt;
+
+Note that &lt;code&gt;sparseIpairs&lt;/code&gt; uses the &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#pairs|pairs]]&lt;/code&gt; function in its implementation. Although some table keys appear to be ignored, all table keys are accessed when it is run.
+
+== size ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.size(t)
+&lt;/syntaxhighlight&gt;
+
+Finds the size of a key/value pair table ([[associative array]]). For example, for {{code|code={foo = 'foo', bar = 'bar'}|lang=lua}}, &lt;code&gt;size&lt;/code&gt; will return &lt;code&gt;2&lt;/code&gt;. The function will also work on arrays, but for arrays it is more efficient to use the &lt;code&gt;#&lt;/code&gt; operator. Note that to find the size, this function uses the &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#pairs|pairs]]&lt;/code&gt; function to iterate through all of the keys.
+
+== keysToList ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.keysToList(t, keySort, checked)
+&lt;/syntaxhighlight&gt;
+
+Returns a list of the keys in a table, sorted using either a default comparison function or a custom &lt;code&gt;''keySort''&lt;/code&gt; function, which follows the same rules as the &lt;code&gt;comp&lt;/code&gt; function supplied to &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#table.sort|table.sort]]&lt;/code&gt;. If &lt;code&gt;''keySort''&lt;/code&gt; is &lt;code&gt;false&lt;/code&gt;, no sorting is done. Set &lt;code&gt;''checked''&lt;/code&gt; to &lt;code&gt;true&lt;/code&gt; to skip the internal type checking.
+
+== sortedPairs ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.sortedPairs(t, keySort)
+&lt;/syntaxhighlight&gt;
+
+Iterates through a table, with the keys sorted using the &lt;code&gt;keysToList&lt;/code&gt; function. If there are only numerical keys, &lt;code&gt;sparseIpairs&lt;/code&gt; is probably more efficient.
+
+== isArray ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.isArray(value)
+&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''value''&lt;/code&gt; is a table and all keys are consecutive integers starting at 1.
+
+== isArrayLike ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.isArrayLike(value)
+&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''value''&lt;/code&gt; is iterable and all keys are consecutive integers starting at 1.
+
+== invert ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.invert(arr)
+&lt;/syntaxhighlight&gt;
+
+Transposes the keys and values in an array. For example, {{code|invert{ "a", "b", "c" }|lua}} yields {{code|code={ a=1, b=2, c=3 }|lang=lua}}.
+
+== listToSet ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.listToSet(arr)
+&lt;/syntaxhighlight&gt;
+
+Creates a set from the array part of the table &lt;code&gt;''arr''&lt;/code&gt;. Indexing the set by any of the values of the array returns &lt;code&gt;true&lt;/code&gt;. For example, {{code|listToSet{ "a", "b", "c" }|lua}} yields {{code|code={ a=true, b=true, c=true }|lang=lua}}.
+
+== deepCopy ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.deepCopy(orig, noMetatable, alreadySeen)
+&lt;/syntaxhighlight&gt;
+
+Creates a copy of the table &lt;code&gt;''orig''&lt;/code&gt;. As with &lt;code&gt;mw.clone&lt;/code&gt;, all values that are not functions are duplicated and the identity of tables is preserved. If &lt;code&gt;''noMetatable''&lt;/code&gt; is &lt;code&gt;true&lt;/code&gt;, then the metatable (if any) is not copied. Can copy tables loaded with &lt;code&gt;mw.loadData&lt;/code&gt;.
+
+Similar to &lt;code&gt;mw.clone&lt;/code&gt;, but &lt;code&gt;mw.clone&lt;/code&gt; cannot copy tables loaded with &lt;code&gt;mw.loadData&lt;/code&gt; and does not allow metatables &lt;em&gt;not&lt;/em&gt; to be copied.
+
+== sparseConcat ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.sparseConcat(t, sep, i, j)
+&lt;/syntaxhighlight&gt;
+
+Concatenates all values in the table that are indexed by a positive integer, in order. For example, {{code|sparseConcat{ "a", nil, "c", "d" }|lua}} yields {{code|"acd"|lua}} and {{code|sparseConcat{ nil, "b", "c", "d" }|lua}} yields {{code|"bcd"|lua}}.
+
+== length ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.length(t, prefix)
+&lt;/syntaxhighlight&gt;
+
+Finds the length of an array or of a quasi-array with keys with an optional &lt;code&gt;''prefix''&lt;/code&gt; such as "data1", "data2", etc. It uses an [[exponential search]] algorithm to find the length, so as to use as few table lookups as possible.
+
+This algorithm is useful for arrays that use metatables (e.g. [[mw:Extension:Scribunto/Lua reference manual#frame.args|frame.args]]) and for quasi-arrays. For normal arrays, just use the [[mw:Extension:Scribunto/Lua reference manual#Length operator|# operator]], as it is implemented in [[:en:C (programming language)|C]] and will be quicker.
+
+== inArray ==
+
+&lt;syntaxhighlight lang="lua"&gt;TableTools.inArray(array, searchElement)
+TableTools.inArray(array, searchElement, fromIndex)&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''searchElement''&lt;/code&gt; is a member of the array &lt;code&gt;''array''&lt;/code&gt;, and &lt;code&gt;false&lt;/code&gt; otherwise. Equivalent to the javascript [https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/includes Array.prototype.includes()] function, except fromIndex is 1-indexed instead of zero-indexed.
+
+=== fromIndex ===
+&lt;code&gt;fromIndex&lt;/code&gt; is the optional 1-based index at which to start searching. If &lt;code&gt;fromIndex&lt;/code&gt; is not present, all values in the array will be searched and the array will be treated as a table/[[associative array]] (it will be iterated over using &lt;syntaxhighlight lang="lua" inline&gt;pairs()&lt;/syntaxhighlight&gt;).
+
+If &lt;code&gt;fromIndex&lt;/code&gt; is present and an integer, the array is assumed to be a conventional array/sequence/list (indexed with consecutive integer keys starting at &lt;code&gt;1&lt;/code&gt;, and interated over using &lt;syntaxhighlight lang="lua" inline&gt;ipairs()&lt;/syntaxhighlight&gt;). Only the values whose index is &lt;code&gt;fromIndex&lt;/code&gt; or higher will be searched.
+
+In the following examples, &lt;code&gt;#array&lt;/code&gt; represents the length of the integer-keyed portion of the array.
+
+* If &lt;code&gt;fromIndex &lt; 0&lt;/code&gt; it will count back from the end of the array, e.g. a value of &lt;code&gt;-1&lt;/code&gt; will only search the last integer-keyed element in the array. If &lt;code&gt;fromIndex &lt;= (-1 * #array)&lt;/code&gt;, the entire integer-keyed portion of the array will be searched.
+* If &lt;code&gt;fromIndex = 0&lt;/code&gt; it will be treated as a &lt;code&gt;1&lt;/code&gt; and the entire integer-keyed portion of the array will be searched.
+* If &lt;code&gt;fromIndex &gt; #array&lt;/code&gt;, the array is not searched and &lt;code&gt;false&lt;/code&gt; is returned.
+
+== merge ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.merge(...)
+&lt;/syntaxhighlight&gt;
+
+Given the arrays, returns an array containing the elements of each input array in sequence.
+
+== extend ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.extend(arr1, arr2)
+&lt;/syntaxhighlight&gt;
+
+Extends the first array in place by appending all elements from the second array.
+
+== See also ==
+* {{ml|params|}}
+
+&lt;includeonly&gt;{{Sandbox other||
+[[Category:Lua metamodules|TableTools]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>1jhwf857erz9g91c39odvkpwv9pihly</sha1>
+    </revision>
+    <revision>
+      <id>916547</id>
+      <parentid>916546</parentid>
+      <timestamp>2025-05-19T18:50:45Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>916547</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="12000" sha1="dwk8qzow9zlgprf26y31xf6da25bmcq" xml:space="preserve">{{used in system}}
+{{module rating|p}}
+{{cascade-protected template|page=module}}
+{{lua|Module:Exponential search|noprotcat=yes}}
+This module includes a number of functions for dealing with Lua tables. It is a meta-module, meant to be called from other Lua modules, and should not be called directly from #invoke.
+
+== Loading the module ==
+
+To use any of the functions, first you must load the module.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local TableTools = require('Module:TableTools')
+&lt;/syntaxhighlight&gt;
+
+== isPositiveInteger ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.isPositiveInteger(value)
+&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''value''&lt;/code&gt; is a positive integer, and &lt;code&gt;false&lt;/code&gt; if not. Although it doesn't operate on tables, it is included here as it is useful for determining whether a given table key is in the array part or the hash part of a table.
+
+== isNan ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.isNan(value)
+&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''value''&lt;/code&gt; is a [[NaN]] value, and &lt;code&gt;false&lt;/code&gt; if not. Although it doesn't operate on tables, it is included here as it is useful for determining whether a value can be a valid table key. (Lua will generate an error if a NaN value is used as a table key.)
+
+== shallowClone ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.shallowClone(t)
+&lt;/syntaxhighlight&gt;
+
+Returns a clone of a table. The value returned is a new table, but all subtables and functions are shared. Metamethods are respected, but the returned table will have no metatable of its own. If you want to make a new table with no shared subtables and with metatables transferred, you can use &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#mw.clone|mw.clone]]&lt;/code&gt; instead. If you want to make a new table with no shared subtables and without metatables transferred, use &lt;code&gt;[[#deepCopy|deepCopy]]&lt;/code&gt; with the &lt;code&gt;noMetatable&lt;/code&gt; option.
+
+== removeDuplicates ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.removeDuplicates(t)
+&lt;/syntaxhighlight&gt;
+
+Removes duplicate values from an array. This function is only designed to work with standard arrays: keys that are not positive integers are ignored, as are all values after the first &lt;code&gt;nil&lt;/code&gt; value. (For arrays containing &lt;code&gt;nil&lt;/code&gt; values, you can use &lt;code&gt;[[#compressSparseArray|compressSparseArray]]&lt;/code&gt; first.) The function tries to preserve the order of the array: the earliest non-unique value is kept, and all subsequent duplicate values are removed. For example, for the table {{code|code={5, 4, 4, 3, 4, 2, 2, 1}|lang=lua}} &lt;code&gt;removeDuplicates&lt;/code&gt; will return {{code|code={5, 4, 3, 2, 1}|lang=lua}}.
+
+== numKeys ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.numKeys(t)
+&lt;/syntaxhighlight&gt;
+
+Takes a table &lt;code&gt;''t''&lt;/code&gt; and returns an array containing the numbers of any positive integer keys that have non-nil values, sorted in numerical order. For example, for the table {{code|code={'foo', nil, 'bar', 'baz', a = 'b'}|lang=lua}}, &lt;code&gt;numKeys&lt;/code&gt; will return {{code|code={1, 3, 4}|lang=lua}}.
+
+== affixNums ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.affixNums(t, prefix, suffix)
+&lt;/syntaxhighlight&gt;
+
+Takes a table &lt;code&gt;''t''&lt;/code&gt; and returns an array containing the numbers of keys with the optional prefix &lt;code&gt;''prefix''&lt;/code&gt; and the optional suffix &lt;code&gt;''suffix''&lt;/code&gt;. For example, for the table {{code|code={a1 = 'foo', a3 = 'bar', a6 = 'baz'}|lang=lua}} and the prefix &lt;code&gt;'a'&lt;/code&gt;, &lt;code&gt;affixNums&lt;/code&gt; will return {{code|code={1, 3, 6}|lang=lua}}. All characters in &lt;code&gt;''prefix''&lt;/code&gt; and &lt;code&gt;''suffix''&lt;/code&gt; are interpreted literally.
+
+== numData ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.numData(t, compress)
+&lt;/syntaxhighlight&gt;
+
+Given a table with keys like &lt;code&gt;"foo1"&lt;/code&gt;, &lt;code&gt;"bar1"&lt;/code&gt;, &lt;code&gt;"foo2"&lt;/code&gt;, and &lt;code&gt;"baz2"&lt;/code&gt;, returns a table of subtables in the format {{code|code={ [1] = {foo = 'text', bar = 'text'}, [2] = {foo = 'text', baz = 'text'} }|lang=lua}}. Keys that don't end with an integer are stored in a subtable named &lt;code&gt;"other"&lt;/code&gt;. The compress option compresses the table so that it can be iterated over with &lt;code&gt;ipairs&lt;/code&gt;.
+
+== compressSparseArray ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.compressSparseArray(t)
+&lt;/syntaxhighlight&gt;
+
+Takes an array &lt;code&gt;''t''&lt;/code&gt; with one or more nil values, and removes the nil values while preserving the order, so that the array can be safely traversed with &lt;code&gt;ipairs&lt;/code&gt;. Any keys that are not positive integers are removed. For example, for the table {{code|code={1, nil, foo = 'bar', 3, 2}|lang=lua}}, &lt;code&gt;compressSparseArray&lt;/code&gt; will return {{code|code={1, 3, 2}|lang=lua}}.
+
+== sparseIpairs ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.sparseIpairs(t)
+&lt;/syntaxhighlight&gt;
+
+This is an iterator function for traversing a sparse array &lt;code&gt;''t''&lt;/code&gt;. It is similar to &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#ipairs|ipairs]]&lt;/code&gt;, but will continue to iterate until the highest numerical key, whereas &lt;code&gt;ipairs&lt;/code&gt; may stop after the first &lt;code&gt;nil&lt;/code&gt; value. Any keys that are not positive integers are ignored.
+
+Usually &lt;code&gt;sparseIpairs&lt;/code&gt; is used in a generic &lt;code&gt;for&lt;/code&gt; loop.
+
+&lt;syntaxhighlight lang="lua"&gt;
+for i, v in TableTools.sparseIpairs(t) do
+   -- code block
+end
+&lt;/syntaxhighlight&gt;
+
+Note that &lt;code&gt;sparseIpairs&lt;/code&gt; uses the &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#pairs|pairs]]&lt;/code&gt; function in its implementation. Although some table keys appear to be ignored, all table keys are accessed when it is run.
+
+== size ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.size(t)
+&lt;/syntaxhighlight&gt;
+
+Finds the size of a key/value pair table ([[:en:Associative array|Associative array]]). For example, for {{code|code={foo = 'foo', bar = 'bar'}|lang=lua}}, &lt;code&gt;size&lt;/code&gt; will return &lt;code&gt;2&lt;/code&gt;. The function will also work on arrays, but for arrays it is more efficient to use the &lt;code&gt;#&lt;/code&gt; operator. Note that to find the size, this function uses the &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#pairs|pairs]]&lt;/code&gt; function to iterate through all of the keys.
+
+== keysToList ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.keysToList(t, keySort, checked)
+&lt;/syntaxhighlight&gt;
+
+Returns a list of the keys in a table, sorted using either a default comparison function or a custom &lt;code&gt;''keySort''&lt;/code&gt; function, which follows the same rules as the &lt;code&gt;comp&lt;/code&gt; function supplied to &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#table.sort|table.sort]]&lt;/code&gt;. If &lt;code&gt;''keySort''&lt;/code&gt; is &lt;code&gt;false&lt;/code&gt;, no sorting is done. Set &lt;code&gt;''checked''&lt;/code&gt; to &lt;code&gt;true&lt;/code&gt; to skip the internal type checking.
+
+== sortedPairs ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.sortedPairs(t, keySort)
+&lt;/syntaxhighlight&gt;
+
+Iterates through a table, with the keys sorted using the &lt;code&gt;keysToList&lt;/code&gt; function. If there are only numerical keys, &lt;code&gt;sparseIpairs&lt;/code&gt; is probably more efficient.
+
+== isArray ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.isArray(value)
+&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''value''&lt;/code&gt; is a table and all keys are consecutive integers starting at 1.
+
+== isArrayLike ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.isArrayLike(value)
+&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''value''&lt;/code&gt; is iterable and all keys are consecutive integers starting at 1.
+
+== invert ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.invert(arr)
+&lt;/syntaxhighlight&gt;
+
+Transposes the keys and values in an array. For example, {{code|invert{ "a", "b", "c" }|lua}} yields {{code|code={ a=1, b=2, c=3 }|lang=lua}}.
+
+== listToSet ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.listToSet(arr)
+&lt;/syntaxhighlight&gt;
+
+Creates a set from the array part of the table &lt;code&gt;''arr''&lt;/code&gt;. Indexing the set by any of the values of the array returns &lt;code&gt;true&lt;/code&gt;. For example, {{code|listToSet{ "a", "b", "c" }|lua}} yields {{code|code={ a=true, b=true, c=true }|lang=lua}}.
+
+== deepCopy ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.deepCopy(orig, noMetatable, alreadySeen)
+&lt;/syntaxhighlight&gt;
+
+Creates a copy of the table &lt;code&gt;''orig''&lt;/code&gt;. As with &lt;code&gt;mw.clone&lt;/code&gt;, all values that are not functions are duplicated and the identity of tables is preserved. If &lt;code&gt;''noMetatable''&lt;/code&gt; is &lt;code&gt;true&lt;/code&gt;, then the metatable (if any) is not copied. Can copy tables loaded with &lt;code&gt;mw.loadData&lt;/code&gt;.
+
+Similar to &lt;code&gt;mw.clone&lt;/code&gt;, but &lt;code&gt;mw.clone&lt;/code&gt; cannot copy tables loaded with &lt;code&gt;mw.loadData&lt;/code&gt; and does not allow metatables &lt;em&gt;not&lt;/em&gt; to be copied.
+
+== sparseConcat ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.sparseConcat(t, sep, i, j)
+&lt;/syntaxhighlight&gt;
+
+Concatenates all values in the table that are indexed by a positive integer, in order. For example, {{code|sparseConcat{ "a", nil, "c", "d" }|lua}} yields {{code|"acd"|lua}} and {{code|sparseConcat{ nil, "b", "c", "d" }|lua}} yields {{code|"bcd"|lua}}.
+
+== length ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.length(t, prefix)
+&lt;/syntaxhighlight&gt;
+
+Finds the length of an array or of a quasi-array with keys with an optional &lt;code&gt;''prefix''&lt;/code&gt; such as "data1", "data2", etc. It uses an [[exponential search]] algorithm to find the length, so as to use as few table lookups as possible.
+
+This algorithm is useful for arrays that use metatables (e.g. [[mw:Extension:Scribunto/Lua reference manual#frame.args|frame.args]]) and for quasi-arrays. For normal arrays, just use the [[mw:Extension:Scribunto/Lua reference manual#Length operator|# operator]], as it is implemented in [[:en:C (programming language)|C]] and will be quicker.
+
+== inArray ==
+
+&lt;syntaxhighlight lang="lua"&gt;TableTools.inArray(array, searchElement)
+TableTools.inArray(array, searchElement, fromIndex)&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''searchElement''&lt;/code&gt; is a member of the array &lt;code&gt;''array''&lt;/code&gt;, and &lt;code&gt;false&lt;/code&gt; otherwise. Equivalent to the javascript [https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/includes Array.prototype.includes()] function, except fromIndex is 1-indexed instead of zero-indexed.
+
+=== fromIndex ===
+&lt;code&gt;fromIndex&lt;/code&gt; is the optional 1-based index at which to start searching. If &lt;code&gt;fromIndex&lt;/code&gt; is not present, all values in the array will be searched and the array will be treated as a table/[[:en:Associative array|Associative array]] (it will be iterated over using &lt;syntaxhighlight lang="lua" inline&gt;pairs()&lt;/syntaxhighlight&gt;).
+
+If &lt;code&gt;fromIndex&lt;/code&gt; is present and an integer, the array is assumed to be a conventional array/sequence/list (indexed with consecutive integer keys starting at &lt;code&gt;1&lt;/code&gt;, and interated over using &lt;syntaxhighlight lang="lua" inline&gt;ipairs()&lt;/syntaxhighlight&gt;). Only the values whose index is &lt;code&gt;fromIndex&lt;/code&gt; or higher will be searched.
+
+In the following examples, &lt;code&gt;#array&lt;/code&gt; represents the length of the integer-keyed portion of the array.
+
+* If &lt;code&gt;fromIndex &lt; 0&lt;/code&gt; it will count back from the end of the array, e.g. a value of &lt;code&gt;-1&lt;/code&gt; will only search the last integer-keyed element in the array. If &lt;code&gt;fromIndex &lt;= (-1 * #array)&lt;/code&gt;, the entire integer-keyed portion of the array will be searched.
+* If &lt;code&gt;fromIndex = 0&lt;/code&gt; it will be treated as a &lt;code&gt;1&lt;/code&gt; and the entire integer-keyed portion of the array will be searched.
+* If &lt;code&gt;fromIndex &gt; #array&lt;/code&gt;, the array is not searched and &lt;code&gt;false&lt;/code&gt; is returned.
+
+== merge ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.merge(...)
+&lt;/syntaxhighlight&gt;
+
+Given the arrays, returns an array containing the elements of each input array in sequence.
+
+== extend ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.extend(arr1, arr2)
+&lt;/syntaxhighlight&gt;
+
+Extends the first array in place by appending all elements from the second array.
+
+== See also ==
+* {{ml|params|}}
+
+&lt;includeonly&gt;{{Sandbox other||
+[[Category:Lua metamodules|TableTools]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>dwk8qzow9zlgprf26y31xf6da25bmcq</sha1>
+    </revision>
+    <revision>
+      <id>916548</id>
+      <parentid>916547</parentid>
+      <timestamp>2025-05-19T22:47:37Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>916548</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="12023" sha1="4ryb6sgrw9g9225k03ljpqvg742dytz" xml:space="preserve">{{used in system}}
+{{module rating|p}}
+{{cascade-protected template|page=module}}
+{{lua|Module:Exponential search|noprotcat=yes}}
+This module includes a number of functions for dealing with Lua tables. It is a meta-module, meant to be called from other Lua modules, and should not be called directly from #invoke.
+
+== Loading the module ==
+
+To use any of the functions, first you must load the module.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local TableTools = require('Module:TableTools')
+&lt;/syntaxhighlight&gt;
+
+== isPositiveInteger ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.isPositiveInteger(value)
+&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''value''&lt;/code&gt; is a positive integer, and &lt;code&gt;false&lt;/code&gt; if not. Although it doesn't operate on tables, it is included here as it is useful for determining whether a given table key is in the array part or the hash part of a table.
+
+== isNan ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.isNan(value)
+&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''value''&lt;/code&gt; is a [[NaN]] value, and &lt;code&gt;false&lt;/code&gt; if not. Although it doesn't operate on tables, it is included here as it is useful for determining whether a value can be a valid table key. (Lua will generate an error if a NaN value is used as a table key.)
+
+== shallowClone ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.shallowClone(t)
+&lt;/syntaxhighlight&gt;
+
+Returns a clone of a table. The value returned is a new table, but all subtables and functions are shared. Metamethods are respected, but the returned table will have no metatable of its own. If you want to make a new table with no shared subtables and with metatables transferred, you can use &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#mw.clone|mw.clone]]&lt;/code&gt; instead. If you want to make a new table with no shared subtables and without metatables transferred, use &lt;code&gt;[[#deepCopy|deepCopy]]&lt;/code&gt; with the &lt;code&gt;noMetatable&lt;/code&gt; option.
+
+== removeDuplicates ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.removeDuplicates(t)
+&lt;/syntaxhighlight&gt;
+
+Removes duplicate values from an array. This function is only designed to work with standard arrays: keys that are not positive integers are ignored, as are all values after the first &lt;code&gt;nil&lt;/code&gt; value. (For arrays containing &lt;code&gt;nil&lt;/code&gt; values, you can use &lt;code&gt;[[#compressSparseArray|compressSparseArray]]&lt;/code&gt; first.) The function tries to preserve the order of the array: the earliest non-unique value is kept, and all subsequent duplicate values are removed. For example, for the table {{code|code={5, 4, 4, 3, 4, 2, 2, 1}|lang=lua}} &lt;code&gt;removeDuplicates&lt;/code&gt; will return {{code|code={5, 4, 3, 2, 1}|lang=lua}}.
+
+== numKeys ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.numKeys(t)
+&lt;/syntaxhighlight&gt;
+
+Takes a table &lt;code&gt;''t''&lt;/code&gt; and returns an array containing the numbers of any positive integer keys that have non-nil values, sorted in numerical order. For example, for the table {{code|code={'foo', nil, 'bar', 'baz', a = 'b'}|lang=lua}}, &lt;code&gt;numKeys&lt;/code&gt; will return {{code|code={1, 3, 4}|lang=lua}}.
+
+== affixNums ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.affixNums(t, prefix, suffix)
+&lt;/syntaxhighlight&gt;
+
+Takes a table &lt;code&gt;''t''&lt;/code&gt; and returns an array containing the numbers of keys with the optional prefix &lt;code&gt;''prefix''&lt;/code&gt; and the optional suffix &lt;code&gt;''suffix''&lt;/code&gt;. For example, for the table {{code|code={a1 = 'foo', a3 = 'bar', a6 = 'baz'}|lang=lua}} and the prefix &lt;code&gt;'a'&lt;/code&gt;, &lt;code&gt;affixNums&lt;/code&gt; will return {{code|code={1, 3, 6}|lang=lua}}. All characters in &lt;code&gt;''prefix''&lt;/code&gt; and &lt;code&gt;''suffix''&lt;/code&gt; are interpreted literally.
+
+== numData ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.numData(t, compress)
+&lt;/syntaxhighlight&gt;
+
+Given a table with keys like &lt;code&gt;"foo1"&lt;/code&gt;, &lt;code&gt;"bar1"&lt;/code&gt;, &lt;code&gt;"foo2"&lt;/code&gt;, and &lt;code&gt;"baz2"&lt;/code&gt;, returns a table of subtables in the format {{code|code={ [1] = {foo = 'text', bar = 'text'}, [2] = {foo = 'text', baz = 'text'} }|lang=lua}}. Keys that don't end with an integer are stored in a subtable named &lt;code&gt;"other"&lt;/code&gt;. The compress option compresses the table so that it can be iterated over with &lt;code&gt;ipairs&lt;/code&gt;.
+
+== compressSparseArray ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.compressSparseArray(t)
+&lt;/syntaxhighlight&gt;
+
+Takes an array &lt;code&gt;''t''&lt;/code&gt; with one or more nil values, and removes the nil values while preserving the order, so that the array can be safely traversed with &lt;code&gt;ipairs&lt;/code&gt;. Any keys that are not positive integers are removed. For example, for the table {{code|code={1, nil, foo = 'bar', 3, 2}|lang=lua}}, &lt;code&gt;compressSparseArray&lt;/code&gt; will return {{code|code={1, 3, 2}|lang=lua}}.
+
+== sparseIpairs ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.sparseIpairs(t)
+&lt;/syntaxhighlight&gt;
+
+This is an iterator function for traversing a sparse array &lt;code&gt;''t''&lt;/code&gt;. It is similar to &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#ipairs|ipairs]]&lt;/code&gt;, but will continue to iterate until the highest numerical key, whereas &lt;code&gt;ipairs&lt;/code&gt; may stop after the first &lt;code&gt;nil&lt;/code&gt; value. Any keys that are not positive integers are ignored.
+
+Usually &lt;code&gt;sparseIpairs&lt;/code&gt; is used in a generic &lt;code&gt;for&lt;/code&gt; loop.
+
+&lt;syntaxhighlight lang="lua"&gt;
+for i, v in TableTools.sparseIpairs(t) do
+   -- code block
+end
+&lt;/syntaxhighlight&gt;
+
+Note that &lt;code&gt;sparseIpairs&lt;/code&gt; uses the &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#pairs|pairs]]&lt;/code&gt; function in its implementation. Although some table keys appear to be ignored, all table keys are accessed when it is run.
+
+== size ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.size(t)
+&lt;/syntaxhighlight&gt;
+
+Finds the size of a key/value pair table ([[:en:Associative array|Associative array]]). For example, for {{code|code={foo = 'foo', bar = 'bar'}|lang=lua}}, &lt;code&gt;size&lt;/code&gt; will return &lt;code&gt;2&lt;/code&gt;. The function will also work on arrays, but for arrays it is more efficient to use the &lt;code&gt;#&lt;/code&gt; operator. Note that to find the size, this function uses the &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#pairs|pairs]]&lt;/code&gt; function to iterate through all of the keys.
+
+== keysToList ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.keysToList(t, keySort, checked)
+&lt;/syntaxhighlight&gt;
+
+Returns a list of the keys in a table, sorted using either a default comparison function or a custom &lt;code&gt;''keySort''&lt;/code&gt; function, which follows the same rules as the &lt;code&gt;comp&lt;/code&gt; function supplied to &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#table.sort|table.sort]]&lt;/code&gt;. If &lt;code&gt;''keySort''&lt;/code&gt; is &lt;code&gt;false&lt;/code&gt;, no sorting is done. Set &lt;code&gt;''checked''&lt;/code&gt; to &lt;code&gt;true&lt;/code&gt; to skip the internal type checking.
+
+== sortedPairs ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.sortedPairs(t, keySort)
+&lt;/syntaxhighlight&gt;
+
+Iterates through a table, with the keys sorted using the &lt;code&gt;keysToList&lt;/code&gt; function. If there are only numerical keys, &lt;code&gt;sparseIpairs&lt;/code&gt; is probably more efficient.
+
+== isArray ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.isArray(value)
+&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''value''&lt;/code&gt; is a table and all keys are consecutive integers starting at 1.
+
+== isArrayLike ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.isArrayLike(value)
+&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''value''&lt;/code&gt; is iterable and all keys are consecutive integers starting at 1.
+
+== invert ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.invert(arr)
+&lt;/syntaxhighlight&gt;
+
+Transposes the keys and values in an array. For example, {{code|invert{ "a", "b", "c" }|lua}} yields {{code|code={ a=1, b=2, c=3 }|lang=lua}}.
+
+== listToSet ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.listToSet(arr)
+&lt;/syntaxhighlight&gt;
+
+Creates a set from the array part of the table &lt;code&gt;''arr''&lt;/code&gt;. Indexing the set by any of the values of the array returns &lt;code&gt;true&lt;/code&gt;. For example, {{code|listToSet{ "a", "b", "c" }|lua}} yields {{code|code={ a=true, b=true, c=true }|lang=lua}}.
+
+== deepCopy ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.deepCopy(orig, noMetatable, alreadySeen)
+&lt;/syntaxhighlight&gt;
+
+Creates a copy of the table &lt;code&gt;''orig''&lt;/code&gt;. As with &lt;code&gt;mw.clone&lt;/code&gt;, all values that are not functions are duplicated and the identity of tables is preserved. If &lt;code&gt;''noMetatable''&lt;/code&gt; is &lt;code&gt;true&lt;/code&gt;, then the metatable (if any) is not copied. Can copy tables loaded with &lt;code&gt;mw.loadData&lt;/code&gt;.
+
+Similar to &lt;code&gt;mw.clone&lt;/code&gt;, but &lt;code&gt;mw.clone&lt;/code&gt; cannot copy tables loaded with &lt;code&gt;mw.loadData&lt;/code&gt; and does not allow metatables &lt;em&gt;not&lt;/em&gt; to be copied.
+
+== sparseConcat ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.sparseConcat(t, sep, i, j)
+&lt;/syntaxhighlight&gt;
+
+Concatenates all values in the table that are indexed by a positive integer, in order. For example, {{code|sparseConcat{ "a", nil, "c", "d" }|lua}} yields {{code|"acd"|lua}} and {{code|sparseConcat{ nil, "b", "c", "d" }|lua}} yields {{code|"bcd"|lua}}.
+
+== length ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.length(t, prefix)
+&lt;/syntaxhighlight&gt;
+
+Finds the length of an array or of a quasi-array with keys with an optional &lt;code&gt;''prefix''&lt;/code&gt; such as "data1", "data2", etc. It uses an [[:en:Exponential search|Exponential search]] algorithm to find the length, so as to use as few table lookups as possible.
+
+This algorithm is useful for arrays that use metatables (e.g. [[mw:Extension:Scribunto/Lua reference manual#frame.args|frame.args]]) and for quasi-arrays. For normal arrays, just use the [[mw:Extension:Scribunto/Lua reference manual#Length operator|# operator]], as it is implemented in [[:en:C (programming language)|C]] and will be quicker.
+
+== inArray ==
+
+&lt;syntaxhighlight lang="lua"&gt;TableTools.inArray(array, searchElement)
+TableTools.inArray(array, searchElement, fromIndex)&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''searchElement''&lt;/code&gt; is a member of the array &lt;code&gt;''array''&lt;/code&gt;, and &lt;code&gt;false&lt;/code&gt; otherwise. Equivalent to the javascript [https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/includes Array.prototype.includes()] function, except fromIndex is 1-indexed instead of zero-indexed.
+
+=== fromIndex ===
+&lt;code&gt;fromIndex&lt;/code&gt; is the optional 1-based index at which to start searching. If &lt;code&gt;fromIndex&lt;/code&gt; is not present, all values in the array will be searched and the array will be treated as a table/[[:en:Associative array|Associative array]] (it will be iterated over using &lt;syntaxhighlight lang="lua" inline&gt;pairs()&lt;/syntaxhighlight&gt;).
+
+If &lt;code&gt;fromIndex&lt;/code&gt; is present and an integer, the array is assumed to be a conventional array/sequence/list (indexed with consecutive integer keys starting at &lt;code&gt;1&lt;/code&gt;, and interated over using &lt;syntaxhighlight lang="lua" inline&gt;ipairs()&lt;/syntaxhighlight&gt;). Only the values whose index is &lt;code&gt;fromIndex&lt;/code&gt; or higher will be searched.
+
+In the following examples, &lt;code&gt;#array&lt;/code&gt; represents the length of the integer-keyed portion of the array.
+
+* If &lt;code&gt;fromIndex &lt; 0&lt;/code&gt; it will count back from the end of the array, e.g. a value of &lt;code&gt;-1&lt;/code&gt; will only search the last integer-keyed element in the array. If &lt;code&gt;fromIndex &lt;= (-1 * #array)&lt;/code&gt;, the entire integer-keyed portion of the array will be searched.
+* If &lt;code&gt;fromIndex = 0&lt;/code&gt; it will be treated as a &lt;code&gt;1&lt;/code&gt; and the entire integer-keyed portion of the array will be searched.
+* If &lt;code&gt;fromIndex &gt; #array&lt;/code&gt;, the array is not searched and &lt;code&gt;false&lt;/code&gt; is returned.
+
+== merge ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.merge(...)
+&lt;/syntaxhighlight&gt;
+
+Given the arrays, returns an array containing the elements of each input array in sequence.
+
+== extend ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.extend(arr1, arr2)
+&lt;/syntaxhighlight&gt;
+
+Extends the first array in place by appending all elements from the second array.
+
+== See also ==
+* {{ml|params|}}
+
+&lt;includeonly&gt;{{Sandbox other||
+[[Category:Lua metamodules|TableTools]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>4ryb6sgrw9g9225k03ljpqvg742dytz</sha1>
+    </revision>
+    <revision>
+      <id>8260</id>
+      <timestamp>2025-05-23T09:33:06Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Bot: convert local link → enwiki interwiki</comment>
+      <origin>8260</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="12031" sha1="8sjuvzjb5bb1713zdounsr96kq2fbas" xml:space="preserve">{{used in system}}
+{{module rating|p}}
+{{cascade-protected template|page=module}}
+{{lua|Module:Exponential search|noprotcat=yes}}
+This module includes a number of functions for dealing with Lua tables. It is a meta-module, meant to be called from other Lua modules, and should not be called directly from #invoke.
+
+== Loading the module ==
+
+To use any of the functions, first you must load the module.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local TableTools = require('Module:TableTools')
+&lt;/syntaxhighlight&gt;
+
+== isPositiveInteger ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.isPositiveInteger(value)
+&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''value''&lt;/code&gt; is a positive integer, and &lt;code&gt;false&lt;/code&gt; if not. Although it doesn't operate on tables, it is included here as it is useful for determining whether a given table key is in the array part or the hash part of a table.
+
+== isNan ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.isNan(value)
+&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''value''&lt;/code&gt; is a [[:en:NaN|NaN]] value, and &lt;code&gt;false&lt;/code&gt; if not. Although it doesn't operate on tables, it is included here as it is useful for determining whether a value can be a valid table key. (Lua will generate an error if a NaN value is used as a table key.)
+
+== shallowClone ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.shallowClone(t)
+&lt;/syntaxhighlight&gt;
+
+Returns a clone of a table. The value returned is a new table, but all subtables and functions are shared. Metamethods are respected, but the returned table will have no metatable of its own. If you want to make a new table with no shared subtables and with metatables transferred, you can use &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#mw.clone|mw.clone]]&lt;/code&gt; instead. If you want to make a new table with no shared subtables and without metatables transferred, use &lt;code&gt;[[#deepCopy|deepCopy]]&lt;/code&gt; with the &lt;code&gt;noMetatable&lt;/code&gt; option.
+
+== removeDuplicates ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.removeDuplicates(t)
+&lt;/syntaxhighlight&gt;
+
+Removes duplicate values from an array. This function is only designed to work with standard arrays: keys that are not positive integers are ignored, as are all values after the first &lt;code&gt;nil&lt;/code&gt; value. (For arrays containing &lt;code&gt;nil&lt;/code&gt; values, you can use &lt;code&gt;[[#compressSparseArray|compressSparseArray]]&lt;/code&gt; first.) The function tries to preserve the order of the array: the earliest non-unique value is kept, and all subsequent duplicate values are removed. For example, for the table {{code|code={5, 4, 4, 3, 4, 2, 2, 1}|lang=lua}} &lt;code&gt;removeDuplicates&lt;/code&gt; will return {{code|code={5, 4, 3, 2, 1}|lang=lua}}.
+
+== numKeys ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.numKeys(t)
+&lt;/syntaxhighlight&gt;
+
+Takes a table &lt;code&gt;''t''&lt;/code&gt; and returns an array containing the numbers of any positive integer keys that have non-nil values, sorted in numerical order. For example, for the table {{code|code={'foo', nil, 'bar', 'baz', a = 'b'}|lang=lua}}, &lt;code&gt;numKeys&lt;/code&gt; will return {{code|code={1, 3, 4}|lang=lua}}.
+
+== affixNums ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.affixNums(t, prefix, suffix)
+&lt;/syntaxhighlight&gt;
+
+Takes a table &lt;code&gt;''t''&lt;/code&gt; and returns an array containing the numbers of keys with the optional prefix &lt;code&gt;''prefix''&lt;/code&gt; and the optional suffix &lt;code&gt;''suffix''&lt;/code&gt;. For example, for the table {{code|code={a1 = 'foo', a3 = 'bar', a6 = 'baz'}|lang=lua}} and the prefix &lt;code&gt;'a'&lt;/code&gt;, &lt;code&gt;affixNums&lt;/code&gt; will return {{code|code={1, 3, 6}|lang=lua}}. All characters in &lt;code&gt;''prefix''&lt;/code&gt; and &lt;code&gt;''suffix''&lt;/code&gt; are interpreted literally.
+
+== numData ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.numData(t, compress)
+&lt;/syntaxhighlight&gt;
+
+Given a table with keys like &lt;code&gt;"foo1"&lt;/code&gt;, &lt;code&gt;"bar1"&lt;/code&gt;, &lt;code&gt;"foo2"&lt;/code&gt;, and &lt;code&gt;"baz2"&lt;/code&gt;, returns a table of subtables in the format {{code|code={ [1] = {foo = 'text', bar = 'text'}, [2] = {foo = 'text', baz = 'text'} }|lang=lua}}. Keys that don't end with an integer are stored in a subtable named &lt;code&gt;"other"&lt;/code&gt;. The compress option compresses the table so that it can be iterated over with &lt;code&gt;ipairs&lt;/code&gt;.
+
+== compressSparseArray ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.compressSparseArray(t)
+&lt;/syntaxhighlight&gt;
+
+Takes an array &lt;code&gt;''t''&lt;/code&gt; with one or more nil values, and removes the nil values while preserving the order, so that the array can be safely traversed with &lt;code&gt;ipairs&lt;/code&gt;. Any keys that are not positive integers are removed. For example, for the table {{code|code={1, nil, foo = 'bar', 3, 2}|lang=lua}}, &lt;code&gt;compressSparseArray&lt;/code&gt; will return {{code|code={1, 3, 2}|lang=lua}}.
+
+== sparseIpairs ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.sparseIpairs(t)
+&lt;/syntaxhighlight&gt;
+
+This is an iterator function for traversing a sparse array &lt;code&gt;''t''&lt;/code&gt;. It is similar to &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#ipairs|ipairs]]&lt;/code&gt;, but will continue to iterate until the highest numerical key, whereas &lt;code&gt;ipairs&lt;/code&gt; may stop after the first &lt;code&gt;nil&lt;/code&gt; value. Any keys that are not positive integers are ignored.
+
+Usually &lt;code&gt;sparseIpairs&lt;/code&gt; is used in a generic &lt;code&gt;for&lt;/code&gt; loop.
+
+&lt;syntaxhighlight lang="lua"&gt;
+for i, v in TableTools.sparseIpairs(t) do
+   -- code block
+end
+&lt;/syntaxhighlight&gt;
+
+Note that &lt;code&gt;sparseIpairs&lt;/code&gt; uses the &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#pairs|pairs]]&lt;/code&gt; function in its implementation. Although some table keys appear to be ignored, all table keys are accessed when it is run.
+
+== size ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.size(t)
+&lt;/syntaxhighlight&gt;
+
+Finds the size of a key/value pair table ([[:en:Associative array|Associative array]]). For example, for {{code|code={foo = 'foo', bar = 'bar'}|lang=lua}}, &lt;code&gt;size&lt;/code&gt; will return &lt;code&gt;2&lt;/code&gt;. The function will also work on arrays, but for arrays it is more efficient to use the &lt;code&gt;#&lt;/code&gt; operator. Note that to find the size, this function uses the &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#pairs|pairs]]&lt;/code&gt; function to iterate through all of the keys.
+
+== keysToList ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.keysToList(t, keySort, checked)
+&lt;/syntaxhighlight&gt;
+
+Returns a list of the keys in a table, sorted using either a default comparison function or a custom &lt;code&gt;''keySort''&lt;/code&gt; function, which follows the same rules as the &lt;code&gt;comp&lt;/code&gt; function supplied to &lt;code&gt;[[mw:Extension:Scribunto/Lua reference manual#table.sort|table.sort]]&lt;/code&gt;. If &lt;code&gt;''keySort''&lt;/code&gt; is &lt;code&gt;false&lt;/code&gt;, no sorting is done. Set &lt;code&gt;''checked''&lt;/code&gt; to &lt;code&gt;true&lt;/code&gt; to skip the internal type checking.
+
+== sortedPairs ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.sortedPairs(t, keySort)
+&lt;/syntaxhighlight&gt;
+
+Iterates through a table, with the keys sorted using the &lt;code&gt;keysToList&lt;/code&gt; function. If there are only numerical keys, &lt;code&gt;sparseIpairs&lt;/code&gt; is probably more efficient.
+
+== isArray ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.isArray(value)
+&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''value''&lt;/code&gt; is a table and all keys are consecutive integers starting at 1.
+
+== isArrayLike ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.isArrayLike(value)
+&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''value''&lt;/code&gt; is iterable and all keys are consecutive integers starting at 1.
+
+== invert ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.invert(arr)
+&lt;/syntaxhighlight&gt;
+
+Transposes the keys and values in an array. For example, {{code|invert{ "a", "b", "c" }|lua}} yields {{code|code={ a=1, b=2, c=3 }|lang=lua}}.
+
+== listToSet ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.listToSet(arr)
+&lt;/syntaxhighlight&gt;
+
+Creates a set from the array part of the table &lt;code&gt;''arr''&lt;/code&gt;. Indexing the set by any of the values of the array returns &lt;code&gt;true&lt;/code&gt;. For example, {{code|listToSet{ "a", "b", "c" }|lua}} yields {{code|code={ a=true, b=true, c=true }|lang=lua}}.
+
+== deepCopy ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.deepCopy(orig, noMetatable, alreadySeen)
+&lt;/syntaxhighlight&gt;
+
+Creates a copy of the table &lt;code&gt;''orig''&lt;/code&gt;. As with &lt;code&gt;mw.clone&lt;/code&gt;, all values that are not functions are duplicated and the identity of tables is preserved. If &lt;code&gt;''noMetatable''&lt;/code&gt; is &lt;code&gt;true&lt;/code&gt;, then the metatable (if any) is not copied. Can copy tables loaded with &lt;code&gt;mw.loadData&lt;/code&gt;.
+
+Similar to &lt;code&gt;mw.clone&lt;/code&gt;, but &lt;code&gt;mw.clone&lt;/code&gt; cannot copy tables loaded with &lt;code&gt;mw.loadData&lt;/code&gt; and does not allow metatables &lt;em&gt;not&lt;/em&gt; to be copied.
+
+== sparseConcat ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.sparseConcat(t, sep, i, j)
+&lt;/syntaxhighlight&gt;
+
+Concatenates all values in the table that are indexed by a positive integer, in order. For example, {{code|sparseConcat{ "a", nil, "c", "d" }|lua}} yields {{code|"acd"|lua}} and {{code|sparseConcat{ nil, "b", "c", "d" }|lua}} yields {{code|"bcd"|lua}}.
+
+== length ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.length(t, prefix)
+&lt;/syntaxhighlight&gt;
+
+Finds the length of an array or of a quasi-array with keys with an optional &lt;code&gt;''prefix''&lt;/code&gt; such as "data1", "data2", etc. It uses an [[:en:Exponential search|Exponential search]] algorithm to find the length, so as to use as few table lookups as possible.
+
+This algorithm is useful for arrays that use metatables (e.g. [[mw:Extension:Scribunto/Lua reference manual#frame.args|frame.args]]) and for quasi-arrays. For normal arrays, just use the [[mw:Extension:Scribunto/Lua reference manual#Length operator|# operator]], as it is implemented in [[:en:C (programming language)|C]] and will be quicker.
+
+== inArray ==
+
+&lt;syntaxhighlight lang="lua"&gt;TableTools.inArray(array, searchElement)
+TableTools.inArray(array, searchElement, fromIndex)&lt;/syntaxhighlight&gt;
+
+Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;''searchElement''&lt;/code&gt; is a member of the array &lt;code&gt;''array''&lt;/code&gt;, and &lt;code&gt;false&lt;/code&gt; otherwise. Equivalent to the javascript [https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/includes Array.prototype.includes()] function, except fromIndex is 1-indexed instead of zero-indexed.
+
+=== fromIndex ===
+&lt;code&gt;fromIndex&lt;/code&gt; is the optional 1-based index at which to start searching. If &lt;code&gt;fromIndex&lt;/code&gt; is not present, all values in the array will be searched and the array will be treated as a table/[[:en:Associative array|Associative array]] (it will be iterated over using &lt;syntaxhighlight lang="lua" inline&gt;pairs()&lt;/syntaxhighlight&gt;).
+
+If &lt;code&gt;fromIndex&lt;/code&gt; is present and an integer, the array is assumed to be a conventional array/sequence/list (indexed with consecutive integer keys starting at &lt;code&gt;1&lt;/code&gt;, and interated over using &lt;syntaxhighlight lang="lua" inline&gt;ipairs()&lt;/syntaxhighlight&gt;). Only the values whose index is &lt;code&gt;fromIndex&lt;/code&gt; or higher will be searched.
+
+In the following examples, &lt;code&gt;#array&lt;/code&gt; represents the length of the integer-keyed portion of the array.
+
+* If &lt;code&gt;fromIndex &lt; 0&lt;/code&gt; it will count back from the end of the array, e.g. a value of &lt;code&gt;-1&lt;/code&gt; will only search the last integer-keyed element in the array. If &lt;code&gt;fromIndex &lt;= (-1 * #array)&lt;/code&gt;, the entire integer-keyed portion of the array will be searched.
+* If &lt;code&gt;fromIndex = 0&lt;/code&gt; it will be treated as a &lt;code&gt;1&lt;/code&gt; and the entire integer-keyed portion of the array will be searched.
+* If &lt;code&gt;fromIndex &gt; #array&lt;/code&gt;, the array is not searched and &lt;code&gt;false&lt;/code&gt; is returned.
+
+== merge ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.merge(...)
+&lt;/syntaxhighlight&gt;
+
+Given the arrays, returns an array containing the elements of each input array in sequence.
+
+== extend ==
+
+&lt;syntaxhighlight lang="lua"&gt;
+TableTools.extend(arr1, arr2)
+&lt;/syntaxhighlight&gt;
+
+Extends the first array in place by appending all elements from the second array.
+
+== See also ==
+* {{ml|params|}}
+
+&lt;includeonly&gt;{{Sandbox other||
+[[Category:Lua metamodules|TableTools]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>8sjuvzjb5bb1713zdounsr96kq2fbas</sha1>
+    </revision>
+  </page>
+</mediawiki>

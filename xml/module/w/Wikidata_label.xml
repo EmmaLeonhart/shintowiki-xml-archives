@@ -1,0 +1,1044 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Wikidata label</title>
+    <ns>828</ns>
+    <id>56311</id>
+    <revision>
+      <id>2938447</id>
+      <timestamp>2022-12-02T22:20:33Z</timestamp>
+      <contributor>
+        <username>Ameisenigel</username>
+        <id>687</id>
+      </contributor>
+      <minor/>
+      <comment>Reverted edits by [[Special:Contributions/Ameisenigel|Ameisenigel]] ([[User talk:Ameisenigel|talk]]) to last revision by [[:User:Matěj Suchánek|Matěj Suchánek]]</comment>
+      <origin>2938447</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="18127" sha1="n3esylxe7nzd2jxddebpx2r62sks71b" xml:space="preserve">--[[
+  __  __           _       _      __        ___ _    _     _       _          _       _          _
+ |  \/  | ___   __| |_   _| | ___ \ \      / (_) | _(_) __| | __ _| |_ __ _  | | __ _| |__   ___| |
+ | |\/| |/ _ \ / _` | | | | |/ _ (_) \ /\ / /| | |/ / |/ _` |/ _` | __/ _` | | |/ _` | '_ \ / _ \ |
+ | |  | | (_) | (_| | |_| | |  __/_ \ V  V / | |   &lt;| | (_| | (_| | || (_| | | | (_| | |_) |  __/ |
+ |_|  |_|\___/ \__,_|\__,_|_|\___(_) \_/\_/  |_|_|\_\_|\__,_|\__,_|\__\__,_| |_|\__,_|_.__/ \___|_|
+
+This module is intended to be the engine behind "Template:Label".
+This module was copied from Commons please ask for changes there.
+
+Please do not modify this code without applying the changes first at "Module:Wikidata label/sandbox" and testing
+at "Module:Wikidata label/testcases".
+
+Authors and maintainers:
+* User:Jarekt - original version
+
+]]
+
+require('strict') -- used for debugging purposes as it detects cases of unintended global variables
+
+--=============================================
+--=== Internal functions ======================
+--=============================================
+
+---------------------------------------------------------------------------
+-- Normalize input arguments by converting them all to lower case and
+-- replacing space with "_" in the argument name. Also empty strings are
+-- converted to nils. Arguments are collected from arguments passed to the
+-- module and if missing from the template that calls the module
+local function getArgs(frame)
+	local function normalize_input_args(input_args, output_args)
+		for name, value in pairs( input_args ) do
+			value = mw.text.trim(value) -- trim whitespaces from the beggining and the end of the string
+			if value ~= '' then -- nuke empty strings
+				if type(name)=='string' then
+					name = string.gsub( string.lower(name), ' ', '_')
+				end
+				output_args[name] = value
+			end
+		end
+		return output_args
+	end
+	local args = {}
+	args = normalize_input_args(frame:getParent().args, args)
+	args = normalize_input_args(frame.args, args)
+	return args
+end
+
+---------------------------------------------------------------------------
+-- Function allowing for consistent treatment of boolean-like wikitext input.
+-- It works similarly to Module:Yesno but does not assume val is a string
+local function yesno(val, default)
+	if type(val) == 'boolean' then
+		return val
+	elseif type(val) == 'number' then
+		if val == 1 then
+			return true
+		elseif val == 0 then
+			return false
+		end
+	elseif type(val) == 'string' then
+		val = mw.ustring.lower(val)  -- put in lower case
+		if val == 'no'  or val == 'n' or val == 'false' or val == '0' then
+			return false
+		elseif val == 'yes' or val == 'y' or val == 'true' or val == '1' then
+			return true
+		end
+	end
+	return default
+end
+
+-------------------------------------------------------------------------
+-- get message in a given language
+-- INPUTS:
+-- * msg  - name of a message. For it to work [[MediaWiki:msg]] page need to be set up
+-- * lang - translate message to language "lang"
+-- * default - string to return in case this module is moved to a project where this message is not set
+-- OUTPUT:
+--  * translated message
+local function getMessage(msg, lang, default)
+	msg = mw.message.new(msg):inLanguage(lang):plain()
+	return (msg == nil and default) or msg
+end
+
+---------------------------------------------------------------------------
+-- use different sitelink call depending if you already have an entity or not
+-- INPUTS:
+--  * item and entity - entity id and entity: if full entity already uploded than use that
+--                      otherwise use entity id to look up sitelink
+--  * lang - language of the project
+-- OUTPUT:
+--  * sitelink
+local function getSitelink(item, entity, lang)
+	if entity and entity.getSitelink then -- if we have entity then use it
+		return entity:getSitelink(lang .. 'wiki')
+	else -- if no entity then use different function
+		return mw.wikibase.getSitelink(item, lang .. 'wiki')
+	end
+end
+
+---------------------------------------------------------------------------
+-- use different sitelink call depending if you already have an entity or not
+-- INPUTS:
+--  * item and entity - entity id and entity: if full entity already uploded than use that
+--                      otherwise use entity id to look up sitelink
+--  * prop - property for which to return the best statment
+-- OUTPUT:
+--  * value of the best statment (only from the first one)
+local function getBestStatementsValue(item, entity, prop)
+	local statments
+	if entity then
+		statments = entity:getBestStatements(prop)
+	else
+		statments = mw.wikibase.getBestStatements(item, prop)
+	end
+	for _, statment in ipairs(statments) do
+		if statment and statment.mainsnak.datavalue.value then
+			return statment.mainsnak.datavalue.value
+		end
+	end
+end
+
+---------------------------------------------------------------------------
+-- change capitalization of the label
+-- INPUTS:
+--  * label - label string
+--  * capitalization - capitalization to be applied: allowed values are "lc",
+--      "uc", "lcfirst", and "ucfirst". Any other value will return original string
+--  * lang - language of the label
+-- OUTPUT:
+--  * value of the best statment (only from the first one)
+local function apply_capitalization(label, capitalization, lang)
+	capitalization = string.lower(capitalization or 'none')
+	if capitalization == 'none' then
+		return label
+	elseif capitalization == 'uc' then
+		return mw.ustring.upper(label)
+	elseif capitalization == 'ucfirst' then
+		return mw.language.new(lang):ucfirst(label)
+	elseif capitalization == 'lc' then
+		return mw.ustring.lower(label)
+	elseif capitalization == 'lcfirst' then
+		return mw.language.new(lang):lcfirst(label)
+	end
+	return label
+end
+
+--[[-------------------------------------------------------------------------
+get link based on user preference
+INPUTS:
+* link_type - can be :
+   * "wikidata" - link to wikidata
+   * "wikipedia" - link to wikipedia (language dependent)
+   * "wikidata talk" - link to wikidata talk page
+   * "commons" - link to commons (try sitelink then commons category then commons gallery)
+   * "commonscat" - link to commons (try commons category then commons gallery)
+   * "-" - means no link
+* item   - entity ID (always provided)
+* entity - whole entity. It can be nil if whole entity is not loaded
+* langList - language fallback list for preferred language (required)
+OUTPUT:
+* link - link to the wikimedia page
+]]
+local function getLink(link_type, item, entity, langList)
+	local link, eLink
+	link_type = mw.ustring.lower(link_type or '')
+	local item_type = mw.ustring.sub(item, 1, 1) -- first letter prefix of item entity ID: 'Q', 'P' or 'M'
+	if item_type == 'M' then
+		eLink='c:Special:EntityPage/'..item
+	elseif item_type == 'Q' then
+		eLink='d:'..item -- wikibase entity page link
+	elseif item_type == 'P' then
+		eLink='d:Property:'..item -- wikibase entity page link
+	else
+		eLink='d:Special:EntityPage/'..item
+	end
+	if link_type == '-' then -- allow different link formats
+		link = ''            -- no link
+	elseif link_type == 'wikidata' or item_type == 'M' then
+		link = eLink        -- link to wikibase entity page
+	elseif link_type == 'wikidata talk' and item_type == 'P' then
+		link = 'd:Property talk:'.. item        -- link to wikidata property talk page
+	elseif link_type == 'wikidata talk' then
+		link = 'd:Talk:'..item   -- link to wikidata talk page
+	elseif link_type == 'commons' or link_type == 'commonscat' then
+		--[[
+		When link_type == 'commons' we try the following links (in specified order):
+		  1) commons sitelink
+		  2) P373 "Commons Category" claims
+		  3) P935 "Commons Gallery"  claims
+		Since most items have a commons sitelink we never have to look for claims
+		When link_type == 'commonscat' we try to maximize chances of commons link being a category, so we
+		      try the following links (in specified order):
+		  1) commons sitelink, which is kept if it points to a category
+		  2) P373 "Commons Category" claims
+		  3) commons sitelink (which does not point to a category)
+		  4) P935 "Commons Gallery"  claims
+		Since most pages have a commons sitelink we never have to look for claims
+		]]
+		local sLink = getSitelink(item, entity, 'commons')  -- look for sitelink to commons
+		if sLink then
+			sLink = 'c:'..sLink
+			if (link_type == 'commons') or (link_type == 'commonscat' and mw.ustring.find(sLink, 'Category:')) then
+				link = sLink
+			end
+		end
+		if not link then -- try linking to P373 "Commons Category"
+			local cat = getBestStatementsValue(item, entity, 'P373')
+			link = (cat ~= nil and 'c:Category:' .. cat) or nil
+		end
+		link = link or sLink
+		if not link then -- try linking to P935 "Commons Gallery"
+			link = getBestStatementsValue(item, entity, 'P935')
+		end
+	end
+	if not link then -- apply default "Wikipedia" link type
+		for _, language in ipairs(langList) do
+			local sitelink = getSitelink(item, entity, language)
+			if sitelink then
+				link = 'w:'.. language ..':'.. sitelink
+				break
+			end
+		end
+	end
+	return link or eLink  -- no wiki sitelink, so link to wikidata
+end
+
+--=============================================
+--=== External functions ======================
+--=============================================
+local p = {}
+
+--======================================================================
+--=== API functions for use from other Scribunto modules ===============
+--======================================================================
+
+--[[
+_getLabel
+
+This function returns a label translated to desired language, created based on wikidata
+
+Inputs:
+	1: item - wikidata's item's q-id or entity class
+	2: lang - desired language of the label
+	3: link_type - link style. Possible values (case-insensitive): "wikipedia", "wikidata", "Commons", or "-" (no link)
+	4: capitalization - can be "uc" (upper case), "lc" (lower case), "ucfirst" (upper case for the first letter),
+			"lcfirst" (lower case for the first letter), or 'none' (default)
+
+Error Handling:
+	Bad q-id will result in displayed error
+]]
+function p._getLabel(item, lang, link_type, capitalization, show_id)
+	local entity, s, link, label, language
+
+	-- clean up the input parameters
+	if type(item) ~= 'string' then -- "item" is not a q-id
+		entity = item            -- "item" must be the entity
+		item   = entity.id       -- look-up q-id
+	elseif tonumber(item) then   -- if it is just the number then add "Q" in front
+		item = 'Q'..item
+	end
+	item = mw.ustring.gsub(mw.ustring.upper(item), 'PROPERTY:P', 'P') -- make all the properties the same and capitalize
+
+	if not lang then
+		label, lang = mw.wikibase.getLabelWithLang(item)
+	end
+	if not lang then -- if still no language
+		lang  = mw.getCurrentFrame():callParserFunction("int","lang")  -- get user's chosen language
+		label = nil
+	end
+
+	-- build language fallback list
+	lang = mw.ustring.lower(lang)
+	local langList = mw.language.getFallbacksFor(lang)
+	table.insert(langList, 1, lang)
+
+	-- get label (visible part of the link)
+	if not label then
+		for _, language in ipairs(langList) do  -- loop over language fallback list looking for label in the specific language
+			if entity then
+				label = entity:getLabel(language)
+			else
+				label = mw.wikibase.getLabelByLang(item, language)
+			end
+			if label then break end                    -- label found and we are done
+		end
+	end
+	if label then  -- wikitext-escape the label if we have one
+		label = mw.text.nowiki(label)
+	end
+	if not label then                              -- no labels found, so just show the q-id
+		label = item
+	elseif show_id then           -- add id
+		show_id = yesno(show_id,false)
+		if show_id then
+			local wordsep = getMessage('Word-separator', lang, ' ')
+			local id = mw.message.new('parentheses', item):inLanguage(lang):plain()
+			id = (id~=nil and id) or ('('..item..')') -- in case this module is moved to a project where {{int:parenthesis}} is not set
+			label = label .. wordsep .. "&lt;small&gt;" .. id .. "&lt;/small&gt;"
+		end
+	end
+	label = apply_capitalization(label, capitalization, lang)
+
+	-- return the results
+	if link_type == '-' then
+		return label -- return just the label
+	else
+		link = getLink(link_type, item, entity, langList)
+		return '[[' .. link .. '|' .. label .. ']]' -- return link
+	end
+end
+
+--[[-------------------------------------------------------------------------------
+_sitelinks
+
+This function returns a table of sitelinks for a single project organized by language
+
+Inputs:
+	1: item - wikidata's item's q-id or entity class
+	2: project - (case-insensitive) one of: "wikipedia", "wikisource", "wikiquote", "wikibooks", "wikinews",
+			"wikiversity", "wikivoyage", "wiktionary", "commons", "mediawiki", "wikispecies", "wikidata", etc.
+
+Output:
+	Table of sitelinks with language fields
+
+Output:
+	Table of sitelinks with language fields
+See also
+* [https://foundation.wikimedia.org/wiki/Special:SiteMatrix] for the full list of supported interwikis.
+* [https://dumps.wikimedia.org/backup-index.html] for the full list of sitecodes (used in database dumps).
+]]
+function p._sitelinks(item, project)
+	local entity, sitelink
+	-- get entity
+	if type(item) == 'string' then -- "item" is a q-id
+		entity = mw.wikibase.getEntity(item)
+	else
+		entity = item              -- "item" is the entity
+	end
+
+	-- convert from english project name  to proproject code
+	local projLUT = {
+		wikipedia   = 'wiki',           commons   = 'commonswiki',
+		foundation  = 'foundationwiki', mediawiki = 'mediawikiwiki',
+		wikispecies = 'specieswiki',    wikidata  = 'wikidatawiki',
+		incubator   = 'incubatorwiki',	oldwikisource = 'sourceswiki',
+	}
+	local langLUT = {
+		-- These are not language codes before the 'wiki' or 'wikiversity' suffix in a sitecode:
+		foundation = '~', commons = '~',	-- they will be skipped
+		incubator  = '~', meta    = '~',
+		mediawiki  = '~', sources = '~',
+		species    = '~', beta    = '~',
+		-- Legacy language codes used in sitecodes, remapped to standard Wikimedia language codes:
+		-- See https://meta.wikimedia.org/wiki/Special_language_codes for details
+		als     = 'gsw', bat_smg      = 'sgs',
+		fiu_vro = 'vro', be_x_old     = 'be-tarask',
+		roa_rup = 'rup', zh_classical = 'lzh',
+		zh_yue  = 'yue', zh_min_nan   = 'nan',
+		zh_wuu  = 'wuu', no           = 'nb',
+	}
+	project = project:lower()
+	project = projLUT[project] or project -- correct the project name
+	local n = project:len()
+	local linkTable = {}
+	if entity and entity.sitelinks then  -- See if entity exists, and that it has sitelinks
+		for _, sitelink in pairs(entity.sitelinks) do -- loop over all sitelinks
+			local site = sitelink.site
+			local m    = site:len() - n
+			local proj = site:sub(m +1)  -- project part of the siteID
+			if proj == project  then -- proj matches desired "project"
+				local lang = site:sub(1, m)  -- language part of the siteID
+				lang = langLUT[lang] or lang:gsub('_','-')
+				if lang ~= '~' then -- proj matches desired "project"
+					linkTable[lang] = sitelink.title
+				end
+			end
+		end
+	end
+	return linkTable
+end
+
+--[[----------------------------------------------------------------
+_aliases
+
+This function returns a table of aliases for a single language
+
+Inputs:
+	1: item - wikidata's item's q-id or entity class
+	2: lang - language code, like 'en' or 'de'
+
+Output:
+	Table of aliases with language fields
+]]
+function p._aliases(item, lang)
+	local entity
+	if type(item) == 'string' then -- "item" is a q-id
+		entity = mw.wikibase.getEntity(item)
+	else
+		entity = item            -- "item" is the entity
+	end
+	local aliasTable = {}
+	if entity and entity.aliases then						-- See if there is an entity and that is has aliases
+		if entity.aliases[lang] then						-- See if it has English Aliases
+			for _, alias in pairs(entity.aliases[lang]) do  -- Make a loop around the English aliases
+				table.insert(aliasTable, alias.value)				-- Create a table of English aliases
+			end
+		end
+	end
+	return aliasTable
+end
+
+--======================================================================
+--=== Invoke functions for use from wikitext, e.g., templates ==========
+---=====================================================================
+
+--[[
+getLabel
+
+This function returns a label translated to desired language, created based on wikidata
+
+Usage:
+{{#invoke:Wikidata label|getLabel|item=Q...|lang=..|link_style=..|capitalization=..}}
+
+Parameters
+	1: wikidata's item's q-id (required)
+	2: language (optional; default {{int:lang}})
+	3: link_style: "wikipedia" (default), "Wikidata", "Commons", or "-" (no link)
+	4: capitalization - can be "uc", "lc", "ucfirst", "lcfirst"
+
+Error Handling:
+	Bad q-id will result in displayed error
+]]
+function p.getLabel(frame)
+	local args = getArgs(frame)
+	return p._getLabel(args.item, args.lang, args.link, args.capitalization, args.show_id)
+end
+
+--[[-------------------------------------------------------------------------------
+sitelinks
+
+This function returns a comma separated list of sitelinks for a single project organized by language
+Its main purpose is to help with testing of _sitelinks function.
+
+Usage:
+{{#invoke:Wikidata label|sitelinks|item=Q...|project=..}}
+
+Inputs:
+	1: item - wikidata's item's q-id or entity class
+	2: project - "wikipedia" (or "wiki"), "wikisource", "wikiquote", "wikibooks",
+	             "wikinews", "wikiversity", "wikivoyage", "wiktionary", etc.
+
+Output:
+	comma separated list
+]]
+function p.sitelinks(frame)
+	local args = getArgs(frame)
+	local sitelinks = p._sitelinks(args.item, args.project)
+	local sitelinkList = {}
+	for lang, sitelink in pairs(sitelinks) do
+		table.insert(sitelinkList, (lang=='' and sitelink) or (lang .. ':' .. sitelink))
+	end
+	return table.concat(sitelinkList, ', ')
+end
+
+--[[----------------------------------------------------------------------------
+aliases
+
+This function returns a comma separated list of aliases for a single language
+Its main purpose is to help with testing of _aliases function.
+
+Usage:
+{{#invoke:Wikidata label|aliases|item=Q...|lang=..}}
+
+Inputs:
+	1: item - wikidata's item's q-id or entity class
+	2: lang - language code, like 'en' or 'de'
+
+Output:
+	Comma separated list of aliases
+]]
+function p.aliases(frame)
+	local args = getArgs(frame)
+	return table.concat(p._aliases(args.item, args.lang), ', ')
+end
+
+return p</text>
+      <sha1>n3esylxe7nzd2jxddebpx2r62sks71b</sha1>
+    </revision>
+    <revision>
+      <id>56312</id>
+      <timestamp>2025-08-11T09:31:19Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: importing wikidata q template</comment>
+      <origin>56312</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="18127" sha1="n3esylxe7nzd2jxddebpx2r62sks71b" xml:space="preserve">--[[
+  __  __           _       _      __        ___ _    _     _       _          _       _          _
+ |  \/  | ___   __| |_   _| | ___ \ \      / (_) | _(_) __| | __ _| |_ __ _  | | __ _| |__   ___| |
+ | |\/| |/ _ \ / _` | | | | |/ _ (_) \ /\ / /| | |/ / |/ _` |/ _` | __/ _` | | |/ _` | '_ \ / _ \ |
+ | |  | | (_) | (_| | |_| | |  __/_ \ V  V / | |   &lt;| | (_| | (_| | || (_| | | | (_| | |_) |  __/ |
+ |_|  |_|\___/ \__,_|\__,_|_|\___(_) \_/\_/  |_|_|\_\_|\__,_|\__,_|\__\__,_| |_|\__,_|_.__/ \___|_|
+
+This module is intended to be the engine behind "Template:Label".
+This module was copied from Commons please ask for changes there.
+
+Please do not modify this code without applying the changes first at "Module:Wikidata label/sandbox" and testing
+at "Module:Wikidata label/testcases".
+
+Authors and maintainers:
+* User:Jarekt - original version
+
+]]
+
+require('strict') -- used for debugging purposes as it detects cases of unintended global variables
+
+--=============================================
+--=== Internal functions ======================
+--=============================================
+
+---------------------------------------------------------------------------
+-- Normalize input arguments by converting them all to lower case and
+-- replacing space with "_" in the argument name. Also empty strings are
+-- converted to nils. Arguments are collected from arguments passed to the
+-- module and if missing from the template that calls the module
+local function getArgs(frame)
+	local function normalize_input_args(input_args, output_args)
+		for name, value in pairs( input_args ) do
+			value = mw.text.trim(value) -- trim whitespaces from the beggining and the end of the string
+			if value ~= '' then -- nuke empty strings
+				if type(name)=='string' then
+					name = string.gsub( string.lower(name), ' ', '_')
+				end
+				output_args[name] = value
+			end
+		end
+		return output_args
+	end
+	local args = {}
+	args = normalize_input_args(frame:getParent().args, args)
+	args = normalize_input_args(frame.args, args)
+	return args
+end
+
+---------------------------------------------------------------------------
+-- Function allowing for consistent treatment of boolean-like wikitext input.
+-- It works similarly to Module:Yesno but does not assume val is a string
+local function yesno(val, default)
+	if type(val) == 'boolean' then
+		return val
+	elseif type(val) == 'number' then
+		if val == 1 then
+			return true
+		elseif val == 0 then
+			return false
+		end
+	elseif type(val) == 'string' then
+		val = mw.ustring.lower(val)  -- put in lower case
+		if val == 'no'  or val == 'n' or val == 'false' or val == '0' then
+			return false
+		elseif val == 'yes' or val == 'y' or val == 'true' or val == '1' then
+			return true
+		end
+	end
+	return default
+end
+
+-------------------------------------------------------------------------
+-- get message in a given language
+-- INPUTS:
+-- * msg  - name of a message. For it to work [[MediaWiki:msg]] page need to be set up
+-- * lang - translate message to language "lang"
+-- * default - string to return in case this module is moved to a project where this message is not set
+-- OUTPUT:
+--  * translated message
+local function getMessage(msg, lang, default)
+	msg = mw.message.new(msg):inLanguage(lang):plain()
+	return (msg == nil and default) or msg
+end
+
+---------------------------------------------------------------------------
+-- use different sitelink call depending if you already have an entity or not
+-- INPUTS:
+--  * item and entity - entity id and entity: if full entity already uploded than use that
+--                      otherwise use entity id to look up sitelink
+--  * lang - language of the project
+-- OUTPUT:
+--  * sitelink
+local function getSitelink(item, entity, lang)
+	if entity and entity.getSitelink then -- if we have entity then use it
+		return entity:getSitelink(lang .. 'wiki')
+	else -- if no entity then use different function
+		return mw.wikibase.getSitelink(item, lang .. 'wiki')
+	end
+end
+
+---------------------------------------------------------------------------
+-- use different sitelink call depending if you already have an entity or not
+-- INPUTS:
+--  * item and entity - entity id and entity: if full entity already uploded than use that
+--                      otherwise use entity id to look up sitelink
+--  * prop - property for which to return the best statment
+-- OUTPUT:
+--  * value of the best statment (only from the first one)
+local function getBestStatementsValue(item, entity, prop)
+	local statments
+	if entity then
+		statments = entity:getBestStatements(prop)
+	else
+		statments = mw.wikibase.getBestStatements(item, prop)
+	end
+	for _, statment in ipairs(statments) do
+		if statment and statment.mainsnak.datavalue.value then
+			return statment.mainsnak.datavalue.value
+		end
+	end
+end
+
+---------------------------------------------------------------------------
+-- change capitalization of the label
+-- INPUTS:
+--  * label - label string
+--  * capitalization - capitalization to be applied: allowed values are "lc",
+--      "uc", "lcfirst", and "ucfirst". Any other value will return original string
+--  * lang - language of the label
+-- OUTPUT:
+--  * value of the best statment (only from the first one)
+local function apply_capitalization(label, capitalization, lang)
+	capitalization = string.lower(capitalization or 'none')
+	if capitalization == 'none' then
+		return label
+	elseif capitalization == 'uc' then
+		return mw.ustring.upper(label)
+	elseif capitalization == 'ucfirst' then
+		return mw.language.new(lang):ucfirst(label)
+	elseif capitalization == 'lc' then
+		return mw.ustring.lower(label)
+	elseif capitalization == 'lcfirst' then
+		return mw.language.new(lang):lcfirst(label)
+	end
+	return label
+end
+
+--[[-------------------------------------------------------------------------
+get link based on user preference
+INPUTS:
+* link_type - can be :
+   * "wikidata" - link to wikidata
+   * "wikipedia" - link to wikipedia (language dependent)
+   * "wikidata talk" - link to wikidata talk page
+   * "commons" - link to commons (try sitelink then commons category then commons gallery)
+   * "commonscat" - link to commons (try commons category then commons gallery)
+   * "-" - means no link
+* item   - entity ID (always provided)
+* entity - whole entity. It can be nil if whole entity is not loaded
+* langList - language fallback list for preferred language (required)
+OUTPUT:
+* link - link to the wikimedia page
+]]
+local function getLink(link_type, item, entity, langList)
+	local link, eLink
+	link_type = mw.ustring.lower(link_type or '')
+	local item_type = mw.ustring.sub(item, 1, 1) -- first letter prefix of item entity ID: 'Q', 'P' or 'M'
+	if item_type == 'M' then
+		eLink='c:Special:EntityPage/'..item
+	elseif item_type == 'Q' then
+		eLink='d:'..item -- wikibase entity page link
+	elseif item_type == 'P' then
+		eLink='d:Property:'..item -- wikibase entity page link
+	else
+		eLink='d:Special:EntityPage/'..item
+	end
+	if link_type == '-' then -- allow different link formats
+		link = ''            -- no link
+	elseif link_type == 'wikidata' or item_type == 'M' then
+		link = eLink        -- link to wikibase entity page
+	elseif link_type == 'wikidata talk' and item_type == 'P' then
+		link = 'd:Property talk:'.. item        -- link to wikidata property talk page
+	elseif link_type == 'wikidata talk' then
+		link = 'd:Talk:'..item   -- link to wikidata talk page
+	elseif link_type == 'commons' or link_type == 'commonscat' then
+		--[[
+		When link_type == 'commons' we try the following links (in specified order):
+		  1) commons sitelink
+		  2) P373 "Commons Category" claims
+		  3) P935 "Commons Gallery"  claims
+		Since most items have a commons sitelink we never have to look for claims
+		When link_type == 'commonscat' we try to maximize chances of commons link being a category, so we
+		      try the following links (in specified order):
+		  1) commons sitelink, which is kept if it points to a category
+		  2) P373 "Commons Category" claims
+		  3) commons sitelink (which does not point to a category)
+		  4) P935 "Commons Gallery"  claims
+		Since most pages have a commons sitelink we never have to look for claims
+		]]
+		local sLink = getSitelink(item, entity, 'commons')  -- look for sitelink to commons
+		if sLink then
+			sLink = 'c:'..sLink
+			if (link_type == 'commons') or (link_type == 'commonscat' and mw.ustring.find(sLink, 'Category:')) then
+				link = sLink
+			end
+		end
+		if not link then -- try linking to P373 "Commons Category"
+			local cat = getBestStatementsValue(item, entity, 'P373')
+			link = (cat ~= nil and 'c:Category:' .. cat) or nil
+		end
+		link = link or sLink
+		if not link then -- try linking to P935 "Commons Gallery"
+			link = getBestStatementsValue(item, entity, 'P935')
+		end
+	end
+	if not link then -- apply default "Wikipedia" link type
+		for _, language in ipairs(langList) do
+			local sitelink = getSitelink(item, entity, language)
+			if sitelink then
+				link = 'w:'.. language ..':'.. sitelink
+				break
+			end
+		end
+	end
+	return link or eLink  -- no wiki sitelink, so link to wikidata
+end
+
+--=============================================
+--=== External functions ======================
+--=============================================
+local p = {}
+
+--======================================================================
+--=== API functions for use from other Scribunto modules ===============
+--======================================================================
+
+--[[
+_getLabel
+
+This function returns a label translated to desired language, created based on wikidata
+
+Inputs:
+	1: item - wikidata's item's q-id or entity class
+	2: lang - desired language of the label
+	3: link_type - link style. Possible values (case-insensitive): "wikipedia", "wikidata", "Commons", or "-" (no link)
+	4: capitalization - can be "uc" (upper case), "lc" (lower case), "ucfirst" (upper case for the first letter),
+			"lcfirst" (lower case for the first letter), or 'none' (default)
+
+Error Handling:
+	Bad q-id will result in displayed error
+]]
+function p._getLabel(item, lang, link_type, capitalization, show_id)
+	local entity, s, link, label, language
+
+	-- clean up the input parameters
+	if type(item) ~= 'string' then -- "item" is not a q-id
+		entity = item            -- "item" must be the entity
+		item   = entity.id       -- look-up q-id
+	elseif tonumber(item) then   -- if it is just the number then add "Q" in front
+		item = 'Q'..item
+	end
+	item = mw.ustring.gsub(mw.ustring.upper(item), 'PROPERTY:P', 'P') -- make all the properties the same and capitalize
+
+	if not lang then
+		label, lang = mw.wikibase.getLabelWithLang(item)
+	end
+	if not lang then -- if still no language
+		lang  = mw.getCurrentFrame():callParserFunction("int","lang")  -- get user's chosen language
+		label = nil
+	end
+
+	-- build language fallback list
+	lang = mw.ustring.lower(lang)
+	local langList = mw.language.getFallbacksFor(lang)
+	table.insert(langList, 1, lang)
+
+	-- get label (visible part of the link)
+	if not label then
+		for _, language in ipairs(langList) do  -- loop over language fallback list looking for label in the specific language
+			if entity then
+				label = entity:getLabel(language)
+			else
+				label = mw.wikibase.getLabelByLang(item, language)
+			end
+			if label then break end                    -- label found and we are done
+		end
+	end
+	if label then  -- wikitext-escape the label if we have one
+		label = mw.text.nowiki(label)
+	end
+	if not label then                              -- no labels found, so just show the q-id
+		label = item
+	elseif show_id then           -- add id
+		show_id = yesno(show_id,false)
+		if show_id then
+			local wordsep = getMessage('Word-separator', lang, ' ')
+			local id = mw.message.new('parentheses', item):inLanguage(lang):plain()
+			id = (id~=nil and id) or ('('..item..')') -- in case this module is moved to a project where {{int:parenthesis}} is not set
+			label = label .. wordsep .. "&lt;small&gt;" .. id .. "&lt;/small&gt;"
+		end
+	end
+	label = apply_capitalization(label, capitalization, lang)
+
+	-- return the results
+	if link_type == '-' then
+		return label -- return just the label
+	else
+		link = getLink(link_type, item, entity, langList)
+		return '[[' .. link .. '|' .. label .. ']]' -- return link
+	end
+end
+
+--[[-------------------------------------------------------------------------------
+_sitelinks
+
+This function returns a table of sitelinks for a single project organized by language
+
+Inputs:
+	1: item - wikidata's item's q-id or entity class
+	2: project - (case-insensitive) one of: "wikipedia", "wikisource", "wikiquote", "wikibooks", "wikinews",
+			"wikiversity", "wikivoyage", "wiktionary", "commons", "mediawiki", "wikispecies", "wikidata", etc.
+
+Output:
+	Table of sitelinks with language fields
+
+Output:
+	Table of sitelinks with language fields
+See also
+* [https://foundation.wikimedia.org/wiki/Special:SiteMatrix] for the full list of supported interwikis.
+* [https://dumps.wikimedia.org/backup-index.html] for the full list of sitecodes (used in database dumps).
+]]
+function p._sitelinks(item, project)
+	local entity, sitelink
+	-- get entity
+	if type(item) == 'string' then -- "item" is a q-id
+		entity = mw.wikibase.getEntity(item)
+	else
+		entity = item              -- "item" is the entity
+	end
+
+	-- convert from english project name  to proproject code
+	local projLUT = {
+		wikipedia   = 'wiki',           commons   = 'commonswiki',
+		foundation  = 'foundationwiki', mediawiki = 'mediawikiwiki',
+		wikispecies = 'specieswiki',    wikidata  = 'wikidatawiki',
+		incubator   = 'incubatorwiki',	oldwikisource = 'sourceswiki',
+	}
+	local langLUT = {
+		-- These are not language codes before the 'wiki' or 'wikiversity' suffix in a sitecode:
+		foundation = '~', commons = '~',	-- they will be skipped
+		incubator  = '~', meta    = '~',
+		mediawiki  = '~', sources = '~',
+		species    = '~', beta    = '~',
+		-- Legacy language codes used in sitecodes, remapped to standard Wikimedia language codes:
+		-- See https://meta.wikimedia.org/wiki/Special_language_codes for details
+		als     = 'gsw', bat_smg      = 'sgs',
+		fiu_vro = 'vro', be_x_old     = 'be-tarask',
+		roa_rup = 'rup', zh_classical = 'lzh',
+		zh_yue  = 'yue', zh_min_nan   = 'nan',
+		zh_wuu  = 'wuu', no           = 'nb',
+	}
+	project = project:lower()
+	project = projLUT[project] or project -- correct the project name
+	local n = project:len()
+	local linkTable = {}
+	if entity and entity.sitelinks then  -- See if entity exists, and that it has sitelinks
+		for _, sitelink in pairs(entity.sitelinks) do -- loop over all sitelinks
+			local site = sitelink.site
+			local m    = site:len() - n
+			local proj = site:sub(m +1)  -- project part of the siteID
+			if proj == project  then -- proj matches desired "project"
+				local lang = site:sub(1, m)  -- language part of the siteID
+				lang = langLUT[lang] or lang:gsub('_','-')
+				if lang ~= '~' then -- proj matches desired "project"
+					linkTable[lang] = sitelink.title
+				end
+			end
+		end
+	end
+	return linkTable
+end
+
+--[[----------------------------------------------------------------
+_aliases
+
+This function returns a table of aliases for a single language
+
+Inputs:
+	1: item - wikidata's item's q-id or entity class
+	2: lang - language code, like 'en' or 'de'
+
+Output:
+	Table of aliases with language fields
+]]
+function p._aliases(item, lang)
+	local entity
+	if type(item) == 'string' then -- "item" is a q-id
+		entity = mw.wikibase.getEntity(item)
+	else
+		entity = item            -- "item" is the entity
+	end
+	local aliasTable = {}
+	if entity and entity.aliases then						-- See if there is an entity and that is has aliases
+		if entity.aliases[lang] then						-- See if it has English Aliases
+			for _, alias in pairs(entity.aliases[lang]) do  -- Make a loop around the English aliases
+				table.insert(aliasTable, alias.value)				-- Create a table of English aliases
+			end
+		end
+	end
+	return aliasTable
+end
+
+--======================================================================
+--=== Invoke functions for use from wikitext, e.g., templates ==========
+---=====================================================================
+
+--[[
+getLabel
+
+This function returns a label translated to desired language, created based on wikidata
+
+Usage:
+{{#invoke:Wikidata label|getLabel|item=Q...|lang=..|link_style=..|capitalization=..}}
+
+Parameters
+	1: wikidata's item's q-id (required)
+	2: language (optional; default {{int:lang}})
+	3: link_style: "wikipedia" (default), "Wikidata", "Commons", or "-" (no link)
+	4: capitalization - can be "uc", "lc", "ucfirst", "lcfirst"
+
+Error Handling:
+	Bad q-id will result in displayed error
+]]
+function p.getLabel(frame)
+	local args = getArgs(frame)
+	return p._getLabel(args.item, args.lang, args.link, args.capitalization, args.show_id)
+end
+
+--[[-------------------------------------------------------------------------------
+sitelinks
+
+This function returns a comma separated list of sitelinks for a single project organized by language
+Its main purpose is to help with testing of _sitelinks function.
+
+Usage:
+{{#invoke:Wikidata label|sitelinks|item=Q...|project=..}}
+
+Inputs:
+	1: item - wikidata's item's q-id or entity class
+	2: project - "wikipedia" (or "wiki"), "wikisource", "wikiquote", "wikibooks",
+	             "wikinews", "wikiversity", "wikivoyage", "wiktionary", etc.
+
+Output:
+	comma separated list
+]]
+function p.sitelinks(frame)
+	local args = getArgs(frame)
+	local sitelinks = p._sitelinks(args.item, args.project)
+	local sitelinkList = {}
+	for lang, sitelink in pairs(sitelinks) do
+		table.insert(sitelinkList, (lang=='' and sitelink) or (lang .. ':' .. sitelink))
+	end
+	return table.concat(sitelinkList, ', ')
+end
+
+--[[----------------------------------------------------------------------------
+aliases
+
+This function returns a comma separated list of aliases for a single language
+Its main purpose is to help with testing of _aliases function.
+
+Usage:
+{{#invoke:Wikidata label|aliases|item=Q...|lang=..}}
+
+Inputs:
+	1: item - wikidata's item's q-id or entity class
+	2: lang - language code, like 'en' or 'de'
+
+Output:
+	Comma separated list of aliases
+]]
+function p.aliases(frame)
+	local args = getArgs(frame)
+	return table.concat(p._aliases(args.item, args.lang), ', ')
+end
+
+return p</text>
+      <sha1>n3esylxe7nzd2jxddebpx2r62sks71b</sha1>
+    </revision>
+  </page>
+</mediawiki>

@@ -1,0 +1,3740 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Ns has subpages</title>
+    <ns>828</ns>
+    <id>415</id>
+    <revision>
+      <id>489422</id>
+      <timestamp>2014-12-10T05:55:05Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Mr. Stradivarius</username>
+        <id>0</id>
+      </contributor>
+      <comment>make replacement for [[Template:Ns has subpages]]</comment>
+      <origin>489422</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1673" sha1="kk0d6e2bixy69sj51tc9se1xjiffpwx" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^:+', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>kk0d6e2bixy69sj51tc9se1xjiffpwx</sha1>
+    </revision>
+    <revision>
+      <id>489423</id>
+      <parentid>489422</parentid>
+      <timestamp>2014-12-10T06:13:56Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Mr. Stradivarius</username>
+        <id>0</id>
+      </contributor>
+      <comment>tweak the string matching</comment>
+      <origin>489423</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1674" sha1="1e9wnemmgkhusz4giebdd4vz0pdtrau" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^_*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>1e9wnemmgkhusz4giebdd4vz0pdtrau</sha1>
+    </revision>
+    <revision>
+      <id>489424</id>
+      <parentid>489423</parentid>
+      <timestamp>2014-12-10T06:14:52Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Mr. Stradivarius</username>
+        <id>0</id>
+      </contributor>
+      <comment>match whitespace and underscores</comment>
+      <origin>489424</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>489425</id>
+      <parentid>489424</parentid>
+      <timestamp>2014-12-10T06:37:29Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Mr. Stradivarius</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Protected Module:Ns has subpages: [[WP:High-risk templates|High-risk Lua module]] ([Edit=Allow only template editors and admins] (indefinite) [Move=Allow only template editors and admins] (indefinite))</comment>
+      <origin>489424</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>489420</id>
+      <timestamp>2024-02-17T04:01:43Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>489420</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>489421</id>
+      <parentid>489420</parentid>
+      <timestamp>2024-06-25T16:09:28Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:Ns_has_subpages]]: importing template</comment>
+      <origin>489420</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>489426</id>
+      <parentid>489421</parentid>
+      <timestamp>2025-02-17T06:16:47Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>4 revisions imported from [[:wikipedia:Module:Ns_has_subpages]]</comment>
+      <origin>489420</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>489427</id>
+      <parentid>489426</parentid>
+      <timestamp>2025-02-27T21:12:30Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>489420</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>489428</id>
+      <parentid>489427</parentid>
+      <timestamp>2025-02-27T21:15:18Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>489420</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>489429</id>
+      <parentid>489428</parentid>
+      <timestamp>2025-03-16T20:53:04Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>489420</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>489430</id>
+      <parentid>489429</parentid>
+      <timestamp>2025-04-06T00:14:09Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>489420</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>489431</id>
+      <parentid>489430</parentid>
+      <timestamp>2025-04-27T22:10:50Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>489420</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>489432</id>
+      <parentid>489431</parentid>
+      <timestamp>2025-04-27T22:12:18Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>489420</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>489433</id>
+      <parentid>489432</parentid>
+      <timestamp>2025-04-27T22:13:12Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>489420</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>489434</id>
+      <parentid>489433</parentid>
+      <timestamp>2025-04-27T22:16:53Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>489420</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>489435</id>
+      <parentid>489434</parentid>
+      <timestamp>2025-05-05T21:16:08Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>489420</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>489436</id>
+      <parentid>489435</parentid>
+      <timestamp>2025-05-15T18:52:44Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>489420</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>489437</id>
+      <parentid>489436</parentid>
+      <timestamp>2025-05-15T18:52:45Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting potentially corrupted lower level templates</comment>
+      <origin>489420</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>489438</id>
+      <parentid>489437</parentid>
+      <timestamp>2025-07-07T21:44:00Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>489420</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>489439</id>
+      <parentid>489438</parentid>
+      <timestamp>2025-07-07T22:04:23Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>489420</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>489440</id>
+      <parentid>489439</parentid>
+      <timestamp>2025-11-21T00:34:36Z</timestamp>
+      <contributor>
+        <username>en&gt;Barras</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>4 revisions imported from [[:en:Module:Ns_has_subpages]]: requested, see [[WP:ANI]]</comment>
+      <origin>489420</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>489441</id>
+      <parentid>489440</parentid>
+      <timestamp>2025-11-21T00:36:00Z</timestamp>
+      <contributor>
+        <username>en&gt;Barras</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>4 revisions imported from [[:en:Module:Ns_has_subpages]]: requested, see [[WP:ANI]]</comment>
+      <origin>489420</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>489442</id>
+      <parentid>489441</parentid>
+      <timestamp>2025-11-21T03:31:46Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>489420</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>489443</id>
+      <parentid>489442</parentid>
+      <timestamp>2025-11-21T05:36:44Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: Reverting edits from past 90 minutes</comment>
+      <origin>489443</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1673" sha1="kk0d6e2bixy69sj51tc9se1xjiffpwx" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^:+', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>kk0d6e2bixy69sj51tc9se1xjiffpwx</sha1>
+    </revision>
+    <revision>
+      <id>416</id>
+      <timestamp>2025-11-21T05:49:42Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: re-importing and overwriting due to the weird script failure </comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3303450</id>
+      <parentid>416</parentid>
+      <timestamp>2026-02-26T20:10:02Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3303451</id>
+      <parentid>3303450</parentid>
+      <timestamp>2026-02-26T20:10:02Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: reimporting these to fix older errors</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3365557</id>
+      <parentid>3303451</parentid>
+      <timestamp>2026-03-02T16:21:38Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3365558</id>
+      <parentid>3365557</parentid>
+      <timestamp>2026-03-02T16:21:39Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: import overwrite</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3404959</id>
+      <parentid>3365558</parentid>
+      <timestamp>2026-03-12T18:09:30Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3404960</id>
+      <parentid>3404959</parentid>
+      <timestamp>2026-03-12T18:09:30Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3407097</id>
+      <parentid>3404960</parentid>
+      <timestamp>2026-03-12T20:03:20Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3407098</id>
+      <parentid>3407097</parentid>
+      <timestamp>2026-03-12T20:03:20Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3407806</id>
+      <parentid>3407098</parentid>
+      <timestamp>2026-03-12T20:26:01Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3407807</id>
+      <parentid>3407806</parentid>
+      <timestamp>2026-03-12T20:26:01Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3408614</id>
+      <parentid>3407807</parentid>
+      <timestamp>2026-03-12T20:38:32Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3408615</id>
+      <parentid>3408614</parentid>
+      <timestamp>2026-03-12T20:38:32Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3417492</id>
+      <parentid>3408615</parentid>
+      <timestamp>2026-03-13T02:56:24Z</timestamp>
+      <contributor>
+        <username>en&gt;Pppery</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3417493</id>
+      <parentid>3417492</parentid>
+      <timestamp>2026-03-13T02:56:24Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Bot: reimport from enwiki to fix erroneous transclusions [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23034089081|commit triggered pipeline]]</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3418160</id>
+      <parentid>3417493</parentid>
+      <timestamp>2026-03-13T03:50:51Z</timestamp>
+      <contributor>
+        <username>en&gt;Pppery</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3418161</id>
+      <parentid>3418160</parentid>
+      <timestamp>2026-03-13T03:50:51Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Bot: reimport from enwiki to fix erroneous transclusions [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23034168414|commit triggered pipeline]]</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3418753</id>
+      <parentid>3418161</parentid>
+      <timestamp>2026-03-13T04:32:32Z</timestamp>
+      <contributor>
+        <username>en&gt;Pppery</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3418754</id>
+      <parentid>3418753</parentid>
+      <timestamp>2026-03-13T04:32:33Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Bot: reimport from enwiki to fix erroneous transclusions [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23035542121|commit triggered pipeline]]</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3418841</id>
+      <parentid>3418754</parentid>
+      <timestamp>2026-03-13T04:32:56Z</timestamp>
+      <contributor>
+        <username>en&gt;Pppery</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3418842</id>
+      <parentid>3418841</parentid>
+      <timestamp>2026-03-13T04:32:56Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Bot: reimport from enwiki to fix erroneous transclusions [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23035542121|commit triggered pipeline]]</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3558070</id>
+      <parentid>3418842</parentid>
+      <timestamp>2026-03-20T19:47:31Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3558071</id>
+      <parentid>3558070</parentid>
+      <timestamp>2026-03-20T19:47:31Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting </comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3562092</id>
+      <parentid>3558071</parentid>
+      <timestamp>2026-03-22T18:47:25Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3562093</id>
+      <parentid>3562092</parentid>
+      <timestamp>2026-03-22T18:47:25Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3568935</id>
+      <parentid>3562093</parentid>
+      <timestamp>2026-03-24T21:35:16Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3568936</id>
+      <parentid>3568935</parentid>
+      <timestamp>2026-03-24T21:35:16Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3607954</id>
+      <parentid>3568936</parentid>
+      <timestamp>2026-04-18T21:22:54Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3607955</id>
+      <parentid>3607954</parentid>
+      <timestamp>2026-04-18T21:22:54Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting to try to fix the lower alpha issue</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3608387</id>
+      <parentid>3607955</parentid>
+      <timestamp>2026-04-18T21:27:04Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3608388</id>
+      <parentid>3608387</parentid>
+      <timestamp>2026-04-18T21:27:04Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting to try to fix the lower alpha issue</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3646074</id>
+      <parentid>3608388</parentid>
+      <timestamp>2026-04-24T16:30:22Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Ns has subpages]]": Per template ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+    <revision>
+      <id>3646075</id>
+      <parentid>3646074</parentid>
+      <timestamp>2026-04-24T16:30:23Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: trying to do a last fix of these, they will be fixed and not bloat the site</comment>
+      <origin>416</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1678" sha1="qb0b1z2vff7kifnw21v205d791esbiz" xml:space="preserve">-- This module implements [[Template:Ns has subpages]].
+-- While the template is fairly simple, this information is made available to
+-- Lua directly, so using a module means that we don't have to update the
+-- template as new namespaces are added.
+
+local p = {}
+
+function p._main(ns, frame)
+	-- Get the current namespace if we were not passed one.
+	if not ns then
+		ns = mw.title.getCurrentTitle().namespace
+	end
+
+	-- Look up the namespace table from mw.site.namespaces. This should work
+	-- for a majority of cases.
+	local nsTable = mw.site.namespaces[ns]
+
+	-- Try using string matching to get the namespace from page names.
+	-- Do a quick and dirty bad title check to try and make sure we do the same
+	-- thing as {{NAMESPACE}} in most cases.
+	if not nsTable and type(ns) == 'string' and not ns:find('[&lt;&gt;|%[%]{}]') then
+		local nsStripped = ns:gsub('^[_%s]*:', '')
+		nsStripped = nsStripped:gsub(':.*$', '')
+		nsTable = mw.site.namespaces[nsStripped]
+	end
+
+	-- If we still have no match then try the {{NAMESPACE}} parser function,
+	-- which should catch the remainder of cases. Don't use a mw.title object,
+	-- as this would increment the expensive function count for each new page
+	-- tested.
+	if not nsTable then
+		frame = frame or mw.getCurrentFrame()
+		local nsProcessed = frame:callParserFunction('NAMESPACE', ns)
+		nsTable = nsProcessed and mw.site.namespaces[nsProcessed]
+	end
+	
+	return nsTable and nsTable.hasSubpages
+end
+
+function p.main(frame)
+	local ns = frame:getParent().args[1]
+	if ns then
+		ns = ns:match('^%s*(.-)%s*$') -- trim whitespace
+		ns = tonumber(ns) or ns
+	end
+	local hasSubpages = p._main(ns, frame)
+	return hasSubpages and 'yes' or ''
+end
+
+return p</text>
+      <sha1>qb0b1z2vff7kifnw21v205d791esbiz</sha1>
+    </revision>
+  </page>
+</mediawiki>

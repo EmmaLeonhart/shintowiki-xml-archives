@@ -1,0 +1,242 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Ordnance Survey coordinates/data</title>
+    <ns>828</ns>
+    <id>166423</id>
+    <revision>
+      <id>3646612</id>
+      <timestamp>2024-11-06T11:07:21Z</timestamp>
+      <contributor>
+        <username>en&gt;Hike395</username>
+        <id>0</id>
+      </contributor>
+      <comment>fix typo, add url to comments</comment>
+      <origin>3646612</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2355" sha1="rmtx7j2h2k0b6yobekjf1yh1h2d5gsy" xml:space="preserve">-- Data for [[Module:Ordnance Survey coordinates]]
+-- You may use and redistribute this data under the terms of the GPL see http://www.gnu.org/copyleft/gpl.html
+
+local deg2rad = math.rad
+
+local OSGBglobe = {
+	semimajor = 6377563.396,
+	semiminor = 6356256.910,
+	ecc = 0.006670539761597529073698869358812557054558,
+	n1 = 0.00167322025032508731869331280635710896296,
+	scale = 0.9996012717,
+    e0 = 400000.0,
+    n0 = -100000.0,
+    lat0 = 49.0,
+    lon0 = -2.0
+}
+
+local IEglobe = {
+	semimajor = 6377340.189,
+	semiminor = 6356034.447,
+	ecc = 0.006670540293336110419293763349975612794125,
+	n1 = 0.001673220384152058651484728058385228837777,
+	scale = 1.000035,
+	e0 = 200000.0,
+	n0 = 250000.0,
+	lat0 = 53.5,
+	lon0 = -8.0
+}
+
+local WGSglobe = {
+	semimajor = 6378137.0,
+	semiminor = 6356752.3141,
+	ecc = 0.00669438003551279089034150031998869922791
+}
+
+local WGS2OSGBparam = {
+ -- Table 4, Section 6.6, Ordnance Survey document https://www.ordnancesurvey.co.uk/documents/resources/guide-coordinate-systems-great-britain.pdf
+	semimajor_src = WGSglobe.semimajor,
+	semiminor_src = WGSglobe.semiminor,
+	ecc_src = WGSglobe.ecc,
+	semimajor_dst = OSGBglobe.semimajor,
+	semiminor_dst = OSGBglobe.semiminor,
+	ecc_dst = OSGBglobe.ecc,
+	tx = -446.448,
+    ty = 125.157,
+    tz = -542.060,
+    s0 = 0.0000204894,
+    rx = deg2rad ( -.1502/3600. ),
+    ry = deg2rad ( -.2470/3600. ),
+    rz = deg2rad ( -.8421/3600. )
+}
+
+local OSGB2WGSparam = {
+	semimajor_src = OSGBglobe.semimajor,
+	semiminor_src = OSGBglobe.semiminor,
+	ecc_src = OSGBglobe.ecc,
+	semimajor_dst = WGSglobe.semimajor,
+	semiminor_dst = WGSglobe.semiminor,
+	ecc_dst = WGSglobe.ecc,
+	tx = -WGS2OSGBparam.tx,
+    ty = -WGS2OSGBparam.ty,
+    tz = -WGS2OSGBparam.tz,
+    s0 = -WGS2OSGBparam.s0,
+    rx = -WGS2OSGBparam.rx,
+    ry = -WGS2OSGBparam.ry,
+    rz = -WGS2OSGBparam.rz,
+}
+
+local IE2WGSparam = {
+	semimajor_src = IEglobe.semimajor,
+	semiminor_src = IEglobe.semiminor,
+	ecc_src = IEglobe.ecc,
+	semimajor_dst = WGSglobe.semimajor,
+	semiminor_dst = WGSglobe.semiminor,
+	ecc_dst = WGSglobe.ecc,
+	tx = 482.53,
+	ty = -130.596,
+	tz = 564.557,
+	s0 = 8.15/1000000.0,
+	rx = deg2rad( -1.042/3600.0 ),
+	ry = deg2rad( -0.214/3600.0 ),
+	rz = deg2rad( -0.631/3600.0 )
+}
+
+return {OSGBglobe=OSGBglobe, IEglobe=IEglobe, WGSglobe=WGSglobe,
+        WGS2OSGBparam=WGS2OSGBparam, OSGB2WGSparam=OSGB2WGSparam, IE2WGSparam=IE2WGSparam}</text>
+      <sha1>rmtx7j2h2k0b6yobekjf1yh1h2d5gsy</sha1>
+    </revision>
+    <revision>
+      <id>3646613</id>
+      <parentid>3646612</parentid>
+      <timestamp>2026-04-24T16:31:50Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: en</comment>
+      <origin>3646612</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2355" sha1="rmtx7j2h2k0b6yobekjf1yh1h2d5gsy" xml:space="preserve">-- Data for [[Module:Ordnance Survey coordinates]]
+-- You may use and redistribute this data under the terms of the GPL see http://www.gnu.org/copyleft/gpl.html
+
+local deg2rad = math.rad
+
+local OSGBglobe = {
+	semimajor = 6377563.396,
+	semiminor = 6356256.910,
+	ecc = 0.006670539761597529073698869358812557054558,
+	n1 = 0.00167322025032508731869331280635710896296,
+	scale = 0.9996012717,
+    e0 = 400000.0,
+    n0 = -100000.0,
+    lat0 = 49.0,
+    lon0 = -2.0
+}
+
+local IEglobe = {
+	semimajor = 6377340.189,
+	semiminor = 6356034.447,
+	ecc = 0.006670540293336110419293763349975612794125,
+	n1 = 0.001673220384152058651484728058385228837777,
+	scale = 1.000035,
+	e0 = 200000.0,
+	n0 = 250000.0,
+	lat0 = 53.5,
+	lon0 = -8.0
+}
+
+local WGSglobe = {
+	semimajor = 6378137.0,
+	semiminor = 6356752.3141,
+	ecc = 0.00669438003551279089034150031998869922791
+}
+
+local WGS2OSGBparam = {
+ -- Table 4, Section 6.6, Ordnance Survey document https://www.ordnancesurvey.co.uk/documents/resources/guide-coordinate-systems-great-britain.pdf
+	semimajor_src = WGSglobe.semimajor,
+	semiminor_src = WGSglobe.semiminor,
+	ecc_src = WGSglobe.ecc,
+	semimajor_dst = OSGBglobe.semimajor,
+	semiminor_dst = OSGBglobe.semiminor,
+	ecc_dst = OSGBglobe.ecc,
+	tx = -446.448,
+    ty = 125.157,
+    tz = -542.060,
+    s0 = 0.0000204894,
+    rx = deg2rad ( -.1502/3600. ),
+    ry = deg2rad ( -.2470/3600. ),
+    rz = deg2rad ( -.8421/3600. )
+}
+
+local OSGB2WGSparam = {
+	semimajor_src = OSGBglobe.semimajor,
+	semiminor_src = OSGBglobe.semiminor,
+	ecc_src = OSGBglobe.ecc,
+	semimajor_dst = WGSglobe.semimajor,
+	semiminor_dst = WGSglobe.semiminor,
+	ecc_dst = WGSglobe.ecc,
+	tx = -WGS2OSGBparam.tx,
+    ty = -WGS2OSGBparam.ty,
+    tz = -WGS2OSGBparam.tz,
+    s0 = -WGS2OSGBparam.s0,
+    rx = -WGS2OSGBparam.rx,
+    ry = -WGS2OSGBparam.ry,
+    rz = -WGS2OSGBparam.rz,
+}
+
+local IE2WGSparam = {
+	semimajor_src = IEglobe.semimajor,
+	semiminor_src = IEglobe.semiminor,
+	ecc_src = IEglobe.ecc,
+	semimajor_dst = WGSglobe.semimajor,
+	semiminor_dst = WGSglobe.semiminor,
+	ecc_dst = WGSglobe.ecc,
+	tx = 482.53,
+	ty = -130.596,
+	tz = 564.557,
+	s0 = 8.15/1000000.0,
+	rx = deg2rad( -1.042/3600.0 ),
+	ry = deg2rad( -0.214/3600.0 ),
+	rz = deg2rad( -0.631/3600.0 )
+}
+
+return {OSGBglobe=OSGBglobe, IEglobe=IEglobe, WGSglobe=WGSglobe,
+        WGS2OSGBparam=WGS2OSGBparam, OSGB2WGSparam=OSGB2WGSparam, IE2WGSparam=IE2WGSparam}</text>
+      <sha1>rmtx7j2h2k0b6yobekjf1yh1h2d5gsy</sha1>
+    </revision>
+  </page>
+</mediawiki>

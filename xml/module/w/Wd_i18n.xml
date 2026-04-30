@@ -1,0 +1,4209 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Wd/i18n</title>
+    <ns>828</ns>
+    <id>570</id>
+    <revision>
+      <id>509986</id>
+      <timestamp>2024-02-11T15:54:21Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Sdkb</username>
+        <id>0</id>
+      </contributor>
+      <comment>Mapping [[wikidata:Property:P958|Wikidata's "section, verse, paragraph, or clause" property]] to {{cite web}}'s "at" parameter, [[Module_talk:Wd#Error|per talk]]</comment>
+      <origin>509986</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4629" sha1="t28rz4790z52gadkxdwisqlpv6mjteu" xml:space="preserve">-- The values and functions in this submodule should be localized per wiki.
+
+local p = {}
+
+function p.init(aliasesP)
+	p = {
+		["errors"] = {
+			["unknown-data-type"]          = "Unknown or unsupported datatype '$1'.",
+			["missing-required-parameter"] = "No required parameters defined, needing at least one",
+			["extra-required-parameter"]   = "Parameter '$1' must be defined as optional",
+			["no-function-specified"]      = "You must specify a function to call",  -- equal to the standard module error message
+			["main-called-twice"]          = 'The function "main" cannot be called twice',
+			["no-such-function"]           = 'The function "$1" does not exist',  -- equal to the standard module error message
+            ["malformed-reference"]        = "Error: Unable to display the reference properly. See [[Module:wd/doc#References|the documentation]] for details.[[Category:Module:Wd reference errors]]"
+		},
+		["info"] = {
+			["edit-on-wikidata"] = "Edit this on Wikidata"
+		},
+		["numeric"] = {
+			["decimal-mark"] = ".",
+			["delimiter"]    = ","
+		},
+		["datetime"] = {
+			["prefixes"] = {
+				["decade-period"] = ""
+			},
+			["suffixes"] = {
+				["decade-period"] = "s",
+				["millennium"]    = " millennium",
+				["century"]       = " century",
+				["million-years"] = " million years",
+				["billion-years"] = " billion years",
+				["year"]          = " year",
+				["years"]         = " years"
+			},
+			["julian-calendar"] = "Julian calendar",  -- linked page title
+			["julian"]          = "Julian",
+			["BCE"]             = "BCE",
+			["CE"]              = "CE",
+			["common-era"]      = "Common Era"  -- linked page title
+		},
+		["coord"] = {
+			["latitude-north"] = "N",
+			["latitude-south"] = "S",
+			["longitude-east"] = "E",
+			["longitude-west"] = "W",
+			["degrees"]        = "°",
+			["minutes"]        = "'",
+			["seconds"]        = '"',
+			["separator"]      = ", "
+		},
+		["values"] = {
+			["unknown"] = "unknown",
+			["none"]    = "none"
+		},
+		["cite"] = {
+			["version"] = "5",  -- increment this each time the below parameters are changed to avoid conflict errors
+			["web"] = {
+				-- &lt;= left side: all allowed reference properties for *web page sources* per https://www.wikidata.org/wiki/Help:Sources
+				-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite web]] (if non-existent, keep empty i.e. "")
+				[aliasesP.statedIn]                = "website",
+				[aliasesP.referenceURL]            = "url",
+				[aliasesP.publicationDate]         = "date",
+				[aliasesP.retrieved]               = "access-date",
+				[aliasesP.title]                   = "title",
+				[aliasesP.archiveURL]              = "archive-url",
+				[aliasesP.archiveDate]             = "archive-date",
+				[aliasesP.language]                = "language",
+				[aliasesP.author]                  = "author",  -- existence of author1, author2, author3, etc. is assumed
+				[aliasesP.authorNameString]        = "author",
+				[aliasesP.publisher]               = "publisher",
+				[aliasesP.quote]                   = "quote",
+				[aliasesP.pages]                   = "pages",  -- extra option
+				[aliasesP.publishedIn]             = "website",
+				[aliasesP.sectionVerseOrParagraph] = "at"
+			},
+			["q"] = {
+				-- &lt;= left side: all allowed reference properties for *sources other than web pages* per https://www.wikidata.org/wiki/Help:Sources
+				-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite Q]] (if non-existent, keep empty i.e. "")
+				[aliasesP.statedIn]                = "1",
+				[aliasesP.pages]                   = "pages",
+				[aliasesP.column]                  = "at",
+				[aliasesP.chapter]                 = "chapter",
+				[aliasesP.sectionVerseOrParagraph] = "section",
+				["external-id"]                    = "id",  -- used for any type of database property ID
+				[aliasesP.title]                   = "title",
+				[aliasesP.publicationDate]         = "date",
+				[aliasesP.retrieved]               = "access-date"
+			}
+		}
+	}
+
+	p.getOrdinalSuffix = function(num)
+		if tostring(num):sub(-2,-2) == '1' then
+			return "th"  -- 10th, 11th, 12th, 13th, ... 19th
+		end
+
+		num = tostring(num):sub(-1)
+
+		if num == '1' then
+			return "st"
+		elseif num == '2' then
+			return "nd"
+		elseif num == '3' then
+			return "rd"
+		else
+			return "th"
+		end
+	end
+
+	p.addDelimiters = function(n)
+		local left, num, right = string.match(n, "^([^%d]*%d)(%d*)(.-)$")
+
+		if left and num and right then
+			return left .. (num:reverse():gsub("(%d%d%d)", "%1" .. p['numeric']['delimiter']):reverse()) .. right
+		else
+			return n
+		end
+	end
+
+	return p
+end
+
+return p</text>
+      <sha1>t28rz4790z52gadkxdwisqlpv6mjteu</sha1>
+    </revision>
+    <revision>
+      <id>509987</id>
+      <parentid>509986</parentid>
+      <timestamp>2024-06-28T09:35:15Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:Wd/i18n]]</comment>
+      <origin>509986</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4629" sha1="t28rz4790z52gadkxdwisqlpv6mjteu" xml:space="preserve">-- The values and functions in this submodule should be localized per wiki.
+
+local p = {}
+
+function p.init(aliasesP)
+	p = {
+		["errors"] = {
+			["unknown-data-type"]          = "Unknown or unsupported datatype '$1'.",
+			["missing-required-parameter"] = "No required parameters defined, needing at least one",
+			["extra-required-parameter"]   = "Parameter '$1' must be defined as optional",
+			["no-function-specified"]      = "You must specify a function to call",  -- equal to the standard module error message
+			["main-called-twice"]          = 'The function "main" cannot be called twice',
+			["no-such-function"]           = 'The function "$1" does not exist',  -- equal to the standard module error message
+            ["malformed-reference"]        = "Error: Unable to display the reference properly. See [[Module:wd/doc#References|the documentation]] for details.[[Category:Module:Wd reference errors]]"
+		},
+		["info"] = {
+			["edit-on-wikidata"] = "Edit this on Wikidata"
+		},
+		["numeric"] = {
+			["decimal-mark"] = ".",
+			["delimiter"]    = ","
+		},
+		["datetime"] = {
+			["prefixes"] = {
+				["decade-period"] = ""
+			},
+			["suffixes"] = {
+				["decade-period"] = "s",
+				["millennium"]    = " millennium",
+				["century"]       = " century",
+				["million-years"] = " million years",
+				["billion-years"] = " billion years",
+				["year"]          = " year",
+				["years"]         = " years"
+			},
+			["julian-calendar"] = "Julian calendar",  -- linked page title
+			["julian"]          = "Julian",
+			["BCE"]             = "BCE",
+			["CE"]              = "CE",
+			["common-era"]      = "Common Era"  -- linked page title
+		},
+		["coord"] = {
+			["latitude-north"] = "N",
+			["latitude-south"] = "S",
+			["longitude-east"] = "E",
+			["longitude-west"] = "W",
+			["degrees"]        = "°",
+			["minutes"]        = "'",
+			["seconds"]        = '"',
+			["separator"]      = ", "
+		},
+		["values"] = {
+			["unknown"] = "unknown",
+			["none"]    = "none"
+		},
+		["cite"] = {
+			["version"] = "5",  -- increment this each time the below parameters are changed to avoid conflict errors
+			["web"] = {
+				-- &lt;= left side: all allowed reference properties for *web page sources* per https://www.wikidata.org/wiki/Help:Sources
+				-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite web]] (if non-existent, keep empty i.e. "")
+				[aliasesP.statedIn]                = "website",
+				[aliasesP.referenceURL]            = "url",
+				[aliasesP.publicationDate]         = "date",
+				[aliasesP.retrieved]               = "access-date",
+				[aliasesP.title]                   = "title",
+				[aliasesP.archiveURL]              = "archive-url",
+				[aliasesP.archiveDate]             = "archive-date",
+				[aliasesP.language]                = "language",
+				[aliasesP.author]                  = "author",  -- existence of author1, author2, author3, etc. is assumed
+				[aliasesP.authorNameString]        = "author",
+				[aliasesP.publisher]               = "publisher",
+				[aliasesP.quote]                   = "quote",
+				[aliasesP.pages]                   = "pages",  -- extra option
+				[aliasesP.publishedIn]             = "website",
+				[aliasesP.sectionVerseOrParagraph] = "at"
+			},
+			["q"] = {
+				-- &lt;= left side: all allowed reference properties for *sources other than web pages* per https://www.wikidata.org/wiki/Help:Sources
+				-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite Q]] (if non-existent, keep empty i.e. "")
+				[aliasesP.statedIn]                = "1",
+				[aliasesP.pages]                   = "pages",
+				[aliasesP.column]                  = "at",
+				[aliasesP.chapter]                 = "chapter",
+				[aliasesP.sectionVerseOrParagraph] = "section",
+				["external-id"]                    = "id",  -- used for any type of database property ID
+				[aliasesP.title]                   = "title",
+				[aliasesP.publicationDate]         = "date",
+				[aliasesP.retrieved]               = "access-date"
+			}
+		}
+	}
+
+	p.getOrdinalSuffix = function(num)
+		if tostring(num):sub(-2,-2) == '1' then
+			return "th"  -- 10th, 11th, 12th, 13th, ... 19th
+		end
+
+		num = tostring(num):sub(-1)
+
+		if num == '1' then
+			return "st"
+		elseif num == '2' then
+			return "nd"
+		elseif num == '3' then
+			return "rd"
+		else
+			return "th"
+		end
+	end
+
+	p.addDelimiters = function(n)
+		local left, num, right = string.match(n, "^([^%d]*%d)(%d*)(.-)$")
+
+		if left and num and right then
+			return left .. (num:reverse():gsub("(%d%d%d)", "%1" .. p['numeric']['delimiter']):reverse()) .. right
+		else
+			return n
+		end
+	end
+
+	return p
+end
+
+return p</text>
+      <sha1>t28rz4790z52gadkxdwisqlpv6mjteu</sha1>
+    </revision>
+    <revision>
+      <id>509990</id>
+      <parentid>509987</parentid>
+      <timestamp>2024-10-05T14:22:01Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Janhrach</username>
+        <id>0</id>
+      </contributor>
+      <comment>Undid revision [[Special:Diff/1249540561|1249540561]] by [[Special:Contributions/Janhrach|Janhrach]] ([[User talk:Janhrach|talk]])</comment>
+      <origin>509990</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="6416" sha1="9x26xqgg01idb8drjyqhb64or1txdtn" xml:space="preserve">-- The values and functions in this submodule should be localized per wiki.
+
+local p = {}
+
+function p.init(aliasesP)
+	p = {
+		["version"] = "7",  -- increment this each time the below parameters are changed to avoid reference conflict errors
+		["errors"] = {
+			["unknown-data-type"]          = "Unknown or unsupported datatype '%s'.",
+			["missing-required-parameter"] = "No required parameters defined, needing at least one",
+			["extra-required-parameter"]   = "Parameter '%s' must be defined as optional",
+			["no-function-specified"]      = "You must specify a function to call",  -- equal to the standard module error message
+			["main-called-twice"]          = 'The function "main" cannot be called twice',
+			["no-such-function"]           = 'The function "%s" does not exist',  -- equal to the standard module error message
+            ["no-such-reference-template"] = 'Error: template "%s", which is set in %s as the output template for the citation-output type "%s", does not exist',
+            -- Parts of the error message signalling a malformed reference.
+            ["malformed-reference-header"] = "&lt;span style=\"color:#dd3333\"&gt;\nError: Unable to display the reference from Wikidata properly. Technical details:\n",
+            ["malformed-reference-footer"] = "See [[Module:wd/doc#References|the documentation]] for further details.\n&lt;/span&gt;\n[[Category:Module:Wd reference errors]]",
+            ["template-failure-reason"]    = "* Reason for the failure of {{tl|%s}}: %s\n",
+            ["missing-mandatory-param"]    = 'The output template call would miss the mandatory parameter &lt;code&gt;%s&lt;/code&gt;.',
+            ["unknown-property-in-ref"]    = 'The Wikidata reference contains the property {{property|%s}}, which is not assigned to any parameter of this template.'
+		},
+		["info"] = {
+			["edit-on-wikidata"] = "Edit this on Wikidata"
+		},
+		["numeric"] = {
+			["decimal-mark"] = ".",
+			["delimiter"]    = ","
+		},
+		["datetime"] = {
+			["prefixes"] = {
+				["decade-period"] = ""
+			},
+			["suffixes"] = {
+				["decade-period"] = "s",
+				["millennium"]    = " millennium",
+				["century"]       = " century",
+				["million-years"] = " million years",
+				["billion-years"] = " billion years",
+				["year"]          = " year",
+				["years"]         = " years"
+			},
+			["julian-calendar"] = "Julian calendar",  -- linked page title
+			["julian"]          = "Julian",
+			["BCE"]             = "BCE",
+			["CE"]              = "CE",
+			["common-era"]      = "Common Era"  -- linked page title
+		},
+		["coord"] = {
+			["latitude-north"] = "N",
+			["latitude-south"] = "S",
+			["longitude-east"] = "E",
+			["longitude-west"] = "W",
+			["degrees"]        = "°",
+			["minutes"]        = "'",
+			["seconds"]        = '"',
+			["separator"]      = ", "
+		},
+		["values"] = {
+			["unknown"] = "unknown",
+			["none"]    = "none"
+		},
+		["cite"] = {
+			["output-types"] = {"web", "q"},  -- In this order, the output types will be tried
+			["param-mapping"] = {
+				["web"] = {
+					-- &lt;= left side: all allowed reference properties for *web page sources* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite web]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "website",
+					[aliasesP.referenceURL]            = "url",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.retrieved]               = "access-date",
+					[aliasesP.title]                   = "title",
+					[aliasesP.archiveURL]              = "archive-url",
+					[aliasesP.archiveDate]             = "archive-date",
+					[aliasesP.language]                = "language",
+					[aliasesP.author]                  = "author",
+					[aliasesP.authorNameString]        = "author",
+					[aliasesP.publisher]               = "publisher",
+					[aliasesP.quote]                   = "quote",
+					[aliasesP.pages]                   = "pages",  -- extra option
+					[aliasesP.publishedIn]             = "website",
+					[aliasesP.sectionVerseOrParagraph] = "at"
+				},
+				["q"] = {
+					-- &lt;= left side: all allowed reference properties for *sources other than web pages* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite Q]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "1",
+					[aliasesP.pages]                   = "pages",
+					[aliasesP.column]                  = "at",
+					[aliasesP.chapter]                 = "chapter",
+					[aliasesP.sectionVerseOrParagraph] = "section",
+					["external-id"]                    = "id",  -- used for any type of database property ID
+					[aliasesP.title]                   = "title",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.retrieved]               = "access-date"
+				}
+			},
+			["config"] = {
+				-- supported fields:
+				--     - template: name of the template used for output
+				--     - numbered-params: citation params accepting an arbitrary number of values by numbering the params (e.g. author1, author2)
+				--     - raw-value-params: params taking a raw value (which means the property is rendered with getValue with raw=true)
+				--     - mandatory-params: params that are required be in the template call (after potentially appending numbers to params listed in numbered-params)
+				-- Leaving out the "template" field causes the output type to be ignored.
+				["web"] = {
+					["template"] = "Cite web",
+					["numbered-params"] = {"author"},
+					["mandatory-params"] = {"url"}
+				},
+				["q"] = {
+					["template"] = "Cite Q",
+					["raw-value-params"] = {"1"},  -- the first, unnamed parameter of CiteQ takes a QID, not the name of the item cited
+					["mandatory-params"] = {"1"}
+				}
+			}
+		}
+	}
+
+	p.getOrdinalSuffix = function(num)
+		if tostring(num):sub(-2,-2) == '1' then
+			return "th"  -- 10th, 11th, 12th, 13th, ... 19th
+		end
+
+		num = tostring(num):sub(-1)
+
+		if num == '1' then
+			return "st"
+		elseif num == '2' then
+			return "nd"
+		elseif num == '3' then
+			return "rd"
+		else
+			return "th"
+		end
+	end
+
+	p.addDelimiters = function(n)
+		local left, num, right = string.match(n, "^([^%d]*%d)(%d*)(.-)$")
+
+		if left and num and right then
+			return left .. (num:reverse():gsub("(%d%d%d)", "%1" .. p['numeric']['delimiter']):reverse()) .. right
+		else
+			return n
+		end
+	end
+
+	return p
+end
+
+return p</text>
+      <sha1>9x26xqgg01idb8drjyqhb64or1txdtn</sha1>
+    </revision>
+    <revision>
+      <id>509988</id>
+      <parentid>509987</parentid>
+      <timestamp>2025-03-15T19:25:46Z</timestamp>
+      <contributor>
+        <username>en&gt;Unknown user</username>
+        <id>0</id>
+      </contributor>
+      <comment>Undid revision [[Special:Diff/1249540561|1249540561]] by [[Special:Contributions/Janhrach|Janhrach]] ([[User talk:Janhrach|talk]])</comment>
+      <origin>509988</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="6416" sha1="9x26xqgg01idb8drjyqhb64or1txdtn" xml:space="preserve">-- The values and functions in this submodule should be localized per wiki.
+
+local p = {}
+
+function p.init(aliasesP)
+	p = {
+		["version"] = "7",  -- increment this each time the below parameters are changed to avoid reference conflict errors
+		["errors"] = {
+			["unknown-data-type"]          = "Unknown or unsupported datatype '%s'.",
+			["missing-required-parameter"] = "No required parameters defined, needing at least one",
+			["extra-required-parameter"]   = "Parameter '%s' must be defined as optional",
+			["no-function-specified"]      = "You must specify a function to call",  -- equal to the standard module error message
+			["main-called-twice"]          = 'The function "main" cannot be called twice',
+			["no-such-function"]           = 'The function "%s" does not exist',  -- equal to the standard module error message
+            ["no-such-reference-template"] = 'Error: template "%s", which is set in %s as the output template for the citation-output type "%s", does not exist',
+            -- Parts of the error message signalling a malformed reference.
+            ["malformed-reference-header"] = "&lt;span style=\"color:#dd3333\"&gt;\nError: Unable to display the reference from Wikidata properly. Technical details:\n",
+            ["malformed-reference-footer"] = "See [[Module:wd/doc#References|the documentation]] for further details.\n&lt;/span&gt;\n[[Category:Module:Wd reference errors]]",
+            ["template-failure-reason"]    = "* Reason for the failure of {{tl|%s}}: %s\n",
+            ["missing-mandatory-param"]    = 'The output template call would miss the mandatory parameter &lt;code&gt;%s&lt;/code&gt;.',
+            ["unknown-property-in-ref"]    = 'The Wikidata reference contains the property {{property|%s}}, which is not assigned to any parameter of this template.'
+		},
+		["info"] = {
+			["edit-on-wikidata"] = "Edit this on Wikidata"
+		},
+		["numeric"] = {
+			["decimal-mark"] = ".",
+			["delimiter"]    = ","
+		},
+		["datetime"] = {
+			["prefixes"] = {
+				["decade-period"] = ""
+			},
+			["suffixes"] = {
+				["decade-period"] = "s",
+				["millennium"]    = " millennium",
+				["century"]       = " century",
+				["million-years"] = " million years",
+				["billion-years"] = " billion years",
+				["year"]          = " year",
+				["years"]         = " years"
+			},
+			["julian-calendar"] = "Julian calendar",  -- linked page title
+			["julian"]          = "Julian",
+			["BCE"]             = "BCE",
+			["CE"]              = "CE",
+			["common-era"]      = "Common Era"  -- linked page title
+		},
+		["coord"] = {
+			["latitude-north"] = "N",
+			["latitude-south"] = "S",
+			["longitude-east"] = "E",
+			["longitude-west"] = "W",
+			["degrees"]        = "°",
+			["minutes"]        = "'",
+			["seconds"]        = '"',
+			["separator"]      = ", "
+		},
+		["values"] = {
+			["unknown"] = "unknown",
+			["none"]    = "none"
+		},
+		["cite"] = {
+			["output-types"] = {"web", "q"},  -- In this order, the output types will be tried
+			["param-mapping"] = {
+				["web"] = {
+					-- &lt;= left side: all allowed reference properties for *web page sources* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite web]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "website",
+					[aliasesP.referenceURL]            = "url",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.retrieved]               = "access-date",
+					[aliasesP.title]                   = "title",
+					[aliasesP.archiveURL]              = "archive-url",
+					[aliasesP.archiveDate]             = "archive-date",
+					[aliasesP.language]                = "language",
+					[aliasesP.author]                  = "author",
+					[aliasesP.authorNameString]        = "author",
+					[aliasesP.publisher]               = "publisher",
+					[aliasesP.quote]                   = "quote",
+					[aliasesP.pages]                   = "pages",  -- extra option
+					[aliasesP.publishedIn]             = "website",
+					[aliasesP.sectionVerseOrParagraph] = "at"
+				},
+				["q"] = {
+					-- &lt;= left side: all allowed reference properties for *sources other than web pages* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite Q]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "1",
+					[aliasesP.pages]                   = "pages",
+					[aliasesP.column]                  = "at",
+					[aliasesP.chapter]                 = "chapter",
+					[aliasesP.sectionVerseOrParagraph] = "section",
+					["external-id"]                    = "id",  -- used for any type of database property ID
+					[aliasesP.title]                   = "title",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.retrieved]               = "access-date"
+				}
+			},
+			["config"] = {
+				-- supported fields:
+				--     - template: name of the template used for output
+				--     - numbered-params: citation params accepting an arbitrary number of values by numbering the params (e.g. author1, author2)
+				--     - raw-value-params: params taking a raw value (which means the property is rendered with getValue with raw=true)
+				--     - mandatory-params: params that are required be in the template call (after potentially appending numbers to params listed in numbered-params)
+				-- Leaving out the "template" field causes the output type to be ignored.
+				["web"] = {
+					["template"] = "Cite web",
+					["numbered-params"] = {"author"},
+					["mandatory-params"] = {"url"}
+				},
+				["q"] = {
+					["template"] = "Cite Q",
+					["raw-value-params"] = {"1"},  -- the first, unnamed parameter of CiteQ takes a QID, not the name of the item cited
+					["mandatory-params"] = {"1"}
+				}
+			}
+		}
+	}
+
+	p.getOrdinalSuffix = function(num)
+		if tostring(num):sub(-2,-2) == '1' then
+			return "th"  -- 10th, 11th, 12th, 13th, ... 19th
+		end
+
+		num = tostring(num):sub(-1)
+
+		if num == '1' then
+			return "st"
+		elseif num == '2' then
+			return "nd"
+		elseif num == '3' then
+			return "rd"
+		else
+			return "th"
+		end
+	end
+
+	p.addDelimiters = function(n)
+		local left, num, right = string.match(n, "^([^%d]*%d)(%d*)(.-)$")
+
+		if left and num and right then
+			return left .. (num:reverse():gsub("(%d%d%d)", "%1" .. p['numeric']['delimiter']):reverse()) .. right
+		else
+			return n
+		end
+	end
+
+	return p
+end
+
+return p</text>
+      <sha1>9x26xqgg01idb8drjyqhb64or1txdtn</sha1>
+    </revision>
+    <revision>
+      <id>509989</id>
+      <parentid>509988</parentid>
+      <timestamp>2025-05-04T10:12:41Z</timestamp>
+      <contributor>
+        <username>en&gt;Janhrach</username>
+        <id>0</id>
+      </contributor>
+      <comment>Undid revision [[Special:Diff/1249540561|1249540561]] by [[Special:Contributions/Janhrach|Janhrach]] ([[User talk:Janhrach|talk]])</comment>
+      <origin>509988</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="6416" sha1="9x26xqgg01idb8drjyqhb64or1txdtn" xml:space="preserve">-- The values and functions in this submodule should be localized per wiki.
+
+local p = {}
+
+function p.init(aliasesP)
+	p = {
+		["version"] = "7",  -- increment this each time the below parameters are changed to avoid reference conflict errors
+		["errors"] = {
+			["unknown-data-type"]          = "Unknown or unsupported datatype '%s'.",
+			["missing-required-parameter"] = "No required parameters defined, needing at least one",
+			["extra-required-parameter"]   = "Parameter '%s' must be defined as optional",
+			["no-function-specified"]      = "You must specify a function to call",  -- equal to the standard module error message
+			["main-called-twice"]          = 'The function "main" cannot be called twice',
+			["no-such-function"]           = 'The function "%s" does not exist',  -- equal to the standard module error message
+            ["no-such-reference-template"] = 'Error: template "%s", which is set in %s as the output template for the citation-output type "%s", does not exist',
+            -- Parts of the error message signalling a malformed reference.
+            ["malformed-reference-header"] = "&lt;span style=\"color:#dd3333\"&gt;\nError: Unable to display the reference from Wikidata properly. Technical details:\n",
+            ["malformed-reference-footer"] = "See [[Module:wd/doc#References|the documentation]] for further details.\n&lt;/span&gt;\n[[Category:Module:Wd reference errors]]",
+            ["template-failure-reason"]    = "* Reason for the failure of {{tl|%s}}: %s\n",
+            ["missing-mandatory-param"]    = 'The output template call would miss the mandatory parameter &lt;code&gt;%s&lt;/code&gt;.',
+            ["unknown-property-in-ref"]    = 'The Wikidata reference contains the property {{property|%s}}, which is not assigned to any parameter of this template.'
+		},
+		["info"] = {
+			["edit-on-wikidata"] = "Edit this on Wikidata"
+		},
+		["numeric"] = {
+			["decimal-mark"] = ".",
+			["delimiter"]    = ","
+		},
+		["datetime"] = {
+			["prefixes"] = {
+				["decade-period"] = ""
+			},
+			["suffixes"] = {
+				["decade-period"] = "s",
+				["millennium"]    = " millennium",
+				["century"]       = " century",
+				["million-years"] = " million years",
+				["billion-years"] = " billion years",
+				["year"]          = " year",
+				["years"]         = " years"
+			},
+			["julian-calendar"] = "Julian calendar",  -- linked page title
+			["julian"]          = "Julian",
+			["BCE"]             = "BCE",
+			["CE"]              = "CE",
+			["common-era"]      = "Common Era"  -- linked page title
+		},
+		["coord"] = {
+			["latitude-north"] = "N",
+			["latitude-south"] = "S",
+			["longitude-east"] = "E",
+			["longitude-west"] = "W",
+			["degrees"]        = "°",
+			["minutes"]        = "'",
+			["seconds"]        = '"',
+			["separator"]      = ", "
+		},
+		["values"] = {
+			["unknown"] = "unknown",
+			["none"]    = "none"
+		},
+		["cite"] = {
+			["output-types"] = {"web", "q"},  -- In this order, the output types will be tried
+			["param-mapping"] = {
+				["web"] = {
+					-- &lt;= left side: all allowed reference properties for *web page sources* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite web]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "website",
+					[aliasesP.referenceURL]            = "url",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.retrieved]               = "access-date",
+					[aliasesP.title]                   = "title",
+					[aliasesP.archiveURL]              = "archive-url",
+					[aliasesP.archiveDate]             = "archive-date",
+					[aliasesP.language]                = "language",
+					[aliasesP.author]                  = "author",
+					[aliasesP.authorNameString]        = "author",
+					[aliasesP.publisher]               = "publisher",
+					[aliasesP.quote]                   = "quote",
+					[aliasesP.pages]                   = "pages",  -- extra option
+					[aliasesP.publishedIn]             = "website",
+					[aliasesP.sectionVerseOrParagraph] = "at"
+				},
+				["q"] = {
+					-- &lt;= left side: all allowed reference properties for *sources other than web pages* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite Q]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "1",
+					[aliasesP.pages]                   = "pages",
+					[aliasesP.column]                  = "at",
+					[aliasesP.chapter]                 = "chapter",
+					[aliasesP.sectionVerseOrParagraph] = "section",
+					["external-id"]                    = "id",  -- used for any type of database property ID
+					[aliasesP.title]                   = "title",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.retrieved]               = "access-date"
+				}
+			},
+			["config"] = {
+				-- supported fields:
+				--     - template: name of the template used for output
+				--     - numbered-params: citation params accepting an arbitrary number of values by numbering the params (e.g. author1, author2)
+				--     - raw-value-params: params taking a raw value (which means the property is rendered with getValue with raw=true)
+				--     - mandatory-params: params that are required be in the template call (after potentially appending numbers to params listed in numbered-params)
+				-- Leaving out the "template" field causes the output type to be ignored.
+				["web"] = {
+					["template"] = "Cite web",
+					["numbered-params"] = {"author"},
+					["mandatory-params"] = {"url"}
+				},
+				["q"] = {
+					["template"] = "Cite Q",
+					["raw-value-params"] = {"1"},  -- the first, unnamed parameter of CiteQ takes a QID, not the name of the item cited
+					["mandatory-params"] = {"1"}
+				}
+			}
+		}
+	}
+
+	p.getOrdinalSuffix = function(num)
+		if tostring(num):sub(-2,-2) == '1' then
+			return "th"  -- 10th, 11th, 12th, 13th, ... 19th
+		end
+
+		num = tostring(num):sub(-1)
+
+		if num == '1' then
+			return "st"
+		elseif num == '2' then
+			return "nd"
+		elseif num == '3' then
+			return "rd"
+		else
+			return "th"
+		end
+	end
+
+	p.addDelimiters = function(n)
+		local left, num, right = string.match(n, "^([^%d]*%d)(%d*)(.-)$")
+
+		if left and num and right then
+			return left .. (num:reverse():gsub("(%d%d%d)", "%1" .. p['numeric']['delimiter']):reverse()) .. right
+		else
+			return n
+		end
+	end
+
+	return p
+end
+
+return p</text>
+      <sha1>9x26xqgg01idb8drjyqhb64or1txdtn</sha1>
+    </revision>
+    <revision>
+      <id>509991</id>
+      <parentid>509989</parentid>
+      <timestamp>2025-06-09T22:17:56Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:Wd/i18n]]</comment>
+      <origin>509988</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="6416" sha1="9x26xqgg01idb8drjyqhb64or1txdtn" xml:space="preserve">-- The values and functions in this submodule should be localized per wiki.
+
+local p = {}
+
+function p.init(aliasesP)
+	p = {
+		["version"] = "7",  -- increment this each time the below parameters are changed to avoid reference conflict errors
+		["errors"] = {
+			["unknown-data-type"]          = "Unknown or unsupported datatype '%s'.",
+			["missing-required-parameter"] = "No required parameters defined, needing at least one",
+			["extra-required-parameter"]   = "Parameter '%s' must be defined as optional",
+			["no-function-specified"]      = "You must specify a function to call",  -- equal to the standard module error message
+			["main-called-twice"]          = 'The function "main" cannot be called twice',
+			["no-such-function"]           = 'The function "%s" does not exist',  -- equal to the standard module error message
+            ["no-such-reference-template"] = 'Error: template "%s", which is set in %s as the output template for the citation-output type "%s", does not exist',
+            -- Parts of the error message signalling a malformed reference.
+            ["malformed-reference-header"] = "&lt;span style=\"color:#dd3333\"&gt;\nError: Unable to display the reference from Wikidata properly. Technical details:\n",
+            ["malformed-reference-footer"] = "See [[Module:wd/doc#References|the documentation]] for further details.\n&lt;/span&gt;\n[[Category:Module:Wd reference errors]]",
+            ["template-failure-reason"]    = "* Reason for the failure of {{tl|%s}}: %s\n",
+            ["missing-mandatory-param"]    = 'The output template call would miss the mandatory parameter &lt;code&gt;%s&lt;/code&gt;.',
+            ["unknown-property-in-ref"]    = 'The Wikidata reference contains the property {{property|%s}}, which is not assigned to any parameter of this template.'
+		},
+		["info"] = {
+			["edit-on-wikidata"] = "Edit this on Wikidata"
+		},
+		["numeric"] = {
+			["decimal-mark"] = ".",
+			["delimiter"]    = ","
+		},
+		["datetime"] = {
+			["prefixes"] = {
+				["decade-period"] = ""
+			},
+			["suffixes"] = {
+				["decade-period"] = "s",
+				["millennium"]    = " millennium",
+				["century"]       = " century",
+				["million-years"] = " million years",
+				["billion-years"] = " billion years",
+				["year"]          = " year",
+				["years"]         = " years"
+			},
+			["julian-calendar"] = "Julian calendar",  -- linked page title
+			["julian"]          = "Julian",
+			["BCE"]             = "BCE",
+			["CE"]              = "CE",
+			["common-era"]      = "Common Era"  -- linked page title
+		},
+		["coord"] = {
+			["latitude-north"] = "N",
+			["latitude-south"] = "S",
+			["longitude-east"] = "E",
+			["longitude-west"] = "W",
+			["degrees"]        = "°",
+			["minutes"]        = "'",
+			["seconds"]        = '"',
+			["separator"]      = ", "
+		},
+		["values"] = {
+			["unknown"] = "unknown",
+			["none"]    = "none"
+		},
+		["cite"] = {
+			["output-types"] = {"web", "q"},  -- In this order, the output types will be tried
+			["param-mapping"] = {
+				["web"] = {
+					-- &lt;= left side: all allowed reference properties for *web page sources* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite web]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "website",
+					[aliasesP.referenceURL]            = "url",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.retrieved]               = "access-date",
+					[aliasesP.title]                   = "title",
+					[aliasesP.archiveURL]              = "archive-url",
+					[aliasesP.archiveDate]             = "archive-date",
+					[aliasesP.language]                = "language",
+					[aliasesP.author]                  = "author",
+					[aliasesP.authorNameString]        = "author",
+					[aliasesP.publisher]               = "publisher",
+					[aliasesP.quote]                   = "quote",
+					[aliasesP.pages]                   = "pages",  -- extra option
+					[aliasesP.publishedIn]             = "website",
+					[aliasesP.sectionVerseOrParagraph] = "at"
+				},
+				["q"] = {
+					-- &lt;= left side: all allowed reference properties for *sources other than web pages* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite Q]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "1",
+					[aliasesP.pages]                   = "pages",
+					[aliasesP.column]                  = "at",
+					[aliasesP.chapter]                 = "chapter",
+					[aliasesP.sectionVerseOrParagraph] = "section",
+					["external-id"]                    = "id",  -- used for any type of database property ID
+					[aliasesP.title]                   = "title",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.retrieved]               = "access-date"
+				}
+			},
+			["config"] = {
+				-- supported fields:
+				--     - template: name of the template used for output
+				--     - numbered-params: citation params accepting an arbitrary number of values by numbering the params (e.g. author1, author2)
+				--     - raw-value-params: params taking a raw value (which means the property is rendered with getValue with raw=true)
+				--     - mandatory-params: params that are required be in the template call (after potentially appending numbers to params listed in numbered-params)
+				-- Leaving out the "template" field causes the output type to be ignored.
+				["web"] = {
+					["template"] = "Cite web",
+					["numbered-params"] = {"author"},
+					["mandatory-params"] = {"url"}
+				},
+				["q"] = {
+					["template"] = "Cite Q",
+					["raw-value-params"] = {"1"},  -- the first, unnamed parameter of CiteQ takes a QID, not the name of the item cited
+					["mandatory-params"] = {"1"}
+				}
+			}
+		}
+	}
+
+	p.getOrdinalSuffix = function(num)
+		if tostring(num):sub(-2,-2) == '1' then
+			return "th"  -- 10th, 11th, 12th, 13th, ... 19th
+		end
+
+		num = tostring(num):sub(-1)
+
+		if num == '1' then
+			return "st"
+		elseif num == '2' then
+			return "nd"
+		elseif num == '3' then
+			return "rd"
+		else
+			return "th"
+		end
+	end
+
+	p.addDelimiters = function(n)
+		local left, num, right = string.match(n, "^([^%d]*%d)(%d*)(.-)$")
+
+		if left and num and right then
+			return left .. (num:reverse():gsub("(%d%d%d)", "%1" .. p['numeric']['delimiter']):reverse()) .. right
+		else
+			return n
+		end
+	end
+
+	return p
+end
+
+return p</text>
+      <sha1>9x26xqgg01idb8drjyqhb64or1txdtn</sha1>
+    </revision>
+    <revision>
+      <id>509992</id>
+      <parentid>509991</parentid>
+      <timestamp>2025-07-22T19:53:10Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Janhrach</username>
+        <id>0</id>
+      </contributor>
+      <comment>update from sandbox</comment>
+      <origin>509992</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7249" sha1="pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5" xml:space="preserve">-- The values and functions in this submodule should be localized per wiki.
+
+local p = {}
+
+function p.init(aliasesP)
+	p = {
+		["version"] = "8",  -- increment this each time the below parameters are changed to avoid reference conflict errors
+		["errors"] = {
+			["unknown-data-type"]          = "Unknown or unsupported datatype '%s'.",
+			["missing-required-parameter"] = "No required parameters defined, needing at least one",
+			["extra-required-parameter"]   = "Parameter '%s' must be defined as optional",
+			["no-function-specified"]      = "You must specify a function to call",  -- equal to the standard module error message
+			["main-called-twice"]          = 'The function "main" cannot be called twice',
+			["no-such-function"]           = 'The function "%s" does not exist',  -- equal to the standard module error message
+            ["no-such-reference-template"] = 'Error: template "%s", which is set in %s as the output template for the citation-output type "%s", does not exist',
+            -- Parts of the error message signalling a malformed reference.
+            ["malformed-reference-header"] = "&lt;span style=\"color:#dd3333\"&gt;\nError: Unable to display the reference from Wikidata properly. Technical details:\n",
+            ["malformed-reference-footer"] = "See [[Module:wd/doc#References|the documentation]] for further details.\n&lt;/span&gt;\n[[Category:Module:Wd reference errors]]",
+            ["template-failure-reason"]    = "* Reason for the failure of {{tl|%s}}: %s\n",
+            ["missing-mandatory-param"]    = 'The output template call would miss the mandatory parameter &lt;code&gt;%s&lt;/code&gt;.',
+            ["unknown-property-in-ref"]    = 'The Wikidata reference contains the property {{property|%s}}, which is not assigned to any parameter of this template.'
+		},
+		["info"] = {
+			["edit-on-wikidata"] = "Edit this on Wikidata"
+		},
+		["numeric"] = {
+			["decimal-mark"] = ".",
+			["delimiter"]    = ","
+		},
+		["datetime"] = {
+			["prefixes"] = {
+				["decade-period"] = ""
+			},
+			["suffixes"] = {
+				["decade-period"] = "s",
+				["millennium"]    = " millennium",
+				["century"]       = " century",
+				["million-years"] = " million years",
+				["billion-years"] = " billion years",
+				["year"]          = " year",
+				["years"]         = " years"
+			},
+			["julian-calendar"] = "Julian calendar",  -- linked page title
+			["julian"]          = "Julian",
+			["BCE"]             = "BCE",
+			["CE"]              = "CE",
+			["common-era"]      = "Common Era"  -- linked page title
+		},
+		["coord"] = {
+			["latitude-north"] = "N",
+			["latitude-south"] = "S",
+			["longitude-east"] = "E",
+			["longitude-west"] = "W",
+			["degrees"]        = "°",
+			["minutes"]        = "'",
+			["seconds"]        = '"',
+			["separator"]      = ", "
+		},
+		["values"] = {
+			["unknown"] = "unknown",
+			["none"]    = "none"
+		},
+		["cite"] = {
+			["output-types"] = {"web", "q"},  -- In this order, the output types will be tried
+			["param-mapping"] = {
+				["web"] = {
+					-- &lt;= left side: all allowed reference properties for *web page sources* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite web]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "website",
+					[aliasesP.referenceURL]            = "url",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date",
+					[aliasesP.title]                   = "title",
+					[aliasesP.subjectNamedAs]          = "title",
+					[aliasesP.archiveURL]              = "archive-url",
+					[aliasesP.archiveDate]             = "archive-date",
+					[aliasesP.language]                = "language",
+					[aliasesP.author]                  = "author",
+					[aliasesP.authorNameString]        = "author",
+					[aliasesP.publisher]               = "publisher",
+					[aliasesP.quote]                   = "quote",
+					[aliasesP.pages]                   = "pages",  -- extra option
+					[aliasesP.publishedIn]             = "website",
+					[aliasesP.sectionVerseOrParagraph] = "at"
+				},
+				["q"] = {
+					-- &lt;= left side: all allowed reference properties for *sources other than web pages* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite Q]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "1",
+					[aliasesP.pages]                   = "pages",
+					[aliasesP.column]                  = "at",
+					[aliasesP.chapter]                 = "chapter",
+					[aliasesP.sectionVerseOrParagraph] = "section",
+					["external-id"]                    = "id",  -- used for any type of database property ID
+					[aliasesP.title]                   = "title",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date"
+				}
+			},
+			["config"] = {
+				-- supported fields:
+				--     - template: name of the template used for output
+				--     - numbered-params: citation params accepting an arbitrary number of values by numbering the params (e.g. author1, author2)
+				--     - raw-value-params: params taking a raw value (which means the property is rendered with getValue with raw=true)
+				--     - mandatory-params: params that are required be in the template call (after potentially appending numbers to params listed in numbered-params)
+				--     - prioritization: table associating a list of properties, in the order in which they are preferred, to template parameters;
+				--                       properties not mentioned here have the lowest priority;
+				--                       prioritization of properties handled through additionalProcessedProperties is unsupported;
+				--                       no key of this table can be from numbered-params 
+				-- Leaving out the "template" field causes the output type to be ignored.
+				["web"] = {
+					["template"] = "Cite web",
+					["numbered-params"] = {"author"},
+					["mandatory-params"] = {"url"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate},
+						["title"] = {aliasesP.title, aliasesP.subjectNamedAs}
+					}
+				},
+				["q"] = {
+					["template"] = "Cite Q",
+					["raw-value-params"] = {"1"},  -- the first, unnamed parameter of CiteQ takes a QID, not the name of the item cited
+					["mandatory-params"] = {"1"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate}
+					}
+				}
+			}
+		}
+	}
+
+	p.getOrdinalSuffix = function(num)
+		if tostring(num):sub(-2,-2) == '1' then
+			return "th"  -- 10th, 11th, 12th, 13th, ... 19th
+		end
+
+		num = tostring(num):sub(-1)
+
+		if num == '1' then
+			return "st"
+		elseif num == '2' then
+			return "nd"
+		elseif num == '3' then
+			return "rd"
+		else
+			return "th"
+		end
+	end
+
+	p.addDelimiters = function(n)
+		local left, num, right = string.match(n, "^([^%d]*%d)(%d*)(.-)$")
+
+		if left and num and right then
+			return left .. (num:reverse():gsub("(%d%d%d)", "%1" .. p['numeric']['delimiter']):reverse()) .. right
+		else
+			return n
+		end
+	end
+
+	return p
+end
+
+return p</text>
+      <sha1>pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5</sha1>
+    </revision>
+    <revision>
+      <id>571</id>
+      <timestamp>2025-11-04T01:31:34Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported from [[:wikipedia:Module:Wd/i18n]]</comment>
+      <origin>571</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7249" sha1="pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5" xml:space="preserve">-- The values and functions in this submodule should be localized per wiki.
+
+local p = {}
+
+function p.init(aliasesP)
+	p = {
+		["version"] = "8",  -- increment this each time the below parameters are changed to avoid reference conflict errors
+		["errors"] = {
+			["unknown-data-type"]          = "Unknown or unsupported datatype '%s'.",
+			["missing-required-parameter"] = "No required parameters defined, needing at least one",
+			["extra-required-parameter"]   = "Parameter '%s' must be defined as optional",
+			["no-function-specified"]      = "You must specify a function to call",  -- equal to the standard module error message
+			["main-called-twice"]          = 'The function "main" cannot be called twice',
+			["no-such-function"]           = 'The function "%s" does not exist',  -- equal to the standard module error message
+            ["no-such-reference-template"] = 'Error: template "%s", which is set in %s as the output template for the citation-output type "%s", does not exist',
+            -- Parts of the error message signalling a malformed reference.
+            ["malformed-reference-header"] = "&lt;span style=\"color:#dd3333\"&gt;\nError: Unable to display the reference from Wikidata properly. Technical details:\n",
+            ["malformed-reference-footer"] = "See [[Module:wd/doc#References|the documentation]] for further details.\n&lt;/span&gt;\n[[Category:Module:Wd reference errors]]",
+            ["template-failure-reason"]    = "* Reason for the failure of {{tl|%s}}: %s\n",
+            ["missing-mandatory-param"]    = 'The output template call would miss the mandatory parameter &lt;code&gt;%s&lt;/code&gt;.',
+            ["unknown-property-in-ref"]    = 'The Wikidata reference contains the property {{property|%s}}, which is not assigned to any parameter of this template.'
+		},
+		["info"] = {
+			["edit-on-wikidata"] = "Edit this on Wikidata"
+		},
+		["numeric"] = {
+			["decimal-mark"] = ".",
+			["delimiter"]    = ","
+		},
+		["datetime"] = {
+			["prefixes"] = {
+				["decade-period"] = ""
+			},
+			["suffixes"] = {
+				["decade-period"] = "s",
+				["millennium"]    = " millennium",
+				["century"]       = " century",
+				["million-years"] = " million years",
+				["billion-years"] = " billion years",
+				["year"]          = " year",
+				["years"]         = " years"
+			},
+			["julian-calendar"] = "Julian calendar",  -- linked page title
+			["julian"]          = "Julian",
+			["BCE"]             = "BCE",
+			["CE"]              = "CE",
+			["common-era"]      = "Common Era"  -- linked page title
+		},
+		["coord"] = {
+			["latitude-north"] = "N",
+			["latitude-south"] = "S",
+			["longitude-east"] = "E",
+			["longitude-west"] = "W",
+			["degrees"]        = "°",
+			["minutes"]        = "'",
+			["seconds"]        = '"',
+			["separator"]      = ", "
+		},
+		["values"] = {
+			["unknown"] = "unknown",
+			["none"]    = "none"
+		},
+		["cite"] = {
+			["output-types"] = {"web", "q"},  -- In this order, the output types will be tried
+			["param-mapping"] = {
+				["web"] = {
+					-- &lt;= left side: all allowed reference properties for *web page sources* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite web]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "website",
+					[aliasesP.referenceURL]            = "url",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date",
+					[aliasesP.title]                   = "title",
+					[aliasesP.subjectNamedAs]          = "title",
+					[aliasesP.archiveURL]              = "archive-url",
+					[aliasesP.archiveDate]             = "archive-date",
+					[aliasesP.language]                = "language",
+					[aliasesP.author]                  = "author",
+					[aliasesP.authorNameString]        = "author",
+					[aliasesP.publisher]               = "publisher",
+					[aliasesP.quote]                   = "quote",
+					[aliasesP.pages]                   = "pages",  -- extra option
+					[aliasesP.publishedIn]             = "website",
+					[aliasesP.sectionVerseOrParagraph] = "at"
+				},
+				["q"] = {
+					-- &lt;= left side: all allowed reference properties for *sources other than web pages* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite Q]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "1",
+					[aliasesP.pages]                   = "pages",
+					[aliasesP.column]                  = "at",
+					[aliasesP.chapter]                 = "chapter",
+					[aliasesP.sectionVerseOrParagraph] = "section",
+					["external-id"]                    = "id",  -- used for any type of database property ID
+					[aliasesP.title]                   = "title",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date"
+				}
+			},
+			["config"] = {
+				-- supported fields:
+				--     - template: name of the template used for output
+				--     - numbered-params: citation params accepting an arbitrary number of values by numbering the params (e.g. author1, author2)
+				--     - raw-value-params: params taking a raw value (which means the property is rendered with getValue with raw=true)
+				--     - mandatory-params: params that are required be in the template call (after potentially appending numbers to params listed in numbered-params)
+				--     - prioritization: table associating a list of properties, in the order in which they are preferred, to template parameters;
+				--                       properties not mentioned here have the lowest priority;
+				--                       prioritization of properties handled through additionalProcessedProperties is unsupported;
+				--                       no key of this table can be from numbered-params 
+				-- Leaving out the "template" field causes the output type to be ignored.
+				["web"] = {
+					["template"] = "Cite web",
+					["numbered-params"] = {"author"},
+					["mandatory-params"] = {"url"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate},
+						["title"] = {aliasesP.title, aliasesP.subjectNamedAs}
+					}
+				},
+				["q"] = {
+					["template"] = "Cite Q",
+					["raw-value-params"] = {"1"},  -- the first, unnamed parameter of CiteQ takes a QID, not the name of the item cited
+					["mandatory-params"] = {"1"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate}
+					}
+				}
+			}
+		}
+	}
+
+	p.getOrdinalSuffix = function(num)
+		if tostring(num):sub(-2,-2) == '1' then
+			return "th"  -- 10th, 11th, 12th, 13th, ... 19th
+		end
+
+		num = tostring(num):sub(-1)
+
+		if num == '1' then
+			return "st"
+		elseif num == '2' then
+			return "nd"
+		elseif num == '3' then
+			return "rd"
+		else
+			return "th"
+		end
+	end
+
+	p.addDelimiters = function(n)
+		local left, num, right = string.match(n, "^([^%d]*%d)(%d*)(.-)$")
+
+		if left and num and right then
+			return left .. (num:reverse():gsub("(%d%d%d)", "%1" .. p['numeric']['delimiter']):reverse()) .. right
+		else
+			return n
+		end
+	end
+
+	return p
+end
+
+return p</text>
+      <sha1>pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5</sha1>
+    </revision>
+    <revision>
+      <id>219225</id>
+      <parentid>571</parentid>
+      <timestamp>2026-02-16T18:53:56Z</timestamp>
+      <contributor>
+        <username>en&gt;Janhrach</username>
+        <id>0</id>
+      </contributor>
+      <comment>update from sandbox</comment>
+      <origin>571</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7249" sha1="pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5" xml:space="preserve">-- The values and functions in this submodule should be localized per wiki.
+
+local p = {}
+
+function p.init(aliasesP)
+	p = {
+		["version"] = "8",  -- increment this each time the below parameters are changed to avoid reference conflict errors
+		["errors"] = {
+			["unknown-data-type"]          = "Unknown or unsupported datatype '%s'.",
+			["missing-required-parameter"] = "No required parameters defined, needing at least one",
+			["extra-required-parameter"]   = "Parameter '%s' must be defined as optional",
+			["no-function-specified"]      = "You must specify a function to call",  -- equal to the standard module error message
+			["main-called-twice"]          = 'The function "main" cannot be called twice',
+			["no-such-function"]           = 'The function "%s" does not exist',  -- equal to the standard module error message
+            ["no-such-reference-template"] = 'Error: template "%s", which is set in %s as the output template for the citation-output type "%s", does not exist',
+            -- Parts of the error message signalling a malformed reference.
+            ["malformed-reference-header"] = "&lt;span style=\"color:#dd3333\"&gt;\nError: Unable to display the reference from Wikidata properly. Technical details:\n",
+            ["malformed-reference-footer"] = "See [[Module:wd/doc#References|the documentation]] for further details.\n&lt;/span&gt;\n[[Category:Module:Wd reference errors]]",
+            ["template-failure-reason"]    = "* Reason for the failure of {{tl|%s}}: %s\n",
+            ["missing-mandatory-param"]    = 'The output template call would miss the mandatory parameter &lt;code&gt;%s&lt;/code&gt;.',
+            ["unknown-property-in-ref"]    = 'The Wikidata reference contains the property {{property|%s}}, which is not assigned to any parameter of this template.'
+		},
+		["info"] = {
+			["edit-on-wikidata"] = "Edit this on Wikidata"
+		},
+		["numeric"] = {
+			["decimal-mark"] = ".",
+			["delimiter"]    = ","
+		},
+		["datetime"] = {
+			["prefixes"] = {
+				["decade-period"] = ""
+			},
+			["suffixes"] = {
+				["decade-period"] = "s",
+				["millennium"]    = " millennium",
+				["century"]       = " century",
+				["million-years"] = " million years",
+				["billion-years"] = " billion years",
+				["year"]          = " year",
+				["years"]         = " years"
+			},
+			["julian-calendar"] = "Julian calendar",  -- linked page title
+			["julian"]          = "Julian",
+			["BCE"]             = "BCE",
+			["CE"]              = "CE",
+			["common-era"]      = "Common Era"  -- linked page title
+		},
+		["coord"] = {
+			["latitude-north"] = "N",
+			["latitude-south"] = "S",
+			["longitude-east"] = "E",
+			["longitude-west"] = "W",
+			["degrees"]        = "°",
+			["minutes"]        = "'",
+			["seconds"]        = '"',
+			["separator"]      = ", "
+		},
+		["values"] = {
+			["unknown"] = "unknown",
+			["none"]    = "none"
+		},
+		["cite"] = {
+			["output-types"] = {"web", "q"},  -- In this order, the output types will be tried
+			["param-mapping"] = {
+				["web"] = {
+					-- &lt;= left side: all allowed reference properties for *web page sources* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite web]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "website",
+					[aliasesP.referenceURL]            = "url",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date",
+					[aliasesP.title]                   = "title",
+					[aliasesP.subjectNamedAs]          = "title",
+					[aliasesP.archiveURL]              = "archive-url",
+					[aliasesP.archiveDate]             = "archive-date",
+					[aliasesP.language]                = "language",
+					[aliasesP.author]                  = "author",
+					[aliasesP.authorNameString]        = "author",
+					[aliasesP.publisher]               = "publisher",
+					[aliasesP.quote]                   = "quote",
+					[aliasesP.pages]                   = "pages",  -- extra option
+					[aliasesP.publishedIn]             = "website",
+					[aliasesP.sectionVerseOrParagraph] = "at"
+				},
+				["q"] = {
+					-- &lt;= left side: all allowed reference properties for *sources other than web pages* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite Q]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "1",
+					[aliasesP.pages]                   = "pages",
+					[aliasesP.column]                  = "at",
+					[aliasesP.chapter]                 = "chapter",
+					[aliasesP.sectionVerseOrParagraph] = "section",
+					["external-id"]                    = "id",  -- used for any type of database property ID
+					[aliasesP.title]                   = "title",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date"
+				}
+			},
+			["config"] = {
+				-- supported fields:
+				--     - template: name of the template used for output
+				--     - numbered-params: citation params accepting an arbitrary number of values by numbering the params (e.g. author1, author2)
+				--     - raw-value-params: params taking a raw value (which means the property is rendered with getValue with raw=true)
+				--     - mandatory-params: params that are required be in the template call (after potentially appending numbers to params listed in numbered-params)
+				--     - prioritization: table associating a list of properties, in the order in which they are preferred, to template parameters;
+				--                       properties not mentioned here have the lowest priority;
+				--                       prioritization of properties handled through additionalProcessedProperties is unsupported;
+				--                       no key of this table can be from numbered-params 
+				-- Leaving out the "template" field causes the output type to be ignored.
+				["web"] = {
+					["template"] = "Cite web",
+					["numbered-params"] = {"author"},
+					["mandatory-params"] = {"url"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate},
+						["title"] = {aliasesP.title, aliasesP.subjectNamedAs}
+					}
+				},
+				["q"] = {
+					["template"] = "Cite Q",
+					["raw-value-params"] = {"1"},  -- the first, unnamed parameter of CiteQ takes a QID, not the name of the item cited
+					["mandatory-params"] = {"1"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate}
+					}
+				}
+			}
+		}
+	}
+
+	p.getOrdinalSuffix = function(num)
+		if tostring(num):sub(-2,-2) == '1' then
+			return "th"  -- 10th, 11th, 12th, 13th, ... 19th
+		end
+
+		num = tostring(num):sub(-1)
+
+		if num == '1' then
+			return "st"
+		elseif num == '2' then
+			return "nd"
+		elseif num == '3' then
+			return "rd"
+		else
+			return "th"
+		end
+	end
+
+	p.addDelimiters = function(n)
+		local left, num, right = string.match(n, "^([^%d]*%d)(%d*)(.-)$")
+
+		if left and num and right then
+			return left .. (num:reverse():gsub("(%d%d%d)", "%1" .. p['numeric']['delimiter']):reverse()) .. right
+		else
+			return n
+		end
+	end
+
+	return p
+end
+
+return p</text>
+      <sha1>pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5</sha1>
+    </revision>
+    <revision>
+      <id>219226</id>
+      <parentid>219225</parentid>
+      <timestamp>2026-02-16T18:53:56Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting this template since it seems broken in how it treats unknown parameters in [[Category:Wikidata generated shikinaisha pages]]</comment>
+      <origin>571</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7249" sha1="pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5" xml:space="preserve">-- The values and functions in this submodule should be localized per wiki.
+
+local p = {}
+
+function p.init(aliasesP)
+	p = {
+		["version"] = "8",  -- increment this each time the below parameters are changed to avoid reference conflict errors
+		["errors"] = {
+			["unknown-data-type"]          = "Unknown or unsupported datatype '%s'.",
+			["missing-required-parameter"] = "No required parameters defined, needing at least one",
+			["extra-required-parameter"]   = "Parameter '%s' must be defined as optional",
+			["no-function-specified"]      = "You must specify a function to call",  -- equal to the standard module error message
+			["main-called-twice"]          = 'The function "main" cannot be called twice',
+			["no-such-function"]           = 'The function "%s" does not exist',  -- equal to the standard module error message
+            ["no-such-reference-template"] = 'Error: template "%s", which is set in %s as the output template for the citation-output type "%s", does not exist',
+            -- Parts of the error message signalling a malformed reference.
+            ["malformed-reference-header"] = "&lt;span style=\"color:#dd3333\"&gt;\nError: Unable to display the reference from Wikidata properly. Technical details:\n",
+            ["malformed-reference-footer"] = "See [[Module:wd/doc#References|the documentation]] for further details.\n&lt;/span&gt;\n[[Category:Module:Wd reference errors]]",
+            ["template-failure-reason"]    = "* Reason for the failure of {{tl|%s}}: %s\n",
+            ["missing-mandatory-param"]    = 'The output template call would miss the mandatory parameter &lt;code&gt;%s&lt;/code&gt;.',
+            ["unknown-property-in-ref"]    = 'The Wikidata reference contains the property {{property|%s}}, which is not assigned to any parameter of this template.'
+		},
+		["info"] = {
+			["edit-on-wikidata"] = "Edit this on Wikidata"
+		},
+		["numeric"] = {
+			["decimal-mark"] = ".",
+			["delimiter"]    = ","
+		},
+		["datetime"] = {
+			["prefixes"] = {
+				["decade-period"] = ""
+			},
+			["suffixes"] = {
+				["decade-period"] = "s",
+				["millennium"]    = " millennium",
+				["century"]       = " century",
+				["million-years"] = " million years",
+				["billion-years"] = " billion years",
+				["year"]          = " year",
+				["years"]         = " years"
+			},
+			["julian-calendar"] = "Julian calendar",  -- linked page title
+			["julian"]          = "Julian",
+			["BCE"]             = "BCE",
+			["CE"]              = "CE",
+			["common-era"]      = "Common Era"  -- linked page title
+		},
+		["coord"] = {
+			["latitude-north"] = "N",
+			["latitude-south"] = "S",
+			["longitude-east"] = "E",
+			["longitude-west"] = "W",
+			["degrees"]        = "°",
+			["minutes"]        = "'",
+			["seconds"]        = '"',
+			["separator"]      = ", "
+		},
+		["values"] = {
+			["unknown"] = "unknown",
+			["none"]    = "none"
+		},
+		["cite"] = {
+			["output-types"] = {"web", "q"},  -- In this order, the output types will be tried
+			["param-mapping"] = {
+				["web"] = {
+					-- &lt;= left side: all allowed reference properties for *web page sources* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite web]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "website",
+					[aliasesP.referenceURL]            = "url",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date",
+					[aliasesP.title]                   = "title",
+					[aliasesP.subjectNamedAs]          = "title",
+					[aliasesP.archiveURL]              = "archive-url",
+					[aliasesP.archiveDate]             = "archive-date",
+					[aliasesP.language]                = "language",
+					[aliasesP.author]                  = "author",
+					[aliasesP.authorNameString]        = "author",
+					[aliasesP.publisher]               = "publisher",
+					[aliasesP.quote]                   = "quote",
+					[aliasesP.pages]                   = "pages",  -- extra option
+					[aliasesP.publishedIn]             = "website",
+					[aliasesP.sectionVerseOrParagraph] = "at"
+				},
+				["q"] = {
+					-- &lt;= left side: all allowed reference properties for *sources other than web pages* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite Q]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "1",
+					[aliasesP.pages]                   = "pages",
+					[aliasesP.column]                  = "at",
+					[aliasesP.chapter]                 = "chapter",
+					[aliasesP.sectionVerseOrParagraph] = "section",
+					["external-id"]                    = "id",  -- used for any type of database property ID
+					[aliasesP.title]                   = "title",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date"
+				}
+			},
+			["config"] = {
+				-- supported fields:
+				--     - template: name of the template used for output
+				--     - numbered-params: citation params accepting an arbitrary number of values by numbering the params (e.g. author1, author2)
+				--     - raw-value-params: params taking a raw value (which means the property is rendered with getValue with raw=true)
+				--     - mandatory-params: params that are required be in the template call (after potentially appending numbers to params listed in numbered-params)
+				--     - prioritization: table associating a list of properties, in the order in which they are preferred, to template parameters;
+				--                       properties not mentioned here have the lowest priority;
+				--                       prioritization of properties handled through additionalProcessedProperties is unsupported;
+				--                       no key of this table can be from numbered-params 
+				-- Leaving out the "template" field causes the output type to be ignored.
+				["web"] = {
+					["template"] = "Cite web",
+					["numbered-params"] = {"author"},
+					["mandatory-params"] = {"url"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate},
+						["title"] = {aliasesP.title, aliasesP.subjectNamedAs}
+					}
+				},
+				["q"] = {
+					["template"] = "Cite Q",
+					["raw-value-params"] = {"1"},  -- the first, unnamed parameter of CiteQ takes a QID, not the name of the item cited
+					["mandatory-params"] = {"1"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate}
+					}
+				}
+			}
+		}
+	}
+
+	p.getOrdinalSuffix = function(num)
+		if tostring(num):sub(-2,-2) == '1' then
+			return "th"  -- 10th, 11th, 12th, 13th, ... 19th
+		end
+
+		num = tostring(num):sub(-1)
+
+		if num == '1' then
+			return "st"
+		elseif num == '2' then
+			return "nd"
+		elseif num == '3' then
+			return "rd"
+		else
+			return "th"
+		end
+	end
+
+	p.addDelimiters = function(n)
+		local left, num, right = string.match(n, "^([^%d]*%d)(%d*)(.-)$")
+
+		if left and num and right then
+			return left .. (num:reverse():gsub("(%d%d%d)", "%1" .. p['numeric']['delimiter']):reverse()) .. right
+		else
+			return n
+		end
+	end
+
+	return p
+end
+
+return p</text>
+      <sha1>pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5</sha1>
+    </revision>
+    <revision>
+      <id>3368395</id>
+      <parentid>219226</parentid>
+      <timestamp>2026-03-02T18:54:59Z</timestamp>
+      <contributor>
+        <username>en&gt;Janhrach</username>
+        <id>0</id>
+      </contributor>
+      <comment>update from sandbox</comment>
+      <origin>571</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7249" sha1="pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5" xml:space="preserve">-- The values and functions in this submodule should be localized per wiki.
+
+local p = {}
+
+function p.init(aliasesP)
+	p = {
+		["version"] = "8",  -- increment this each time the below parameters are changed to avoid reference conflict errors
+		["errors"] = {
+			["unknown-data-type"]          = "Unknown or unsupported datatype '%s'.",
+			["missing-required-parameter"] = "No required parameters defined, needing at least one",
+			["extra-required-parameter"]   = "Parameter '%s' must be defined as optional",
+			["no-function-specified"]      = "You must specify a function to call",  -- equal to the standard module error message
+			["main-called-twice"]          = 'The function "main" cannot be called twice',
+			["no-such-function"]           = 'The function "%s" does not exist',  -- equal to the standard module error message
+            ["no-such-reference-template"] = 'Error: template "%s", which is set in %s as the output template for the citation-output type "%s", does not exist',
+            -- Parts of the error message signalling a malformed reference.
+            ["malformed-reference-header"] = "&lt;span style=\"color:#dd3333\"&gt;\nError: Unable to display the reference from Wikidata properly. Technical details:\n",
+            ["malformed-reference-footer"] = "See [[Module:wd/doc#References|the documentation]] for further details.\n&lt;/span&gt;\n[[Category:Module:Wd reference errors]]",
+            ["template-failure-reason"]    = "* Reason for the failure of {{tl|%s}}: %s\n",
+            ["missing-mandatory-param"]    = 'The output template call would miss the mandatory parameter &lt;code&gt;%s&lt;/code&gt;.',
+            ["unknown-property-in-ref"]    = 'The Wikidata reference contains the property {{property|%s}}, which is not assigned to any parameter of this template.'
+		},
+		["info"] = {
+			["edit-on-wikidata"] = "Edit this on Wikidata"
+		},
+		["numeric"] = {
+			["decimal-mark"] = ".",
+			["delimiter"]    = ","
+		},
+		["datetime"] = {
+			["prefixes"] = {
+				["decade-period"] = ""
+			},
+			["suffixes"] = {
+				["decade-period"] = "s",
+				["millennium"]    = " millennium",
+				["century"]       = " century",
+				["million-years"] = " million years",
+				["billion-years"] = " billion years",
+				["year"]          = " year",
+				["years"]         = " years"
+			},
+			["julian-calendar"] = "Julian calendar",  -- linked page title
+			["julian"]          = "Julian",
+			["BCE"]             = "BCE",
+			["CE"]              = "CE",
+			["common-era"]      = "Common Era"  -- linked page title
+		},
+		["coord"] = {
+			["latitude-north"] = "N",
+			["latitude-south"] = "S",
+			["longitude-east"] = "E",
+			["longitude-west"] = "W",
+			["degrees"]        = "°",
+			["minutes"]        = "'",
+			["seconds"]        = '"',
+			["separator"]      = ", "
+		},
+		["values"] = {
+			["unknown"] = "unknown",
+			["none"]    = "none"
+		},
+		["cite"] = {
+			["output-types"] = {"web", "q"},  -- In this order, the output types will be tried
+			["param-mapping"] = {
+				["web"] = {
+					-- &lt;= left side: all allowed reference properties for *web page sources* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite web]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "website",
+					[aliasesP.referenceURL]            = "url",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date",
+					[aliasesP.title]                   = "title",
+					[aliasesP.subjectNamedAs]          = "title",
+					[aliasesP.archiveURL]              = "archive-url",
+					[aliasesP.archiveDate]             = "archive-date",
+					[aliasesP.language]                = "language",
+					[aliasesP.author]                  = "author",
+					[aliasesP.authorNameString]        = "author",
+					[aliasesP.publisher]               = "publisher",
+					[aliasesP.quote]                   = "quote",
+					[aliasesP.pages]                   = "pages",  -- extra option
+					[aliasesP.publishedIn]             = "website",
+					[aliasesP.sectionVerseOrParagraph] = "at"
+				},
+				["q"] = {
+					-- &lt;= left side: all allowed reference properties for *sources other than web pages* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite Q]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "1",
+					[aliasesP.pages]                   = "pages",
+					[aliasesP.column]                  = "at",
+					[aliasesP.chapter]                 = "chapter",
+					[aliasesP.sectionVerseOrParagraph] = "section",
+					["external-id"]                    = "id",  -- used for any type of database property ID
+					[aliasesP.title]                   = "title",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date"
+				}
+			},
+			["config"] = {
+				-- supported fields:
+				--     - template: name of the template used for output
+				--     - numbered-params: citation params accepting an arbitrary number of values by numbering the params (e.g. author1, author2)
+				--     - raw-value-params: params taking a raw value (which means the property is rendered with getValue with raw=true)
+				--     - mandatory-params: params that are required be in the template call (after potentially appending numbers to params listed in numbered-params)
+				--     - prioritization: table associating a list of properties, in the order in which they are preferred, to template parameters;
+				--                       properties not mentioned here have the lowest priority;
+				--                       prioritization of properties handled through additionalProcessedProperties is unsupported;
+				--                       no key of this table can be from numbered-params 
+				-- Leaving out the "template" field causes the output type to be ignored.
+				["web"] = {
+					["template"] = "Cite web",
+					["numbered-params"] = {"author"},
+					["mandatory-params"] = {"url"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate},
+						["title"] = {aliasesP.title, aliasesP.subjectNamedAs}
+					}
+				},
+				["q"] = {
+					["template"] = "Cite Q",
+					["raw-value-params"] = {"1"},  -- the first, unnamed parameter of CiteQ takes a QID, not the name of the item cited
+					["mandatory-params"] = {"1"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate}
+					}
+				}
+			}
+		}
+	}
+
+	p.getOrdinalSuffix = function(num)
+		if tostring(num):sub(-2,-2) == '1' then
+			return "th"  -- 10th, 11th, 12th, 13th, ... 19th
+		end
+
+		num = tostring(num):sub(-1)
+
+		if num == '1' then
+			return "st"
+		elseif num == '2' then
+			return "nd"
+		elseif num == '3' then
+			return "rd"
+		else
+			return "th"
+		end
+	end
+
+	p.addDelimiters = function(n)
+		local left, num, right = string.match(n, "^([^%d]*%d)(%d*)(.-)$")
+
+		if left and num and right then
+			return left .. (num:reverse():gsub("(%d%d%d)", "%1" .. p['numeric']['delimiter']):reverse()) .. right
+		else
+			return n
+		end
+	end
+
+	return p
+end
+
+return p</text>
+      <sha1>pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5</sha1>
+    </revision>
+    <revision>
+      <id>3368396</id>
+      <parentid>3368395</parentid>
+      <timestamp>2026-03-02T18:54:59Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>571</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7249" sha1="pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5" xml:space="preserve">-- The values and functions in this submodule should be localized per wiki.
+
+local p = {}
+
+function p.init(aliasesP)
+	p = {
+		["version"] = "8",  -- increment this each time the below parameters are changed to avoid reference conflict errors
+		["errors"] = {
+			["unknown-data-type"]          = "Unknown or unsupported datatype '%s'.",
+			["missing-required-parameter"] = "No required parameters defined, needing at least one",
+			["extra-required-parameter"]   = "Parameter '%s' must be defined as optional",
+			["no-function-specified"]      = "You must specify a function to call",  -- equal to the standard module error message
+			["main-called-twice"]          = 'The function "main" cannot be called twice',
+			["no-such-function"]           = 'The function "%s" does not exist',  -- equal to the standard module error message
+            ["no-such-reference-template"] = 'Error: template "%s", which is set in %s as the output template for the citation-output type "%s", does not exist',
+            -- Parts of the error message signalling a malformed reference.
+            ["malformed-reference-header"] = "&lt;span style=\"color:#dd3333\"&gt;\nError: Unable to display the reference from Wikidata properly. Technical details:\n",
+            ["malformed-reference-footer"] = "See [[Module:wd/doc#References|the documentation]] for further details.\n&lt;/span&gt;\n[[Category:Module:Wd reference errors]]",
+            ["template-failure-reason"]    = "* Reason for the failure of {{tl|%s}}: %s\n",
+            ["missing-mandatory-param"]    = 'The output template call would miss the mandatory parameter &lt;code&gt;%s&lt;/code&gt;.',
+            ["unknown-property-in-ref"]    = 'The Wikidata reference contains the property {{property|%s}}, which is not assigned to any parameter of this template.'
+		},
+		["info"] = {
+			["edit-on-wikidata"] = "Edit this on Wikidata"
+		},
+		["numeric"] = {
+			["decimal-mark"] = ".",
+			["delimiter"]    = ","
+		},
+		["datetime"] = {
+			["prefixes"] = {
+				["decade-period"] = ""
+			},
+			["suffixes"] = {
+				["decade-period"] = "s",
+				["millennium"]    = " millennium",
+				["century"]       = " century",
+				["million-years"] = " million years",
+				["billion-years"] = " billion years",
+				["year"]          = " year",
+				["years"]         = " years"
+			},
+			["julian-calendar"] = "Julian calendar",  -- linked page title
+			["julian"]          = "Julian",
+			["BCE"]             = "BCE",
+			["CE"]              = "CE",
+			["common-era"]      = "Common Era"  -- linked page title
+		},
+		["coord"] = {
+			["latitude-north"] = "N",
+			["latitude-south"] = "S",
+			["longitude-east"] = "E",
+			["longitude-west"] = "W",
+			["degrees"]        = "°",
+			["minutes"]        = "'",
+			["seconds"]        = '"',
+			["separator"]      = ", "
+		},
+		["values"] = {
+			["unknown"] = "unknown",
+			["none"]    = "none"
+		},
+		["cite"] = {
+			["output-types"] = {"web", "q"},  -- In this order, the output types will be tried
+			["param-mapping"] = {
+				["web"] = {
+					-- &lt;= left side: all allowed reference properties for *web page sources* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite web]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "website",
+					[aliasesP.referenceURL]            = "url",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date",
+					[aliasesP.title]                   = "title",
+					[aliasesP.subjectNamedAs]          = "title",
+					[aliasesP.archiveURL]              = "archive-url",
+					[aliasesP.archiveDate]             = "archive-date",
+					[aliasesP.language]                = "language",
+					[aliasesP.author]                  = "author",
+					[aliasesP.authorNameString]        = "author",
+					[aliasesP.publisher]               = "publisher",
+					[aliasesP.quote]                   = "quote",
+					[aliasesP.pages]                   = "pages",  -- extra option
+					[aliasesP.publishedIn]             = "website",
+					[aliasesP.sectionVerseOrParagraph] = "at"
+				},
+				["q"] = {
+					-- &lt;= left side: all allowed reference properties for *sources other than web pages* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite Q]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "1",
+					[aliasesP.pages]                   = "pages",
+					[aliasesP.column]                  = "at",
+					[aliasesP.chapter]                 = "chapter",
+					[aliasesP.sectionVerseOrParagraph] = "section",
+					["external-id"]                    = "id",  -- used for any type of database property ID
+					[aliasesP.title]                   = "title",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date"
+				}
+			},
+			["config"] = {
+				-- supported fields:
+				--     - template: name of the template used for output
+				--     - numbered-params: citation params accepting an arbitrary number of values by numbering the params (e.g. author1, author2)
+				--     - raw-value-params: params taking a raw value (which means the property is rendered with getValue with raw=true)
+				--     - mandatory-params: params that are required be in the template call (after potentially appending numbers to params listed in numbered-params)
+				--     - prioritization: table associating a list of properties, in the order in which they are preferred, to template parameters;
+				--                       properties not mentioned here have the lowest priority;
+				--                       prioritization of properties handled through additionalProcessedProperties is unsupported;
+				--                       no key of this table can be from numbered-params 
+				-- Leaving out the "template" field causes the output type to be ignored.
+				["web"] = {
+					["template"] = "Cite web",
+					["numbered-params"] = {"author"},
+					["mandatory-params"] = {"url"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate},
+						["title"] = {aliasesP.title, aliasesP.subjectNamedAs}
+					}
+				},
+				["q"] = {
+					["template"] = "Cite Q",
+					["raw-value-params"] = {"1"},  -- the first, unnamed parameter of CiteQ takes a QID, not the name of the item cited
+					["mandatory-params"] = {"1"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate}
+					}
+				}
+			}
+		}
+	}
+
+	p.getOrdinalSuffix = function(num)
+		if tostring(num):sub(-2,-2) == '1' then
+			return "th"  -- 10th, 11th, 12th, 13th, ... 19th
+		end
+
+		num = tostring(num):sub(-1)
+
+		if num == '1' then
+			return "st"
+		elseif num == '2' then
+			return "nd"
+		elseif num == '3' then
+			return "rd"
+		else
+			return "th"
+		end
+	end
+
+	p.addDelimiters = function(n)
+		local left, num, right = string.match(n, "^([^%d]*%d)(%d*)(.-)$")
+
+		if left and num and right then
+			return left .. (num:reverse():gsub("(%d%d%d)", "%1" .. p['numeric']['delimiter']):reverse()) .. right
+		else
+			return n
+		end
+	end
+
+	return p
+end
+
+return p</text>
+      <sha1>pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5</sha1>
+    </revision>
+    <revision>
+      <id>3368869</id>
+      <parentid>3368396</parentid>
+      <timestamp>2026-03-02T18:57:27Z</timestamp>
+      <contributor>
+        <username>en&gt;Janhrach</username>
+        <id>0</id>
+      </contributor>
+      <comment>update from sandbox</comment>
+      <origin>571</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7249" sha1="pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5" xml:space="preserve">-- The values and functions in this submodule should be localized per wiki.
+
+local p = {}
+
+function p.init(aliasesP)
+	p = {
+		["version"] = "8",  -- increment this each time the below parameters are changed to avoid reference conflict errors
+		["errors"] = {
+			["unknown-data-type"]          = "Unknown or unsupported datatype '%s'.",
+			["missing-required-parameter"] = "No required parameters defined, needing at least one",
+			["extra-required-parameter"]   = "Parameter '%s' must be defined as optional",
+			["no-function-specified"]      = "You must specify a function to call",  -- equal to the standard module error message
+			["main-called-twice"]          = 'The function "main" cannot be called twice',
+			["no-such-function"]           = 'The function "%s" does not exist',  -- equal to the standard module error message
+            ["no-such-reference-template"] = 'Error: template "%s", which is set in %s as the output template for the citation-output type "%s", does not exist',
+            -- Parts of the error message signalling a malformed reference.
+            ["malformed-reference-header"] = "&lt;span style=\"color:#dd3333\"&gt;\nError: Unable to display the reference from Wikidata properly. Technical details:\n",
+            ["malformed-reference-footer"] = "See [[Module:wd/doc#References|the documentation]] for further details.\n&lt;/span&gt;\n[[Category:Module:Wd reference errors]]",
+            ["template-failure-reason"]    = "* Reason for the failure of {{tl|%s}}: %s\n",
+            ["missing-mandatory-param"]    = 'The output template call would miss the mandatory parameter &lt;code&gt;%s&lt;/code&gt;.',
+            ["unknown-property-in-ref"]    = 'The Wikidata reference contains the property {{property|%s}}, which is not assigned to any parameter of this template.'
+		},
+		["info"] = {
+			["edit-on-wikidata"] = "Edit this on Wikidata"
+		},
+		["numeric"] = {
+			["decimal-mark"] = ".",
+			["delimiter"]    = ","
+		},
+		["datetime"] = {
+			["prefixes"] = {
+				["decade-period"] = ""
+			},
+			["suffixes"] = {
+				["decade-period"] = "s",
+				["millennium"]    = " millennium",
+				["century"]       = " century",
+				["million-years"] = " million years",
+				["billion-years"] = " billion years",
+				["year"]          = " year",
+				["years"]         = " years"
+			},
+			["julian-calendar"] = "Julian calendar",  -- linked page title
+			["julian"]          = "Julian",
+			["BCE"]             = "BCE",
+			["CE"]              = "CE",
+			["common-era"]      = "Common Era"  -- linked page title
+		},
+		["coord"] = {
+			["latitude-north"] = "N",
+			["latitude-south"] = "S",
+			["longitude-east"] = "E",
+			["longitude-west"] = "W",
+			["degrees"]        = "°",
+			["minutes"]        = "'",
+			["seconds"]        = '"',
+			["separator"]      = ", "
+		},
+		["values"] = {
+			["unknown"] = "unknown",
+			["none"]    = "none"
+		},
+		["cite"] = {
+			["output-types"] = {"web", "q"},  -- In this order, the output types will be tried
+			["param-mapping"] = {
+				["web"] = {
+					-- &lt;= left side: all allowed reference properties for *web page sources* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite web]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "website",
+					[aliasesP.referenceURL]            = "url",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date",
+					[aliasesP.title]                   = "title",
+					[aliasesP.subjectNamedAs]          = "title",
+					[aliasesP.archiveURL]              = "archive-url",
+					[aliasesP.archiveDate]             = "archive-date",
+					[aliasesP.language]                = "language",
+					[aliasesP.author]                  = "author",
+					[aliasesP.authorNameString]        = "author",
+					[aliasesP.publisher]               = "publisher",
+					[aliasesP.quote]                   = "quote",
+					[aliasesP.pages]                   = "pages",  -- extra option
+					[aliasesP.publishedIn]             = "website",
+					[aliasesP.sectionVerseOrParagraph] = "at"
+				},
+				["q"] = {
+					-- &lt;= left side: all allowed reference properties for *sources other than web pages* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite Q]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "1",
+					[aliasesP.pages]                   = "pages",
+					[aliasesP.column]                  = "at",
+					[aliasesP.chapter]                 = "chapter",
+					[aliasesP.sectionVerseOrParagraph] = "section",
+					["external-id"]                    = "id",  -- used for any type of database property ID
+					[aliasesP.title]                   = "title",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date"
+				}
+			},
+			["config"] = {
+				-- supported fields:
+				--     - template: name of the template used for output
+				--     - numbered-params: citation params accepting an arbitrary number of values by numbering the params (e.g. author1, author2)
+				--     - raw-value-params: params taking a raw value (which means the property is rendered with getValue with raw=true)
+				--     - mandatory-params: params that are required be in the template call (after potentially appending numbers to params listed in numbered-params)
+				--     - prioritization: table associating a list of properties, in the order in which they are preferred, to template parameters;
+				--                       properties not mentioned here have the lowest priority;
+				--                       prioritization of properties handled through additionalProcessedProperties is unsupported;
+				--                       no key of this table can be from numbered-params 
+				-- Leaving out the "template" field causes the output type to be ignored.
+				["web"] = {
+					["template"] = "Cite web",
+					["numbered-params"] = {"author"},
+					["mandatory-params"] = {"url"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate},
+						["title"] = {aliasesP.title, aliasesP.subjectNamedAs}
+					}
+				},
+				["q"] = {
+					["template"] = "Cite Q",
+					["raw-value-params"] = {"1"},  -- the first, unnamed parameter of CiteQ takes a QID, not the name of the item cited
+					["mandatory-params"] = {"1"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate}
+					}
+				}
+			}
+		}
+	}
+
+	p.getOrdinalSuffix = function(num)
+		if tostring(num):sub(-2,-2) == '1' then
+			return "th"  -- 10th, 11th, 12th, 13th, ... 19th
+		end
+
+		num = tostring(num):sub(-1)
+
+		if num == '1' then
+			return "st"
+		elseif num == '2' then
+			return "nd"
+		elseif num == '3' then
+			return "rd"
+		else
+			return "th"
+		end
+	end
+
+	p.addDelimiters = function(n)
+		local left, num, right = string.match(n, "^([^%d]*%d)(%d*)(.-)$")
+
+		if left and num and right then
+			return left .. (num:reverse():gsub("(%d%d%d)", "%1" .. p['numeric']['delimiter']):reverse()) .. right
+		else
+			return n
+		end
+	end
+
+	return p
+end
+
+return p</text>
+      <sha1>pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5</sha1>
+    </revision>
+    <revision>
+      <id>3368870</id>
+      <parentid>3368869</parentid>
+      <timestamp>2026-03-02T18:57:28Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>571</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7249" sha1="pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5" xml:space="preserve">-- The values and functions in this submodule should be localized per wiki.
+
+local p = {}
+
+function p.init(aliasesP)
+	p = {
+		["version"] = "8",  -- increment this each time the below parameters are changed to avoid reference conflict errors
+		["errors"] = {
+			["unknown-data-type"]          = "Unknown or unsupported datatype '%s'.",
+			["missing-required-parameter"] = "No required parameters defined, needing at least one",
+			["extra-required-parameter"]   = "Parameter '%s' must be defined as optional",
+			["no-function-specified"]      = "You must specify a function to call",  -- equal to the standard module error message
+			["main-called-twice"]          = 'The function "main" cannot be called twice',
+			["no-such-function"]           = 'The function "%s" does not exist',  -- equal to the standard module error message
+            ["no-such-reference-template"] = 'Error: template "%s", which is set in %s as the output template for the citation-output type "%s", does not exist',
+            -- Parts of the error message signalling a malformed reference.
+            ["malformed-reference-header"] = "&lt;span style=\"color:#dd3333\"&gt;\nError: Unable to display the reference from Wikidata properly. Technical details:\n",
+            ["malformed-reference-footer"] = "See [[Module:wd/doc#References|the documentation]] for further details.\n&lt;/span&gt;\n[[Category:Module:Wd reference errors]]",
+            ["template-failure-reason"]    = "* Reason for the failure of {{tl|%s}}: %s\n",
+            ["missing-mandatory-param"]    = 'The output template call would miss the mandatory parameter &lt;code&gt;%s&lt;/code&gt;.',
+            ["unknown-property-in-ref"]    = 'The Wikidata reference contains the property {{property|%s}}, which is not assigned to any parameter of this template.'
+		},
+		["info"] = {
+			["edit-on-wikidata"] = "Edit this on Wikidata"
+		},
+		["numeric"] = {
+			["decimal-mark"] = ".",
+			["delimiter"]    = ","
+		},
+		["datetime"] = {
+			["prefixes"] = {
+				["decade-period"] = ""
+			},
+			["suffixes"] = {
+				["decade-period"] = "s",
+				["millennium"]    = " millennium",
+				["century"]       = " century",
+				["million-years"] = " million years",
+				["billion-years"] = " billion years",
+				["year"]          = " year",
+				["years"]         = " years"
+			},
+			["julian-calendar"] = "Julian calendar",  -- linked page title
+			["julian"]          = "Julian",
+			["BCE"]             = "BCE",
+			["CE"]              = "CE",
+			["common-era"]      = "Common Era"  -- linked page title
+		},
+		["coord"] = {
+			["latitude-north"] = "N",
+			["latitude-south"] = "S",
+			["longitude-east"] = "E",
+			["longitude-west"] = "W",
+			["degrees"]        = "°",
+			["minutes"]        = "'",
+			["seconds"]        = '"',
+			["separator"]      = ", "
+		},
+		["values"] = {
+			["unknown"] = "unknown",
+			["none"]    = "none"
+		},
+		["cite"] = {
+			["output-types"] = {"web", "q"},  -- In this order, the output types will be tried
+			["param-mapping"] = {
+				["web"] = {
+					-- &lt;= left side: all allowed reference properties for *web page sources* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite web]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "website",
+					[aliasesP.referenceURL]            = "url",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date",
+					[aliasesP.title]                   = "title",
+					[aliasesP.subjectNamedAs]          = "title",
+					[aliasesP.archiveURL]              = "archive-url",
+					[aliasesP.archiveDate]             = "archive-date",
+					[aliasesP.language]                = "language",
+					[aliasesP.author]                  = "author",
+					[aliasesP.authorNameString]        = "author",
+					[aliasesP.publisher]               = "publisher",
+					[aliasesP.quote]                   = "quote",
+					[aliasesP.pages]                   = "pages",  -- extra option
+					[aliasesP.publishedIn]             = "website",
+					[aliasesP.sectionVerseOrParagraph] = "at"
+				},
+				["q"] = {
+					-- &lt;= left side: all allowed reference properties for *sources other than web pages* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite Q]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "1",
+					[aliasesP.pages]                   = "pages",
+					[aliasesP.column]                  = "at",
+					[aliasesP.chapter]                 = "chapter",
+					[aliasesP.sectionVerseOrParagraph] = "section",
+					["external-id"]                    = "id",  -- used for any type of database property ID
+					[aliasesP.title]                   = "title",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date"
+				}
+			},
+			["config"] = {
+				-- supported fields:
+				--     - template: name of the template used for output
+				--     - numbered-params: citation params accepting an arbitrary number of values by numbering the params (e.g. author1, author2)
+				--     - raw-value-params: params taking a raw value (which means the property is rendered with getValue with raw=true)
+				--     - mandatory-params: params that are required be in the template call (after potentially appending numbers to params listed in numbered-params)
+				--     - prioritization: table associating a list of properties, in the order in which they are preferred, to template parameters;
+				--                       properties not mentioned here have the lowest priority;
+				--                       prioritization of properties handled through additionalProcessedProperties is unsupported;
+				--                       no key of this table can be from numbered-params 
+				-- Leaving out the "template" field causes the output type to be ignored.
+				["web"] = {
+					["template"] = "Cite web",
+					["numbered-params"] = {"author"},
+					["mandatory-params"] = {"url"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate},
+						["title"] = {aliasesP.title, aliasesP.subjectNamedAs}
+					}
+				},
+				["q"] = {
+					["template"] = "Cite Q",
+					["raw-value-params"] = {"1"},  -- the first, unnamed parameter of CiteQ takes a QID, not the name of the item cited
+					["mandatory-params"] = {"1"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate}
+					}
+				}
+			}
+		}
+	}
+
+	p.getOrdinalSuffix = function(num)
+		if tostring(num):sub(-2,-2) == '1' then
+			return "th"  -- 10th, 11th, 12th, 13th, ... 19th
+		end
+
+		num = tostring(num):sub(-1)
+
+		if num == '1' then
+			return "st"
+		elseif num == '2' then
+			return "nd"
+		elseif num == '3' then
+			return "rd"
+		else
+			return "th"
+		end
+	end
+
+	p.addDelimiters = function(n)
+		local left, num, right = string.match(n, "^([^%d]*%d)(%d*)(.-)$")
+
+		if left and num and right then
+			return left .. (num:reverse():gsub("(%d%d%d)", "%1" .. p['numeric']['delimiter']):reverse()) .. right
+		else
+			return n
+		end
+	end
+
+	return p
+end
+
+return p</text>
+      <sha1>pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5</sha1>
+    </revision>
+    <revision>
+      <id>3369343</id>
+      <parentid>3368870</parentid>
+      <timestamp>2026-03-02T19:03:56Z</timestamp>
+      <contributor>
+        <username>en&gt;Janhrach</username>
+        <id>0</id>
+      </contributor>
+      <comment>update from sandbox</comment>
+      <origin>571</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7249" sha1="pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5" xml:space="preserve">-- The values and functions in this submodule should be localized per wiki.
+
+local p = {}
+
+function p.init(aliasesP)
+	p = {
+		["version"] = "8",  -- increment this each time the below parameters are changed to avoid reference conflict errors
+		["errors"] = {
+			["unknown-data-type"]          = "Unknown or unsupported datatype '%s'.",
+			["missing-required-parameter"] = "No required parameters defined, needing at least one",
+			["extra-required-parameter"]   = "Parameter '%s' must be defined as optional",
+			["no-function-specified"]      = "You must specify a function to call",  -- equal to the standard module error message
+			["main-called-twice"]          = 'The function "main" cannot be called twice',
+			["no-such-function"]           = 'The function "%s" does not exist',  -- equal to the standard module error message
+            ["no-such-reference-template"] = 'Error: template "%s", which is set in %s as the output template for the citation-output type "%s", does not exist',
+            -- Parts of the error message signalling a malformed reference.
+            ["malformed-reference-header"] = "&lt;span style=\"color:#dd3333\"&gt;\nError: Unable to display the reference from Wikidata properly. Technical details:\n",
+            ["malformed-reference-footer"] = "See [[Module:wd/doc#References|the documentation]] for further details.\n&lt;/span&gt;\n[[Category:Module:Wd reference errors]]",
+            ["template-failure-reason"]    = "* Reason for the failure of {{tl|%s}}: %s\n",
+            ["missing-mandatory-param"]    = 'The output template call would miss the mandatory parameter &lt;code&gt;%s&lt;/code&gt;.',
+            ["unknown-property-in-ref"]    = 'The Wikidata reference contains the property {{property|%s}}, which is not assigned to any parameter of this template.'
+		},
+		["info"] = {
+			["edit-on-wikidata"] = "Edit this on Wikidata"
+		},
+		["numeric"] = {
+			["decimal-mark"] = ".",
+			["delimiter"]    = ","
+		},
+		["datetime"] = {
+			["prefixes"] = {
+				["decade-period"] = ""
+			},
+			["suffixes"] = {
+				["decade-period"] = "s",
+				["millennium"]    = " millennium",
+				["century"]       = " century",
+				["million-years"] = " million years",
+				["billion-years"] = " billion years",
+				["year"]          = " year",
+				["years"]         = " years"
+			},
+			["julian-calendar"] = "Julian calendar",  -- linked page title
+			["julian"]          = "Julian",
+			["BCE"]             = "BCE",
+			["CE"]              = "CE",
+			["common-era"]      = "Common Era"  -- linked page title
+		},
+		["coord"] = {
+			["latitude-north"] = "N",
+			["latitude-south"] = "S",
+			["longitude-east"] = "E",
+			["longitude-west"] = "W",
+			["degrees"]        = "°",
+			["minutes"]        = "'",
+			["seconds"]        = '"',
+			["separator"]      = ", "
+		},
+		["values"] = {
+			["unknown"] = "unknown",
+			["none"]    = "none"
+		},
+		["cite"] = {
+			["output-types"] = {"web", "q"},  -- In this order, the output types will be tried
+			["param-mapping"] = {
+				["web"] = {
+					-- &lt;= left side: all allowed reference properties for *web page sources* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite web]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "website",
+					[aliasesP.referenceURL]            = "url",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date",
+					[aliasesP.title]                   = "title",
+					[aliasesP.subjectNamedAs]          = "title",
+					[aliasesP.archiveURL]              = "archive-url",
+					[aliasesP.archiveDate]             = "archive-date",
+					[aliasesP.language]                = "language",
+					[aliasesP.author]                  = "author",
+					[aliasesP.authorNameString]        = "author",
+					[aliasesP.publisher]               = "publisher",
+					[aliasesP.quote]                   = "quote",
+					[aliasesP.pages]                   = "pages",  -- extra option
+					[aliasesP.publishedIn]             = "website",
+					[aliasesP.sectionVerseOrParagraph] = "at"
+				},
+				["q"] = {
+					-- &lt;= left side: all allowed reference properties for *sources other than web pages* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite Q]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "1",
+					[aliasesP.pages]                   = "pages",
+					[aliasesP.column]                  = "at",
+					[aliasesP.chapter]                 = "chapter",
+					[aliasesP.sectionVerseOrParagraph] = "section",
+					["external-id"]                    = "id",  -- used for any type of database property ID
+					[aliasesP.title]                   = "title",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date"
+				}
+			},
+			["config"] = {
+				-- supported fields:
+				--     - template: name of the template used for output
+				--     - numbered-params: citation params accepting an arbitrary number of values by numbering the params (e.g. author1, author2)
+				--     - raw-value-params: params taking a raw value (which means the property is rendered with getValue with raw=true)
+				--     - mandatory-params: params that are required be in the template call (after potentially appending numbers to params listed in numbered-params)
+				--     - prioritization: table associating a list of properties, in the order in which they are preferred, to template parameters;
+				--                       properties not mentioned here have the lowest priority;
+				--                       prioritization of properties handled through additionalProcessedProperties is unsupported;
+				--                       no key of this table can be from numbered-params 
+				-- Leaving out the "template" field causes the output type to be ignored.
+				["web"] = {
+					["template"] = "Cite web",
+					["numbered-params"] = {"author"},
+					["mandatory-params"] = {"url"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate},
+						["title"] = {aliasesP.title, aliasesP.subjectNamedAs}
+					}
+				},
+				["q"] = {
+					["template"] = "Cite Q",
+					["raw-value-params"] = {"1"},  -- the first, unnamed parameter of CiteQ takes a QID, not the name of the item cited
+					["mandatory-params"] = {"1"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate}
+					}
+				}
+			}
+		}
+	}
+
+	p.getOrdinalSuffix = function(num)
+		if tostring(num):sub(-2,-2) == '1' then
+			return "th"  -- 10th, 11th, 12th, 13th, ... 19th
+		end
+
+		num = tostring(num):sub(-1)
+
+		if num == '1' then
+			return "st"
+		elseif num == '2' then
+			return "nd"
+		elseif num == '3' then
+			return "rd"
+		else
+			return "th"
+		end
+	end
+
+	p.addDelimiters = function(n)
+		local left, num, right = string.match(n, "^([^%d]*%d)(%d*)(.-)$")
+
+		if left and num and right then
+			return left .. (num:reverse():gsub("(%d%d%d)", "%1" .. p['numeric']['delimiter']):reverse()) .. right
+		else
+			return n
+		end
+	end
+
+	return p
+end
+
+return p</text>
+      <sha1>pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5</sha1>
+    </revision>
+    <revision>
+      <id>3369344</id>
+      <parentid>3369343</parentid>
+      <timestamp>2026-03-02T19:03:56Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>571</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7249" sha1="pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5" xml:space="preserve">-- The values and functions in this submodule should be localized per wiki.
+
+local p = {}
+
+function p.init(aliasesP)
+	p = {
+		["version"] = "8",  -- increment this each time the below parameters are changed to avoid reference conflict errors
+		["errors"] = {
+			["unknown-data-type"]          = "Unknown or unsupported datatype '%s'.",
+			["missing-required-parameter"] = "No required parameters defined, needing at least one",
+			["extra-required-parameter"]   = "Parameter '%s' must be defined as optional",
+			["no-function-specified"]      = "You must specify a function to call",  -- equal to the standard module error message
+			["main-called-twice"]          = 'The function "main" cannot be called twice',
+			["no-such-function"]           = 'The function "%s" does not exist',  -- equal to the standard module error message
+            ["no-such-reference-template"] = 'Error: template "%s", which is set in %s as the output template for the citation-output type "%s", does not exist',
+            -- Parts of the error message signalling a malformed reference.
+            ["malformed-reference-header"] = "&lt;span style=\"color:#dd3333\"&gt;\nError: Unable to display the reference from Wikidata properly. Technical details:\n",
+            ["malformed-reference-footer"] = "See [[Module:wd/doc#References|the documentation]] for further details.\n&lt;/span&gt;\n[[Category:Module:Wd reference errors]]",
+            ["template-failure-reason"]    = "* Reason for the failure of {{tl|%s}}: %s\n",
+            ["missing-mandatory-param"]    = 'The output template call would miss the mandatory parameter &lt;code&gt;%s&lt;/code&gt;.',
+            ["unknown-property-in-ref"]    = 'The Wikidata reference contains the property {{property|%s}}, which is not assigned to any parameter of this template.'
+		},
+		["info"] = {
+			["edit-on-wikidata"] = "Edit this on Wikidata"
+		},
+		["numeric"] = {
+			["decimal-mark"] = ".",
+			["delimiter"]    = ","
+		},
+		["datetime"] = {
+			["prefixes"] = {
+				["decade-period"] = ""
+			},
+			["suffixes"] = {
+				["decade-period"] = "s",
+				["millennium"]    = " millennium",
+				["century"]       = " century",
+				["million-years"] = " million years",
+				["billion-years"] = " billion years",
+				["year"]          = " year",
+				["years"]         = " years"
+			},
+			["julian-calendar"] = "Julian calendar",  -- linked page title
+			["julian"]          = "Julian",
+			["BCE"]             = "BCE",
+			["CE"]              = "CE",
+			["common-era"]      = "Common Era"  -- linked page title
+		},
+		["coord"] = {
+			["latitude-north"] = "N",
+			["latitude-south"] = "S",
+			["longitude-east"] = "E",
+			["longitude-west"] = "W",
+			["degrees"]        = "°",
+			["minutes"]        = "'",
+			["seconds"]        = '"',
+			["separator"]      = ", "
+		},
+		["values"] = {
+			["unknown"] = "unknown",
+			["none"]    = "none"
+		},
+		["cite"] = {
+			["output-types"] = {"web", "q"},  -- In this order, the output types will be tried
+			["param-mapping"] = {
+				["web"] = {
+					-- &lt;= left side: all allowed reference properties for *web page sources* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite web]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "website",
+					[aliasesP.referenceURL]            = "url",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date",
+					[aliasesP.title]                   = "title",
+					[aliasesP.subjectNamedAs]          = "title",
+					[aliasesP.archiveURL]              = "archive-url",
+					[aliasesP.archiveDate]             = "archive-date",
+					[aliasesP.language]                = "language",
+					[aliasesP.author]                  = "author",
+					[aliasesP.authorNameString]        = "author",
+					[aliasesP.publisher]               = "publisher",
+					[aliasesP.quote]                   = "quote",
+					[aliasesP.pages]                   = "pages",  -- extra option
+					[aliasesP.publishedIn]             = "website",
+					[aliasesP.sectionVerseOrParagraph] = "at"
+				},
+				["q"] = {
+					-- &lt;= left side: all allowed reference properties for *sources other than web pages* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite Q]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "1",
+					[aliasesP.pages]                   = "pages",
+					[aliasesP.column]                  = "at",
+					[aliasesP.chapter]                 = "chapter",
+					[aliasesP.sectionVerseOrParagraph] = "section",
+					["external-id"]                    = "id",  -- used for any type of database property ID
+					[aliasesP.title]                   = "title",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date"
+				}
+			},
+			["config"] = {
+				-- supported fields:
+				--     - template: name of the template used for output
+				--     - numbered-params: citation params accepting an arbitrary number of values by numbering the params (e.g. author1, author2)
+				--     - raw-value-params: params taking a raw value (which means the property is rendered with getValue with raw=true)
+				--     - mandatory-params: params that are required be in the template call (after potentially appending numbers to params listed in numbered-params)
+				--     - prioritization: table associating a list of properties, in the order in which they are preferred, to template parameters;
+				--                       properties not mentioned here have the lowest priority;
+				--                       prioritization of properties handled through additionalProcessedProperties is unsupported;
+				--                       no key of this table can be from numbered-params 
+				-- Leaving out the "template" field causes the output type to be ignored.
+				["web"] = {
+					["template"] = "Cite web",
+					["numbered-params"] = {"author"},
+					["mandatory-params"] = {"url"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate},
+						["title"] = {aliasesP.title, aliasesP.subjectNamedAs}
+					}
+				},
+				["q"] = {
+					["template"] = "Cite Q",
+					["raw-value-params"] = {"1"},  -- the first, unnamed parameter of CiteQ takes a QID, not the name of the item cited
+					["mandatory-params"] = {"1"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate}
+					}
+				}
+			}
+		}
+	}
+
+	p.getOrdinalSuffix = function(num)
+		if tostring(num):sub(-2,-2) == '1' then
+			return "th"  -- 10th, 11th, 12th, 13th, ... 19th
+		end
+
+		num = tostring(num):sub(-1)
+
+		if num == '1' then
+			return "st"
+		elseif num == '2' then
+			return "nd"
+		elseif num == '3' then
+			return "rd"
+		else
+			return "th"
+		end
+	end
+
+	p.addDelimiters = function(n)
+		local left, num, right = string.match(n, "^([^%d]*%d)(%d*)(.-)$")
+
+		if left and num and right then
+			return left .. (num:reverse():gsub("(%d%d%d)", "%1" .. p['numeric']['delimiter']):reverse()) .. right
+		else
+			return n
+		end
+	end
+
+	return p
+end
+
+return p</text>
+      <sha1>pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5</sha1>
+    </revision>
+    <revision>
+      <id>3407043</id>
+      <parentid>3369344</parentid>
+      <timestamp>2026-03-12T20:03:15Z</timestamp>
+      <contributor>
+        <username>en&gt;Janhrach</username>
+        <id>0</id>
+      </contributor>
+      <comment>update from sandbox</comment>
+      <origin>571</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7249" sha1="pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5" xml:space="preserve">-- The values and functions in this submodule should be localized per wiki.
+
+local p = {}
+
+function p.init(aliasesP)
+	p = {
+		["version"] = "8",  -- increment this each time the below parameters are changed to avoid reference conflict errors
+		["errors"] = {
+			["unknown-data-type"]          = "Unknown or unsupported datatype '%s'.",
+			["missing-required-parameter"] = "No required parameters defined, needing at least one",
+			["extra-required-parameter"]   = "Parameter '%s' must be defined as optional",
+			["no-function-specified"]      = "You must specify a function to call",  -- equal to the standard module error message
+			["main-called-twice"]          = 'The function "main" cannot be called twice',
+			["no-such-function"]           = 'The function "%s" does not exist',  -- equal to the standard module error message
+            ["no-such-reference-template"] = 'Error: template "%s", which is set in %s as the output template for the citation-output type "%s", does not exist',
+            -- Parts of the error message signalling a malformed reference.
+            ["malformed-reference-header"] = "&lt;span style=\"color:#dd3333\"&gt;\nError: Unable to display the reference from Wikidata properly. Technical details:\n",
+            ["malformed-reference-footer"] = "See [[Module:wd/doc#References|the documentation]] for further details.\n&lt;/span&gt;\n[[Category:Module:Wd reference errors]]",
+            ["template-failure-reason"]    = "* Reason for the failure of {{tl|%s}}: %s\n",
+            ["missing-mandatory-param"]    = 'The output template call would miss the mandatory parameter &lt;code&gt;%s&lt;/code&gt;.',
+            ["unknown-property-in-ref"]    = 'The Wikidata reference contains the property {{property|%s}}, which is not assigned to any parameter of this template.'
+		},
+		["info"] = {
+			["edit-on-wikidata"] = "Edit this on Wikidata"
+		},
+		["numeric"] = {
+			["decimal-mark"] = ".",
+			["delimiter"]    = ","
+		},
+		["datetime"] = {
+			["prefixes"] = {
+				["decade-period"] = ""
+			},
+			["suffixes"] = {
+				["decade-period"] = "s",
+				["millennium"]    = " millennium",
+				["century"]       = " century",
+				["million-years"] = " million years",
+				["billion-years"] = " billion years",
+				["year"]          = " year",
+				["years"]         = " years"
+			},
+			["julian-calendar"] = "Julian calendar",  -- linked page title
+			["julian"]          = "Julian",
+			["BCE"]             = "BCE",
+			["CE"]              = "CE",
+			["common-era"]      = "Common Era"  -- linked page title
+		},
+		["coord"] = {
+			["latitude-north"] = "N",
+			["latitude-south"] = "S",
+			["longitude-east"] = "E",
+			["longitude-west"] = "W",
+			["degrees"]        = "°",
+			["minutes"]        = "'",
+			["seconds"]        = '"',
+			["separator"]      = ", "
+		},
+		["values"] = {
+			["unknown"] = "unknown",
+			["none"]    = "none"
+		},
+		["cite"] = {
+			["output-types"] = {"web", "q"},  -- In this order, the output types will be tried
+			["param-mapping"] = {
+				["web"] = {
+					-- &lt;= left side: all allowed reference properties for *web page sources* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite web]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "website",
+					[aliasesP.referenceURL]            = "url",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date",
+					[aliasesP.title]                   = "title",
+					[aliasesP.subjectNamedAs]          = "title",
+					[aliasesP.archiveURL]              = "archive-url",
+					[aliasesP.archiveDate]             = "archive-date",
+					[aliasesP.language]                = "language",
+					[aliasesP.author]                  = "author",
+					[aliasesP.authorNameString]        = "author",
+					[aliasesP.publisher]               = "publisher",
+					[aliasesP.quote]                   = "quote",
+					[aliasesP.pages]                   = "pages",  -- extra option
+					[aliasesP.publishedIn]             = "website",
+					[aliasesP.sectionVerseOrParagraph] = "at"
+				},
+				["q"] = {
+					-- &lt;= left side: all allowed reference properties for *sources other than web pages* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite Q]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "1",
+					[aliasesP.pages]                   = "pages",
+					[aliasesP.column]                  = "at",
+					[aliasesP.chapter]                 = "chapter",
+					[aliasesP.sectionVerseOrParagraph] = "section",
+					["external-id"]                    = "id",  -- used for any type of database property ID
+					[aliasesP.title]                   = "title",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date"
+				}
+			},
+			["config"] = {
+				-- supported fields:
+				--     - template: name of the template used for output
+				--     - numbered-params: citation params accepting an arbitrary number of values by numbering the params (e.g. author1, author2)
+				--     - raw-value-params: params taking a raw value (which means the property is rendered with getValue with raw=true)
+				--     - mandatory-params: params that are required be in the template call (after potentially appending numbers to params listed in numbered-params)
+				--     - prioritization: table associating a list of properties, in the order in which they are preferred, to template parameters;
+				--                       properties not mentioned here have the lowest priority;
+				--                       prioritization of properties handled through additionalProcessedProperties is unsupported;
+				--                       no key of this table can be from numbered-params 
+				-- Leaving out the "template" field causes the output type to be ignored.
+				["web"] = {
+					["template"] = "Cite web",
+					["numbered-params"] = {"author"},
+					["mandatory-params"] = {"url"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate},
+						["title"] = {aliasesP.title, aliasesP.subjectNamedAs}
+					}
+				},
+				["q"] = {
+					["template"] = "Cite Q",
+					["raw-value-params"] = {"1"},  -- the first, unnamed parameter of CiteQ takes a QID, not the name of the item cited
+					["mandatory-params"] = {"1"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate}
+					}
+				}
+			}
+		}
+	}
+
+	p.getOrdinalSuffix = function(num)
+		if tostring(num):sub(-2,-2) == '1' then
+			return "th"  -- 10th, 11th, 12th, 13th, ... 19th
+		end
+
+		num = tostring(num):sub(-1)
+
+		if num == '1' then
+			return "st"
+		elseif num == '2' then
+			return "nd"
+		elseif num == '3' then
+			return "rd"
+		else
+			return "th"
+		end
+	end
+
+	p.addDelimiters = function(n)
+		local left, num, right = string.match(n, "^([^%d]*%d)(%d*)(.-)$")
+
+		if left and num and right then
+			return left .. (num:reverse():gsub("(%d%d%d)", "%1" .. p['numeric']['delimiter']):reverse()) .. right
+		else
+			return n
+		end
+	end
+
+	return p
+end
+
+return p</text>
+      <sha1>pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5</sha1>
+    </revision>
+    <revision>
+      <id>3407044</id>
+      <parentid>3407043</parentid>
+      <timestamp>2026-03-12T20:03:16Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>571</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7249" sha1="pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5" xml:space="preserve">-- The values and functions in this submodule should be localized per wiki.
+
+local p = {}
+
+function p.init(aliasesP)
+	p = {
+		["version"] = "8",  -- increment this each time the below parameters are changed to avoid reference conflict errors
+		["errors"] = {
+			["unknown-data-type"]          = "Unknown or unsupported datatype '%s'.",
+			["missing-required-parameter"] = "No required parameters defined, needing at least one",
+			["extra-required-parameter"]   = "Parameter '%s' must be defined as optional",
+			["no-function-specified"]      = "You must specify a function to call",  -- equal to the standard module error message
+			["main-called-twice"]          = 'The function "main" cannot be called twice',
+			["no-such-function"]           = 'The function "%s" does not exist',  -- equal to the standard module error message
+            ["no-such-reference-template"] = 'Error: template "%s", which is set in %s as the output template for the citation-output type "%s", does not exist',
+            -- Parts of the error message signalling a malformed reference.
+            ["malformed-reference-header"] = "&lt;span style=\"color:#dd3333\"&gt;\nError: Unable to display the reference from Wikidata properly. Technical details:\n",
+            ["malformed-reference-footer"] = "See [[Module:wd/doc#References|the documentation]] for further details.\n&lt;/span&gt;\n[[Category:Module:Wd reference errors]]",
+            ["template-failure-reason"]    = "* Reason for the failure of {{tl|%s}}: %s\n",
+            ["missing-mandatory-param"]    = 'The output template call would miss the mandatory parameter &lt;code&gt;%s&lt;/code&gt;.',
+            ["unknown-property-in-ref"]    = 'The Wikidata reference contains the property {{property|%s}}, which is not assigned to any parameter of this template.'
+		},
+		["info"] = {
+			["edit-on-wikidata"] = "Edit this on Wikidata"
+		},
+		["numeric"] = {
+			["decimal-mark"] = ".",
+			["delimiter"]    = ","
+		},
+		["datetime"] = {
+			["prefixes"] = {
+				["decade-period"] = ""
+			},
+			["suffixes"] = {
+				["decade-period"] = "s",
+				["millennium"]    = " millennium",
+				["century"]       = " century",
+				["million-years"] = " million years",
+				["billion-years"] = " billion years",
+				["year"]          = " year",
+				["years"]         = " years"
+			},
+			["julian-calendar"] = "Julian calendar",  -- linked page title
+			["julian"]          = "Julian",
+			["BCE"]             = "BCE",
+			["CE"]              = "CE",
+			["common-era"]      = "Common Era"  -- linked page title
+		},
+		["coord"] = {
+			["latitude-north"] = "N",
+			["latitude-south"] = "S",
+			["longitude-east"] = "E",
+			["longitude-west"] = "W",
+			["degrees"]        = "°",
+			["minutes"]        = "'",
+			["seconds"]        = '"',
+			["separator"]      = ", "
+		},
+		["values"] = {
+			["unknown"] = "unknown",
+			["none"]    = "none"
+		},
+		["cite"] = {
+			["output-types"] = {"web", "q"},  -- In this order, the output types will be tried
+			["param-mapping"] = {
+				["web"] = {
+					-- &lt;= left side: all allowed reference properties for *web page sources* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite web]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "website",
+					[aliasesP.referenceURL]            = "url",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date",
+					[aliasesP.title]                   = "title",
+					[aliasesP.subjectNamedAs]          = "title",
+					[aliasesP.archiveURL]              = "archive-url",
+					[aliasesP.archiveDate]             = "archive-date",
+					[aliasesP.language]                = "language",
+					[aliasesP.author]                  = "author",
+					[aliasesP.authorNameString]        = "author",
+					[aliasesP.publisher]               = "publisher",
+					[aliasesP.quote]                   = "quote",
+					[aliasesP.pages]                   = "pages",  -- extra option
+					[aliasesP.publishedIn]             = "website",
+					[aliasesP.sectionVerseOrParagraph] = "at"
+				},
+				["q"] = {
+					-- &lt;= left side: all allowed reference properties for *sources other than web pages* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite Q]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "1",
+					[aliasesP.pages]                   = "pages",
+					[aliasesP.column]                  = "at",
+					[aliasesP.chapter]                 = "chapter",
+					[aliasesP.sectionVerseOrParagraph] = "section",
+					["external-id"]                    = "id",  -- used for any type of database property ID
+					[aliasesP.title]                   = "title",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date"
+				}
+			},
+			["config"] = {
+				-- supported fields:
+				--     - template: name of the template used for output
+				--     - numbered-params: citation params accepting an arbitrary number of values by numbering the params (e.g. author1, author2)
+				--     - raw-value-params: params taking a raw value (which means the property is rendered with getValue with raw=true)
+				--     - mandatory-params: params that are required be in the template call (after potentially appending numbers to params listed in numbered-params)
+				--     - prioritization: table associating a list of properties, in the order in which they are preferred, to template parameters;
+				--                       properties not mentioned here have the lowest priority;
+				--                       prioritization of properties handled through additionalProcessedProperties is unsupported;
+				--                       no key of this table can be from numbered-params 
+				-- Leaving out the "template" field causes the output type to be ignored.
+				["web"] = {
+					["template"] = "Cite web",
+					["numbered-params"] = {"author"},
+					["mandatory-params"] = {"url"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate},
+						["title"] = {aliasesP.title, aliasesP.subjectNamedAs}
+					}
+				},
+				["q"] = {
+					["template"] = "Cite Q",
+					["raw-value-params"] = {"1"},  -- the first, unnamed parameter of CiteQ takes a QID, not the name of the item cited
+					["mandatory-params"] = {"1"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate}
+					}
+				}
+			}
+		}
+	}
+
+	p.getOrdinalSuffix = function(num)
+		if tostring(num):sub(-2,-2) == '1' then
+			return "th"  -- 10th, 11th, 12th, 13th, ... 19th
+		end
+
+		num = tostring(num):sub(-1)
+
+		if num == '1' then
+			return "st"
+		elseif num == '2' then
+			return "nd"
+		elseif num == '3' then
+			return "rd"
+		else
+			return "th"
+		end
+	end
+
+	p.addDelimiters = function(n)
+		local left, num, right = string.match(n, "^([^%d]*%d)(%d*)(.-)$")
+
+		if left and num and right then
+			return left .. (num:reverse():gsub("(%d%d%d)", "%1" .. p['numeric']['delimiter']):reverse()) .. right
+		else
+			return n
+		end
+	end
+
+	return p
+end
+
+return p</text>
+      <sha1>pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5</sha1>
+    </revision>
+    <revision>
+      <id>3412290</id>
+      <parentid>3407044</parentid>
+      <timestamp>2026-03-13T00:16:21Z</timestamp>
+      <contributor>
+        <username>en&gt;Janhrach</username>
+        <id>0</id>
+      </contributor>
+      <comment>update from sandbox</comment>
+      <origin>571</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7249" sha1="pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5" xml:space="preserve">-- The values and functions in this submodule should be localized per wiki.
+
+local p = {}
+
+function p.init(aliasesP)
+	p = {
+		["version"] = "8",  -- increment this each time the below parameters are changed to avoid reference conflict errors
+		["errors"] = {
+			["unknown-data-type"]          = "Unknown or unsupported datatype '%s'.",
+			["missing-required-parameter"] = "No required parameters defined, needing at least one",
+			["extra-required-parameter"]   = "Parameter '%s' must be defined as optional",
+			["no-function-specified"]      = "You must specify a function to call",  -- equal to the standard module error message
+			["main-called-twice"]          = 'The function "main" cannot be called twice',
+			["no-such-function"]           = 'The function "%s" does not exist',  -- equal to the standard module error message
+            ["no-such-reference-template"] = 'Error: template "%s", which is set in %s as the output template for the citation-output type "%s", does not exist',
+            -- Parts of the error message signalling a malformed reference.
+            ["malformed-reference-header"] = "&lt;span style=\"color:#dd3333\"&gt;\nError: Unable to display the reference from Wikidata properly. Technical details:\n",
+            ["malformed-reference-footer"] = "See [[Module:wd/doc#References|the documentation]] for further details.\n&lt;/span&gt;\n[[Category:Module:Wd reference errors]]",
+            ["template-failure-reason"]    = "* Reason for the failure of {{tl|%s}}: %s\n",
+            ["missing-mandatory-param"]    = 'The output template call would miss the mandatory parameter &lt;code&gt;%s&lt;/code&gt;.',
+            ["unknown-property-in-ref"]    = 'The Wikidata reference contains the property {{property|%s}}, which is not assigned to any parameter of this template.'
+		},
+		["info"] = {
+			["edit-on-wikidata"] = "Edit this on Wikidata"
+		},
+		["numeric"] = {
+			["decimal-mark"] = ".",
+			["delimiter"]    = ","
+		},
+		["datetime"] = {
+			["prefixes"] = {
+				["decade-period"] = ""
+			},
+			["suffixes"] = {
+				["decade-period"] = "s",
+				["millennium"]    = " millennium",
+				["century"]       = " century",
+				["million-years"] = " million years",
+				["billion-years"] = " billion years",
+				["year"]          = " year",
+				["years"]         = " years"
+			},
+			["julian-calendar"] = "Julian calendar",  -- linked page title
+			["julian"]          = "Julian",
+			["BCE"]             = "BCE",
+			["CE"]              = "CE",
+			["common-era"]      = "Common Era"  -- linked page title
+		},
+		["coord"] = {
+			["latitude-north"] = "N",
+			["latitude-south"] = "S",
+			["longitude-east"] = "E",
+			["longitude-west"] = "W",
+			["degrees"]        = "°",
+			["minutes"]        = "'",
+			["seconds"]        = '"',
+			["separator"]      = ", "
+		},
+		["values"] = {
+			["unknown"] = "unknown",
+			["none"]    = "none"
+		},
+		["cite"] = {
+			["output-types"] = {"web", "q"},  -- In this order, the output types will be tried
+			["param-mapping"] = {
+				["web"] = {
+					-- &lt;= left side: all allowed reference properties for *web page sources* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite web]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "website",
+					[aliasesP.referenceURL]            = "url",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date",
+					[aliasesP.title]                   = "title",
+					[aliasesP.subjectNamedAs]          = "title",
+					[aliasesP.archiveURL]              = "archive-url",
+					[aliasesP.archiveDate]             = "archive-date",
+					[aliasesP.language]                = "language",
+					[aliasesP.author]                  = "author",
+					[aliasesP.authorNameString]        = "author",
+					[aliasesP.publisher]               = "publisher",
+					[aliasesP.quote]                   = "quote",
+					[aliasesP.pages]                   = "pages",  -- extra option
+					[aliasesP.publishedIn]             = "website",
+					[aliasesP.sectionVerseOrParagraph] = "at"
+				},
+				["q"] = {
+					-- &lt;= left side: all allowed reference properties for *sources other than web pages* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite Q]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "1",
+					[aliasesP.pages]                   = "pages",
+					[aliasesP.column]                  = "at",
+					[aliasesP.chapter]                 = "chapter",
+					[aliasesP.sectionVerseOrParagraph] = "section",
+					["external-id"]                    = "id",  -- used for any type of database property ID
+					[aliasesP.title]                   = "title",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date"
+				}
+			},
+			["config"] = {
+				-- supported fields:
+				--     - template: name of the template used for output
+				--     - numbered-params: citation params accepting an arbitrary number of values by numbering the params (e.g. author1, author2)
+				--     - raw-value-params: params taking a raw value (which means the property is rendered with getValue with raw=true)
+				--     - mandatory-params: params that are required be in the template call (after potentially appending numbers to params listed in numbered-params)
+				--     - prioritization: table associating a list of properties, in the order in which they are preferred, to template parameters;
+				--                       properties not mentioned here have the lowest priority;
+				--                       prioritization of properties handled through additionalProcessedProperties is unsupported;
+				--                       no key of this table can be from numbered-params 
+				-- Leaving out the "template" field causes the output type to be ignored.
+				["web"] = {
+					["template"] = "Cite web",
+					["numbered-params"] = {"author"},
+					["mandatory-params"] = {"url"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate},
+						["title"] = {aliasesP.title, aliasesP.subjectNamedAs}
+					}
+				},
+				["q"] = {
+					["template"] = "Cite Q",
+					["raw-value-params"] = {"1"},  -- the first, unnamed parameter of CiteQ takes a QID, not the name of the item cited
+					["mandatory-params"] = {"1"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate}
+					}
+				}
+			}
+		}
+	}
+
+	p.getOrdinalSuffix = function(num)
+		if tostring(num):sub(-2,-2) == '1' then
+			return "th"  -- 10th, 11th, 12th, 13th, ... 19th
+		end
+
+		num = tostring(num):sub(-1)
+
+		if num == '1' then
+			return "st"
+		elseif num == '2' then
+			return "nd"
+		elseif num == '3' then
+			return "rd"
+		else
+			return "th"
+		end
+	end
+
+	p.addDelimiters = function(n)
+		local left, num, right = string.match(n, "^([^%d]*%d)(%d*)(.-)$")
+
+		if left and num and right then
+			return left .. (num:reverse():gsub("(%d%d%d)", "%1" .. p['numeric']['delimiter']):reverse()) .. right
+		else
+			return n
+		end
+	end
+
+	return p
+end
+
+return p</text>
+      <sha1>pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5</sha1>
+    </revision>
+    <revision>
+      <id>3412291</id>
+      <parentid>3412290</parentid>
+      <timestamp>2026-03-13T00:16:21Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: importing</comment>
+      <origin>571</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7249" sha1="pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5" xml:space="preserve">-- The values and functions in this submodule should be localized per wiki.
+
+local p = {}
+
+function p.init(aliasesP)
+	p = {
+		["version"] = "8",  -- increment this each time the below parameters are changed to avoid reference conflict errors
+		["errors"] = {
+			["unknown-data-type"]          = "Unknown or unsupported datatype '%s'.",
+			["missing-required-parameter"] = "No required parameters defined, needing at least one",
+			["extra-required-parameter"]   = "Parameter '%s' must be defined as optional",
+			["no-function-specified"]      = "You must specify a function to call",  -- equal to the standard module error message
+			["main-called-twice"]          = 'The function "main" cannot be called twice',
+			["no-such-function"]           = 'The function "%s" does not exist',  -- equal to the standard module error message
+            ["no-such-reference-template"] = 'Error: template "%s", which is set in %s as the output template for the citation-output type "%s", does not exist',
+            -- Parts of the error message signalling a malformed reference.
+            ["malformed-reference-header"] = "&lt;span style=\"color:#dd3333\"&gt;\nError: Unable to display the reference from Wikidata properly. Technical details:\n",
+            ["malformed-reference-footer"] = "See [[Module:wd/doc#References|the documentation]] for further details.\n&lt;/span&gt;\n[[Category:Module:Wd reference errors]]",
+            ["template-failure-reason"]    = "* Reason for the failure of {{tl|%s}}: %s\n",
+            ["missing-mandatory-param"]    = 'The output template call would miss the mandatory parameter &lt;code&gt;%s&lt;/code&gt;.',
+            ["unknown-property-in-ref"]    = 'The Wikidata reference contains the property {{property|%s}}, which is not assigned to any parameter of this template.'
+		},
+		["info"] = {
+			["edit-on-wikidata"] = "Edit this on Wikidata"
+		},
+		["numeric"] = {
+			["decimal-mark"] = ".",
+			["delimiter"]    = ","
+		},
+		["datetime"] = {
+			["prefixes"] = {
+				["decade-period"] = ""
+			},
+			["suffixes"] = {
+				["decade-period"] = "s",
+				["millennium"]    = " millennium",
+				["century"]       = " century",
+				["million-years"] = " million years",
+				["billion-years"] = " billion years",
+				["year"]          = " year",
+				["years"]         = " years"
+			},
+			["julian-calendar"] = "Julian calendar",  -- linked page title
+			["julian"]          = "Julian",
+			["BCE"]             = "BCE",
+			["CE"]              = "CE",
+			["common-era"]      = "Common Era"  -- linked page title
+		},
+		["coord"] = {
+			["latitude-north"] = "N",
+			["latitude-south"] = "S",
+			["longitude-east"] = "E",
+			["longitude-west"] = "W",
+			["degrees"]        = "°",
+			["minutes"]        = "'",
+			["seconds"]        = '"',
+			["separator"]      = ", "
+		},
+		["values"] = {
+			["unknown"] = "unknown",
+			["none"]    = "none"
+		},
+		["cite"] = {
+			["output-types"] = {"web", "q"},  -- In this order, the output types will be tried
+			["param-mapping"] = {
+				["web"] = {
+					-- &lt;= left side: all allowed reference properties for *web page sources* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite web]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "website",
+					[aliasesP.referenceURL]            = "url",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date",
+					[aliasesP.title]                   = "title",
+					[aliasesP.subjectNamedAs]          = "title",
+					[aliasesP.archiveURL]              = "archive-url",
+					[aliasesP.archiveDate]             = "archive-date",
+					[aliasesP.language]                = "language",
+					[aliasesP.author]                  = "author",
+					[aliasesP.authorNameString]        = "author",
+					[aliasesP.publisher]               = "publisher",
+					[aliasesP.quote]                   = "quote",
+					[aliasesP.pages]                   = "pages",  -- extra option
+					[aliasesP.publishedIn]             = "website",
+					[aliasesP.sectionVerseOrParagraph] = "at"
+				},
+				["q"] = {
+					-- &lt;= left side: all allowed reference properties for *sources other than web pages* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite Q]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "1",
+					[aliasesP.pages]                   = "pages",
+					[aliasesP.column]                  = "at",
+					[aliasesP.chapter]                 = "chapter",
+					[aliasesP.sectionVerseOrParagraph] = "section",
+					["external-id"]                    = "id",  -- used for any type of database property ID
+					[aliasesP.title]                   = "title",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date"
+				}
+			},
+			["config"] = {
+				-- supported fields:
+				--     - template: name of the template used for output
+				--     - numbered-params: citation params accepting an arbitrary number of values by numbering the params (e.g. author1, author2)
+				--     - raw-value-params: params taking a raw value (which means the property is rendered with getValue with raw=true)
+				--     - mandatory-params: params that are required be in the template call (after potentially appending numbers to params listed in numbered-params)
+				--     - prioritization: table associating a list of properties, in the order in which they are preferred, to template parameters;
+				--                       properties not mentioned here have the lowest priority;
+				--                       prioritization of properties handled through additionalProcessedProperties is unsupported;
+				--                       no key of this table can be from numbered-params 
+				-- Leaving out the "template" field causes the output type to be ignored.
+				["web"] = {
+					["template"] = "Cite web",
+					["numbered-params"] = {"author"},
+					["mandatory-params"] = {"url"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate},
+						["title"] = {aliasesP.title, aliasesP.subjectNamedAs}
+					}
+				},
+				["q"] = {
+					["template"] = "Cite Q",
+					["raw-value-params"] = {"1"},  -- the first, unnamed parameter of CiteQ takes a QID, not the name of the item cited
+					["mandatory-params"] = {"1"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate}
+					}
+				}
+			}
+		}
+	}
+
+	p.getOrdinalSuffix = function(num)
+		if tostring(num):sub(-2,-2) == '1' then
+			return "th"  -- 10th, 11th, 12th, 13th, ... 19th
+		end
+
+		num = tostring(num):sub(-1)
+
+		if num == '1' then
+			return "st"
+		elseif num == '2' then
+			return "nd"
+		elseif num == '3' then
+			return "rd"
+		else
+			return "th"
+		end
+	end
+
+	p.addDelimiters = function(n)
+		local left, num, right = string.match(n, "^([^%d]*%d)(%d*)(.-)$")
+
+		if left and num and right then
+			return left .. (num:reverse():gsub("(%d%d%d)", "%1" .. p['numeric']['delimiter']):reverse()) .. right
+		else
+			return n
+		end
+	end
+
+	return p
+end
+
+return p</text>
+      <sha1>pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5</sha1>
+    </revision>
+    <revision>
+      <id>3412659</id>
+      <parentid>3412291</parentid>
+      <timestamp>2026-03-13T00:17:24Z</timestamp>
+      <contributor>
+        <username>en&gt;Janhrach</username>
+        <id>0</id>
+      </contributor>
+      <comment>update from sandbox</comment>
+      <origin>571</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7249" sha1="pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5" xml:space="preserve">-- The values and functions in this submodule should be localized per wiki.
+
+local p = {}
+
+function p.init(aliasesP)
+	p = {
+		["version"] = "8",  -- increment this each time the below parameters are changed to avoid reference conflict errors
+		["errors"] = {
+			["unknown-data-type"]          = "Unknown or unsupported datatype '%s'.",
+			["missing-required-parameter"] = "No required parameters defined, needing at least one",
+			["extra-required-parameter"]   = "Parameter '%s' must be defined as optional",
+			["no-function-specified"]      = "You must specify a function to call",  -- equal to the standard module error message
+			["main-called-twice"]          = 'The function "main" cannot be called twice',
+			["no-such-function"]           = 'The function "%s" does not exist',  -- equal to the standard module error message
+            ["no-such-reference-template"] = 'Error: template "%s", which is set in %s as the output template for the citation-output type "%s", does not exist',
+            -- Parts of the error message signalling a malformed reference.
+            ["malformed-reference-header"] = "&lt;span style=\"color:#dd3333\"&gt;\nError: Unable to display the reference from Wikidata properly. Technical details:\n",
+            ["malformed-reference-footer"] = "See [[Module:wd/doc#References|the documentation]] for further details.\n&lt;/span&gt;\n[[Category:Module:Wd reference errors]]",
+            ["template-failure-reason"]    = "* Reason for the failure of {{tl|%s}}: %s\n",
+            ["missing-mandatory-param"]    = 'The output template call would miss the mandatory parameter &lt;code&gt;%s&lt;/code&gt;.',
+            ["unknown-property-in-ref"]    = 'The Wikidata reference contains the property {{property|%s}}, which is not assigned to any parameter of this template.'
+		},
+		["info"] = {
+			["edit-on-wikidata"] = "Edit this on Wikidata"
+		},
+		["numeric"] = {
+			["decimal-mark"] = ".",
+			["delimiter"]    = ","
+		},
+		["datetime"] = {
+			["prefixes"] = {
+				["decade-period"] = ""
+			},
+			["suffixes"] = {
+				["decade-period"] = "s",
+				["millennium"]    = " millennium",
+				["century"]       = " century",
+				["million-years"] = " million years",
+				["billion-years"] = " billion years",
+				["year"]          = " year",
+				["years"]         = " years"
+			},
+			["julian-calendar"] = "Julian calendar",  -- linked page title
+			["julian"]          = "Julian",
+			["BCE"]             = "BCE",
+			["CE"]              = "CE",
+			["common-era"]      = "Common Era"  -- linked page title
+		},
+		["coord"] = {
+			["latitude-north"] = "N",
+			["latitude-south"] = "S",
+			["longitude-east"] = "E",
+			["longitude-west"] = "W",
+			["degrees"]        = "°",
+			["minutes"]        = "'",
+			["seconds"]        = '"',
+			["separator"]      = ", "
+		},
+		["values"] = {
+			["unknown"] = "unknown",
+			["none"]    = "none"
+		},
+		["cite"] = {
+			["output-types"] = {"web", "q"},  -- In this order, the output types will be tried
+			["param-mapping"] = {
+				["web"] = {
+					-- &lt;= left side: all allowed reference properties for *web page sources* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite web]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "website",
+					[aliasesP.referenceURL]            = "url",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date",
+					[aliasesP.title]                   = "title",
+					[aliasesP.subjectNamedAs]          = "title",
+					[aliasesP.archiveURL]              = "archive-url",
+					[aliasesP.archiveDate]             = "archive-date",
+					[aliasesP.language]                = "language",
+					[aliasesP.author]                  = "author",
+					[aliasesP.authorNameString]        = "author",
+					[aliasesP.publisher]               = "publisher",
+					[aliasesP.quote]                   = "quote",
+					[aliasesP.pages]                   = "pages",  -- extra option
+					[aliasesP.publishedIn]             = "website",
+					[aliasesP.sectionVerseOrParagraph] = "at"
+				},
+				["q"] = {
+					-- &lt;= left side: all allowed reference properties for *sources other than web pages* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite Q]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "1",
+					[aliasesP.pages]                   = "pages",
+					[aliasesP.column]                  = "at",
+					[aliasesP.chapter]                 = "chapter",
+					[aliasesP.sectionVerseOrParagraph] = "section",
+					["external-id"]                    = "id",  -- used for any type of database property ID
+					[aliasesP.title]                   = "title",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date"
+				}
+			},
+			["config"] = {
+				-- supported fields:
+				--     - template: name of the template used for output
+				--     - numbered-params: citation params accepting an arbitrary number of values by numbering the params (e.g. author1, author2)
+				--     - raw-value-params: params taking a raw value (which means the property is rendered with getValue with raw=true)
+				--     - mandatory-params: params that are required be in the template call (after potentially appending numbers to params listed in numbered-params)
+				--     - prioritization: table associating a list of properties, in the order in which they are preferred, to template parameters;
+				--                       properties not mentioned here have the lowest priority;
+				--                       prioritization of properties handled through additionalProcessedProperties is unsupported;
+				--                       no key of this table can be from numbered-params 
+				-- Leaving out the "template" field causes the output type to be ignored.
+				["web"] = {
+					["template"] = "Cite web",
+					["numbered-params"] = {"author"},
+					["mandatory-params"] = {"url"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate},
+						["title"] = {aliasesP.title, aliasesP.subjectNamedAs}
+					}
+				},
+				["q"] = {
+					["template"] = "Cite Q",
+					["raw-value-params"] = {"1"},  -- the first, unnamed parameter of CiteQ takes a QID, not the name of the item cited
+					["mandatory-params"] = {"1"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate}
+					}
+				}
+			}
+		}
+	}
+
+	p.getOrdinalSuffix = function(num)
+		if tostring(num):sub(-2,-2) == '1' then
+			return "th"  -- 10th, 11th, 12th, 13th, ... 19th
+		end
+
+		num = tostring(num):sub(-1)
+
+		if num == '1' then
+			return "st"
+		elseif num == '2' then
+			return "nd"
+		elseif num == '3' then
+			return "rd"
+		else
+			return "th"
+		end
+	end
+
+	p.addDelimiters = function(n)
+		local left, num, right = string.match(n, "^([^%d]*%d)(%d*)(.-)$")
+
+		if left and num and right then
+			return left .. (num:reverse():gsub("(%d%d%d)", "%1" .. p['numeric']['delimiter']):reverse()) .. right
+		else
+			return n
+		end
+	end
+
+	return p
+end
+
+return p</text>
+      <sha1>pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5</sha1>
+    </revision>
+    <revision>
+      <id>3412660</id>
+      <parentid>3412659</parentid>
+      <timestamp>2026-03-13T00:17:24Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>571</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7249" sha1="pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5" xml:space="preserve">-- The values and functions in this submodule should be localized per wiki.
+
+local p = {}
+
+function p.init(aliasesP)
+	p = {
+		["version"] = "8",  -- increment this each time the below parameters are changed to avoid reference conflict errors
+		["errors"] = {
+			["unknown-data-type"]          = "Unknown or unsupported datatype '%s'.",
+			["missing-required-parameter"] = "No required parameters defined, needing at least one",
+			["extra-required-parameter"]   = "Parameter '%s' must be defined as optional",
+			["no-function-specified"]      = "You must specify a function to call",  -- equal to the standard module error message
+			["main-called-twice"]          = 'The function "main" cannot be called twice',
+			["no-such-function"]           = 'The function "%s" does not exist',  -- equal to the standard module error message
+            ["no-such-reference-template"] = 'Error: template "%s", which is set in %s as the output template for the citation-output type "%s", does not exist',
+            -- Parts of the error message signalling a malformed reference.
+            ["malformed-reference-header"] = "&lt;span style=\"color:#dd3333\"&gt;\nError: Unable to display the reference from Wikidata properly. Technical details:\n",
+            ["malformed-reference-footer"] = "See [[Module:wd/doc#References|the documentation]] for further details.\n&lt;/span&gt;\n[[Category:Module:Wd reference errors]]",
+            ["template-failure-reason"]    = "* Reason for the failure of {{tl|%s}}: %s\n",
+            ["missing-mandatory-param"]    = 'The output template call would miss the mandatory parameter &lt;code&gt;%s&lt;/code&gt;.',
+            ["unknown-property-in-ref"]    = 'The Wikidata reference contains the property {{property|%s}}, which is not assigned to any parameter of this template.'
+		},
+		["info"] = {
+			["edit-on-wikidata"] = "Edit this on Wikidata"
+		},
+		["numeric"] = {
+			["decimal-mark"] = ".",
+			["delimiter"]    = ","
+		},
+		["datetime"] = {
+			["prefixes"] = {
+				["decade-period"] = ""
+			},
+			["suffixes"] = {
+				["decade-period"] = "s",
+				["millennium"]    = " millennium",
+				["century"]       = " century",
+				["million-years"] = " million years",
+				["billion-years"] = " billion years",
+				["year"]          = " year",
+				["years"]         = " years"
+			},
+			["julian-calendar"] = "Julian calendar",  -- linked page title
+			["julian"]          = "Julian",
+			["BCE"]             = "BCE",
+			["CE"]              = "CE",
+			["common-era"]      = "Common Era"  -- linked page title
+		},
+		["coord"] = {
+			["latitude-north"] = "N",
+			["latitude-south"] = "S",
+			["longitude-east"] = "E",
+			["longitude-west"] = "W",
+			["degrees"]        = "°",
+			["minutes"]        = "'",
+			["seconds"]        = '"',
+			["separator"]      = ", "
+		},
+		["values"] = {
+			["unknown"] = "unknown",
+			["none"]    = "none"
+		},
+		["cite"] = {
+			["output-types"] = {"web", "q"},  -- In this order, the output types will be tried
+			["param-mapping"] = {
+				["web"] = {
+					-- &lt;= left side: all allowed reference properties for *web page sources* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite web]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "website",
+					[aliasesP.referenceURL]            = "url",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date",
+					[aliasesP.title]                   = "title",
+					[aliasesP.subjectNamedAs]          = "title",
+					[aliasesP.archiveURL]              = "archive-url",
+					[aliasesP.archiveDate]             = "archive-date",
+					[aliasesP.language]                = "language",
+					[aliasesP.author]                  = "author",
+					[aliasesP.authorNameString]        = "author",
+					[aliasesP.publisher]               = "publisher",
+					[aliasesP.quote]                   = "quote",
+					[aliasesP.pages]                   = "pages",  -- extra option
+					[aliasesP.publishedIn]             = "website",
+					[aliasesP.sectionVerseOrParagraph] = "at"
+				},
+				["q"] = {
+					-- &lt;= left side: all allowed reference properties for *sources other than web pages* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite Q]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "1",
+					[aliasesP.pages]                   = "pages",
+					[aliasesP.column]                  = "at",
+					[aliasesP.chapter]                 = "chapter",
+					[aliasesP.sectionVerseOrParagraph] = "section",
+					["external-id"]                    = "id",  -- used for any type of database property ID
+					[aliasesP.title]                   = "title",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date"
+				}
+			},
+			["config"] = {
+				-- supported fields:
+				--     - template: name of the template used for output
+				--     - numbered-params: citation params accepting an arbitrary number of values by numbering the params (e.g. author1, author2)
+				--     - raw-value-params: params taking a raw value (which means the property is rendered with getValue with raw=true)
+				--     - mandatory-params: params that are required be in the template call (after potentially appending numbers to params listed in numbered-params)
+				--     - prioritization: table associating a list of properties, in the order in which they are preferred, to template parameters;
+				--                       properties not mentioned here have the lowest priority;
+				--                       prioritization of properties handled through additionalProcessedProperties is unsupported;
+				--                       no key of this table can be from numbered-params 
+				-- Leaving out the "template" field causes the output type to be ignored.
+				["web"] = {
+					["template"] = "Cite web",
+					["numbered-params"] = {"author"},
+					["mandatory-params"] = {"url"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate},
+						["title"] = {aliasesP.title, aliasesP.subjectNamedAs}
+					}
+				},
+				["q"] = {
+					["template"] = "Cite Q",
+					["raw-value-params"] = {"1"},  -- the first, unnamed parameter of CiteQ takes a QID, not the name of the item cited
+					["mandatory-params"] = {"1"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate}
+					}
+				}
+			}
+		}
+	}
+
+	p.getOrdinalSuffix = function(num)
+		if tostring(num):sub(-2,-2) == '1' then
+			return "th"  -- 10th, 11th, 12th, 13th, ... 19th
+		end
+
+		num = tostring(num):sub(-1)
+
+		if num == '1' then
+			return "st"
+		elseif num == '2' then
+			return "nd"
+		elseif num == '3' then
+			return "rd"
+		else
+			return "th"
+		end
+	end
+
+	p.addDelimiters = function(n)
+		local left, num, right = string.match(n, "^([^%d]*%d)(%d*)(.-)$")
+
+		if left and num and right then
+			return left .. (num:reverse():gsub("(%d%d%d)", "%1" .. p['numeric']['delimiter']):reverse()) .. right
+		else
+			return n
+		end
+	end
+
+	return p
+end
+
+return p</text>
+      <sha1>pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5</sha1>
+    </revision>
+    <revision>
+      <id>3560831</id>
+      <parentid>3412660</parentid>
+      <timestamp>2026-03-21T20:10:30Z</timestamp>
+      <contributor>
+        <username>en&gt;Janhrach</username>
+        <id>0</id>
+      </contributor>
+      <comment>update from sandbox</comment>
+      <origin>571</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7249" sha1="pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5" xml:space="preserve">-- The values and functions in this submodule should be localized per wiki.
+
+local p = {}
+
+function p.init(aliasesP)
+	p = {
+		["version"] = "8",  -- increment this each time the below parameters are changed to avoid reference conflict errors
+		["errors"] = {
+			["unknown-data-type"]          = "Unknown or unsupported datatype '%s'.",
+			["missing-required-parameter"] = "No required parameters defined, needing at least one",
+			["extra-required-parameter"]   = "Parameter '%s' must be defined as optional",
+			["no-function-specified"]      = "You must specify a function to call",  -- equal to the standard module error message
+			["main-called-twice"]          = 'The function "main" cannot be called twice',
+			["no-such-function"]           = 'The function "%s" does not exist',  -- equal to the standard module error message
+            ["no-such-reference-template"] = 'Error: template "%s", which is set in %s as the output template for the citation-output type "%s", does not exist',
+            -- Parts of the error message signalling a malformed reference.
+            ["malformed-reference-header"] = "&lt;span style=\"color:#dd3333\"&gt;\nError: Unable to display the reference from Wikidata properly. Technical details:\n",
+            ["malformed-reference-footer"] = "See [[Module:wd/doc#References|the documentation]] for further details.\n&lt;/span&gt;\n[[Category:Module:Wd reference errors]]",
+            ["template-failure-reason"]    = "* Reason for the failure of {{tl|%s}}: %s\n",
+            ["missing-mandatory-param"]    = 'The output template call would miss the mandatory parameter &lt;code&gt;%s&lt;/code&gt;.',
+            ["unknown-property-in-ref"]    = 'The Wikidata reference contains the property {{property|%s}}, which is not assigned to any parameter of this template.'
+		},
+		["info"] = {
+			["edit-on-wikidata"] = "Edit this on Wikidata"
+		},
+		["numeric"] = {
+			["decimal-mark"] = ".",
+			["delimiter"]    = ","
+		},
+		["datetime"] = {
+			["prefixes"] = {
+				["decade-period"] = ""
+			},
+			["suffixes"] = {
+				["decade-period"] = "s",
+				["millennium"]    = " millennium",
+				["century"]       = " century",
+				["million-years"] = " million years",
+				["billion-years"] = " billion years",
+				["year"]          = " year",
+				["years"]         = " years"
+			},
+			["julian-calendar"] = "Julian calendar",  -- linked page title
+			["julian"]          = "Julian",
+			["BCE"]             = "BCE",
+			["CE"]              = "CE",
+			["common-era"]      = "Common Era"  -- linked page title
+		},
+		["coord"] = {
+			["latitude-north"] = "N",
+			["latitude-south"] = "S",
+			["longitude-east"] = "E",
+			["longitude-west"] = "W",
+			["degrees"]        = "°",
+			["minutes"]        = "'",
+			["seconds"]        = '"',
+			["separator"]      = ", "
+		},
+		["values"] = {
+			["unknown"] = "unknown",
+			["none"]    = "none"
+		},
+		["cite"] = {
+			["output-types"] = {"web", "q"},  -- In this order, the output types will be tried
+			["param-mapping"] = {
+				["web"] = {
+					-- &lt;= left side: all allowed reference properties for *web page sources* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite web]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "website",
+					[aliasesP.referenceURL]            = "url",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date",
+					[aliasesP.title]                   = "title",
+					[aliasesP.subjectNamedAs]          = "title",
+					[aliasesP.archiveURL]              = "archive-url",
+					[aliasesP.archiveDate]             = "archive-date",
+					[aliasesP.language]                = "language",
+					[aliasesP.author]                  = "author",
+					[aliasesP.authorNameString]        = "author",
+					[aliasesP.publisher]               = "publisher",
+					[aliasesP.quote]                   = "quote",
+					[aliasesP.pages]                   = "pages",  -- extra option
+					[aliasesP.publishedIn]             = "website",
+					[aliasesP.sectionVerseOrParagraph] = "at"
+				},
+				["q"] = {
+					-- &lt;= left side: all allowed reference properties for *sources other than web pages* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite Q]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "1",
+					[aliasesP.pages]                   = "pages",
+					[aliasesP.column]                  = "at",
+					[aliasesP.chapter]                 = "chapter",
+					[aliasesP.sectionVerseOrParagraph] = "section",
+					["external-id"]                    = "id",  -- used for any type of database property ID
+					[aliasesP.title]                   = "title",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date"
+				}
+			},
+			["config"] = {
+				-- supported fields:
+				--     - template: name of the template used for output
+				--     - numbered-params: citation params accepting an arbitrary number of values by numbering the params (e.g. author1, author2)
+				--     - raw-value-params: params taking a raw value (which means the property is rendered with getValue with raw=true)
+				--     - mandatory-params: params that are required be in the template call (after potentially appending numbers to params listed in numbered-params)
+				--     - prioritization: table associating a list of properties, in the order in which they are preferred, to template parameters;
+				--                       properties not mentioned here have the lowest priority;
+				--                       prioritization of properties handled through additionalProcessedProperties is unsupported;
+				--                       no key of this table can be from numbered-params 
+				-- Leaving out the "template" field causes the output type to be ignored.
+				["web"] = {
+					["template"] = "Cite web",
+					["numbered-params"] = {"author"},
+					["mandatory-params"] = {"url"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate},
+						["title"] = {aliasesP.title, aliasesP.subjectNamedAs}
+					}
+				},
+				["q"] = {
+					["template"] = "Cite Q",
+					["raw-value-params"] = {"1"},  -- the first, unnamed parameter of CiteQ takes a QID, not the name of the item cited
+					["mandatory-params"] = {"1"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate}
+					}
+				}
+			}
+		}
+	}
+
+	p.getOrdinalSuffix = function(num)
+		if tostring(num):sub(-2,-2) == '1' then
+			return "th"  -- 10th, 11th, 12th, 13th, ... 19th
+		end
+
+		num = tostring(num):sub(-1)
+
+		if num == '1' then
+			return "st"
+		elseif num == '2' then
+			return "nd"
+		elseif num == '3' then
+			return "rd"
+		else
+			return "th"
+		end
+	end
+
+	p.addDelimiters = function(n)
+		local left, num, right = string.match(n, "^([^%d]*%d)(%d*)(.-)$")
+
+		if left and num and right then
+			return left .. (num:reverse():gsub("(%d%d%d)", "%1" .. p['numeric']['delimiter']):reverse()) .. right
+		else
+			return n
+		end
+	end
+
+	return p
+end
+
+return p</text>
+      <sha1>pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5</sha1>
+    </revision>
+    <revision>
+      <id>3560832</id>
+      <parentid>3560831</parentid>
+      <timestamp>2026-03-21T20:10:31Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>571</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7249" sha1="pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5" xml:space="preserve">-- The values and functions in this submodule should be localized per wiki.
+
+local p = {}
+
+function p.init(aliasesP)
+	p = {
+		["version"] = "8",  -- increment this each time the below parameters are changed to avoid reference conflict errors
+		["errors"] = {
+			["unknown-data-type"]          = "Unknown or unsupported datatype '%s'.",
+			["missing-required-parameter"] = "No required parameters defined, needing at least one",
+			["extra-required-parameter"]   = "Parameter '%s' must be defined as optional",
+			["no-function-specified"]      = "You must specify a function to call",  -- equal to the standard module error message
+			["main-called-twice"]          = 'The function "main" cannot be called twice',
+			["no-such-function"]           = 'The function "%s" does not exist',  -- equal to the standard module error message
+            ["no-such-reference-template"] = 'Error: template "%s", which is set in %s as the output template for the citation-output type "%s", does not exist',
+            -- Parts of the error message signalling a malformed reference.
+            ["malformed-reference-header"] = "&lt;span style=\"color:#dd3333\"&gt;\nError: Unable to display the reference from Wikidata properly. Technical details:\n",
+            ["malformed-reference-footer"] = "See [[Module:wd/doc#References|the documentation]] for further details.\n&lt;/span&gt;\n[[Category:Module:Wd reference errors]]",
+            ["template-failure-reason"]    = "* Reason for the failure of {{tl|%s}}: %s\n",
+            ["missing-mandatory-param"]    = 'The output template call would miss the mandatory parameter &lt;code&gt;%s&lt;/code&gt;.',
+            ["unknown-property-in-ref"]    = 'The Wikidata reference contains the property {{property|%s}}, which is not assigned to any parameter of this template.'
+		},
+		["info"] = {
+			["edit-on-wikidata"] = "Edit this on Wikidata"
+		},
+		["numeric"] = {
+			["decimal-mark"] = ".",
+			["delimiter"]    = ","
+		},
+		["datetime"] = {
+			["prefixes"] = {
+				["decade-period"] = ""
+			},
+			["suffixes"] = {
+				["decade-period"] = "s",
+				["millennium"]    = " millennium",
+				["century"]       = " century",
+				["million-years"] = " million years",
+				["billion-years"] = " billion years",
+				["year"]          = " year",
+				["years"]         = " years"
+			},
+			["julian-calendar"] = "Julian calendar",  -- linked page title
+			["julian"]          = "Julian",
+			["BCE"]             = "BCE",
+			["CE"]              = "CE",
+			["common-era"]      = "Common Era"  -- linked page title
+		},
+		["coord"] = {
+			["latitude-north"] = "N",
+			["latitude-south"] = "S",
+			["longitude-east"] = "E",
+			["longitude-west"] = "W",
+			["degrees"]        = "°",
+			["minutes"]        = "'",
+			["seconds"]        = '"',
+			["separator"]      = ", "
+		},
+		["values"] = {
+			["unknown"] = "unknown",
+			["none"]    = "none"
+		},
+		["cite"] = {
+			["output-types"] = {"web", "q"},  -- In this order, the output types will be tried
+			["param-mapping"] = {
+				["web"] = {
+					-- &lt;= left side: all allowed reference properties for *web page sources* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite web]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "website",
+					[aliasesP.referenceURL]            = "url",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date",
+					[aliasesP.title]                   = "title",
+					[aliasesP.subjectNamedAs]          = "title",
+					[aliasesP.archiveURL]              = "archive-url",
+					[aliasesP.archiveDate]             = "archive-date",
+					[aliasesP.language]                = "language",
+					[aliasesP.author]                  = "author",
+					[aliasesP.authorNameString]        = "author",
+					[aliasesP.publisher]               = "publisher",
+					[aliasesP.quote]                   = "quote",
+					[aliasesP.pages]                   = "pages",  -- extra option
+					[aliasesP.publishedIn]             = "website",
+					[aliasesP.sectionVerseOrParagraph] = "at"
+				},
+				["q"] = {
+					-- &lt;= left side: all allowed reference properties for *sources other than web pages* per https://www.wikidata.org/wiki/Help:Sources
+					-- =&gt; right side: corresponding parameter names in (equivalent of) [[:en:Template:Cite Q]] (if non-existent, keep empty i.e. "")
+					[aliasesP.statedIn]                = "1",
+					[aliasesP.pages]                   = "pages",
+					[aliasesP.column]                  = "at",
+					[aliasesP.chapter]                 = "chapter",
+					[aliasesP.sectionVerseOrParagraph] = "section",
+					["external-id"]                    = "id",  -- used for any type of database property ID
+					[aliasesP.title]                   = "title",
+					[aliasesP.publicationDate]         = "date",
+					[aliasesP.lastUpdate]              = "date",
+					[aliasesP.retrieved]               = "access-date"
+				}
+			},
+			["config"] = {
+				-- supported fields:
+				--     - template: name of the template used for output
+				--     - numbered-params: citation params accepting an arbitrary number of values by numbering the params (e.g. author1, author2)
+				--     - raw-value-params: params taking a raw value (which means the property is rendered with getValue with raw=true)
+				--     - mandatory-params: params that are required be in the template call (after potentially appending numbers to params listed in numbered-params)
+				--     - prioritization: table associating a list of properties, in the order in which they are preferred, to template parameters;
+				--                       properties not mentioned here have the lowest priority;
+				--                       prioritization of properties handled through additionalProcessedProperties is unsupported;
+				--                       no key of this table can be from numbered-params 
+				-- Leaving out the "template" field causes the output type to be ignored.
+				["web"] = {
+					["template"] = "Cite web",
+					["numbered-params"] = {"author"},
+					["mandatory-params"] = {"url"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate},
+						["title"] = {aliasesP.title, aliasesP.subjectNamedAs}
+					}
+				},
+				["q"] = {
+					["template"] = "Cite Q",
+					["raw-value-params"] = {"1"},  -- the first, unnamed parameter of CiteQ takes a QID, not the name of the item cited
+					["mandatory-params"] = {"1"},
+					["prioritization"] = {
+						["date"] = {aliasesP.lastUpdate, aliasesP.publicationDate}
+					}
+				}
+			}
+		}
+	}
+
+	p.getOrdinalSuffix = function(num)
+		if tostring(num):sub(-2,-2) == '1' then
+			return "th"  -- 10th, 11th, 12th, 13th, ... 19th
+		end
+
+		num = tostring(num):sub(-1)
+
+		if num == '1' then
+			return "st"
+		elseif num == '2' then
+			return "nd"
+		elseif num == '3' then
+			return "rd"
+		else
+			return "th"
+		end
+	end
+
+	p.addDelimiters = function(n)
+		local left, num, right = string.match(n, "^([^%d]*%d)(%d*)(.-)$")
+
+		if left and num and right then
+			return left .. (num:reverse():gsub("(%d%d%d)", "%1" .. p['numeric']['delimiter']):reverse()) .. right
+		else
+			return n
+		end
+	end
+
+	return p
+end
+
+return p</text>
+      <sha1>pgkxz3kqyoyu0zj2nmtkjkdr0ntnin5</sha1>
+    </revision>
+  </page>
+</mediawiki>

@@ -1,0 +1,282 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Ustring/doc</title>
+    <ns>828</ns>
+    <id>8276</id>
+    <revision>
+      <id>916600</id>
+      <timestamp>2024-10-19T02:15:02Z</timestamp>
+      <contributor>
+        <username>en&gt;64.114 etc</username>
+        <id>0</id>
+      </contributor>
+      <origin>916600</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="4622" sha1="otedhfkicactbw1ra54b3e6z48uvj66" xml:space="preserve">{{used in system}}
+{{cascade-protected template|page=module}}
+{{Module rating |release&lt;!-- Values:  pre-alpha • alpha • beta • release • protected  --  If a rating not needed/relevant, delete this template call --&gt;}}
+&lt;!-- Please place categories where indicated at the bottom of this page and interwikis at Wikidata (see [[Wikipedia:Wikidata]]) --&gt;
+This module directly imports all functions from the {{luaref|Ustring library|mw.ustring}} library. Documentation for each function can be found there.
+
+The module takes an indefinite number of arguments. Arguments given as {{para|s1}}, {{para|s2}}, etc, are read first, and are used as strings. All remaining numerical arguments are coerced to number type if possible, and remain strings if not. If you wish for a numerical (i.e. unnamed or "{{para|1}}", "{{para|2}}") to remain a string, you can simply escape it by inserting &lt;code&gt;\&lt;/code&gt; at the beginning of the string.
+
+Note that MediaWiki will always trim whitespace from named arguments; to give arguments with surrounding whitespace you must use unnamed parameters starting with &lt;code&gt;\&lt;/code&gt;.
+
+{| class="wikitable"
+|+ How to pass inconvenient strings
+|-
+! To pass this... !! Write this !! Explanation
+|-
+| &lt;code&gt;"  0123  "&lt;/code&gt; || {{para||\  123  }} || To get surrounding whitespace must use unnamed, but must precede with &lt;code&gt;\&lt;/code&gt; to indicate that it isn't a number.
+|-
+| &lt;code&gt;"0123"&lt;/code&gt; || {{para|s1|0123}} || If you don't need to preserve whitespace use {{para|s1}} etc.
+|-
+| &lt;code&gt;"0123"&lt;/code&gt; || {{para|1|\0123}} || If you don't need to preserve whitespace explicitly use {{para|1}} etc.
+|-
+| In another template, to pass its parameter &lt;code&gt;{{{1}}}&lt;/code&gt;, preserving whitespace || {{para||\{{{1}}}}} || Must provide the &lt;code&gt;\&lt;/code&gt; with unknown string input.
+|-
+| In another template, to pass its parameter &lt;code&gt;{{{1}}}&lt;/code&gt;, stripping whitespace || {{para|s1|{{{1}}}}} || 
+|-
+| In another template, to pass its parameter &lt;code&gt;{{{1}}}&lt;/code&gt;, stripping whitespace || {{para|1|&lt;nowiki&gt;\{{#if:1|{{{1}}}}}&lt;/nowiki&gt;}} || 
+|}
+
+You can also wrap results in tags. All other unused arguments will be passed to {{luaref|frame:extensionTag}}
+
+== Usage ==
+
+&lt;code&gt;&lt;nowiki&gt;{{&lt;/nowiki&gt;#invoke:{{BASEPAGENAME}}|''function_name''|arg1|arg2|...}}&lt;/code&gt; is equivalent to {{luaref|Ustring library|mw.ustring.''function_name''|args=arg1, arg2, ...}}
+
+===Example using mw.ustring.sub===
+&lt;code&gt;&lt;nowiki&gt;{{#invoke:Ustring|sub|s1=abcde|2|4}}&lt;/nowiki&gt;&lt;/code&gt;
+
+produces:
+
+{{#invoke:Ustring|sub|s1=abcde|2|4}}
+
+===Example using mw.ustring.gsub===
+&lt;code&gt;&lt;nowiki&gt;{{#invoke:Ustring|gsub|s1=1234|23|}}&lt;/nowiki&gt;&lt;/code&gt;
+
+produces:
+
+{{#invoke:Ustring|gsub|s1=1234|23|}}
+
+===Example using mw.ustring.char===
+&lt;code&gt;&lt;nowiki&gt;&amp;amp;amp;#{{#invoke:ustring|char|49|48|59}}&lt;/nowiki&gt;&lt;/code&gt;
+
+produces:
+
+&amp;amp;#{{#invoke:ustring|char|49|48|59}}
+
+===Example using mw.ustring.match===
+&lt;code&gt;&lt;nowiki&gt;{{#invoke:Ustring|match|s1=abcde|s2=(c%w)}}&lt;/nowiki&gt;&lt;/code&gt;
+
+produces:
+
+{{#invoke:Ustring|match|s1=abcde|s2=(c%w)}}
+
+Note: Only the first match is returned. Additional returns are omitted because mw.ustring.gsub's second return value is generally undesirable.
+
+===Example using tag arguments===
+&lt;pre&gt;{{#invoke:Ustring|match
+|s1={{Module:Ustring}}|%s%s%sif%snot%s[^%s]+%sthen.+%
+&lt;!--enter an actual newline character to match '\n'--&gt;%s%s%send
+|tag=syntaxhighlight|lang=lua}}&lt;/pre&gt;
+produces:
+{{#invoke:Ustring|match
+|s1={{Module:Ustring}}|%s%s%sif%snot%s[^%s]+%sthen.+%
+&lt;!--enter an actual newline character to match '\n'--&gt;%s%s%send
+|tag=syntaxhighlight|lang=lua}}
+
+Note that:
+{{#tag:pre|&lt;nowiki&gt;&lt;syntaxhighlight lang="lua"&gt;{{#invoke:Ustring|match
+|s1={{Module:Ustring}}|%s%s%sif%snot%s[^%s]+%sthen.+%
+&lt;!--enter an actual newline character to match '\n'--&gt;%s%s%send}}&lt;/syntaxhighlight&gt;&lt;/nowiki&gt;}}
+produces:
+&lt;syntaxhighlight lang="lua"&gt;{{#invoke:Ustring|match
+|s1={{Module:Ustring}}|%s%s%sif%snot%s[^%s]+%sthen.+%
+&lt;!--enter an actual newline character to match '\n'--&gt;%s%s%send}}&lt;/syntaxhighlight&gt;
+
+== Errors ==
+Errors from accessing {{luaref|Ustring library|mw.ustring}} should be maintained, e.g.:
+
+&lt;code&gt;&lt;nowiki&gt;{{#invoke:Ustring|xyzzy}}&lt;/nowiki&gt;&lt;/code&gt;
+
+should produce:
+
+{{script error|Script error: The function "xyzzy" does not exist.}}
+
+and
+
+&lt;code&gt;&lt;nowiki&gt;{{#invoke:Ustring|maxPatternLength}}&lt;/nowiki&gt;&lt;/code&gt;
+
+should produce:
+
+{{script error|Script error: "maxPatternLength" is not a function.}}
+
+== See also ==
+{{String handling templates}}
+&lt;includeonly&gt;{{#ifeq:{{SUBPAGENAME}}|sandbox | |
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:Modules that manipulate strings|*]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>otedhfkicactbw1ra54b3e6z48uvj66</sha1>
+    </revision>
+    <revision>
+      <id>8277</id>
+      <timestamp>2025-01-10T09:34:46Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: IMPORTING ALL WANTED MODULES</comment>
+      <origin>8277</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="4622" sha1="otedhfkicactbw1ra54b3e6z48uvj66" xml:space="preserve">{{used in system}}
+{{cascade-protected template|page=module}}
+{{Module rating |release&lt;!-- Values:  pre-alpha • alpha • beta • release • protected  --  If a rating not needed/relevant, delete this template call --&gt;}}
+&lt;!-- Please place categories where indicated at the bottom of this page and interwikis at Wikidata (see [[Wikipedia:Wikidata]]) --&gt;
+This module directly imports all functions from the {{luaref|Ustring library|mw.ustring}} library. Documentation for each function can be found there.
+
+The module takes an indefinite number of arguments. Arguments given as {{para|s1}}, {{para|s2}}, etc, are read first, and are used as strings. All remaining numerical arguments are coerced to number type if possible, and remain strings if not. If you wish for a numerical (i.e. unnamed or "{{para|1}}", "{{para|2}}") to remain a string, you can simply escape it by inserting &lt;code&gt;\&lt;/code&gt; at the beginning of the string.
+
+Note that MediaWiki will always trim whitespace from named arguments; to give arguments with surrounding whitespace you must use unnamed parameters starting with &lt;code&gt;\&lt;/code&gt;.
+
+{| class="wikitable"
+|+ How to pass inconvenient strings
+|-
+! To pass this... !! Write this !! Explanation
+|-
+| &lt;code&gt;"  0123  "&lt;/code&gt; || {{para||\  123  }} || To get surrounding whitespace must use unnamed, but must precede with &lt;code&gt;\&lt;/code&gt; to indicate that it isn't a number.
+|-
+| &lt;code&gt;"0123"&lt;/code&gt; || {{para|s1|0123}} || If you don't need to preserve whitespace use {{para|s1}} etc.
+|-
+| &lt;code&gt;"0123"&lt;/code&gt; || {{para|1|\0123}} || If you don't need to preserve whitespace explicitly use {{para|1}} etc.
+|-
+| In another template, to pass its parameter &lt;code&gt;{{{1}}}&lt;/code&gt;, preserving whitespace || {{para||\{{{1}}}}} || Must provide the &lt;code&gt;\&lt;/code&gt; with unknown string input.
+|-
+| In another template, to pass its parameter &lt;code&gt;{{{1}}}&lt;/code&gt;, stripping whitespace || {{para|s1|{{{1}}}}} || 
+|-
+| In another template, to pass its parameter &lt;code&gt;{{{1}}}&lt;/code&gt;, stripping whitespace || {{para|1|&lt;nowiki&gt;\{{#if:1|{{{1}}}}}&lt;/nowiki&gt;}} || 
+|}
+
+You can also wrap results in tags. All other unused arguments will be passed to {{luaref|frame:extensionTag}}
+
+== Usage ==
+
+&lt;code&gt;&lt;nowiki&gt;{{&lt;/nowiki&gt;#invoke:{{BASEPAGENAME}}|''function_name''|arg1|arg2|...}}&lt;/code&gt; is equivalent to {{luaref|Ustring library|mw.ustring.''function_name''|args=arg1, arg2, ...}}
+
+===Example using mw.ustring.sub===
+&lt;code&gt;&lt;nowiki&gt;{{#invoke:Ustring|sub|s1=abcde|2|4}}&lt;/nowiki&gt;&lt;/code&gt;
+
+produces:
+
+{{#invoke:Ustring|sub|s1=abcde|2|4}}
+
+===Example using mw.ustring.gsub===
+&lt;code&gt;&lt;nowiki&gt;{{#invoke:Ustring|gsub|s1=1234|23|}}&lt;/nowiki&gt;&lt;/code&gt;
+
+produces:
+
+{{#invoke:Ustring|gsub|s1=1234|23|}}
+
+===Example using mw.ustring.char===
+&lt;code&gt;&lt;nowiki&gt;&amp;amp;amp;#{{#invoke:ustring|char|49|48|59}}&lt;/nowiki&gt;&lt;/code&gt;
+
+produces:
+
+&amp;amp;#{{#invoke:ustring|char|49|48|59}}
+
+===Example using mw.ustring.match===
+&lt;code&gt;&lt;nowiki&gt;{{#invoke:Ustring|match|s1=abcde|s2=(c%w)}}&lt;/nowiki&gt;&lt;/code&gt;
+
+produces:
+
+{{#invoke:Ustring|match|s1=abcde|s2=(c%w)}}
+
+Note: Only the first match is returned. Additional returns are omitted because mw.ustring.gsub's second return value is generally undesirable.
+
+===Example using tag arguments===
+&lt;pre&gt;{{#invoke:Ustring|match
+|s1={{Module:Ustring}}|%s%s%sif%snot%s[^%s]+%sthen.+%
+&lt;!--enter an actual newline character to match '\n'--&gt;%s%s%send
+|tag=syntaxhighlight|lang=lua}}&lt;/pre&gt;
+produces:
+{{#invoke:Ustring|match
+|s1={{Module:Ustring}}|%s%s%sif%snot%s[^%s]+%sthen.+%
+&lt;!--enter an actual newline character to match '\n'--&gt;%s%s%send
+|tag=syntaxhighlight|lang=lua}}
+
+Note that:
+{{#tag:pre|&lt;nowiki&gt;&lt;syntaxhighlight lang="lua"&gt;{{#invoke:Ustring|match
+|s1={{Module:Ustring}}|%s%s%sif%snot%s[^%s]+%sthen.+%
+&lt;!--enter an actual newline character to match '\n'--&gt;%s%s%send}}&lt;/syntaxhighlight&gt;&lt;/nowiki&gt;}}
+produces:
+&lt;syntaxhighlight lang="lua"&gt;{{#invoke:Ustring|match
+|s1={{Module:Ustring}}|%s%s%sif%snot%s[^%s]+%sthen.+%
+&lt;!--enter an actual newline character to match '\n'--&gt;%s%s%send}}&lt;/syntaxhighlight&gt;
+
+== Errors ==
+Errors from accessing {{luaref|Ustring library|mw.ustring}} should be maintained, e.g.:
+
+&lt;code&gt;&lt;nowiki&gt;{{#invoke:Ustring|xyzzy}}&lt;/nowiki&gt;&lt;/code&gt;
+
+should produce:
+
+{{script error|Script error: The function "xyzzy" does not exist.}}
+
+and
+
+&lt;code&gt;&lt;nowiki&gt;{{#invoke:Ustring|maxPatternLength}}&lt;/nowiki&gt;&lt;/code&gt;
+
+should produce:
+
+{{script error|Script error: "maxPatternLength" is not a function.}}
+
+== See also ==
+{{String handling templates}}
+&lt;includeonly&gt;{{#ifeq:{{SUBPAGENAME}}|sandbox | |
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:Modules that manipulate strings|*]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>otedhfkicactbw1ra54b3e6z48uvj66</sha1>
+    </revision>
+  </page>
+</mediawiki>

@@ -1,0 +1,1248 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Parameter names example</title>
+    <ns>828</ns>
+    <id>243</id>
+    <revision>
+      <id>471031</id>
+      <timestamp>2023-07-10T09:41:44Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Gonnym</username>
+        <id>0</id>
+      </contributor>
+      <comment>if these are wanted, they should be handled differently (by passing a parameter to this module) as these cause pages to appear as unknown parameters for templates that don't use them</comment>
+      <origin>471031</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1607" sha1="to0eolw8xx8fiql0ynvd8cfvp3ukqw4" xml:space="preserve">-- This module implements {{parameter names example}}.
+
+local p = {}
+
+local function makeParam(s)
+	local lb = '&amp;#123;'
+	local rb = '&amp;#125;'
+	return lb:rep(3) .. s .. rb:rep(3)
+end
+
+local function italicize(s)
+	return "''" .. s .. "''"
+end
+
+local function plain(s)
+	return s
+end
+
+function p._main(args, frame)
+	-- Find how we want to format the arguments to the template.
+	local formatFunc
+	if args._display == 'italics' or args._display == 'italic' then
+		formatFunc = italicize
+	elseif args._display == 'plain' then
+		formatFunc = plain
+	else
+		formatFunc = makeParam
+	end
+
+	-- Build the table of template arguments.
+	local targs = {}
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			targs[v] = formatFunc(v)
+		elseif not k:find('^_') then
+			targs[k] = v
+		end
+	end
+	
+	--targs['nocat'] = 'yes';
+	--targs['categories'] = 'no';
+	--targs['demo'] = 'yes';
+
+	-- Find the template name.
+	local template
+	if args._template then
+		template = args._template
+	else
+		local currentTitle = mw.title.getCurrentTitle()
+		if currentTitle.prefixedText:find('/sandbox$') then
+			template = currentTitle.prefixedText
+		else
+			template = currentTitle.basePageTitle.prefixedText
+		end
+	end
+
+	-- Call the template with the arguments.
+	frame = frame or mw.getCurrentFrame()
+	local success, result = pcall(
+		frame.expandTemplate,
+		frame,
+		{title = template, args = targs}
+	)
+	if success then
+		return result
+	else
+		return ''
+	end
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {
+		wrappers = 'Template:Parameter names example'
+	})
+	return p._main(args, frame)
+end
+
+return p</text>
+      <sha1>to0eolw8xx8fiql0ynvd8cfvp3ukqw4</sha1>
+    </revision>
+    <revision>
+      <id>471032</id>
+      <parentid>471031</parentid>
+      <timestamp>2024-06-25T13:04:50Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:Parameter_names_example]]: importing template for usage here</comment>
+      <origin>471031</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1607" sha1="to0eolw8xx8fiql0ynvd8cfvp3ukqw4" xml:space="preserve">-- This module implements {{parameter names example}}.
+
+local p = {}
+
+local function makeParam(s)
+	local lb = '&amp;#123;'
+	local rb = '&amp;#125;'
+	return lb:rep(3) .. s .. rb:rep(3)
+end
+
+local function italicize(s)
+	return "''" .. s .. "''"
+end
+
+local function plain(s)
+	return s
+end
+
+function p._main(args, frame)
+	-- Find how we want to format the arguments to the template.
+	local formatFunc
+	if args._display == 'italics' or args._display == 'italic' then
+		formatFunc = italicize
+	elseif args._display == 'plain' then
+		formatFunc = plain
+	else
+		formatFunc = makeParam
+	end
+
+	-- Build the table of template arguments.
+	local targs = {}
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			targs[v] = formatFunc(v)
+		elseif not k:find('^_') then
+			targs[k] = v
+		end
+	end
+	
+	--targs['nocat'] = 'yes';
+	--targs['categories'] = 'no';
+	--targs['demo'] = 'yes';
+
+	-- Find the template name.
+	local template
+	if args._template then
+		template = args._template
+	else
+		local currentTitle = mw.title.getCurrentTitle()
+		if currentTitle.prefixedText:find('/sandbox$') then
+			template = currentTitle.prefixedText
+		else
+			template = currentTitle.basePageTitle.prefixedText
+		end
+	end
+
+	-- Call the template with the arguments.
+	frame = frame or mw.getCurrentFrame()
+	local success, result = pcall(
+		frame.expandTemplate,
+		frame,
+		{title = template, args = targs}
+	)
+	if success then
+		return result
+	else
+		return ''
+	end
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {
+		wrappers = 'Template:Parameter names example'
+	})
+	return p._main(args, frame)
+end
+
+return p</text>
+      <sha1>to0eolw8xx8fiql0ynvd8cfvp3ukqw4</sha1>
+    </revision>
+    <revision>
+      <id>3407344</id>
+      <parentid>471032</parentid>
+      <timestamp>2025-04-23T18:00:35Z</timestamp>
+      <contributor>
+        <username>en&gt;MusikBot II</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Parameter names example]]": [[Wikipedia:High-risk templates|High-risk template or module]]: 2500 transclusions ([[User:MusikBot II/TemplateProtector|more info]]) ([Edit=Require extended confirmed access] (indefinite) [Move=Require extended confirmed access] (indefinite))</comment>
+      <origin>471031</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1607" sha1="to0eolw8xx8fiql0ynvd8cfvp3ukqw4" xml:space="preserve">-- This module implements {{parameter names example}}.
+
+local p = {}
+
+local function makeParam(s)
+	local lb = '&amp;#123;'
+	local rb = '&amp;#125;'
+	return lb:rep(3) .. s .. rb:rep(3)
+end
+
+local function italicize(s)
+	return "''" .. s .. "''"
+end
+
+local function plain(s)
+	return s
+end
+
+function p._main(args, frame)
+	-- Find how we want to format the arguments to the template.
+	local formatFunc
+	if args._display == 'italics' or args._display == 'italic' then
+		formatFunc = italicize
+	elseif args._display == 'plain' then
+		formatFunc = plain
+	else
+		formatFunc = makeParam
+	end
+
+	-- Build the table of template arguments.
+	local targs = {}
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			targs[v] = formatFunc(v)
+		elseif not k:find('^_') then
+			targs[k] = v
+		end
+	end
+	
+	--targs['nocat'] = 'yes';
+	--targs['categories'] = 'no';
+	--targs['demo'] = 'yes';
+
+	-- Find the template name.
+	local template
+	if args._template then
+		template = args._template
+	else
+		local currentTitle = mw.title.getCurrentTitle()
+		if currentTitle.prefixedText:find('/sandbox$') then
+			template = currentTitle.prefixedText
+		else
+			template = currentTitle.basePageTitle.prefixedText
+		end
+	end
+
+	-- Call the template with the arguments.
+	frame = frame or mw.getCurrentFrame()
+	local success, result = pcall(
+		frame.expandTemplate,
+		frame,
+		{title = template, args = targs}
+	)
+	if success then
+		return result
+	else
+		return ''
+	end
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {
+		wrappers = 'Template:Parameter names example'
+	})
+	return p._main(args, frame)
+end
+
+return p</text>
+      <sha1>to0eolw8xx8fiql0ynvd8cfvp3ukqw4</sha1>
+    </revision>
+    <revision>
+      <id>244</id>
+      <timestamp>2025-04-25T22:09:36Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: fixing this template</comment>
+      <origin>244</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1607" sha1="to0eolw8xx8fiql0ynvd8cfvp3ukqw4" xml:space="preserve">-- This module implements {{parameter names example}}.
+
+local p = {}
+
+local function makeParam(s)
+	local lb = '&amp;#123;'
+	local rb = '&amp;#125;'
+	return lb:rep(3) .. s .. rb:rep(3)
+end
+
+local function italicize(s)
+	return "''" .. s .. "''"
+end
+
+local function plain(s)
+	return s
+end
+
+function p._main(args, frame)
+	-- Find how we want to format the arguments to the template.
+	local formatFunc
+	if args._display == 'italics' or args._display == 'italic' then
+		formatFunc = italicize
+	elseif args._display == 'plain' then
+		formatFunc = plain
+	else
+		formatFunc = makeParam
+	end
+
+	-- Build the table of template arguments.
+	local targs = {}
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			targs[v] = formatFunc(v)
+		elseif not k:find('^_') then
+			targs[k] = v
+		end
+	end
+	
+	--targs['nocat'] = 'yes';
+	--targs['categories'] = 'no';
+	--targs['demo'] = 'yes';
+
+	-- Find the template name.
+	local template
+	if args._template then
+		template = args._template
+	else
+		local currentTitle = mw.title.getCurrentTitle()
+		if currentTitle.prefixedText:find('/sandbox$') then
+			template = currentTitle.prefixedText
+		else
+			template = currentTitle.basePageTitle.prefixedText
+		end
+	end
+
+	-- Call the template with the arguments.
+	frame = frame or mw.getCurrentFrame()
+	local success, result = pcall(
+		frame.expandTemplate,
+		frame,
+		{title = template, args = targs}
+	)
+	if success then
+		return result
+	else
+		return ''
+	end
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {
+		wrappers = 'Template:Parameter names example'
+	})
+	return p._main(args, frame)
+end
+
+return p</text>
+      <sha1>to0eolw8xx8fiql0ynvd8cfvp3ukqw4</sha1>
+    </revision>
+    <revision>
+      <id>3407345</id>
+      <parentid>244</parentid>
+      <timestamp>2026-03-12T20:21:25Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>244</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1607" sha1="to0eolw8xx8fiql0ynvd8cfvp3ukqw4" xml:space="preserve">-- This module implements {{parameter names example}}.
+
+local p = {}
+
+local function makeParam(s)
+	local lb = '&amp;#123;'
+	local rb = '&amp;#125;'
+	return lb:rep(3) .. s .. rb:rep(3)
+end
+
+local function italicize(s)
+	return "''" .. s .. "''"
+end
+
+local function plain(s)
+	return s
+end
+
+function p._main(args, frame)
+	-- Find how we want to format the arguments to the template.
+	local formatFunc
+	if args._display == 'italics' or args._display == 'italic' then
+		formatFunc = italicize
+	elseif args._display == 'plain' then
+		formatFunc = plain
+	else
+		formatFunc = makeParam
+	end
+
+	-- Build the table of template arguments.
+	local targs = {}
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			targs[v] = formatFunc(v)
+		elseif not k:find('^_') then
+			targs[k] = v
+		end
+	end
+	
+	--targs['nocat'] = 'yes';
+	--targs['categories'] = 'no';
+	--targs['demo'] = 'yes';
+
+	-- Find the template name.
+	local template
+	if args._template then
+		template = args._template
+	else
+		local currentTitle = mw.title.getCurrentTitle()
+		if currentTitle.prefixedText:find('/sandbox$') then
+			template = currentTitle.prefixedText
+		else
+			template = currentTitle.basePageTitle.prefixedText
+		end
+	end
+
+	-- Call the template with the arguments.
+	frame = frame or mw.getCurrentFrame()
+	local success, result = pcall(
+		frame.expandTemplate,
+		frame,
+		{title = template, args = targs}
+	)
+	if success then
+		return result
+	else
+		return ''
+	end
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {
+		wrappers = 'Template:Parameter names example'
+	})
+	return p._main(args, frame)
+end
+
+return p</text>
+      <sha1>to0eolw8xx8fiql0ynvd8cfvp3ukqw4</sha1>
+    </revision>
+    <revision>
+      <id>3408221</id>
+      <parentid>3407345</parentid>
+      <timestamp>2026-03-12T20:30:48Z</timestamp>
+      <contributor>
+        <username>en&gt;MusikBot II</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Parameter names example]]": [[Wikipedia:High-risk templates|High-risk template or module]]: 2500 transclusions ([[User:MusikBot II/TemplateProtector|more info]]) ([Edit=Require extended confirmed access] (indefinite) [Move=Require extended confirmed access] (indefinite))</comment>
+      <origin>244</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1607" sha1="to0eolw8xx8fiql0ynvd8cfvp3ukqw4" xml:space="preserve">-- This module implements {{parameter names example}}.
+
+local p = {}
+
+local function makeParam(s)
+	local lb = '&amp;#123;'
+	local rb = '&amp;#125;'
+	return lb:rep(3) .. s .. rb:rep(3)
+end
+
+local function italicize(s)
+	return "''" .. s .. "''"
+end
+
+local function plain(s)
+	return s
+end
+
+function p._main(args, frame)
+	-- Find how we want to format the arguments to the template.
+	local formatFunc
+	if args._display == 'italics' or args._display == 'italic' then
+		formatFunc = italicize
+	elseif args._display == 'plain' then
+		formatFunc = plain
+	else
+		formatFunc = makeParam
+	end
+
+	-- Build the table of template arguments.
+	local targs = {}
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			targs[v] = formatFunc(v)
+		elseif not k:find('^_') then
+			targs[k] = v
+		end
+	end
+	
+	--targs['nocat'] = 'yes';
+	--targs['categories'] = 'no';
+	--targs['demo'] = 'yes';
+
+	-- Find the template name.
+	local template
+	if args._template then
+		template = args._template
+	else
+		local currentTitle = mw.title.getCurrentTitle()
+		if currentTitle.prefixedText:find('/sandbox$') then
+			template = currentTitle.prefixedText
+		else
+			template = currentTitle.basePageTitle.prefixedText
+		end
+	end
+
+	-- Call the template with the arguments.
+	frame = frame or mw.getCurrentFrame()
+	local success, result = pcall(
+		frame.expandTemplate,
+		frame,
+		{title = template, args = targs}
+	)
+	if success then
+		return result
+	else
+		return ''
+	end
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {
+		wrappers = 'Template:Parameter names example'
+	})
+	return p._main(args, frame)
+end
+
+return p</text>
+      <sha1>to0eolw8xx8fiql0ynvd8cfvp3ukqw4</sha1>
+    </revision>
+    <revision>
+      <id>3408222</id>
+      <parentid>3408221</parentid>
+      <timestamp>2026-03-12T20:30:48Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>244</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1607" sha1="to0eolw8xx8fiql0ynvd8cfvp3ukqw4" xml:space="preserve">-- This module implements {{parameter names example}}.
+
+local p = {}
+
+local function makeParam(s)
+	local lb = '&amp;#123;'
+	local rb = '&amp;#125;'
+	return lb:rep(3) .. s .. rb:rep(3)
+end
+
+local function italicize(s)
+	return "''" .. s .. "''"
+end
+
+local function plain(s)
+	return s
+end
+
+function p._main(args, frame)
+	-- Find how we want to format the arguments to the template.
+	local formatFunc
+	if args._display == 'italics' or args._display == 'italic' then
+		formatFunc = italicize
+	elseif args._display == 'plain' then
+		formatFunc = plain
+	else
+		formatFunc = makeParam
+	end
+
+	-- Build the table of template arguments.
+	local targs = {}
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			targs[v] = formatFunc(v)
+		elseif not k:find('^_') then
+			targs[k] = v
+		end
+	end
+	
+	--targs['nocat'] = 'yes';
+	--targs['categories'] = 'no';
+	--targs['demo'] = 'yes';
+
+	-- Find the template name.
+	local template
+	if args._template then
+		template = args._template
+	else
+		local currentTitle = mw.title.getCurrentTitle()
+		if currentTitle.prefixedText:find('/sandbox$') then
+			template = currentTitle.prefixedText
+		else
+			template = currentTitle.basePageTitle.prefixedText
+		end
+	end
+
+	-- Call the template with the arguments.
+	frame = frame or mw.getCurrentFrame()
+	local success, result = pcall(
+		frame.expandTemplate,
+		frame,
+		{title = template, args = targs}
+	)
+	if success then
+		return result
+	else
+		return ''
+	end
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {
+		wrappers = 'Template:Parameter names example'
+	})
+	return p._main(args, frame)
+end
+
+return p</text>
+      <sha1>to0eolw8xx8fiql0ynvd8cfvp3ukqw4</sha1>
+    </revision>
+    <revision>
+      <id>3561013</id>
+      <parentid>3408222</parentid>
+      <timestamp>2026-03-21T20:11:12Z</timestamp>
+      <contributor>
+        <username>en&gt;MusikBot II</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Parameter names example]]": [[Wikipedia:High-risk templates|High-risk template or module]]: 2500 transclusions ([[User:MusikBot II/TemplateProtector|more info]]) ([Edit=Require extended confirmed access] (indefinite) [Move=Require extended confirmed access] (indefinite))</comment>
+      <origin>244</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1607" sha1="to0eolw8xx8fiql0ynvd8cfvp3ukqw4" xml:space="preserve">-- This module implements {{parameter names example}}.
+
+local p = {}
+
+local function makeParam(s)
+	local lb = '&amp;#123;'
+	local rb = '&amp;#125;'
+	return lb:rep(3) .. s .. rb:rep(3)
+end
+
+local function italicize(s)
+	return "''" .. s .. "''"
+end
+
+local function plain(s)
+	return s
+end
+
+function p._main(args, frame)
+	-- Find how we want to format the arguments to the template.
+	local formatFunc
+	if args._display == 'italics' or args._display == 'italic' then
+		formatFunc = italicize
+	elseif args._display == 'plain' then
+		formatFunc = plain
+	else
+		formatFunc = makeParam
+	end
+
+	-- Build the table of template arguments.
+	local targs = {}
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			targs[v] = formatFunc(v)
+		elseif not k:find('^_') then
+			targs[k] = v
+		end
+	end
+	
+	--targs['nocat'] = 'yes';
+	--targs['categories'] = 'no';
+	--targs['demo'] = 'yes';
+
+	-- Find the template name.
+	local template
+	if args._template then
+		template = args._template
+	else
+		local currentTitle = mw.title.getCurrentTitle()
+		if currentTitle.prefixedText:find('/sandbox$') then
+			template = currentTitle.prefixedText
+		else
+			template = currentTitle.basePageTitle.prefixedText
+		end
+	end
+
+	-- Call the template with the arguments.
+	frame = frame or mw.getCurrentFrame()
+	local success, result = pcall(
+		frame.expandTemplate,
+		frame,
+		{title = template, args = targs}
+	)
+	if success then
+		return result
+	else
+		return ''
+	end
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {
+		wrappers = 'Template:Parameter names example'
+	})
+	return p._main(args, frame)
+end
+
+return p</text>
+      <sha1>to0eolw8xx8fiql0ynvd8cfvp3ukqw4</sha1>
+    </revision>
+    <revision>
+      <id>3561014</id>
+      <parentid>3561013</parentid>
+      <timestamp>2026-03-21T20:11:12Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>244</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1607" sha1="to0eolw8xx8fiql0ynvd8cfvp3ukqw4" xml:space="preserve">-- This module implements {{parameter names example}}.
+
+local p = {}
+
+local function makeParam(s)
+	local lb = '&amp;#123;'
+	local rb = '&amp;#125;'
+	return lb:rep(3) .. s .. rb:rep(3)
+end
+
+local function italicize(s)
+	return "''" .. s .. "''"
+end
+
+local function plain(s)
+	return s
+end
+
+function p._main(args, frame)
+	-- Find how we want to format the arguments to the template.
+	local formatFunc
+	if args._display == 'italics' or args._display == 'italic' then
+		formatFunc = italicize
+	elseif args._display == 'plain' then
+		formatFunc = plain
+	else
+		formatFunc = makeParam
+	end
+
+	-- Build the table of template arguments.
+	local targs = {}
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			targs[v] = formatFunc(v)
+		elseif not k:find('^_') then
+			targs[k] = v
+		end
+	end
+	
+	--targs['nocat'] = 'yes';
+	--targs['categories'] = 'no';
+	--targs['demo'] = 'yes';
+
+	-- Find the template name.
+	local template
+	if args._template then
+		template = args._template
+	else
+		local currentTitle = mw.title.getCurrentTitle()
+		if currentTitle.prefixedText:find('/sandbox$') then
+			template = currentTitle.prefixedText
+		else
+			template = currentTitle.basePageTitle.prefixedText
+		end
+	end
+
+	-- Call the template with the arguments.
+	frame = frame or mw.getCurrentFrame()
+	local success, result = pcall(
+		frame.expandTemplate,
+		frame,
+		{title = template, args = targs}
+	)
+	if success then
+		return result
+	else
+		return ''
+	end
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {
+		wrappers = 'Template:Parameter names example'
+	})
+	return p._main(args, frame)
+end
+
+return p</text>
+      <sha1>to0eolw8xx8fiql0ynvd8cfvp3ukqw4</sha1>
+    </revision>
+    <revision>
+      <id>3646887</id>
+      <parentid>3561014</parentid>
+      <timestamp>2026-04-24T16:33:49Z</timestamp>
+      <contributor>
+        <username>en&gt;MusikBot II</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Parameter names example]]": [[Wikipedia:High-risk templates|High-risk template or module]]: 2500 transclusions ([[User:MusikBot II/TemplateProtector|more info]]) ([Edit=Require extended confirmed access] (indefinite) [Move=Require extended confirmed access] (indefinite))</comment>
+      <origin>244</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1607" sha1="to0eolw8xx8fiql0ynvd8cfvp3ukqw4" xml:space="preserve">-- This module implements {{parameter names example}}.
+
+local p = {}
+
+local function makeParam(s)
+	local lb = '&amp;#123;'
+	local rb = '&amp;#125;'
+	return lb:rep(3) .. s .. rb:rep(3)
+end
+
+local function italicize(s)
+	return "''" .. s .. "''"
+end
+
+local function plain(s)
+	return s
+end
+
+function p._main(args, frame)
+	-- Find how we want to format the arguments to the template.
+	local formatFunc
+	if args._display == 'italics' or args._display == 'italic' then
+		formatFunc = italicize
+	elseif args._display == 'plain' then
+		formatFunc = plain
+	else
+		formatFunc = makeParam
+	end
+
+	-- Build the table of template arguments.
+	local targs = {}
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			targs[v] = formatFunc(v)
+		elseif not k:find('^_') then
+			targs[k] = v
+		end
+	end
+	
+	--targs['nocat'] = 'yes';
+	--targs['categories'] = 'no';
+	--targs['demo'] = 'yes';
+
+	-- Find the template name.
+	local template
+	if args._template then
+		template = args._template
+	else
+		local currentTitle = mw.title.getCurrentTitle()
+		if currentTitle.prefixedText:find('/sandbox$') then
+			template = currentTitle.prefixedText
+		else
+			template = currentTitle.basePageTitle.prefixedText
+		end
+	end
+
+	-- Call the template with the arguments.
+	frame = frame or mw.getCurrentFrame()
+	local success, result = pcall(
+		frame.expandTemplate,
+		frame,
+		{title = template, args = targs}
+	)
+	if success then
+		return result
+	else
+		return ''
+	end
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {
+		wrappers = 'Template:Parameter names example'
+	})
+	return p._main(args, frame)
+end
+
+return p</text>
+      <sha1>to0eolw8xx8fiql0ynvd8cfvp3ukqw4</sha1>
+    </revision>
+    <revision>
+      <id>3646888</id>
+      <parentid>3646887</parentid>
+      <timestamp>2026-04-24T16:33:49Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Template:Infobox saint </comment>
+      <origin>244</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1607" sha1="to0eolw8xx8fiql0ynvd8cfvp3ukqw4" xml:space="preserve">-- This module implements {{parameter names example}}.
+
+local p = {}
+
+local function makeParam(s)
+	local lb = '&amp;#123;'
+	local rb = '&amp;#125;'
+	return lb:rep(3) .. s .. rb:rep(3)
+end
+
+local function italicize(s)
+	return "''" .. s .. "''"
+end
+
+local function plain(s)
+	return s
+end
+
+function p._main(args, frame)
+	-- Find how we want to format the arguments to the template.
+	local formatFunc
+	if args._display == 'italics' or args._display == 'italic' then
+		formatFunc = italicize
+	elseif args._display == 'plain' then
+		formatFunc = plain
+	else
+		formatFunc = makeParam
+	end
+
+	-- Build the table of template arguments.
+	local targs = {}
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			targs[v] = formatFunc(v)
+		elseif not k:find('^_') then
+			targs[k] = v
+		end
+	end
+	
+	--targs['nocat'] = 'yes';
+	--targs['categories'] = 'no';
+	--targs['demo'] = 'yes';
+
+	-- Find the template name.
+	local template
+	if args._template then
+		template = args._template
+	else
+		local currentTitle = mw.title.getCurrentTitle()
+		if currentTitle.prefixedText:find('/sandbox$') then
+			template = currentTitle.prefixedText
+		else
+			template = currentTitle.basePageTitle.prefixedText
+		end
+	end
+
+	-- Call the template with the arguments.
+	frame = frame or mw.getCurrentFrame()
+	local success, result = pcall(
+		frame.expandTemplate,
+		frame,
+		{title = template, args = targs}
+	)
+	if success then
+		return result
+	else
+		return ''
+	end
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {
+		wrappers = 'Template:Parameter names example'
+	})
+	return p._main(args, frame)
+end
+
+return p</text>
+      <sha1>to0eolw8xx8fiql0ynvd8cfvp3ukqw4</sha1>
+    </revision>
+    <revision>
+      <id>3647048</id>
+      <parentid>3646888</parentid>
+      <timestamp>2026-04-24T16:34:21Z</timestamp>
+      <contributor>
+        <username>en&gt;MusikBot II</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Parameter names example]]": [[Wikipedia:High-risk templates|High-risk template or module]]: 2500 transclusions ([[User:MusikBot II/TemplateProtector|more info]]) ([Edit=Require extended confirmed access] (indefinite) [Move=Require extended confirmed access] (indefinite))</comment>
+      <origin>244</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1607" sha1="to0eolw8xx8fiql0ynvd8cfvp3ukqw4" xml:space="preserve">-- This module implements {{parameter names example}}.
+
+local p = {}
+
+local function makeParam(s)
+	local lb = '&amp;#123;'
+	local rb = '&amp;#125;'
+	return lb:rep(3) .. s .. rb:rep(3)
+end
+
+local function italicize(s)
+	return "''" .. s .. "''"
+end
+
+local function plain(s)
+	return s
+end
+
+function p._main(args, frame)
+	-- Find how we want to format the arguments to the template.
+	local formatFunc
+	if args._display == 'italics' or args._display == 'italic' then
+		formatFunc = italicize
+	elseif args._display == 'plain' then
+		formatFunc = plain
+	else
+		formatFunc = makeParam
+	end
+
+	-- Build the table of template arguments.
+	local targs = {}
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			targs[v] = formatFunc(v)
+		elseif not k:find('^_') then
+			targs[k] = v
+		end
+	end
+	
+	--targs['nocat'] = 'yes';
+	--targs['categories'] = 'no';
+	--targs['demo'] = 'yes';
+
+	-- Find the template name.
+	local template
+	if args._template then
+		template = args._template
+	else
+		local currentTitle = mw.title.getCurrentTitle()
+		if currentTitle.prefixedText:find('/sandbox$') then
+			template = currentTitle.prefixedText
+		else
+			template = currentTitle.basePageTitle.prefixedText
+		end
+	end
+
+	-- Call the template with the arguments.
+	frame = frame or mw.getCurrentFrame()
+	local success, result = pcall(
+		frame.expandTemplate,
+		frame,
+		{title = template, args = targs}
+	)
+	if success then
+		return result
+	else
+		return ''
+	end
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {
+		wrappers = 'Template:Parameter names example'
+	})
+	return p._main(args, frame)
+end
+
+return p</text>
+      <sha1>to0eolw8xx8fiql0ynvd8cfvp3ukqw4</sha1>
+    </revision>
+    <revision>
+      <id>3647050</id>
+      <parentid>3647048</parentid>
+      <timestamp>2026-04-24T16:34:21Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: en</comment>
+      <origin>244</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1607" sha1="to0eolw8xx8fiql0ynvd8cfvp3ukqw4" xml:space="preserve">-- This module implements {{parameter names example}}.
+
+local p = {}
+
+local function makeParam(s)
+	local lb = '&amp;#123;'
+	local rb = '&amp;#125;'
+	return lb:rep(3) .. s .. rb:rep(3)
+end
+
+local function italicize(s)
+	return "''" .. s .. "''"
+end
+
+local function plain(s)
+	return s
+end
+
+function p._main(args, frame)
+	-- Find how we want to format the arguments to the template.
+	local formatFunc
+	if args._display == 'italics' or args._display == 'italic' then
+		formatFunc = italicize
+	elseif args._display == 'plain' then
+		formatFunc = plain
+	else
+		formatFunc = makeParam
+	end
+
+	-- Build the table of template arguments.
+	local targs = {}
+	for k, v in pairs(args) do
+		if type(k) == 'number' then
+			targs[v] = formatFunc(v)
+		elseif not k:find('^_') then
+			targs[k] = v
+		end
+	end
+	
+	--targs['nocat'] = 'yes';
+	--targs['categories'] = 'no';
+	--targs['demo'] = 'yes';
+
+	-- Find the template name.
+	local template
+	if args._template then
+		template = args._template
+	else
+		local currentTitle = mw.title.getCurrentTitle()
+		if currentTitle.prefixedText:find('/sandbox$') then
+			template = currentTitle.prefixedText
+		else
+			template = currentTitle.basePageTitle.prefixedText
+		end
+	end
+
+	-- Call the template with the arguments.
+	frame = frame or mw.getCurrentFrame()
+	local success, result = pcall(
+		frame.expandTemplate,
+		frame,
+		{title = template, args = targs}
+	)
+	if success then
+		return result
+	else
+		return ''
+	end
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {
+		wrappers = 'Template:Parameter names example'
+	})
+	return p._main(args, frame)
+end
+
+return p</text>
+      <sha1>to0eolw8xx8fiql0ynvd8cfvp3ukqw4</sha1>
+    </revision>
+  </page>
+</mediawiki>

@@ -1,0 +1,1201 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Parameter validation</title>
+    <ns>828</ns>
+    <id>833</id>
+    <revision>
+      <id>524456</id>
+      <timestamp>2021-05-08T15:21:49Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;ProcrastinatingReader</username>
+        <id>0</id>
+      </contributor>
+      <comment>doc was moved into actual doc page</comment>
+      <origin>524456</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="9953" sha1="4qkzuo2iwtgkzfsbp529j9belmcqwmy" xml:space="preserve">local util = {
+	empty = function( s ) 
+		return s == nil  or type( s ) == 'string' and mw.text.trim( s ) == ''   
+	end
+	, 
+	extract_options = function ( frame, optionsPrefix )
+		optionsPrefix = optionsPrefix or 'options' 
+
+		local options, n, more = {}
+		if frame.args['module_options'] then
+			local module_options = mw.loadData( frame.args['module_options'] ) 
+			if type( module_options ) ~= 'table' then return {} end
+			local title = mw.title.getCurrentTitle()
+			local local_ptions = module_options[ title.namespace ] or module_options[ title.nsText ] or {} 
+			for k, v in pairs( local_ptions ) do options[k] = v end
+		end
+		
+		repeat
+			ok, more = pcall( mw.text.jsonDecode, frame.args[optionsPrefix .. ( n or '' )] )
+			if ok and type( more ) == 'table' then
+				for k, v in pairs( more ) do options[k] = v end
+			end
+			n = ( n or 0 ) + 1
+		until not ok
+
+		return options
+	end
+	, 
+	build_namelist = function ( template_name, sp )
+		local res = { template_name }
+		if sp then
+			if type( sp ) == 'string' then sp = { sp } end
+			for _, p in ipairs( sp ) do table.insert( res, template_name .. '/' .. p ) end
+		end
+		return res
+	end
+	,
+	table_empty = function( t ) -- normally, test if next(t) is nil, but for some perverse reason, non-empty tables returned by loadData return nil...
+		if type( t ) ~= 'table' then return true end
+		for a, b in pairs( t ) do return false end
+		return true
+	end
+	,
+}
+
+local function _readTemplateData( templateName ) 
+	local title = mw.title.makeTitle( 0, templateName )  
+	local templateContent = title and title.exists and title:getContent() -- template's raw content
+	local capture =  templateContent and mw.ustring.match( templateContent, '&lt;templatedata%s*&gt;(.*)&lt;/templatedata%s*&gt;' ) -- templatedata as text
+--	capture = capture and mw.ustring.gsub( capture, '"(%d+)"', tonumber ) -- convert "1": {} to 1: {}. frame.args uses numerical indexes for order-based params.
+	local trailingComma = capture and mw.ustring.find( capture, ',%s*[%]%}]' ) -- look for ,] or ,} : jsonDecode allows it, but it's verbotten in json
+	if capture and not trailingComma then return pcall( mw.text.jsonDecode, capture ) end
+	return false
+end
+
+local function readTemplateData( templateName )
+	if type( templateName ) == 'string' then 
+		templateName = { templateName, templateName .. '/' .. docSubPage }
+	end
+	if type( templateName ) == "table" then
+		for _, name in ipairs( templateName ) do
+			local td, result = _readTemplateData( name ) 
+			if td then return result end
+		end
+	end
+	return nil
+end
+
+
+-- this is the function to be called by other modules. it expects the frame, and then an optional list of subpages, e.g. { "Documentation" }.
+-- if second parameter is nil, only tempalte page will be searched for templatedata.
+function calculateViolations( frame, subpages )
+-- used for parameter type validy test. keyed by TD 'type' string. values are function(val) returning bool.
+	local type_validators = { 
+		['number'] = function( s ) return mw.language.getContentLanguage():parseFormattedNumber( s ) end
+	}
+	function compatible( typ, val )
+		local func = type_validators[typ]
+		return type( func ) ~= 'function' or util.empty( val ) or func( val )
+	end
+	
+	local t_frame = frame:getParent()
+	local t_args, template_name = t_frame.args, t_frame:getTitle()
+	template_name = mw.ustring.gsub( template_name, '/sandbox', '', 1 )
+	local td_source = util.build_namelist( template_name, subpages )
+	if frame.args['td_source'] then
+		table.insert(td_source, frame.args['td_source'])
+	end
+
+	local templatedata = readTemplateData( td_source )
+	local td_params = templatedata and templatedata.params
+	local all_aliases, all_series = {}, {}
+
+	if not td_params then return { ['no-templatedata'] = { [''] = '' } } end
+	-- from this point on, we know templatedata is valid.
+
+	local res = {} -- before returning to caller, we'll prune empty tables
+
+	-- allow for aliases
+	for x, p in pairs( td_params ) do for y, alias in ipairs( p.aliases or {} ) do
+		p['primary'] = x
+		td_params[x] = p
+		all_aliases[alias] = p
+		if tonumber(alias) then all_aliases[tonumber(alias)] = p end
+	end end
+
+	-- handle undeclared and deprecated
+	local already_seen = {}
+	local series = frame.args['series']
+	for p_name, value in pairs( t_args ) do
+		local tp_param, noval, numeric, table_name = td_params[p_name] or all_aliases[p_name], util.empty( value ), tonumber( p_name )
+		local hasval = not noval
+
+		if not tp_param and series then -- 2nd chance. check to see if series
+			for s_name, p in pairs(td_params) do 
+				if mw.ustring.match( p_name, '^' .. s_name .. '%d+' .. '$') then 
+					-- mw.log('found p_name '.. p_name .. '  s_name:' .. s_name, ' p is:', p) debugging series support
+					tp_param = p 
+				end -- don't bother breaking. td always correct.
+			end 				
+		end
+
+		if not tp_param then -- not in TD: this is called undeclared
+			-- calculate the relevant table for this undeclared parameter, based on parameter and value types
+			table_name = 
+				noval and numeric and 'empty-undeclared-numeric' or
+				noval and not numeric and 'empty-undeclared' or
+				hasval and numeric and 'undeclared-numeric' or
+				'undeclared' -- tzvototi nishar.
+		else -- in td: test for deprecation and mistype. if deprecated, no further tests
+			table_name = tp_param.deprecated and hasval and 'deprecated' 
+				or tp_param.deprecated and noval and 'empty-deprecated' 
+				or not compatible( tp_param.type, value ) and 'incompatible'
+				or not series and already_seen[tp_param] and hasval and 'duplicate'
+
+			if hasval and table_name ~= 'duplicate' then
+				already_seen[tp_param] = p_name
+			end
+		end
+		
+		-- report it.
+		if table_name then
+			res[table_name] = res[table_name] or {}
+			if table_name == 'duplicate' then
+				local primary_param = tp_param['primary']
+				local primaryData = res[table_name][primary_param]
+				if not primaryData then
+					primaryData = {}
+					table.insert(primaryData, already_seen[tp_param])
+				end
+				table.insert(primaryData, p_name)
+				res[table_name][primary_param] = primaryData
+			else
+				res[table_name][p_name] = value
+			end
+		end
+	end
+
+	-- check for empty/missing parameters declared "required" 
+	for p_name, param in pairs( td_params ) do 
+		if param.required and util.empty( t_args[p_name] ) then
+			local is_alias
+			for _, alias in ipairs( param.aliases or {} ) do is_alias = is_alias or not util.empty( t_args[alias] ) end
+			if not is_alias then
+				res['empty-required'] = res['empty-required'] or {} 
+				res['empty-required'][p_name] = '' 
+			end
+		end
+	end
+	
+	mw.logObject(res)
+	
+	return res
+end
+
+-- wraps report in hidden frame
+function wrapReport(report, template_name, options)
+	mw.logObject(report)
+	if util.empty( report ) then return '' end
+	local naked = mw.title.new( template_name )['text']
+	naked = mw.ustring.gsub(naked, 'Infobox', 'infobox', 1)
+	
+	report = ( options['wrapper-prefix'] or "&lt;div class = 'paramvalidator-wrapper'&gt;&lt;span class='paramvalidator-error'&gt;" )
+			.. report
+			.. ( options['wrapper-suffix'] or "&lt;/span&gt;&lt;/div&gt;" )
+	
+	report = mw.ustring.gsub( report, 'tname_naked', naked )
+	report = mw.ustring.gsub( report, 'templatename', template_name )
+
+	return report
+end
+
+-- this is the "user" version, called with {{#invoke:}} returns a string, as defined by the options parameter
+function validateParams( frame )
+	local options, report, template_name = util.extract_options( frame ), '', frame:getParent():getTitle()
+
+	local ignore = function( p_name )
+		for _, pattern in ipairs( options['ignore'] or {} ) do
+			if mw.ustring.match( p_name, '^' .. pattern .. '$' ) then return true end
+		end
+		return false
+	end
+
+	local replace_macros = function( error_type, s, param_names )
+		function concat_and_escape( t , sep )
+			sep = sep or ', '
+			local s = table.concat( t, sep )
+			return ( mw.ustring.gsub( s, '%%', '%%%%' ) )
+		end
+		
+		if s and ( type( param_names ) == 'table' ) then
+			local k_ar, kv_ar = {}, {}
+			for k, v in pairs( param_names ) do
+				table.insert( k_ar, k )
+				if type(v) == 'table' then
+					v = table.concat(v, ', ')
+				end
+					
+				if error_type == 'duplicate' then
+					table.insert( kv_ar, v)
+				else
+					table.insert( kv_ar, k .. ': ' .. v)
+				end
+			end
+			
+			s = mw.ustring.gsub( s, 'paramname', concat_and_escape( k_ar ) )
+			s = mw.ustring.gsub( s, 'paramandvalue', concat_and_escape( kv_ar, ' AND ' ) )
+
+			if mw.getCurrentFrame():preprocess( "{{REVISIONID}}" ) ~= "" then
+				s = mw.ustring.gsub( s, "&lt;div.*&lt;%/div&gt;", "", 1 )
+			end
+		end
+		return s
+	end
+
+	local report_params = function( key, param_names )
+		local res = replace_macros( key, options[key], param_names )
+		res = frame:preprocess(res or '')
+		report = report ..  ( res or '' )
+		return res
+	end
+
+	-- no option no work.
+	if util.table_empty( options ) then return '' end
+
+	-- get the errors.
+	local violations = calculateViolations( frame, options['doc-subpage'] )
+	-- special request of bora: use skip_empty_numeric
+	if violations['empty-undeclared-numeric'] then 
+		for i = 1, tonumber( options['skip-empty-numeric'] ) or 0 do 
+			violations['empty-undeclared-numeric'][i] = nil 
+		end
+	end
+	
+	-- handle ignore list, and prune empty violations - in that order!
+	local offenders = 0
+	for name, tab in pairs( violations ) do 
+		-- remove ignored parameters from all violations
+		for pname in pairs( tab ) do if ignore( pname ) then tab[pname] = nil end end
+		-- prune empty violations
+		if util.table_empty( tab ) then violations[name] = nil end
+	-- WORK IS DONE. report the errors.
+	-- if report then count it.
+		if violations[name] and report_params( name, tab ) then offenders = offenders + 1 end 
+	end
+
+	if offenders &gt; 1 then report_params( 'multiple' ) end
+	if offenders ~= 0 then report_params( 'any' ) end -- could have tested for empty( report ), but since we count them anyway...
+	return wrapReport(report, template_name, options)
+end
+
+return {
+	['validateparams'] = validateParams,
+	['calculateViolations'] = calculateViolations,
+	['wrapReport'] = wrapReport
+}</text>
+      <sha1>4qkzuo2iwtgkzfsbp529j9belmcqwmy</sha1>
+    </revision>
+    <revision>
+      <id>524457</id>
+      <parentid>524456</parentid>
+      <timestamp>2024-06-28T10:06:23Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:Parameter_validation]]</comment>
+      <origin>524456</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="9953" sha1="4qkzuo2iwtgkzfsbp529j9belmcqwmy" xml:space="preserve">local util = {
+	empty = function( s ) 
+		return s == nil  or type( s ) == 'string' and mw.text.trim( s ) == ''   
+	end
+	, 
+	extract_options = function ( frame, optionsPrefix )
+		optionsPrefix = optionsPrefix or 'options' 
+
+		local options, n, more = {}
+		if frame.args['module_options'] then
+			local module_options = mw.loadData( frame.args['module_options'] ) 
+			if type( module_options ) ~= 'table' then return {} end
+			local title = mw.title.getCurrentTitle()
+			local local_ptions = module_options[ title.namespace ] or module_options[ title.nsText ] or {} 
+			for k, v in pairs( local_ptions ) do options[k] = v end
+		end
+		
+		repeat
+			ok, more = pcall( mw.text.jsonDecode, frame.args[optionsPrefix .. ( n or '' )] )
+			if ok and type( more ) == 'table' then
+				for k, v in pairs( more ) do options[k] = v end
+			end
+			n = ( n or 0 ) + 1
+		until not ok
+
+		return options
+	end
+	, 
+	build_namelist = function ( template_name, sp )
+		local res = { template_name }
+		if sp then
+			if type( sp ) == 'string' then sp = { sp } end
+			for _, p in ipairs( sp ) do table.insert( res, template_name .. '/' .. p ) end
+		end
+		return res
+	end
+	,
+	table_empty = function( t ) -- normally, test if next(t) is nil, but for some perverse reason, non-empty tables returned by loadData return nil...
+		if type( t ) ~= 'table' then return true end
+		for a, b in pairs( t ) do return false end
+		return true
+	end
+	,
+}
+
+local function _readTemplateData( templateName ) 
+	local title = mw.title.makeTitle( 0, templateName )  
+	local templateContent = title and title.exists and title:getContent() -- template's raw content
+	local capture =  templateContent and mw.ustring.match( templateContent, '&lt;templatedata%s*&gt;(.*)&lt;/templatedata%s*&gt;' ) -- templatedata as text
+--	capture = capture and mw.ustring.gsub( capture, '"(%d+)"', tonumber ) -- convert "1": {} to 1: {}. frame.args uses numerical indexes for order-based params.
+	local trailingComma = capture and mw.ustring.find( capture, ',%s*[%]%}]' ) -- look for ,] or ,} : jsonDecode allows it, but it's verbotten in json
+	if capture and not trailingComma then return pcall( mw.text.jsonDecode, capture ) end
+	return false
+end
+
+local function readTemplateData( templateName )
+	if type( templateName ) == 'string' then 
+		templateName = { templateName, templateName .. '/' .. docSubPage }
+	end
+	if type( templateName ) == "table" then
+		for _, name in ipairs( templateName ) do
+			local td, result = _readTemplateData( name ) 
+			if td then return result end
+		end
+	end
+	return nil
+end
+
+
+-- this is the function to be called by other modules. it expects the frame, and then an optional list of subpages, e.g. { "Documentation" }.
+-- if second parameter is nil, only tempalte page will be searched for templatedata.
+function calculateViolations( frame, subpages )
+-- used for parameter type validy test. keyed by TD 'type' string. values are function(val) returning bool.
+	local type_validators = { 
+		['number'] = function( s ) return mw.language.getContentLanguage():parseFormattedNumber( s ) end
+	}
+	function compatible( typ, val )
+		local func = type_validators[typ]
+		return type( func ) ~= 'function' or util.empty( val ) or func( val )
+	end
+	
+	local t_frame = frame:getParent()
+	local t_args, template_name = t_frame.args, t_frame:getTitle()
+	template_name = mw.ustring.gsub( template_name, '/sandbox', '', 1 )
+	local td_source = util.build_namelist( template_name, subpages )
+	if frame.args['td_source'] then
+		table.insert(td_source, frame.args['td_source'])
+	end
+
+	local templatedata = readTemplateData( td_source )
+	local td_params = templatedata and templatedata.params
+	local all_aliases, all_series = {}, {}
+
+	if not td_params then return { ['no-templatedata'] = { [''] = '' } } end
+	-- from this point on, we know templatedata is valid.
+
+	local res = {} -- before returning to caller, we'll prune empty tables
+
+	-- allow for aliases
+	for x, p in pairs( td_params ) do for y, alias in ipairs( p.aliases or {} ) do
+		p['primary'] = x
+		td_params[x] = p
+		all_aliases[alias] = p
+		if tonumber(alias) then all_aliases[tonumber(alias)] = p end
+	end end
+
+	-- handle undeclared and deprecated
+	local already_seen = {}
+	local series = frame.args['series']
+	for p_name, value in pairs( t_args ) do
+		local tp_param, noval, numeric, table_name = td_params[p_name] or all_aliases[p_name], util.empty( value ), tonumber( p_name )
+		local hasval = not noval
+
+		if not tp_param and series then -- 2nd chance. check to see if series
+			for s_name, p in pairs(td_params) do 
+				if mw.ustring.match( p_name, '^' .. s_name .. '%d+' .. '$') then 
+					-- mw.log('found p_name '.. p_name .. '  s_name:' .. s_name, ' p is:', p) debugging series support
+					tp_param = p 
+				end -- don't bother breaking. td always correct.
+			end 				
+		end
+
+		if not tp_param then -- not in TD: this is called undeclared
+			-- calculate the relevant table for this undeclared parameter, based on parameter and value types
+			table_name = 
+				noval and numeric and 'empty-undeclared-numeric' or
+				noval and not numeric and 'empty-undeclared' or
+				hasval and numeric and 'undeclared-numeric' or
+				'undeclared' -- tzvototi nishar.
+		else -- in td: test for deprecation and mistype. if deprecated, no further tests
+			table_name = tp_param.deprecated and hasval and 'deprecated' 
+				or tp_param.deprecated and noval and 'empty-deprecated' 
+				or not compatible( tp_param.type, value ) and 'incompatible'
+				or not series and already_seen[tp_param] and hasval and 'duplicate'
+
+			if hasval and table_name ~= 'duplicate' then
+				already_seen[tp_param] = p_name
+			end
+		end
+		
+		-- report it.
+		if table_name then
+			res[table_name] = res[table_name] or {}
+			if table_name == 'duplicate' then
+				local primary_param = tp_param['primary']
+				local primaryData = res[table_name][primary_param]
+				if not primaryData then
+					primaryData = {}
+					table.insert(primaryData, already_seen[tp_param])
+				end
+				table.insert(primaryData, p_name)
+				res[table_name][primary_param] = primaryData
+			else
+				res[table_name][p_name] = value
+			end
+		end
+	end
+
+	-- check for empty/missing parameters declared "required" 
+	for p_name, param in pairs( td_params ) do 
+		if param.required and util.empty( t_args[p_name] ) then
+			local is_alias
+			for _, alias in ipairs( param.aliases or {} ) do is_alias = is_alias or not util.empty( t_args[alias] ) end
+			if not is_alias then
+				res['empty-required'] = res['empty-required'] or {} 
+				res['empty-required'][p_name] = '' 
+			end
+		end
+	end
+	
+	mw.logObject(res)
+	
+	return res
+end
+
+-- wraps report in hidden frame
+function wrapReport(report, template_name, options)
+	mw.logObject(report)
+	if util.empty( report ) then return '' end
+	local naked = mw.title.new( template_name )['text']
+	naked = mw.ustring.gsub(naked, 'Infobox', 'infobox', 1)
+	
+	report = ( options['wrapper-prefix'] or "&lt;div class = 'paramvalidator-wrapper'&gt;&lt;span class='paramvalidator-error'&gt;" )
+			.. report
+			.. ( options['wrapper-suffix'] or "&lt;/span&gt;&lt;/div&gt;" )
+	
+	report = mw.ustring.gsub( report, 'tname_naked', naked )
+	report = mw.ustring.gsub( report, 'templatename', template_name )
+
+	return report
+end
+
+-- this is the "user" version, called with {{#invoke:}} returns a string, as defined by the options parameter
+function validateParams( frame )
+	local options, report, template_name = util.extract_options( frame ), '', frame:getParent():getTitle()
+
+	local ignore = function( p_name )
+		for _, pattern in ipairs( options['ignore'] or {} ) do
+			if mw.ustring.match( p_name, '^' .. pattern .. '$' ) then return true end
+		end
+		return false
+	end
+
+	local replace_macros = function( error_type, s, param_names )
+		function concat_and_escape( t , sep )
+			sep = sep or ', '
+			local s = table.concat( t, sep )
+			return ( mw.ustring.gsub( s, '%%', '%%%%' ) )
+		end
+		
+		if s and ( type( param_names ) == 'table' ) then
+			local k_ar, kv_ar = {}, {}
+			for k, v in pairs( param_names ) do
+				table.insert( k_ar, k )
+				if type(v) == 'table' then
+					v = table.concat(v, ', ')
+				end
+					
+				if error_type == 'duplicate' then
+					table.insert( kv_ar, v)
+				else
+					table.insert( kv_ar, k .. ': ' .. v)
+				end
+			end
+			
+			s = mw.ustring.gsub( s, 'paramname', concat_and_escape( k_ar ) )
+			s = mw.ustring.gsub( s, 'paramandvalue', concat_and_escape( kv_ar, ' AND ' ) )
+
+			if mw.getCurrentFrame():preprocess( "{{REVISIONID}}" ) ~= "" then
+				s = mw.ustring.gsub( s, "&lt;div.*&lt;%/div&gt;", "", 1 )
+			end
+		end
+		return s
+	end
+
+	local report_params = function( key, param_names )
+		local res = replace_macros( key, options[key], param_names )
+		res = frame:preprocess(res or '')
+		report = report ..  ( res or '' )
+		return res
+	end
+
+	-- no option no work.
+	if util.table_empty( options ) then return '' end
+
+	-- get the errors.
+	local violations = calculateViolations( frame, options['doc-subpage'] )
+	-- special request of bora: use skip_empty_numeric
+	if violations['empty-undeclared-numeric'] then 
+		for i = 1, tonumber( options['skip-empty-numeric'] ) or 0 do 
+			violations['empty-undeclared-numeric'][i] = nil 
+		end
+	end
+	
+	-- handle ignore list, and prune empty violations - in that order!
+	local offenders = 0
+	for name, tab in pairs( violations ) do 
+		-- remove ignored parameters from all violations
+		for pname in pairs( tab ) do if ignore( pname ) then tab[pname] = nil end end
+		-- prune empty violations
+		if util.table_empty( tab ) then violations[name] = nil end
+	-- WORK IS DONE. report the errors.
+	-- if report then count it.
+		if violations[name] and report_params( name, tab ) then offenders = offenders + 1 end 
+	end
+
+	if offenders &gt; 1 then report_params( 'multiple' ) end
+	if offenders ~= 0 then report_params( 'any' ) end -- could have tested for empty( report ), but since we count them anyway...
+	return wrapReport(report, template_name, options)
+end
+
+return {
+	['validateparams'] = validateParams,
+	['calculateViolations'] = calculateViolations,
+	['wrapReport'] = wrapReport
+}</text>
+      <sha1>4qkzuo2iwtgkzfsbp529j9belmcqwmy</sha1>
+    </revision>
+    <revision>
+      <id>524458</id>
+      <parentid>524457</parentid>
+      <timestamp>2025-03-15T19:26:07Z</timestamp>
+      <contributor>
+        <username>en&gt;Unknown user</username>
+        <id>0</id>
+      </contributor>
+      <comment>doc was moved into actual doc page</comment>
+      <origin>524456</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="9953" sha1="4qkzuo2iwtgkzfsbp529j9belmcqwmy" xml:space="preserve">local util = {
+	empty = function( s ) 
+		return s == nil  or type( s ) == 'string' and mw.text.trim( s ) == ''   
+	end
+	, 
+	extract_options = function ( frame, optionsPrefix )
+		optionsPrefix = optionsPrefix or 'options' 
+
+		local options, n, more = {}
+		if frame.args['module_options'] then
+			local module_options = mw.loadData( frame.args['module_options'] ) 
+			if type( module_options ) ~= 'table' then return {} end
+			local title = mw.title.getCurrentTitle()
+			local local_ptions = module_options[ title.namespace ] or module_options[ title.nsText ] or {} 
+			for k, v in pairs( local_ptions ) do options[k] = v end
+		end
+		
+		repeat
+			ok, more = pcall( mw.text.jsonDecode, frame.args[optionsPrefix .. ( n or '' )] )
+			if ok and type( more ) == 'table' then
+				for k, v in pairs( more ) do options[k] = v end
+			end
+			n = ( n or 0 ) + 1
+		until not ok
+
+		return options
+	end
+	, 
+	build_namelist = function ( template_name, sp )
+		local res = { template_name }
+		if sp then
+			if type( sp ) == 'string' then sp = { sp } end
+			for _, p in ipairs( sp ) do table.insert( res, template_name .. '/' .. p ) end
+		end
+		return res
+	end
+	,
+	table_empty = function( t ) -- normally, test if next(t) is nil, but for some perverse reason, non-empty tables returned by loadData return nil...
+		if type( t ) ~= 'table' then return true end
+		for a, b in pairs( t ) do return false end
+		return true
+	end
+	,
+}
+
+local function _readTemplateData( templateName ) 
+	local title = mw.title.makeTitle( 0, templateName )  
+	local templateContent = title and title.exists and title:getContent() -- template's raw content
+	local capture =  templateContent and mw.ustring.match( templateContent, '&lt;templatedata%s*&gt;(.*)&lt;/templatedata%s*&gt;' ) -- templatedata as text
+--	capture = capture and mw.ustring.gsub( capture, '"(%d+)"', tonumber ) -- convert "1": {} to 1: {}. frame.args uses numerical indexes for order-based params.
+	local trailingComma = capture and mw.ustring.find( capture, ',%s*[%]%}]' ) -- look for ,] or ,} : jsonDecode allows it, but it's verbotten in json
+	if capture and not trailingComma then return pcall( mw.text.jsonDecode, capture ) end
+	return false
+end
+
+local function readTemplateData( templateName )
+	if type( templateName ) == 'string' then 
+		templateName = { templateName, templateName .. '/' .. docSubPage }
+	end
+	if type( templateName ) == "table" then
+		for _, name in ipairs( templateName ) do
+			local td, result = _readTemplateData( name ) 
+			if td then return result end
+		end
+	end
+	return nil
+end
+
+
+-- this is the function to be called by other modules. it expects the frame, and then an optional list of subpages, e.g. { "Documentation" }.
+-- if second parameter is nil, only tempalte page will be searched for templatedata.
+function calculateViolations( frame, subpages )
+-- used for parameter type validy test. keyed by TD 'type' string. values are function(val) returning bool.
+	local type_validators = { 
+		['number'] = function( s ) return mw.language.getContentLanguage():parseFormattedNumber( s ) end
+	}
+	function compatible( typ, val )
+		local func = type_validators[typ]
+		return type( func ) ~= 'function' or util.empty( val ) or func( val )
+	end
+	
+	local t_frame = frame:getParent()
+	local t_args, template_name = t_frame.args, t_frame:getTitle()
+	template_name = mw.ustring.gsub( template_name, '/sandbox', '', 1 )
+	local td_source = util.build_namelist( template_name, subpages )
+	if frame.args['td_source'] then
+		table.insert(td_source, frame.args['td_source'])
+	end
+
+	local templatedata = readTemplateData( td_source )
+	local td_params = templatedata and templatedata.params
+	local all_aliases, all_series = {}, {}
+
+	if not td_params then return { ['no-templatedata'] = { [''] = '' } } end
+	-- from this point on, we know templatedata is valid.
+
+	local res = {} -- before returning to caller, we'll prune empty tables
+
+	-- allow for aliases
+	for x, p in pairs( td_params ) do for y, alias in ipairs( p.aliases or {} ) do
+		p['primary'] = x
+		td_params[x] = p
+		all_aliases[alias] = p
+		if tonumber(alias) then all_aliases[tonumber(alias)] = p end
+	end end
+
+	-- handle undeclared and deprecated
+	local already_seen = {}
+	local series = frame.args['series']
+	for p_name, value in pairs( t_args ) do
+		local tp_param, noval, numeric, table_name = td_params[p_name] or all_aliases[p_name], util.empty( value ), tonumber( p_name )
+		local hasval = not noval
+
+		if not tp_param and series then -- 2nd chance. check to see if series
+			for s_name, p in pairs(td_params) do 
+				if mw.ustring.match( p_name, '^' .. s_name .. '%d+' .. '$') then 
+					-- mw.log('found p_name '.. p_name .. '  s_name:' .. s_name, ' p is:', p) debugging series support
+					tp_param = p 
+				end -- don't bother breaking. td always correct.
+			end 				
+		end
+
+		if not tp_param then -- not in TD: this is called undeclared
+			-- calculate the relevant table for this undeclared parameter, based on parameter and value types
+			table_name = 
+				noval and numeric and 'empty-undeclared-numeric' or
+				noval and not numeric and 'empty-undeclared' or
+				hasval and numeric and 'undeclared-numeric' or
+				'undeclared' -- tzvototi nishar.
+		else -- in td: test for deprecation and mistype. if deprecated, no further tests
+			table_name = tp_param.deprecated and hasval and 'deprecated' 
+				or tp_param.deprecated and noval and 'empty-deprecated' 
+				or not compatible( tp_param.type, value ) and 'incompatible'
+				or not series and already_seen[tp_param] and hasval and 'duplicate'
+
+			if hasval and table_name ~= 'duplicate' then
+				already_seen[tp_param] = p_name
+			end
+		end
+		
+		-- report it.
+		if table_name then
+			res[table_name] = res[table_name] or {}
+			if table_name == 'duplicate' then
+				local primary_param = tp_param['primary']
+				local primaryData = res[table_name][primary_param]
+				if not primaryData then
+					primaryData = {}
+					table.insert(primaryData, already_seen[tp_param])
+				end
+				table.insert(primaryData, p_name)
+				res[table_name][primary_param] = primaryData
+			else
+				res[table_name][p_name] = value
+			end
+		end
+	end
+
+	-- check for empty/missing parameters declared "required" 
+	for p_name, param in pairs( td_params ) do 
+		if param.required and util.empty( t_args[p_name] ) then
+			local is_alias
+			for _, alias in ipairs( param.aliases or {} ) do is_alias = is_alias or not util.empty( t_args[alias] ) end
+			if not is_alias then
+				res['empty-required'] = res['empty-required'] or {} 
+				res['empty-required'][p_name] = '' 
+			end
+		end
+	end
+	
+	mw.logObject(res)
+	
+	return res
+end
+
+-- wraps report in hidden frame
+function wrapReport(report, template_name, options)
+	mw.logObject(report)
+	if util.empty( report ) then return '' end
+	local naked = mw.title.new( template_name )['text']
+	naked = mw.ustring.gsub(naked, 'Infobox', 'infobox', 1)
+	
+	report = ( options['wrapper-prefix'] or "&lt;div class = 'paramvalidator-wrapper'&gt;&lt;span class='paramvalidator-error'&gt;" )
+			.. report
+			.. ( options['wrapper-suffix'] or "&lt;/span&gt;&lt;/div&gt;" )
+	
+	report = mw.ustring.gsub( report, 'tname_naked', naked )
+	report = mw.ustring.gsub( report, 'templatename', template_name )
+
+	return report
+end
+
+-- this is the "user" version, called with {{#invoke:}} returns a string, as defined by the options parameter
+function validateParams( frame )
+	local options, report, template_name = util.extract_options( frame ), '', frame:getParent():getTitle()
+
+	local ignore = function( p_name )
+		for _, pattern in ipairs( options['ignore'] or {} ) do
+			if mw.ustring.match( p_name, '^' .. pattern .. '$' ) then return true end
+		end
+		return false
+	end
+
+	local replace_macros = function( error_type, s, param_names )
+		function concat_and_escape( t , sep )
+			sep = sep or ', '
+			local s = table.concat( t, sep )
+			return ( mw.ustring.gsub( s, '%%', '%%%%' ) )
+		end
+		
+		if s and ( type( param_names ) == 'table' ) then
+			local k_ar, kv_ar = {}, {}
+			for k, v in pairs( param_names ) do
+				table.insert( k_ar, k )
+				if type(v) == 'table' then
+					v = table.concat(v, ', ')
+				end
+					
+				if error_type == 'duplicate' then
+					table.insert( kv_ar, v)
+				else
+					table.insert( kv_ar, k .. ': ' .. v)
+				end
+			end
+			
+			s = mw.ustring.gsub( s, 'paramname', concat_and_escape( k_ar ) )
+			s = mw.ustring.gsub( s, 'paramandvalue', concat_and_escape( kv_ar, ' AND ' ) )
+
+			if mw.getCurrentFrame():preprocess( "{{REVISIONID}}" ) ~= "" then
+				s = mw.ustring.gsub( s, "&lt;div.*&lt;%/div&gt;", "", 1 )
+			end
+		end
+		return s
+	end
+
+	local report_params = function( key, param_names )
+		local res = replace_macros( key, options[key], param_names )
+		res = frame:preprocess(res or '')
+		report = report ..  ( res or '' )
+		return res
+	end
+
+	-- no option no work.
+	if util.table_empty( options ) then return '' end
+
+	-- get the errors.
+	local violations = calculateViolations( frame, options['doc-subpage'] )
+	-- special request of bora: use skip_empty_numeric
+	if violations['empty-undeclared-numeric'] then 
+		for i = 1, tonumber( options['skip-empty-numeric'] ) or 0 do 
+			violations['empty-undeclared-numeric'][i] = nil 
+		end
+	end
+	
+	-- handle ignore list, and prune empty violations - in that order!
+	local offenders = 0
+	for name, tab in pairs( violations ) do 
+		-- remove ignored parameters from all violations
+		for pname in pairs( tab ) do if ignore( pname ) then tab[pname] = nil end end
+		-- prune empty violations
+		if util.table_empty( tab ) then violations[name] = nil end
+	-- WORK IS DONE. report the errors.
+	-- if report then count it.
+		if violations[name] and report_params( name, tab ) then offenders = offenders + 1 end 
+	end
+
+	if offenders &gt; 1 then report_params( 'multiple' ) end
+	if offenders ~= 0 then report_params( 'any' ) end -- could have tested for empty( report ), but since we count them anyway...
+	return wrapReport(report, template_name, options)
+end
+
+return {
+	['validateparams'] = validateParams,
+	['calculateViolations'] = calculateViolations,
+	['wrapReport'] = wrapReport
+}</text>
+      <sha1>4qkzuo2iwtgkzfsbp529j9belmcqwmy</sha1>
+    </revision>
+    <revision>
+      <id>834</id>
+      <timestamp>2025-11-22T14:38:06Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Text replacement - "↵↵↵" to "
+"</comment>
+      <origin>834</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="9951" sha1="hidj2lwfe630wvxl8m4q9mbzjpxqoyn" xml:space="preserve">local util = {
+	empty = function( s ) 
+		return s == nil  or type( s ) == 'string' and mw.text.trim( s ) == ''   
+	end
+	, 
+	extract_options = function ( frame, optionsPrefix )
+		optionsPrefix = optionsPrefix or 'options' 
+
+		local options, n, more = {}
+		if frame.args['module_options'] then
+			local module_options = mw.loadData( frame.args['module_options'] ) 
+			if type( module_options ) ~= 'table' then return {} end
+			local title = mw.title.getCurrentTitle()
+			local local_ptions = module_options[ title.namespace ] or module_options[ title.nsText ] or {} 
+			for k, v in pairs( local_ptions ) do options[k] = v end
+		end
+		
+		repeat
+			ok, more = pcall( mw.text.jsonDecode, frame.args[optionsPrefix .. ( n or '' )] )
+			if ok and type( more ) == 'table' then
+				for k, v in pairs( more ) do options[k] = v end
+			end
+			n = ( n or 0 ) + 1
+		until not ok
+
+		return options
+	end
+	, 
+	build_namelist = function ( template_name, sp )
+		local res = { template_name }
+		if sp then
+			if type( sp ) == 'string' then sp = { sp } end
+			for _, p in ipairs( sp ) do table.insert( res, template_name .. '/' .. p ) end
+		end
+		return res
+	end
+	,
+	table_empty = function( t ) -- normally, test if next(t) is nil, but for some perverse reason, non-empty tables returned by loadData return nil...
+		if type( t ) ~= 'table' then return true end
+		for a, b in pairs( t ) do return false end
+		return true
+	end
+	,
+}
+
+local function _readTemplateData( templateName ) 
+	local title = mw.title.makeTitle( 0, templateName )  
+	local templateContent = title and title.exists and title:getContent() -- template's raw content
+	local capture =  templateContent and mw.ustring.match( templateContent, '&lt;templatedata%s*&gt;(.*)&lt;/templatedata%s*&gt;' ) -- templatedata as text
+--	capture = capture and mw.ustring.gsub( capture, '"(%d+)"', tonumber ) -- convert "1": {} to 1: {}. frame.args uses numerical indexes for order-based params.
+	local trailingComma = capture and mw.ustring.find( capture, ',%s*[%]%}]' ) -- look for ,] or ,} : jsonDecode allows it, but it's verbotten in json
+	if capture and not trailingComma then return pcall( mw.text.jsonDecode, capture ) end
+	return false
+end
+
+local function readTemplateData( templateName )
+	if type( templateName ) == 'string' then 
+		templateName = { templateName, templateName .. '/' .. docSubPage }
+	end
+	if type( templateName ) == "table" then
+		for _, name in ipairs( templateName ) do
+			local td, result = _readTemplateData( name ) 
+			if td then return result end
+		end
+	end
+	return nil
+end
+-- this is the function to be called by other modules. it expects the frame, and then an optional list of subpages, e.g. { "Documentation" }.
+-- if second parameter is nil, only tempalte page will be searched for templatedata.
+function calculateViolations( frame, subpages )
+-- used for parameter type validy test. keyed by TD 'type' string. values are function(val) returning bool.
+	local type_validators = { 
+		['number'] = function( s ) return mw.language.getContentLanguage():parseFormattedNumber( s ) end
+	}
+	function compatible( typ, val )
+		local func = type_validators[typ]
+		return type( func ) ~= 'function' or util.empty( val ) or func( val )
+	end
+	
+	local t_frame = frame:getParent()
+	local t_args, template_name = t_frame.args, t_frame:getTitle()
+	template_name = mw.ustring.gsub( template_name, '/sandbox', '', 1 )
+	local td_source = util.build_namelist( template_name, subpages )
+	if frame.args['td_source'] then
+		table.insert(td_source, frame.args['td_source'])
+	end
+
+	local templatedata = readTemplateData( td_source )
+	local td_params = templatedata and templatedata.params
+	local all_aliases, all_series = {}, {}
+
+	if not td_params then return { ['no-templatedata'] = { [''] = '' } } end
+	-- from this point on, we know templatedata is valid.
+
+	local res = {} -- before returning to caller, we'll prune empty tables
+
+	-- allow for aliases
+	for x, p in pairs( td_params ) do for y, alias in ipairs( p.aliases or {} ) do
+		p['primary'] = x
+		td_params[x] = p
+		all_aliases[alias] = p
+		if tonumber(alias) then all_aliases[tonumber(alias)] = p end
+	end end
+
+	-- handle undeclared and deprecated
+	local already_seen = {}
+	local series = frame.args['series']
+	for p_name, value in pairs( t_args ) do
+		local tp_param, noval, numeric, table_name = td_params[p_name] or all_aliases[p_name], util.empty( value ), tonumber( p_name )
+		local hasval = not noval
+
+		if not tp_param and series then -- 2nd chance. check to see if series
+			for s_name, p in pairs(td_params) do 
+				if mw.ustring.match( p_name, '^' .. s_name .. '%d+' .. '$') then 
+					-- mw.log('found p_name '.. p_name .. '  s_name:' .. s_name, ' p is:', p) debugging series support
+					tp_param = p 
+				end -- don't bother breaking. td always correct.
+			end 				
+		end
+
+		if not tp_param then -- not in TD: this is called undeclared
+			-- calculate the relevant table for this undeclared parameter, based on parameter and value types
+			table_name = 
+				noval and numeric and 'empty-undeclared-numeric' or
+				noval and not numeric and 'empty-undeclared' or
+				hasval and numeric and 'undeclared-numeric' or
+				'undeclared' -- tzvototi nishar.
+		else -- in td: test for deprecation and mistype. if deprecated, no further tests
+			table_name = tp_param.deprecated and hasval and 'deprecated' 
+				or tp_param.deprecated and noval and 'empty-deprecated' 
+				or not compatible( tp_param.type, value ) and 'incompatible'
+				or not series and already_seen[tp_param] and hasval and 'duplicate'
+
+			if hasval and table_name ~= 'duplicate' then
+				already_seen[tp_param] = p_name
+			end
+		end
+		
+		-- report it.
+		if table_name then
+			res[table_name] = res[table_name] or {}
+			if table_name == 'duplicate' then
+				local primary_param = tp_param['primary']
+				local primaryData = res[table_name][primary_param]
+				if not primaryData then
+					primaryData = {}
+					table.insert(primaryData, already_seen[tp_param])
+				end
+				table.insert(primaryData, p_name)
+				res[table_name][primary_param] = primaryData
+			else
+				res[table_name][p_name] = value
+			end
+		end
+	end
+
+	-- check for empty/missing parameters declared "required" 
+	for p_name, param in pairs( td_params ) do 
+		if param.required and util.empty( t_args[p_name] ) then
+			local is_alias
+			for _, alias in ipairs( param.aliases or {} ) do is_alias = is_alias or not util.empty( t_args[alias] ) end
+			if not is_alias then
+				res['empty-required'] = res['empty-required'] or {} 
+				res['empty-required'][p_name] = '' 
+			end
+		end
+	end
+	
+	mw.logObject(res)
+	
+	return res
+end
+
+-- wraps report in hidden frame
+function wrapReport(report, template_name, options)
+	mw.logObject(report)
+	if util.empty( report ) then return '' end
+	local naked = mw.title.new( template_name )['text']
+	naked = mw.ustring.gsub(naked, 'Infobox', 'infobox', 1)
+	
+	report = ( options['wrapper-prefix'] or "&lt;div class = 'paramvalidator-wrapper'&gt;&lt;span class='paramvalidator-error'&gt;" )
+			.. report
+			.. ( options['wrapper-suffix'] or "&lt;/span&gt;&lt;/div&gt;" )
+	
+	report = mw.ustring.gsub( report, 'tname_naked', naked )
+	report = mw.ustring.gsub( report, 'templatename', template_name )
+
+	return report
+end
+
+-- this is the "user" version, called with {{#invoke:}} returns a string, as defined by the options parameter
+function validateParams( frame )
+	local options, report, template_name = util.extract_options( frame ), '', frame:getParent():getTitle()
+
+	local ignore = function( p_name )
+		for _, pattern in ipairs( options['ignore'] or {} ) do
+			if mw.ustring.match( p_name, '^' .. pattern .. '$' ) then return true end
+		end
+		return false
+	end
+
+	local replace_macros = function( error_type, s, param_names )
+		function concat_and_escape( t , sep )
+			sep = sep or ', '
+			local s = table.concat( t, sep )
+			return ( mw.ustring.gsub( s, '%%', '%%%%' ) )
+		end
+		
+		if s and ( type( param_names ) == 'table' ) then
+			local k_ar, kv_ar = {}, {}
+			for k, v in pairs( param_names ) do
+				table.insert( k_ar, k )
+				if type(v) == 'table' then
+					v = table.concat(v, ', ')
+				end
+					
+				if error_type == 'duplicate' then
+					table.insert( kv_ar, v)
+				else
+					table.insert( kv_ar, k .. ': ' .. v)
+				end
+			end
+			
+			s = mw.ustring.gsub( s, 'paramname', concat_and_escape( k_ar ) )
+			s = mw.ustring.gsub( s, 'paramandvalue', concat_and_escape( kv_ar, ' AND ' ) )
+
+			if mw.getCurrentFrame():preprocess( "{{REVISIONID}}" ) ~= "" then
+				s = mw.ustring.gsub( s, "&lt;div.*&lt;%/div&gt;", "", 1 )
+			end
+		end
+		return s
+	end
+
+	local report_params = function( key, param_names )
+		local res = replace_macros( key, options[key], param_names )
+		res = frame:preprocess(res or '')
+		report = report ..  ( res or '' )
+		return res
+	end
+
+	-- no option no work.
+	if util.table_empty( options ) then return '' end
+
+	-- get the errors.
+	local violations = calculateViolations( frame, options['doc-subpage'] )
+	-- special request of bora: use skip_empty_numeric
+	if violations['empty-undeclared-numeric'] then 
+		for i = 1, tonumber( options['skip-empty-numeric'] ) or 0 do 
+			violations['empty-undeclared-numeric'][i] = nil 
+		end
+	end
+	
+	-- handle ignore list, and prune empty violations - in that order!
+	local offenders = 0
+	for name, tab in pairs( violations ) do 
+		-- remove ignored parameters from all violations
+		for pname in pairs( tab ) do if ignore( pname ) then tab[pname] = nil end end
+		-- prune empty violations
+		if util.table_empty( tab ) then violations[name] = nil end
+	-- WORK IS DONE. report the errors.
+	-- if report then count it.
+		if violations[name] and report_params( name, tab ) then offenders = offenders + 1 end 
+	end
+
+	if offenders &gt; 1 then report_params( 'multiple' ) end
+	if offenders ~= 0 then report_params( 'any' ) end -- could have tested for empty( report ), but since we count them anyway...
+	return wrapReport(report, template_name, options)
+end
+
+return {
+	['validateparams'] = validateParams,
+	['calculateViolations'] = calculateViolations,
+	['wrapReport'] = wrapReport
+}</text>
+      <sha1>hidj2lwfe630wvxl8m4q9mbzjpxqoyn</sha1>
+    </revision>
+  </page>
+</mediawiki>

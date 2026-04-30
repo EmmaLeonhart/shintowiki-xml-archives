@@ -1,0 +1,1622 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Mw lang</title>
+    <ns>828</ns>
+    <id>678</id>
+    <revision>
+      <id>517808</id>
+      <timestamp>2022-10-22T09:09:34Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;WOSlinker</username>
+        <id>0</id>
+      </contributor>
+      <comment>use require('strict') instead of require('Module:No globals')</comment>
+      <origin>517808</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7508" sha1="8pqnzgtq7ebx347t4mkm4d3ttg4cfax" xml:space="preserve">require('strict');
+local getArgs = require('Module:Arguments').getArgs
+
+
+--[[--------------------------&lt; E R R _ M S G _ M A K E &gt;------------------------------------------------------
+]]
+
+local function err_msg_make (msg)
+	return '&lt;span class="error" style="font-size:100%"&gt;error: ' .. msg .. ' not recognized&lt;/span&gt;'
+end
+
+
+--[[--------------------------&lt; _ I S _ C O D E &gt;--------------------------------------------------------------
+
+local or require()d entry point
+
+return true if &lt;code&gt; is a mediawiki recognized code; false else
+
+&lt;code&gt; - language code to validate; expected to be lowercase without leading/trailing whitespace
+&lt;target_lang_code&gt; - language code for target language; expected to be valid; expected to be lowercase without leading/trailing whitespace
+
+specifying &lt;target_lang_code&gt; may be a pointless exercise because of cldr fallback.  For example,
+	mw.language.fetchLanguageName (crh, sq) -&gt; Crimean Turkish
+because the Albanian language definitions do not have an Albanian-language version of the language name
+
+]]
+
+local function _is_code (code, target_lang_code)
+	code = mw.language.fetchLanguageName (code, target_lang_code);
+	return '' ~= code;
+end
+
+
+--[[--------------------------&lt; _ _ V A L I D A T E _ T A R G E T _ L A N G _ C O D E &gt;------------------------
+
+validates target_lang_code as a know language code; returns two values
+	when target_lang_code is valid, first return value holds target_lang_code; second return value is nil
+	when target_lang_code is invalid, first retrun value is nil; second return value has error message
+
+if target_lang_code argument is nil, (missing or empty in the invoke) use local wiki's language code
+
+]]
+
+local function __validate_target_lang_code (target_lang_code)
+	local msg;
+	
+	if target_lang_code then													-- not missing or empty
+		if not _is_code (target_lang_code) then									-- validate target_lang_code
+			msg = err_msg_make ('target language code: ' .. target_lang_code);
+			target_lang_code = nil;												-- unset as invalid
+		end
+	end
+	if not target_lang_code then												-- if nil because missing or empty or because invlaid and we set it nil
+		target_lang_code = mw.getContentLanguage():getCode();					-- use local wiki's language code
+	end
+
+	return target_lang_code, msg;												-- target_lang_code is valid or nil; msg is nil or has an error message
+end
+
+
+--[[--------------------------&lt; I S _ C O D E &gt;----------------------------------------------------------------
+
+module entry point
+
+args[1]: language code -&gt; &lt;code&gt;
+args[2]: optional target language code; same as &lt;target lang code&gt; in {{#language:&lt;code&gt;|&lt;target lang code&gt;}}; defaults to the local wiki language
+
+return true if &lt;code&gt; is a mediawiki recognized code; nil else
+
+]]
+
+local function is_code (frame)
+	local args = getArgs (frame, {
+		valueFunc = function (key, value)
+			return (value and '' ~= value) and value:lower():gsub ('^%s*(.-)%s*$', '%1') or nil;
+		end
+		});
+	local code = args[1];
+	local target_lang_code = __validate_target_lang_code (args[2]);
+
+	return code and _is_code (code, target_lang_code) and true or nil;
+end
+
+
+--[[--------------------------&lt; N A M E _ F R O M _ C O D E &gt;--------------------------------------------------
+
+module entry point
+
+args[1]: language code
+args[2]: optional target language code; same as &lt;target lang code&gt; in {{#language:&lt;code&gt;|&lt;target lang code&gt;}}; defaults to the local wiki language
+
+return language-name if language-code is a mediawiki recognized code; error message string else
+
+returned language name not guarenteed to be in target_lang_code (if specified), because mw language lists are incomplete
+
+]]
+
+local function name_from_code (frame)
+	local args = getArgs (frame, {
+		valueFunc = function (key, value)
+			return (value and '' ~= value) and value:lower():gsub ('%s*(.-)%s*', '%1') or nil;
+		end
+		});
+	local code = args[1];
+	if not code then
+		return err_msg_make ('code: (empty)');
+	end
+	
+	local target_lang_code, msg = __validate_target_lang_code (args[2]);
+	if msg then
+		return msg;
+	end
+
+	local name = mw.language.fetchLanguageName (code, target_lang_code);		-- returns empty string if code not found
+	return '' ~= name and name or err_msg_make ('language code: ' .. code);		-- return language name or error message
+end
+
+
+--[[--------------------------&lt; C O D E _ F R O M _ N A M E &gt;--------------------------------------------------
+
+local entry point
+
+args[1]: language name
+args[2]: optional target language code; instruct this function to fetch language name list in 'this' language
+
+return language-code if language-name is a mediawiki recognized name and target language code is valid; error message string else
+
+second return value is a boolean used by is_name(); true when name is found; false else
+
+]]
+
+local function _code_from_name (args)
+	local name = args[1];
+	if not name then
+		return err_msg_make ('name: (empty)');
+	end
+
+	local target_lang_code, msg =  __validate_target_lang_code (args[2]);
+
+	if msg then
+		return msg;
+	end
+
+	local code_name_list = mw.language.fetchLanguageNames (target_lang_code, 'all');	-- get language code / name list in target_lang_code language indexed by language code
+	local name_code_list = {};													-- to hold language name / code list indexed by name
+
+	for k, v in pairs (code_name_list) do										-- spin through the code / name list and
+		name_code_list[v:lower()] = k;											-- make a name / code list
+	end
+
+	if name_code_list[name] then
+		return name_code_list[name], true;										-- returns code when name is found and true for is_name()
+	else
+		return err_msg_make ('language name: ' .. name), false;					-- return error message when name not found and false for is_name()
+	end
+end
+
+
+--[[--------------------------&lt; C O D E _ F R O M _ N A M E &gt;--------------------------------------------------
+
+module entry point
+
+args[1]: language name
+args[2]: optional target language code; instruct this function to fetch language name list in 'this' language
+
+return language-code if language-name is a mediawiki recognized name and target language code is valid; error message string else
+
+]]
+
+local function code_from_name (frame)
+	local args = getArgs (frame, {
+		valueFunc = function (key, value)
+			return (value and '' ~= value) and value:lower():gsub ('^%s*(.-)%s*$', '%1') or nil;
+		end
+		});
+	
+	local result, _ = _code_from_name (args);									-- suppress true/false return used by is_name()
+	return result;
+end
+
+
+--[[--------------------------&lt; I S _ N A M E &gt;----------------------------------------------------------------
+
+return true if &lt;name&gt; is a mediawiki recognized language name; false else
+
+args[1]: language name
+args[2]: optional target language code; instructs _code_from_name to fetch language name list in 'this' language
+			defaults to local wiki's language;  when this parameter not valid, language name is assumed to be not valid
+
+]]
+
+local function is_name (frame)
+	local args = getArgs (frame, {
+		valueFunc = function (key, value)
+			return (value and '' ~= value) and value:lower():gsub ('%s*(.-)%s*', '%1') or nil;
+		end
+		});
+	
+	local _, result = _code_from_name (args);									-- suppress code return used by code_from_name()
+	return result and true or nil;
+end
+
+
+--[[--------------------------&lt; E X P O R T E D   F U N C T I O N S &gt;------------------------------------------
+]]
+
+return {
+	code_from_name = code_from_name,
+	is_code = is_code,
+	is_name = is_name,
+	name_from_code = name_from_code,
+
+	_is_code = _is_code,														-- entry point from another module
+	}</text>
+      <sha1>8pqnzgtq7ebx347t4mkm4d3ttg4cfax</sha1>
+    </revision>
+    <revision>
+      <id>517809</id>
+      <parentid>517808</parentid>
+      <timestamp>2024-06-28T09:46:04Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:Mw_lang]]</comment>
+      <origin>517808</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7508" sha1="8pqnzgtq7ebx347t4mkm4d3ttg4cfax" xml:space="preserve">require('strict');
+local getArgs = require('Module:Arguments').getArgs
+
+
+--[[--------------------------&lt; E R R _ M S G _ M A K E &gt;------------------------------------------------------
+]]
+
+local function err_msg_make (msg)
+	return '&lt;span class="error" style="font-size:100%"&gt;error: ' .. msg .. ' not recognized&lt;/span&gt;'
+end
+
+
+--[[--------------------------&lt; _ I S _ C O D E &gt;--------------------------------------------------------------
+
+local or require()d entry point
+
+return true if &lt;code&gt; is a mediawiki recognized code; false else
+
+&lt;code&gt; - language code to validate; expected to be lowercase without leading/trailing whitespace
+&lt;target_lang_code&gt; - language code for target language; expected to be valid; expected to be lowercase without leading/trailing whitespace
+
+specifying &lt;target_lang_code&gt; may be a pointless exercise because of cldr fallback.  For example,
+	mw.language.fetchLanguageName (crh, sq) -&gt; Crimean Turkish
+because the Albanian language definitions do not have an Albanian-language version of the language name
+
+]]
+
+local function _is_code (code, target_lang_code)
+	code = mw.language.fetchLanguageName (code, target_lang_code);
+	return '' ~= code;
+end
+
+
+--[[--------------------------&lt; _ _ V A L I D A T E _ T A R G E T _ L A N G _ C O D E &gt;------------------------
+
+validates target_lang_code as a know language code; returns two values
+	when target_lang_code is valid, first return value holds target_lang_code; second return value is nil
+	when target_lang_code is invalid, first retrun value is nil; second return value has error message
+
+if target_lang_code argument is nil, (missing or empty in the invoke) use local wiki's language code
+
+]]
+
+local function __validate_target_lang_code (target_lang_code)
+	local msg;
+	
+	if target_lang_code then													-- not missing or empty
+		if not _is_code (target_lang_code) then									-- validate target_lang_code
+			msg = err_msg_make ('target language code: ' .. target_lang_code);
+			target_lang_code = nil;												-- unset as invalid
+		end
+	end
+	if not target_lang_code then												-- if nil because missing or empty or because invlaid and we set it nil
+		target_lang_code = mw.getContentLanguage():getCode();					-- use local wiki's language code
+	end
+
+	return target_lang_code, msg;												-- target_lang_code is valid or nil; msg is nil or has an error message
+end
+
+
+--[[--------------------------&lt; I S _ C O D E &gt;----------------------------------------------------------------
+
+module entry point
+
+args[1]: language code -&gt; &lt;code&gt;
+args[2]: optional target language code; same as &lt;target lang code&gt; in {{#language:&lt;code&gt;|&lt;target lang code&gt;}}; defaults to the local wiki language
+
+return true if &lt;code&gt; is a mediawiki recognized code; nil else
+
+]]
+
+local function is_code (frame)
+	local args = getArgs (frame, {
+		valueFunc = function (key, value)
+			return (value and '' ~= value) and value:lower():gsub ('^%s*(.-)%s*$', '%1') or nil;
+		end
+		});
+	local code = args[1];
+	local target_lang_code = __validate_target_lang_code (args[2]);
+
+	return code and _is_code (code, target_lang_code) and true or nil;
+end
+
+
+--[[--------------------------&lt; N A M E _ F R O M _ C O D E &gt;--------------------------------------------------
+
+module entry point
+
+args[1]: language code
+args[2]: optional target language code; same as &lt;target lang code&gt; in {{#language:&lt;code&gt;|&lt;target lang code&gt;}}; defaults to the local wiki language
+
+return language-name if language-code is a mediawiki recognized code; error message string else
+
+returned language name not guarenteed to be in target_lang_code (if specified), because mw language lists are incomplete
+
+]]
+
+local function name_from_code (frame)
+	local args = getArgs (frame, {
+		valueFunc = function (key, value)
+			return (value and '' ~= value) and value:lower():gsub ('%s*(.-)%s*', '%1') or nil;
+		end
+		});
+	local code = args[1];
+	if not code then
+		return err_msg_make ('code: (empty)');
+	end
+	
+	local target_lang_code, msg = __validate_target_lang_code (args[2]);
+	if msg then
+		return msg;
+	end
+
+	local name = mw.language.fetchLanguageName (code, target_lang_code);		-- returns empty string if code not found
+	return '' ~= name and name or err_msg_make ('language code: ' .. code);		-- return language name or error message
+end
+
+
+--[[--------------------------&lt; C O D E _ F R O M _ N A M E &gt;--------------------------------------------------
+
+local entry point
+
+args[1]: language name
+args[2]: optional target language code; instruct this function to fetch language name list in 'this' language
+
+return language-code if language-name is a mediawiki recognized name and target language code is valid; error message string else
+
+second return value is a boolean used by is_name(); true when name is found; false else
+
+]]
+
+local function _code_from_name (args)
+	local name = args[1];
+	if not name then
+		return err_msg_make ('name: (empty)');
+	end
+
+	local target_lang_code, msg =  __validate_target_lang_code (args[2]);
+
+	if msg then
+		return msg;
+	end
+
+	local code_name_list = mw.language.fetchLanguageNames (target_lang_code, 'all');	-- get language code / name list in target_lang_code language indexed by language code
+	local name_code_list = {};													-- to hold language name / code list indexed by name
+
+	for k, v in pairs (code_name_list) do										-- spin through the code / name list and
+		name_code_list[v:lower()] = k;											-- make a name / code list
+	end
+
+	if name_code_list[name] then
+		return name_code_list[name], true;										-- returns code when name is found and true for is_name()
+	else
+		return err_msg_make ('language name: ' .. name), false;					-- return error message when name not found and false for is_name()
+	end
+end
+
+
+--[[--------------------------&lt; C O D E _ F R O M _ N A M E &gt;--------------------------------------------------
+
+module entry point
+
+args[1]: language name
+args[2]: optional target language code; instruct this function to fetch language name list in 'this' language
+
+return language-code if language-name is a mediawiki recognized name and target language code is valid; error message string else
+
+]]
+
+local function code_from_name (frame)
+	local args = getArgs (frame, {
+		valueFunc = function (key, value)
+			return (value and '' ~= value) and value:lower():gsub ('^%s*(.-)%s*$', '%1') or nil;
+		end
+		});
+	
+	local result, _ = _code_from_name (args);									-- suppress true/false return used by is_name()
+	return result;
+end
+
+
+--[[--------------------------&lt; I S _ N A M E &gt;----------------------------------------------------------------
+
+return true if &lt;name&gt; is a mediawiki recognized language name; false else
+
+args[1]: language name
+args[2]: optional target language code; instructs _code_from_name to fetch language name list in 'this' language
+			defaults to local wiki's language;  when this parameter not valid, language name is assumed to be not valid
+
+]]
+
+local function is_name (frame)
+	local args = getArgs (frame, {
+		valueFunc = function (key, value)
+			return (value and '' ~= value) and value:lower():gsub ('%s*(.-)%s*', '%1') or nil;
+		end
+		});
+	
+	local _, result = _code_from_name (args);									-- suppress code return used by code_from_name()
+	return result and true or nil;
+end
+
+
+--[[--------------------------&lt; E X P O R T E D   F U N C T I O N S &gt;------------------------------------------
+]]
+
+return {
+	code_from_name = code_from_name,
+	is_code = is_code,
+	is_name = is_name,
+	name_from_code = name_from_code,
+
+	_is_code = _is_code,														-- entry point from another module
+	}</text>
+      <sha1>8pqnzgtq7ebx347t4mkm4d3ttg4cfax</sha1>
+    </revision>
+    <revision>
+      <id>517810</id>
+      <parentid>517809</parentid>
+      <timestamp>2025-03-11T09:01:31Z</timestamp>
+      <contributor>
+        <username>en&gt;WOSlinker</username>
+        <id>0</id>
+      </contributor>
+      <comment>use require('strict') instead of require('Module:No globals')</comment>
+      <origin>517808</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7508" sha1="8pqnzgtq7ebx347t4mkm4d3ttg4cfax" xml:space="preserve">require('strict');
+local getArgs = require('Module:Arguments').getArgs
+
+
+--[[--------------------------&lt; E R R _ M S G _ M A K E &gt;------------------------------------------------------
+]]
+
+local function err_msg_make (msg)
+	return '&lt;span class="error" style="font-size:100%"&gt;error: ' .. msg .. ' not recognized&lt;/span&gt;'
+end
+
+
+--[[--------------------------&lt; _ I S _ C O D E &gt;--------------------------------------------------------------
+
+local or require()d entry point
+
+return true if &lt;code&gt; is a mediawiki recognized code; false else
+
+&lt;code&gt; - language code to validate; expected to be lowercase without leading/trailing whitespace
+&lt;target_lang_code&gt; - language code for target language; expected to be valid; expected to be lowercase without leading/trailing whitespace
+
+specifying &lt;target_lang_code&gt; may be a pointless exercise because of cldr fallback.  For example,
+	mw.language.fetchLanguageName (crh, sq) -&gt; Crimean Turkish
+because the Albanian language definitions do not have an Albanian-language version of the language name
+
+]]
+
+local function _is_code (code, target_lang_code)
+	code = mw.language.fetchLanguageName (code, target_lang_code);
+	return '' ~= code;
+end
+
+
+--[[--------------------------&lt; _ _ V A L I D A T E _ T A R G E T _ L A N G _ C O D E &gt;------------------------
+
+validates target_lang_code as a know language code; returns two values
+	when target_lang_code is valid, first return value holds target_lang_code; second return value is nil
+	when target_lang_code is invalid, first retrun value is nil; second return value has error message
+
+if target_lang_code argument is nil, (missing or empty in the invoke) use local wiki's language code
+
+]]
+
+local function __validate_target_lang_code (target_lang_code)
+	local msg;
+	
+	if target_lang_code then													-- not missing or empty
+		if not _is_code (target_lang_code) then									-- validate target_lang_code
+			msg = err_msg_make ('target language code: ' .. target_lang_code);
+			target_lang_code = nil;												-- unset as invalid
+		end
+	end
+	if not target_lang_code then												-- if nil because missing or empty or because invlaid and we set it nil
+		target_lang_code = mw.getContentLanguage():getCode();					-- use local wiki's language code
+	end
+
+	return target_lang_code, msg;												-- target_lang_code is valid or nil; msg is nil or has an error message
+end
+
+
+--[[--------------------------&lt; I S _ C O D E &gt;----------------------------------------------------------------
+
+module entry point
+
+args[1]: language code -&gt; &lt;code&gt;
+args[2]: optional target language code; same as &lt;target lang code&gt; in {{#language:&lt;code&gt;|&lt;target lang code&gt;}}; defaults to the local wiki language
+
+return true if &lt;code&gt; is a mediawiki recognized code; nil else
+
+]]
+
+local function is_code (frame)
+	local args = getArgs (frame, {
+		valueFunc = function (key, value)
+			return (value and '' ~= value) and value:lower():gsub ('^%s*(.-)%s*$', '%1') or nil;
+		end
+		});
+	local code = args[1];
+	local target_lang_code = __validate_target_lang_code (args[2]);
+
+	return code and _is_code (code, target_lang_code) and true or nil;
+end
+
+
+--[[--------------------------&lt; N A M E _ F R O M _ C O D E &gt;--------------------------------------------------
+
+module entry point
+
+args[1]: language code
+args[2]: optional target language code; same as &lt;target lang code&gt; in {{#language:&lt;code&gt;|&lt;target lang code&gt;}}; defaults to the local wiki language
+
+return language-name if language-code is a mediawiki recognized code; error message string else
+
+returned language name not guarenteed to be in target_lang_code (if specified), because mw language lists are incomplete
+
+]]
+
+local function name_from_code (frame)
+	local args = getArgs (frame, {
+		valueFunc = function (key, value)
+			return (value and '' ~= value) and value:lower():gsub ('%s*(.-)%s*', '%1') or nil;
+		end
+		});
+	local code = args[1];
+	if not code then
+		return err_msg_make ('code: (empty)');
+	end
+	
+	local target_lang_code, msg = __validate_target_lang_code (args[2]);
+	if msg then
+		return msg;
+	end
+
+	local name = mw.language.fetchLanguageName (code, target_lang_code);		-- returns empty string if code not found
+	return '' ~= name and name or err_msg_make ('language code: ' .. code);		-- return language name or error message
+end
+
+
+--[[--------------------------&lt; C O D E _ F R O M _ N A M E &gt;--------------------------------------------------
+
+local entry point
+
+args[1]: language name
+args[2]: optional target language code; instruct this function to fetch language name list in 'this' language
+
+return language-code if language-name is a mediawiki recognized name and target language code is valid; error message string else
+
+second return value is a boolean used by is_name(); true when name is found; false else
+
+]]
+
+local function _code_from_name (args)
+	local name = args[1];
+	if not name then
+		return err_msg_make ('name: (empty)');
+	end
+
+	local target_lang_code, msg =  __validate_target_lang_code (args[2]);
+
+	if msg then
+		return msg;
+	end
+
+	local code_name_list = mw.language.fetchLanguageNames (target_lang_code, 'all');	-- get language code / name list in target_lang_code language indexed by language code
+	local name_code_list = {};													-- to hold language name / code list indexed by name
+
+	for k, v in pairs (code_name_list) do										-- spin through the code / name list and
+		name_code_list[v:lower()] = k;											-- make a name / code list
+	end
+
+	if name_code_list[name] then
+		return name_code_list[name], true;										-- returns code when name is found and true for is_name()
+	else
+		return err_msg_make ('language name: ' .. name), false;					-- return error message when name not found and false for is_name()
+	end
+end
+
+
+--[[--------------------------&lt; C O D E _ F R O M _ N A M E &gt;--------------------------------------------------
+
+module entry point
+
+args[1]: language name
+args[2]: optional target language code; instruct this function to fetch language name list in 'this' language
+
+return language-code if language-name is a mediawiki recognized name and target language code is valid; error message string else
+
+]]
+
+local function code_from_name (frame)
+	local args = getArgs (frame, {
+		valueFunc = function (key, value)
+			return (value and '' ~= value) and value:lower():gsub ('^%s*(.-)%s*$', '%1') or nil;
+		end
+		});
+	
+	local result, _ = _code_from_name (args);									-- suppress true/false return used by is_name()
+	return result;
+end
+
+
+--[[--------------------------&lt; I S _ N A M E &gt;----------------------------------------------------------------
+
+return true if &lt;name&gt; is a mediawiki recognized language name; false else
+
+args[1]: language name
+args[2]: optional target language code; instructs _code_from_name to fetch language name list in 'this' language
+			defaults to local wiki's language;  when this parameter not valid, language name is assumed to be not valid
+
+]]
+
+local function is_name (frame)
+	local args = getArgs (frame, {
+		valueFunc = function (key, value)
+			return (value and '' ~= value) and value:lower():gsub ('%s*(.-)%s*', '%1') or nil;
+		end
+		});
+	
+	local _, result = _code_from_name (args);									-- suppress code return used by code_from_name()
+	return result and true or nil;
+end
+
+
+--[[--------------------------&lt; E X P O R T E D   F U N C T I O N S &gt;------------------------------------------
+]]
+
+return {
+	code_from_name = code_from_name,
+	is_code = is_code,
+	is_name = is_name,
+	name_from_code = name_from_code,
+
+	_is_code = _is_code,														-- entry point from another module
+	}</text>
+      <sha1>8pqnzgtq7ebx347t4mkm4d3ttg4cfax</sha1>
+    </revision>
+    <revision>
+      <id>517811</id>
+      <parentid>517810</parentid>
+      <timestamp>2025-03-11T09:01:32Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: more imports</comment>
+      <origin>517808</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7508" sha1="8pqnzgtq7ebx347t4mkm4d3ttg4cfax" xml:space="preserve">require('strict');
+local getArgs = require('Module:Arguments').getArgs
+
+
+--[[--------------------------&lt; E R R _ M S G _ M A K E &gt;------------------------------------------------------
+]]
+
+local function err_msg_make (msg)
+	return '&lt;span class="error" style="font-size:100%"&gt;error: ' .. msg .. ' not recognized&lt;/span&gt;'
+end
+
+
+--[[--------------------------&lt; _ I S _ C O D E &gt;--------------------------------------------------------------
+
+local or require()d entry point
+
+return true if &lt;code&gt; is a mediawiki recognized code; false else
+
+&lt;code&gt; - language code to validate; expected to be lowercase without leading/trailing whitespace
+&lt;target_lang_code&gt; - language code for target language; expected to be valid; expected to be lowercase without leading/trailing whitespace
+
+specifying &lt;target_lang_code&gt; may be a pointless exercise because of cldr fallback.  For example,
+	mw.language.fetchLanguageName (crh, sq) -&gt; Crimean Turkish
+because the Albanian language definitions do not have an Albanian-language version of the language name
+
+]]
+
+local function _is_code (code, target_lang_code)
+	code = mw.language.fetchLanguageName (code, target_lang_code);
+	return '' ~= code;
+end
+
+
+--[[--------------------------&lt; _ _ V A L I D A T E _ T A R G E T _ L A N G _ C O D E &gt;------------------------
+
+validates target_lang_code as a know language code; returns two values
+	when target_lang_code is valid, first return value holds target_lang_code; second return value is nil
+	when target_lang_code is invalid, first retrun value is nil; second return value has error message
+
+if target_lang_code argument is nil, (missing or empty in the invoke) use local wiki's language code
+
+]]
+
+local function __validate_target_lang_code (target_lang_code)
+	local msg;
+	
+	if target_lang_code then													-- not missing or empty
+		if not _is_code (target_lang_code) then									-- validate target_lang_code
+			msg = err_msg_make ('target language code: ' .. target_lang_code);
+			target_lang_code = nil;												-- unset as invalid
+		end
+	end
+	if not target_lang_code then												-- if nil because missing or empty or because invlaid and we set it nil
+		target_lang_code = mw.getContentLanguage():getCode();					-- use local wiki's language code
+	end
+
+	return target_lang_code, msg;												-- target_lang_code is valid or nil; msg is nil or has an error message
+end
+
+
+--[[--------------------------&lt; I S _ C O D E &gt;----------------------------------------------------------------
+
+module entry point
+
+args[1]: language code -&gt; &lt;code&gt;
+args[2]: optional target language code; same as &lt;target lang code&gt; in {{#language:&lt;code&gt;|&lt;target lang code&gt;}}; defaults to the local wiki language
+
+return true if &lt;code&gt; is a mediawiki recognized code; nil else
+
+]]
+
+local function is_code (frame)
+	local args = getArgs (frame, {
+		valueFunc = function (key, value)
+			return (value and '' ~= value) and value:lower():gsub ('^%s*(.-)%s*$', '%1') or nil;
+		end
+		});
+	local code = args[1];
+	local target_lang_code = __validate_target_lang_code (args[2]);
+
+	return code and _is_code (code, target_lang_code) and true or nil;
+end
+
+
+--[[--------------------------&lt; N A M E _ F R O M _ C O D E &gt;--------------------------------------------------
+
+module entry point
+
+args[1]: language code
+args[2]: optional target language code; same as &lt;target lang code&gt; in {{#language:&lt;code&gt;|&lt;target lang code&gt;}}; defaults to the local wiki language
+
+return language-name if language-code is a mediawiki recognized code; error message string else
+
+returned language name not guarenteed to be in target_lang_code (if specified), because mw language lists are incomplete
+
+]]
+
+local function name_from_code (frame)
+	local args = getArgs (frame, {
+		valueFunc = function (key, value)
+			return (value and '' ~= value) and value:lower():gsub ('%s*(.-)%s*', '%1') or nil;
+		end
+		});
+	local code = args[1];
+	if not code then
+		return err_msg_make ('code: (empty)');
+	end
+	
+	local target_lang_code, msg = __validate_target_lang_code (args[2]);
+	if msg then
+		return msg;
+	end
+
+	local name = mw.language.fetchLanguageName (code, target_lang_code);		-- returns empty string if code not found
+	return '' ~= name and name or err_msg_make ('language code: ' .. code);		-- return language name or error message
+end
+
+
+--[[--------------------------&lt; C O D E _ F R O M _ N A M E &gt;--------------------------------------------------
+
+local entry point
+
+args[1]: language name
+args[2]: optional target language code; instruct this function to fetch language name list in 'this' language
+
+return language-code if language-name is a mediawiki recognized name and target language code is valid; error message string else
+
+second return value is a boolean used by is_name(); true when name is found; false else
+
+]]
+
+local function _code_from_name (args)
+	local name = args[1];
+	if not name then
+		return err_msg_make ('name: (empty)');
+	end
+
+	local target_lang_code, msg =  __validate_target_lang_code (args[2]);
+
+	if msg then
+		return msg;
+	end
+
+	local code_name_list = mw.language.fetchLanguageNames (target_lang_code, 'all');	-- get language code / name list in target_lang_code language indexed by language code
+	local name_code_list = {};													-- to hold language name / code list indexed by name
+
+	for k, v in pairs (code_name_list) do										-- spin through the code / name list and
+		name_code_list[v:lower()] = k;											-- make a name / code list
+	end
+
+	if name_code_list[name] then
+		return name_code_list[name], true;										-- returns code when name is found and true for is_name()
+	else
+		return err_msg_make ('language name: ' .. name), false;					-- return error message when name not found and false for is_name()
+	end
+end
+
+
+--[[--------------------------&lt; C O D E _ F R O M _ N A M E &gt;--------------------------------------------------
+
+module entry point
+
+args[1]: language name
+args[2]: optional target language code; instruct this function to fetch language name list in 'this' language
+
+return language-code if language-name is a mediawiki recognized name and target language code is valid; error message string else
+
+]]
+
+local function code_from_name (frame)
+	local args = getArgs (frame, {
+		valueFunc = function (key, value)
+			return (value and '' ~= value) and value:lower():gsub ('^%s*(.-)%s*$', '%1') or nil;
+		end
+		});
+	
+	local result, _ = _code_from_name (args);									-- suppress true/false return used by is_name()
+	return result;
+end
+
+
+--[[--------------------------&lt; I S _ N A M E &gt;----------------------------------------------------------------
+
+return true if &lt;name&gt; is a mediawiki recognized language name; false else
+
+args[1]: language name
+args[2]: optional target language code; instructs _code_from_name to fetch language name list in 'this' language
+			defaults to local wiki's language;  when this parameter not valid, language name is assumed to be not valid
+
+]]
+
+local function is_name (frame)
+	local args = getArgs (frame, {
+		valueFunc = function (key, value)
+			return (value and '' ~= value) and value:lower():gsub ('%s*(.-)%s*', '%1') or nil;
+		end
+		});
+	
+	local _, result = _code_from_name (args);									-- suppress code return used by code_from_name()
+	return result and true or nil;
+end
+
+
+--[[--------------------------&lt; E X P O R T E D   F U N C T I O N S &gt;------------------------------------------
+]]
+
+return {
+	code_from_name = code_from_name,
+	is_code = is_code,
+	is_name = is_name,
+	name_from_code = name_from_code,
+
+	_is_code = _is_code,														-- entry point from another module
+	}</text>
+      <sha1>8pqnzgtq7ebx347t4mkm4d3ttg4cfax</sha1>
+    </revision>
+    <revision>
+      <id>517812</id>
+      <parentid>517811</parentid>
+      <timestamp>2025-04-27T23:30:57Z</timestamp>
+      <contributor>
+        <username>en&gt;WOSlinker</username>
+        <id>0</id>
+      </contributor>
+      <comment>use require('strict') instead of require('Module:No globals')</comment>
+      <origin>517808</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7508" sha1="8pqnzgtq7ebx347t4mkm4d3ttg4cfax" xml:space="preserve">require('strict');
+local getArgs = require('Module:Arguments').getArgs
+
+
+--[[--------------------------&lt; E R R _ M S G _ M A K E &gt;------------------------------------------------------
+]]
+
+local function err_msg_make (msg)
+	return '&lt;span class="error" style="font-size:100%"&gt;error: ' .. msg .. ' not recognized&lt;/span&gt;'
+end
+
+
+--[[--------------------------&lt; _ I S _ C O D E &gt;--------------------------------------------------------------
+
+local or require()d entry point
+
+return true if &lt;code&gt; is a mediawiki recognized code; false else
+
+&lt;code&gt; - language code to validate; expected to be lowercase without leading/trailing whitespace
+&lt;target_lang_code&gt; - language code for target language; expected to be valid; expected to be lowercase without leading/trailing whitespace
+
+specifying &lt;target_lang_code&gt; may be a pointless exercise because of cldr fallback.  For example,
+	mw.language.fetchLanguageName (crh, sq) -&gt; Crimean Turkish
+because the Albanian language definitions do not have an Albanian-language version of the language name
+
+]]
+
+local function _is_code (code, target_lang_code)
+	code = mw.language.fetchLanguageName (code, target_lang_code);
+	return '' ~= code;
+end
+
+
+--[[--------------------------&lt; _ _ V A L I D A T E _ T A R G E T _ L A N G _ C O D E &gt;------------------------
+
+validates target_lang_code as a know language code; returns two values
+	when target_lang_code is valid, first return value holds target_lang_code; second return value is nil
+	when target_lang_code is invalid, first retrun value is nil; second return value has error message
+
+if target_lang_code argument is nil, (missing or empty in the invoke) use local wiki's language code
+
+]]
+
+local function __validate_target_lang_code (target_lang_code)
+	local msg;
+	
+	if target_lang_code then													-- not missing or empty
+		if not _is_code (target_lang_code) then									-- validate target_lang_code
+			msg = err_msg_make ('target language code: ' .. target_lang_code);
+			target_lang_code = nil;												-- unset as invalid
+		end
+	end
+	if not target_lang_code then												-- if nil because missing or empty or because invlaid and we set it nil
+		target_lang_code = mw.getContentLanguage():getCode();					-- use local wiki's language code
+	end
+
+	return target_lang_code, msg;												-- target_lang_code is valid or nil; msg is nil or has an error message
+end
+
+
+--[[--------------------------&lt; I S _ C O D E &gt;----------------------------------------------------------------
+
+module entry point
+
+args[1]: language code -&gt; &lt;code&gt;
+args[2]: optional target language code; same as &lt;target lang code&gt; in {{#language:&lt;code&gt;|&lt;target lang code&gt;}}; defaults to the local wiki language
+
+return true if &lt;code&gt; is a mediawiki recognized code; nil else
+
+]]
+
+local function is_code (frame)
+	local args = getArgs (frame, {
+		valueFunc = function (key, value)
+			return (value and '' ~= value) and value:lower():gsub ('^%s*(.-)%s*$', '%1') or nil;
+		end
+		});
+	local code = args[1];
+	local target_lang_code = __validate_target_lang_code (args[2]);
+
+	return code and _is_code (code, target_lang_code) and true or nil;
+end
+
+
+--[[--------------------------&lt; N A M E _ F R O M _ C O D E &gt;--------------------------------------------------
+
+module entry point
+
+args[1]: language code
+args[2]: optional target language code; same as &lt;target lang code&gt; in {{#language:&lt;code&gt;|&lt;target lang code&gt;}}; defaults to the local wiki language
+
+return language-name if language-code is a mediawiki recognized code; error message string else
+
+returned language name not guarenteed to be in target_lang_code (if specified), because mw language lists are incomplete
+
+]]
+
+local function name_from_code (frame)
+	local args = getArgs (frame, {
+		valueFunc = function (key, value)
+			return (value and '' ~= value) and value:lower():gsub ('%s*(.-)%s*', '%1') or nil;
+		end
+		});
+	local code = args[1];
+	if not code then
+		return err_msg_make ('code: (empty)');
+	end
+	
+	local target_lang_code, msg = __validate_target_lang_code (args[2]);
+	if msg then
+		return msg;
+	end
+
+	local name = mw.language.fetchLanguageName (code, target_lang_code);		-- returns empty string if code not found
+	return '' ~= name and name or err_msg_make ('language code: ' .. code);		-- return language name or error message
+end
+
+
+--[[--------------------------&lt; C O D E _ F R O M _ N A M E &gt;--------------------------------------------------
+
+local entry point
+
+args[1]: language name
+args[2]: optional target language code; instruct this function to fetch language name list in 'this' language
+
+return language-code if language-name is a mediawiki recognized name and target language code is valid; error message string else
+
+second return value is a boolean used by is_name(); true when name is found; false else
+
+]]
+
+local function _code_from_name (args)
+	local name = args[1];
+	if not name then
+		return err_msg_make ('name: (empty)');
+	end
+
+	local target_lang_code, msg =  __validate_target_lang_code (args[2]);
+
+	if msg then
+		return msg;
+	end
+
+	local code_name_list = mw.language.fetchLanguageNames (target_lang_code, 'all');	-- get language code / name list in target_lang_code language indexed by language code
+	local name_code_list = {};													-- to hold language name / code list indexed by name
+
+	for k, v in pairs (code_name_list) do										-- spin through the code / name list and
+		name_code_list[v:lower()] = k;											-- make a name / code list
+	end
+
+	if name_code_list[name] then
+		return name_code_list[name], true;										-- returns code when name is found and true for is_name()
+	else
+		return err_msg_make ('language name: ' .. name), false;					-- return error message when name not found and false for is_name()
+	end
+end
+
+
+--[[--------------------------&lt; C O D E _ F R O M _ N A M E &gt;--------------------------------------------------
+
+module entry point
+
+args[1]: language name
+args[2]: optional target language code; instruct this function to fetch language name list in 'this' language
+
+return language-code if language-name is a mediawiki recognized name and target language code is valid; error message string else
+
+]]
+
+local function code_from_name (frame)
+	local args = getArgs (frame, {
+		valueFunc = function (key, value)
+			return (value and '' ~= value) and value:lower():gsub ('^%s*(.-)%s*$', '%1') or nil;
+		end
+		});
+	
+	local result, _ = _code_from_name (args);									-- suppress true/false return used by is_name()
+	return result;
+end
+
+
+--[[--------------------------&lt; I S _ N A M E &gt;----------------------------------------------------------------
+
+return true if &lt;name&gt; is a mediawiki recognized language name; false else
+
+args[1]: language name
+args[2]: optional target language code; instructs _code_from_name to fetch language name list in 'this' language
+			defaults to local wiki's language;  when this parameter not valid, language name is assumed to be not valid
+
+]]
+
+local function is_name (frame)
+	local args = getArgs (frame, {
+		valueFunc = function (key, value)
+			return (value and '' ~= value) and value:lower():gsub ('%s*(.-)%s*', '%1') or nil;
+		end
+		});
+	
+	local _, result = _code_from_name (args);									-- suppress code return used by code_from_name()
+	return result and true or nil;
+end
+
+
+--[[--------------------------&lt; E X P O R T E D   F U N C T I O N S &gt;------------------------------------------
+]]
+
+return {
+	code_from_name = code_from_name,
+	is_code = is_code,
+	is_name = is_name,
+	name_from_code = name_from_code,
+
+	_is_code = _is_code,														-- entry point from another module
+	}</text>
+      <sha1>8pqnzgtq7ebx347t4mkm4d3ttg4cfax</sha1>
+    </revision>
+    <revision>
+      <id>517813</id>
+      <parentid>517812</parentid>
+      <timestamp>2025-05-04T18:34:18Z</timestamp>
+      <contributor>
+        <username>en&gt;WOSlinker</username>
+        <id>0</id>
+      </contributor>
+      <comment>use require('strict') instead of require('Module:No globals')</comment>
+      <origin>517808</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7508" sha1="8pqnzgtq7ebx347t4mkm4d3ttg4cfax" xml:space="preserve">require('strict');
+local getArgs = require('Module:Arguments').getArgs
+
+
+--[[--------------------------&lt; E R R _ M S G _ M A K E &gt;------------------------------------------------------
+]]
+
+local function err_msg_make (msg)
+	return '&lt;span class="error" style="font-size:100%"&gt;error: ' .. msg .. ' not recognized&lt;/span&gt;'
+end
+
+
+--[[--------------------------&lt; _ I S _ C O D E &gt;--------------------------------------------------------------
+
+local or require()d entry point
+
+return true if &lt;code&gt; is a mediawiki recognized code; false else
+
+&lt;code&gt; - language code to validate; expected to be lowercase without leading/trailing whitespace
+&lt;target_lang_code&gt; - language code for target language; expected to be valid; expected to be lowercase without leading/trailing whitespace
+
+specifying &lt;target_lang_code&gt; may be a pointless exercise because of cldr fallback.  For example,
+	mw.language.fetchLanguageName (crh, sq) -&gt; Crimean Turkish
+because the Albanian language definitions do not have an Albanian-language version of the language name
+
+]]
+
+local function _is_code (code, target_lang_code)
+	code = mw.language.fetchLanguageName (code, target_lang_code);
+	return '' ~= code;
+end
+
+
+--[[--------------------------&lt; _ _ V A L I D A T E _ T A R G E T _ L A N G _ C O D E &gt;------------------------
+
+validates target_lang_code as a know language code; returns two values
+	when target_lang_code is valid, first return value holds target_lang_code; second return value is nil
+	when target_lang_code is invalid, first retrun value is nil; second return value has error message
+
+if target_lang_code argument is nil, (missing or empty in the invoke) use local wiki's language code
+
+]]
+
+local function __validate_target_lang_code (target_lang_code)
+	local msg;
+	
+	if target_lang_code then													-- not missing or empty
+		if not _is_code (target_lang_code) then									-- validate target_lang_code
+			msg = err_msg_make ('target language code: ' .. target_lang_code);
+			target_lang_code = nil;												-- unset as invalid
+		end
+	end
+	if not target_lang_code then												-- if nil because missing or empty or because invlaid and we set it nil
+		target_lang_code = mw.getContentLanguage():getCode();					-- use local wiki's language code
+	end
+
+	return target_lang_code, msg;												-- target_lang_code is valid or nil; msg is nil or has an error message
+end
+
+
+--[[--------------------------&lt; I S _ C O D E &gt;----------------------------------------------------------------
+
+module entry point
+
+args[1]: language code -&gt; &lt;code&gt;
+args[2]: optional target language code; same as &lt;target lang code&gt; in {{#language:&lt;code&gt;|&lt;target lang code&gt;}}; defaults to the local wiki language
+
+return true if &lt;code&gt; is a mediawiki recognized code; nil else
+
+]]
+
+local function is_code (frame)
+	local args = getArgs (frame, {
+		valueFunc = function (key, value)
+			return (value and '' ~= value) and value:lower():gsub ('^%s*(.-)%s*$', '%1') or nil;
+		end
+		});
+	local code = args[1];
+	local target_lang_code = __validate_target_lang_code (args[2]);
+
+	return code and _is_code (code, target_lang_code) and true or nil;
+end
+
+
+--[[--------------------------&lt; N A M E _ F R O M _ C O D E &gt;--------------------------------------------------
+
+module entry point
+
+args[1]: language code
+args[2]: optional target language code; same as &lt;target lang code&gt; in {{#language:&lt;code&gt;|&lt;target lang code&gt;}}; defaults to the local wiki language
+
+return language-name if language-code is a mediawiki recognized code; error message string else
+
+returned language name not guarenteed to be in target_lang_code (if specified), because mw language lists are incomplete
+
+]]
+
+local function name_from_code (frame)
+	local args = getArgs (frame, {
+		valueFunc = function (key, value)
+			return (value and '' ~= value) and value:lower():gsub ('%s*(.-)%s*', '%1') or nil;
+		end
+		});
+	local code = args[1];
+	if not code then
+		return err_msg_make ('code: (empty)');
+	end
+	
+	local target_lang_code, msg = __validate_target_lang_code (args[2]);
+	if msg then
+		return msg;
+	end
+
+	local name = mw.language.fetchLanguageName (code, target_lang_code);		-- returns empty string if code not found
+	return '' ~= name and name or err_msg_make ('language code: ' .. code);		-- return language name or error message
+end
+
+
+--[[--------------------------&lt; C O D E _ F R O M _ N A M E &gt;--------------------------------------------------
+
+local entry point
+
+args[1]: language name
+args[2]: optional target language code; instruct this function to fetch language name list in 'this' language
+
+return language-code if language-name is a mediawiki recognized name and target language code is valid; error message string else
+
+second return value is a boolean used by is_name(); true when name is found; false else
+
+]]
+
+local function _code_from_name (args)
+	local name = args[1];
+	if not name then
+		return err_msg_make ('name: (empty)');
+	end
+
+	local target_lang_code, msg =  __validate_target_lang_code (args[2]);
+
+	if msg then
+		return msg;
+	end
+
+	local code_name_list = mw.language.fetchLanguageNames (target_lang_code, 'all');	-- get language code / name list in target_lang_code language indexed by language code
+	local name_code_list = {};													-- to hold language name / code list indexed by name
+
+	for k, v in pairs (code_name_list) do										-- spin through the code / name list and
+		name_code_list[v:lower()] = k;											-- make a name / code list
+	end
+
+	if name_code_list[name] then
+		return name_code_list[name], true;										-- returns code when name is found and true for is_name()
+	else
+		return err_msg_make ('language name: ' .. name), false;					-- return error message when name not found and false for is_name()
+	end
+end
+
+
+--[[--------------------------&lt; C O D E _ F R O M _ N A M E &gt;--------------------------------------------------
+
+module entry point
+
+args[1]: language name
+args[2]: optional target language code; instruct this function to fetch language name list in 'this' language
+
+return language-code if language-name is a mediawiki recognized name and target language code is valid; error message string else
+
+]]
+
+local function code_from_name (frame)
+	local args = getArgs (frame, {
+		valueFunc = function (key, value)
+			return (value and '' ~= value) and value:lower():gsub ('^%s*(.-)%s*$', '%1') or nil;
+		end
+		});
+	
+	local result, _ = _code_from_name (args);									-- suppress true/false return used by is_name()
+	return result;
+end
+
+
+--[[--------------------------&lt; I S _ N A M E &gt;----------------------------------------------------------------
+
+return true if &lt;name&gt; is a mediawiki recognized language name; false else
+
+args[1]: language name
+args[2]: optional target language code; instructs _code_from_name to fetch language name list in 'this' language
+			defaults to local wiki's language;  when this parameter not valid, language name is assumed to be not valid
+
+]]
+
+local function is_name (frame)
+	local args = getArgs (frame, {
+		valueFunc = function (key, value)
+			return (value and '' ~= value) and value:lower():gsub ('%s*(.-)%s*', '%1') or nil;
+		end
+		});
+	
+	local _, result = _code_from_name (args);									-- suppress code return used by code_from_name()
+	return result and true or nil;
+end
+
+
+--[[--------------------------&lt; E X P O R T E D   F U N C T I O N S &gt;------------------------------------------
+]]
+
+return {
+	code_from_name = code_from_name,
+	is_code = is_code,
+	is_name = is_name,
+	name_from_code = name_from_code,
+
+	_is_code = _is_code,														-- entry point from another module
+	}</text>
+      <sha1>8pqnzgtq7ebx347t4mkm4d3ttg4cfax</sha1>
+    </revision>
+    <revision>
+      <id>679</id>
+      <timestamp>2025-11-22T14:38:05Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Text replacement - "↵↵↵" to "
+"</comment>
+      <origin>679</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7490" sha1="4105426k5mo9r5j9dctpk5eisz2numy" xml:space="preserve">require('strict');
+local getArgs = require('Module:Arguments').getArgs
+--[[--------------------------&lt; E R R _ M S G _ M A K E &gt;------------------------------------------------------
+]]
+
+local function err_msg_make (msg)
+	return '&lt;span class="error" style="font-size:100%"&gt;error: ' .. msg .. ' not recognized&lt;/span&gt;'
+end
+--[[--------------------------&lt; _ I S _ C O D E &gt;--------------------------------------------------------------
+
+local or require()d entry point
+
+return true if &lt;code&gt; is a mediawiki recognized code; false else
+
+&lt;code&gt; - language code to validate; expected to be lowercase without leading/trailing whitespace
+&lt;target_lang_code&gt; - language code for target language; expected to be valid; expected to be lowercase without leading/trailing whitespace
+
+specifying &lt;target_lang_code&gt; may be a pointless exercise because of cldr fallback.  For example,
+	mw.language.fetchLanguageName (crh, sq) -&gt; Crimean Turkish
+because the Albanian language definitions do not have an Albanian-language version of the language name
+
+]]
+
+local function _is_code (code, target_lang_code)
+	code = mw.language.fetchLanguageName (code, target_lang_code);
+	return '' ~= code;
+end
+--[[--------------------------&lt; _ _ V A L I D A T E _ T A R G E T _ L A N G _ C O D E &gt;------------------------
+
+validates target_lang_code as a know language code; returns two values
+	when target_lang_code is valid, first return value holds target_lang_code; second return value is nil
+	when target_lang_code is invalid, first retrun value is nil; second return value has error message
+
+if target_lang_code argument is nil, (missing or empty in the invoke) use local wiki's language code
+
+]]
+
+local function __validate_target_lang_code (target_lang_code)
+	local msg;
+	
+	if target_lang_code then													-- not missing or empty
+		if not _is_code (target_lang_code) then									-- validate target_lang_code
+			msg = err_msg_make ('target language code: ' .. target_lang_code);
+			target_lang_code = nil;												-- unset as invalid
+		end
+	end
+	if not target_lang_code then												-- if nil because missing or empty or because invlaid and we set it nil
+		target_lang_code = mw.getContentLanguage():getCode();					-- use local wiki's language code
+	end
+
+	return target_lang_code, msg;												-- target_lang_code is valid or nil; msg is nil or has an error message
+end
+--[[--------------------------&lt; I S _ C O D E &gt;----------------------------------------------------------------
+
+module entry point
+
+args[1]: language code -&gt; &lt;code&gt;
+args[2]: optional target language code; same as &lt;target lang code&gt; in {{#language:&lt;code&gt;|&lt;target lang code&gt;}}; defaults to the local wiki language
+
+return true if &lt;code&gt; is a mediawiki recognized code; nil else
+
+]]
+
+local function is_code (frame)
+	local args = getArgs (frame, {
+		valueFunc = function (key, value)
+			return (value and '' ~= value) and value:lower():gsub ('^%s*(.-)%s*$', '%1') or nil;
+		end
+		});
+	local code = args[1];
+	local target_lang_code = __validate_target_lang_code (args[2]);
+
+	return code and _is_code (code, target_lang_code) and true or nil;
+end
+--[[--------------------------&lt; N A M E _ F R O M _ C O D E &gt;--------------------------------------------------
+
+module entry point
+
+args[1]: language code
+args[2]: optional target language code; same as &lt;target lang code&gt; in {{#language:&lt;code&gt;|&lt;target lang code&gt;}}; defaults to the local wiki language
+
+return language-name if language-code is a mediawiki recognized code; error message string else
+
+returned language name not guarenteed to be in target_lang_code (if specified), because mw language lists are incomplete
+
+]]
+
+local function name_from_code (frame)
+	local args = getArgs (frame, {
+		valueFunc = function (key, value)
+			return (value and '' ~= value) and value:lower():gsub ('%s*(.-)%s*', '%1') or nil;
+		end
+		});
+	local code = args[1];
+	if not code then
+		return err_msg_make ('code: (empty)');
+	end
+	
+	local target_lang_code, msg = __validate_target_lang_code (args[2]);
+	if msg then
+		return msg;
+	end
+
+	local name = mw.language.fetchLanguageName (code, target_lang_code);		-- returns empty string if code not found
+	return '' ~= name and name or err_msg_make ('language code: ' .. code);		-- return language name or error message
+end
+--[[--------------------------&lt; C O D E _ F R O M _ N A M E &gt;--------------------------------------------------
+
+local entry point
+
+args[1]: language name
+args[2]: optional target language code; instruct this function to fetch language name list in 'this' language
+
+return language-code if language-name is a mediawiki recognized name and target language code is valid; error message string else
+
+second return value is a boolean used by is_name(); true when name is found; false else
+
+]]
+
+local function _code_from_name (args)
+	local name = args[1];
+	if not name then
+		return err_msg_make ('name: (empty)');
+	end
+
+	local target_lang_code, msg =  __validate_target_lang_code (args[2]);
+
+	if msg then
+		return msg;
+	end
+
+	local code_name_list = mw.language.fetchLanguageNames (target_lang_code, 'all');	-- get language code / name list in target_lang_code language indexed by language code
+	local name_code_list = {};													-- to hold language name / code list indexed by name
+
+	for k, v in pairs (code_name_list) do										-- spin through the code / name list and
+		name_code_list[v:lower()] = k;											-- make a name / code list
+	end
+
+	if name_code_list[name] then
+		return name_code_list[name], true;										-- returns code when name is found and true for is_name()
+	else
+		return err_msg_make ('language name: ' .. name), false;					-- return error message when name not found and false for is_name()
+	end
+end
+--[[--------------------------&lt; C O D E _ F R O M _ N A M E &gt;--------------------------------------------------
+
+module entry point
+
+args[1]: language name
+args[2]: optional target language code; instruct this function to fetch language name list in 'this' language
+
+return language-code if language-name is a mediawiki recognized name and target language code is valid; error message string else
+
+]]
+
+local function code_from_name (frame)
+	local args = getArgs (frame, {
+		valueFunc = function (key, value)
+			return (value and '' ~= value) and value:lower():gsub ('^%s*(.-)%s*$', '%1') or nil;
+		end
+		});
+	
+	local result, _ = _code_from_name (args);									-- suppress true/false return used by is_name()
+	return result;
+end
+--[[--------------------------&lt; I S _ N A M E &gt;----------------------------------------------------------------
+
+return true if &lt;name&gt; is a mediawiki recognized language name; false else
+
+args[1]: language name
+args[2]: optional target language code; instructs _code_from_name to fetch language name list in 'this' language
+			defaults to local wiki's language;  when this parameter not valid, language name is assumed to be not valid
+
+]]
+
+local function is_name (frame)
+	local args = getArgs (frame, {
+		valueFunc = function (key, value)
+			return (value and '' ~= value) and value:lower():gsub ('%s*(.-)%s*', '%1') or nil;
+		end
+		});
+	
+	local _, result = _code_from_name (args);									-- suppress code return used by code_from_name()
+	return result and true or nil;
+end
+--[[--------------------------&lt; E X P O R T E D   F U N C T I O N S &gt;------------------------------------------
+]]
+
+return {
+	code_from_name = code_from_name,
+	is_code = is_code,
+	is_name = is_name,
+	name_from_code = name_from_code,
+
+	_is_code = _is_code,														-- entry point from another module
+	}</text>
+      <sha1>4105426k5mo9r5j9dctpk5eisz2numy</sha1>
+    </revision>
+  </page>
+</mediawiki>

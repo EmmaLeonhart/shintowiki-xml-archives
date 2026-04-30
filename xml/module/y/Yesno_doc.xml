@@ -1,0 +1,345 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Yesno/doc</title>
+    <ns>828</ns>
+    <id>8285</id>
+    <revision>
+      <id>916634</id>
+      <timestamp>2024-12-16T21:05:49Z</timestamp>
+      <contributor>
+        <username>en&gt;Tbhotch</username>
+        <id>0</id>
+      </contributor>
+      <comment>transclude</comment>
+      <origin>916634</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="4802" sha1="mws43mnc8sb90pfdpi4y35t1kgtn9bf" xml:space="preserve">&lt;noinclude&gt;{{pp|small=yes}}
+&lt;/noinclude&gt;{{used in system}}
+{{Module rating|protected}}
+{{cascade-protected template|page=module}}
+This module provides a consistent interface for processing boolean or boolean-style string input. While Lua allows the &lt;code&gt;true&lt;/code&gt; and &lt;code&gt;false&lt;/code&gt; boolean values, wikicode templates can only express boolean values through strings such as "yes", "no", etc. This module processes these kinds of strings and turns them into boolean input for Lua to process. It also returns &lt;code&gt;nil&lt;/code&gt; values as &lt;code&gt;nil&lt;/code&gt;, to allow for distinctions between &lt;code&gt;nil&lt;/code&gt; and &lt;code&gt;false&lt;/code&gt;. The module also accepts other Lua structures as input, i.e. booleans, numbers, tables, and functions. If it is passed input that it does not recognise as boolean or &lt;code&gt;nil&lt;/code&gt;, it is possible to specify a default value to return.
+
+== Syntax ==
+
+&lt;syntaxhighlight lang="lua"&gt;yesno(value, default)&lt;/syntaxhighlight&gt;
+
+&lt;code&gt;value&lt;/code&gt; is the value to be tested. Boolean input or boolean-style input (see below) always evaluates to either &lt;code&gt;true&lt;/code&gt; or &lt;code&gt;false&lt;/code&gt;, and &lt;code&gt;nil&lt;/code&gt; always evaluates to &lt;code&gt;nil&lt;/code&gt;. Other values evaluate to &lt;code&gt;default&lt;/code&gt;.
+
+== Usage ==
+
+First, load the module. Note that it can only be loaded from other Lua modules, not from normal wiki pages. For normal wiki pages you can use {{tl|yesno}} instead.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local yesno = require('Module:Yesno')
+&lt;/syntaxhighlight&gt;
+
+Some input values always return &lt;code&gt;true&lt;/code&gt;, and some always return &lt;code&gt;false&lt;/code&gt;. &lt;code&gt;nil&lt;/code&gt; values always return &lt;code&gt;nil&lt;/code&gt;.
+
+&lt;syntaxhighlight lang="lua"&gt;
+-- These always return true:
+yesno('yes')
+yesno('y')
+yesno('true')
+yesno('t')
+yesno('on')
+yesno('1')
+yesno(1)
+yesno(true)
+
+-- These always return false:
+yesno('no')
+yesno('n')
+yesno('false')
+yesno('f')
+yesno('off')
+yesno('0')
+yesno(0)
+yesno(false)
+
+-- A nil value always returns nil:
+yesno(nil)
+yesno()
+&lt;/syntaxhighlight&gt;
+
+String values are converted to lower case before they are matched:
+
+&lt;syntaxhighlight lang="lua"&gt;
+-- These always return true:
+yesno('Yes')
+yesno('YES')
+yesno('yEs')
+yesno('Y')
+yesno('tRuE')
+
+-- These always return false:
+yesno('No')
+yesno('NO')
+yesno('nO')
+yesno('N')
+yesno('fALsE')
+&lt;/syntaxhighlight&gt;
+
+===Undefined input ('foo')===
+You can specify a default value if yesno receives input other than that listed above. If you don't supply a default, the module will return &lt;code&gt;nil&lt;/code&gt; for these inputs.
+
+&lt;syntaxhighlight lang="lua"&gt;
+-- These return nil:
+yesno(nil)
+yesno('foo')
+yesno({})
+yesno(5)
+yesno('')
+yesno(function() return 'This is a function.' end)
+yesno(nil, true)
+yesno(nil, 'bar')
+
+-- These return true:
+yesno('foo', true)
+yesno({}, true)
+yesno(5, true)
+yesno('', true)
+yesno(function() return 'This is a function.' end, true)
+
+-- These return "bar":
+yesno('foo', 'bar')
+yesno({}, 'bar')
+yesno(5, 'bar')
+yesno('', 'bar')
+yesno(function() return 'This is a function.' end, 'bar')
+&lt;/syntaxhighlight&gt;
+
+Although the empty string usually evaluates to false in wikitext, it evaluates to true in Lua. This module prefers the Lua behaviour over the wikitext behaviour. If treating the empty string as false is important for your module, you will need to convert empty strings to a value that evaluates to false before passing them to this module. In the case of arguments received from wikitext, this can be done by using [[Module:Arguments]].
+
+===Handling nil results===
+By definition:
+&lt;syntaxhighlight lang="lua"&gt;
+yesno(nil)         -- Returns nil.
+yesno('foo')       -- Returns nil.
+yesno(nil, true)   -- Returns nil.
+yesno(nil, false)  -- Returns nil.
+yesno('foo', true) -- Returns true.
+&lt;/syntaxhighlight&gt;
+
+To get the binary &lt;syntaxhighlight lang="lua" inline&gt;true/false&lt;/syntaxhighlight&gt;-only values, use code like:
+&lt;syntaxhighlight lang="lua"&gt;
+myvariable = yesno(value or false) -- When value is nil, result is false.
+myvariable = yesno(value or true)  -- When value is nil, result is true. (XXX: when value is false, result is true...)
+myvariable = yesno('foo') or false  -- Unknown string returns nil, result is false.
+myvariable = yesno('foo', true) or false  -- Default value (here: true) applies, result is true.
+&lt;/syntaxhighlight&gt;
+
+Better suggestions:
+&lt;syntaxhighlight lang="lua"&gt;
+local myvariable = yesno(value)
+if myvariable == nil then -- value is nil or an unrecognized string
+    myvariable = true
+end
+
+-- more efficient when value is nil, but more verbose
+-- (note the default result has to be written twice)
+local myvariable
+if value == nil then
+    myvariable = true
+else
+    myvariable = yesno(value, true)
+end
+&lt;/syntaxhighlight&gt;&lt;!--
+
+--&gt;&lt;includeonly&gt;{{sandbox other||
+[[Category:Lua metamodules]]
+}}&lt;/includeonly&gt;
+&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>mws43mnc8sb90pfdpi4y35t1kgtn9bf</sha1>
+    </revision>
+    <revision>
+      <id>8286</id>
+      <timestamp>2025-01-10T09:34:51Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: IMPORTING ALL WANTED MODULES</comment>
+      <origin>8286</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="4802" sha1="mws43mnc8sb90pfdpi4y35t1kgtn9bf" xml:space="preserve">&lt;noinclude&gt;{{pp|small=yes}}
+&lt;/noinclude&gt;{{used in system}}
+{{Module rating|protected}}
+{{cascade-protected template|page=module}}
+This module provides a consistent interface for processing boolean or boolean-style string input. While Lua allows the &lt;code&gt;true&lt;/code&gt; and &lt;code&gt;false&lt;/code&gt; boolean values, wikicode templates can only express boolean values through strings such as "yes", "no", etc. This module processes these kinds of strings and turns them into boolean input for Lua to process. It also returns &lt;code&gt;nil&lt;/code&gt; values as &lt;code&gt;nil&lt;/code&gt;, to allow for distinctions between &lt;code&gt;nil&lt;/code&gt; and &lt;code&gt;false&lt;/code&gt;. The module also accepts other Lua structures as input, i.e. booleans, numbers, tables, and functions. If it is passed input that it does not recognise as boolean or &lt;code&gt;nil&lt;/code&gt;, it is possible to specify a default value to return.
+
+== Syntax ==
+
+&lt;syntaxhighlight lang="lua"&gt;yesno(value, default)&lt;/syntaxhighlight&gt;
+
+&lt;code&gt;value&lt;/code&gt; is the value to be tested. Boolean input or boolean-style input (see below) always evaluates to either &lt;code&gt;true&lt;/code&gt; or &lt;code&gt;false&lt;/code&gt;, and &lt;code&gt;nil&lt;/code&gt; always evaluates to &lt;code&gt;nil&lt;/code&gt;. Other values evaluate to &lt;code&gt;default&lt;/code&gt;.
+
+== Usage ==
+
+First, load the module. Note that it can only be loaded from other Lua modules, not from normal wiki pages. For normal wiki pages you can use {{tl|yesno}} instead.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local yesno = require('Module:Yesno')
+&lt;/syntaxhighlight&gt;
+
+Some input values always return &lt;code&gt;true&lt;/code&gt;, and some always return &lt;code&gt;false&lt;/code&gt;. &lt;code&gt;nil&lt;/code&gt; values always return &lt;code&gt;nil&lt;/code&gt;.
+
+&lt;syntaxhighlight lang="lua"&gt;
+-- These always return true:
+yesno('yes')
+yesno('y')
+yesno('true')
+yesno('t')
+yesno('on')
+yesno('1')
+yesno(1)
+yesno(true)
+
+-- These always return false:
+yesno('no')
+yesno('n')
+yesno('false')
+yesno('f')
+yesno('off')
+yesno('0')
+yesno(0)
+yesno(false)
+
+-- A nil value always returns nil:
+yesno(nil)
+yesno()
+&lt;/syntaxhighlight&gt;
+
+String values are converted to lower case before they are matched:
+
+&lt;syntaxhighlight lang="lua"&gt;
+-- These always return true:
+yesno('Yes')
+yesno('YES')
+yesno('yEs')
+yesno('Y')
+yesno('tRuE')
+
+-- These always return false:
+yesno('No')
+yesno('NO')
+yesno('nO')
+yesno('N')
+yesno('fALsE')
+&lt;/syntaxhighlight&gt;
+
+===Undefined input ('foo')===
+You can specify a default value if yesno receives input other than that listed above. If you don't supply a default, the module will return &lt;code&gt;nil&lt;/code&gt; for these inputs.
+
+&lt;syntaxhighlight lang="lua"&gt;
+-- These return nil:
+yesno(nil)
+yesno('foo')
+yesno({})
+yesno(5)
+yesno('')
+yesno(function() return 'This is a function.' end)
+yesno(nil, true)
+yesno(nil, 'bar')
+
+-- These return true:
+yesno('foo', true)
+yesno({}, true)
+yesno(5, true)
+yesno('', true)
+yesno(function() return 'This is a function.' end, true)
+
+-- These return "bar":
+yesno('foo', 'bar')
+yesno({}, 'bar')
+yesno(5, 'bar')
+yesno('', 'bar')
+yesno(function() return 'This is a function.' end, 'bar')
+&lt;/syntaxhighlight&gt;
+
+Although the empty string usually evaluates to false in wikitext, it evaluates to true in Lua. This module prefers the Lua behaviour over the wikitext behaviour. If treating the empty string as false is important for your module, you will need to convert empty strings to a value that evaluates to false before passing them to this module. In the case of arguments received from wikitext, this can be done by using [[Module:Arguments]].
+
+===Handling nil results===
+By definition:
+&lt;syntaxhighlight lang="lua"&gt;
+yesno(nil)         -- Returns nil.
+yesno('foo')       -- Returns nil.
+yesno(nil, true)   -- Returns nil.
+yesno(nil, false)  -- Returns nil.
+yesno('foo', true) -- Returns true.
+&lt;/syntaxhighlight&gt;
+
+To get the binary &lt;syntaxhighlight lang="lua" inline&gt;true/false&lt;/syntaxhighlight&gt;-only values, use code like:
+&lt;syntaxhighlight lang="lua"&gt;
+myvariable = yesno(value or false) -- When value is nil, result is false.
+myvariable = yesno(value or true)  -- When value is nil, result is true. (XXX: when value is false, result is true...)
+myvariable = yesno('foo') or false  -- Unknown string returns nil, result is false.
+myvariable = yesno('foo', true) or false  -- Default value (here: true) applies, result is true.
+&lt;/syntaxhighlight&gt;
+
+Better suggestions:
+&lt;syntaxhighlight lang="lua"&gt;
+local myvariable = yesno(value)
+if myvariable == nil then -- value is nil or an unrecognized string
+    myvariable = true
+end
+
+-- more efficient when value is nil, but more verbose
+-- (note the default result has to be written twice)
+local myvariable
+if value == nil then
+    myvariable = true
+else
+    myvariable = yesno(value, true)
+end
+&lt;/syntaxhighlight&gt;&lt;!--
+
+--&gt;&lt;includeonly&gt;{{sandbox other||
+[[Category:Lua metamodules]]
+}}&lt;/includeonly&gt;
+&lt;noinclude&gt;
+[[Category:Module documentation pages]]
+&lt;/noinclude&gt;</text>
+      <sha1>mws43mnc8sb90pfdpi4y35t1kgtn9bf</sha1>
+    </revision>
+  </page>
+</mediawiki>

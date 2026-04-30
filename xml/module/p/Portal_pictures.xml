@@ -1,0 +1,3037 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Portal pictures</title>
+    <ns>828</ns>
+    <id>5011</id>
+    <revision>
+      <id>787897</id>
+      <timestamp>2021-11-19T00:00:17Z</timestamp>
+      <contributor>
+        <username>en&gt;Andrybak</username>
+        <id>0</id>
+      </contributor>
+      <comment>fix usage of Module:yesno</comment>
+      <origin>787897</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7242" sha1="hurtasqfs3xhonxakk7t15lp9rclj29" xml:space="preserve">local getArgs = require('Module:Arguments').getArgs
+local randomModule = require('Module:Random')
+local yesno = require('Module:Yesno')
+local slideshowModule = require('Module:Random slideshow')
+
+p = {}
+
+-- == Utility functions ==
+local function getCleanArgs(frame)
+	return getArgs(frame, {
+		trim = true,
+		removeBlanks = true
+	})
+end
+
+local function wikiError(message)
+	return mw.html.create('div'):addClass('error'):wikitext(message)
+end
+
+-- replace all newlines in the string with break tags
+-- slideshow only supports single line captions
+local function replaceNewlines(s)
+	return mw.ustring.gsub(s, '%c', '&lt;br /&gt;')
+end
+
+-- == Argument preparation functions ==
+-- Extracts dates, custom images, and subpages from args
+local function extractPictures(args)
+	local dates = {}
+	local images = {}
+	local subpages = {}
+	for key, value in pairs(args) do
+		if value then
+			if type(key) == "number" then
+				-- positional parameters correspond to POTD dates
+				table.insert(dates, value)
+			elseif string.sub(key, 1, 1) == "i" then
+				-- named parameters with prefixes "i", "title", "credit", and "caption"
+				-- correspond to custom images
+				local num = string.sub(key, 2)
+				local title = args["title" .. num]
+				local credit = args["credit" .. num]
+				local caption = args["caption" .. num] or ""
+				local image = {
+					file = value,
+					title = title,
+					credit = credit,
+					caption = caption
+				}
+				table.insert(images, image)
+			end
+		end
+	end
+	local subpageMax = tonumber(args['subpagemax']) or 0
+	if subpageMax &gt; 0
+	then
+		local root = args['demoroot'] or (mw.title.getCurrentTitle().rootPageTitle.prefixedText)
+		local picturesRoot = root .. '/' .. (args['subpage'] or 'Selected picture')
+		for i = 1, subpageMax do
+			table.insert(subpages, picturesRoot .. '/' .. tostring(i))
+		end
+	end
+	return dates, images, subpages
+end
+
+local function getDefaultMoreLink(args)
+	local root = args['demoroot'] or (mw.title.getCurrentTitle().rootPageTitle.prefixedText)
+	local picturesPage = args['subpage'] or 'Selected picture'
+	return "[[" .. root .. "/" .. picturesPage .. "|More selected pictures]]"
+end
+
+-- == Formatting functions ==
+-- transclude [[Template:Portal POTD]]
+local function formatPortalPotd(frame, potdDate)
+	return frame:expandTemplate{
+		title = "Portal POTD",
+		args = {
+			potdDate,
+			more = 'no'
+		}
+	}
+end
+
+local function formatMoreHtml(more)
+	if not yesno(more, true)
+	then
+		return ""
+	end
+	local moreHtml = mw.html.create('div')
+		:attr("class", "noprint")
+		:attr("style", "margin-top:0.5em; font-weight:bold; width:100%; text-align:right;")
+		:wikitext(more)
+	return tostring(moreHtml)
+end
+
+-- manual recreation of the bottom half of [[Template:Portal POTD]]
+local function formatPotdText(frame, titleText, creditText, captionText, moreHtml)
+	local res = frame:expandTemplate{
+		title = "POTD portal layout/text",
+		args = {
+			title = titleText,
+			credit = creditText,
+			caption = captionText,
+			['margin-top']='0.5em'
+		}
+	}
+	if moreHtml
+	then
+		-- ideally, the "more" text should be trancluded _once_ for the whole box
+		-- but we do it for _every_ image for compatibility with portals, which use numbered subpages
+		res = res .. moreHtml
+	end
+	return res
+end
+
+local function formatFile(filename)
+	local html = mw.html.create('div')
+		:attr("class", "center")
+		:wikitext("[[File:" .. filename .. "|380px]]")
+	return tostring(html)
+end
+
+-- Extract value named "paramName" from a subpage of [[Template:POTD]]
+local function getPotdPart(frame, potdSubpage, paramName)
+	return frame:expandTemplate{
+		title = potdSubpage,
+		args = { paramName }
+	}
+end
+
+-- bottom half of [[Template:Portal POTD]] for a POTD subpage
+local function getPotdText(frame, potdDate, moreHtml)
+	local potdText = getPotdPart(frame, "POTD/" .. potdDate, "portal layout/text")
+	potdText = replaceNewlines(potdText)
+	if moreHtml
+	then
+		potdText = potdText .. moreHtml
+	end
+	return potdText
+end
+
+-- prepare arguments for [[Module:Random slideshow]]
+-- alternating: image1, text1, image2, text2, ...
+local function makeSlideShowArgs(frame, dates, images, subpages, more, limit)
+	local slideShowArgs = {}
+	local moreHtml = formatMoreHtml(more)
+	if #dates &gt; 0 then
+		local randomDates = randomModule.main('array', {t=dates, limit=limit})
+		for _, potdDate in ipairs(randomDates) do
+			local image = getPotdPart(frame, "POTD/" .. potdDate, "image")
+			local image2 = ''
+			if image == '{{{image}}}' then
+				image = getPotdPart(frame, "POTD/" .. potdDate, "image1")
+				image2 = '[[File:' .. getPotdPart(frame, "POTD/" .. potdDate, "image2") .. '|200px|center]]'
+			end
+			local text = image2 .. getPotdText(frame, potdDate, moreHtml)
+			table.insert(slideShowArgs, image)
+			table.insert(slideShowArgs, text)
+		end
+	end
+	if #images &gt; 0 then
+		local randomImages = randomModule.main('array', {t=images, limit=limit})
+		for _, image in pairs(randomImages) do
+			table.insert(slideShowArgs, image['file'])
+			local text = formatPotdText(frame, image['title'], image['credit'], image['caption'], moreHtml)
+			table.insert(slideShowArgs, text)
+		end
+	end
+	if #subpages &gt; 0 then
+		local randomSubpages = randomModule.main('array', {t=subpages, limit=math.floor(limit / 2)})
+		for _, subpage in pairs(randomSubpages) do
+			table.insert(slideShowArgs, 'Blank.png')
+			local subpageContent = replaceNewlines(frame:expandTemplate{ title = subpage })
+			table.insert(slideShowArgs, subpageContent)
+		end
+	end
+	return slideShowArgs
+end
+
+-- == Main functions ==
+-- Create a list gallery of all passed images
+local function gallery(frame)
+	local args = getCleanArgs(frame)
+	local dates, images, subpages = extractPictures(args)
+	local texts = {}
+
+	for _, value in pairs(dates) do
+		local topText = '&lt;span id="Template:POTD/' .. value .. '"&gt;&lt;/span&gt;' .. "[[Template:POTD/" .. value .. "]]\n\n"
+		table.insert(texts,	topText .. formatPortalPotd(frame, value))
+	end
+	for _, image in pairs(images) do
+		local topText = "[[:File:" .. image['file'] .. "]]\n\n"
+		local bottomText = formatPotdText(frame, image['title'], image['credit'], image['caption'])
+		table.insert(texts, topText .. formatFile(image['file']) .. "\n\n" .. bottomText)
+	end
+	for _, subpage in pairs(subpages) do
+		local topText = "[[:" .. subpage .. "]]\n\n"
+		local subpageContent = frame:expandTemplate{ title = subpage }
+		table.insert(texts, topText .. subpageContent)
+	end
+	return frame:preprocess(table.concat(texts, "\n----\n"))
+end
+
+-- Create a slideshow of passed images using [[Module:Random slideshow]]
+local function slideShow(frame)
+	local args = getCleanArgs(frame)
+	local more = args["more"] or getDefaultMoreLink(args)
+	local dates, images, subpages = extractPictures(args)
+	local limit = 15
+
+	local slideShowArgs = makeSlideShowArgs(frame, dates, images, subpages, more, limit)
+
+	local slideShow = slideshowModule._main(slideShowArgs, false, 'portalSlideshow-container')
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } .. frame:preprocess(slideShow)
+end
+
+-- entry point for the module
+function main(frame)
+	local title = mw.title.getCurrentTitle()
+	if title.isSubpage
+	then
+		return gallery(frame)
+	else
+		return slideShow(frame)
+	end
+end
+
+p.main = main
+p.slideShow = slideShow
+p.gallery = gallery
+
+return p</text>
+      <sha1>hurtasqfs3xhonxakk7t15lp9rclj29</sha1>
+    </revision>
+    <revision>
+      <id>787898</id>
+      <parentid>787897</parentid>
+      <timestamp>2024-12-20T23:55:36Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: importing wikipedia</comment>
+      <origin>787897</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7242" sha1="hurtasqfs3xhonxakk7t15lp9rclj29" xml:space="preserve">local getArgs = require('Module:Arguments').getArgs
+local randomModule = require('Module:Random')
+local yesno = require('Module:Yesno')
+local slideshowModule = require('Module:Random slideshow')
+
+p = {}
+
+-- == Utility functions ==
+local function getCleanArgs(frame)
+	return getArgs(frame, {
+		trim = true,
+		removeBlanks = true
+	})
+end
+
+local function wikiError(message)
+	return mw.html.create('div'):addClass('error'):wikitext(message)
+end
+
+-- replace all newlines in the string with break tags
+-- slideshow only supports single line captions
+local function replaceNewlines(s)
+	return mw.ustring.gsub(s, '%c', '&lt;br /&gt;')
+end
+
+-- == Argument preparation functions ==
+-- Extracts dates, custom images, and subpages from args
+local function extractPictures(args)
+	local dates = {}
+	local images = {}
+	local subpages = {}
+	for key, value in pairs(args) do
+		if value then
+			if type(key) == "number" then
+				-- positional parameters correspond to POTD dates
+				table.insert(dates, value)
+			elseif string.sub(key, 1, 1) == "i" then
+				-- named parameters with prefixes "i", "title", "credit", and "caption"
+				-- correspond to custom images
+				local num = string.sub(key, 2)
+				local title = args["title" .. num]
+				local credit = args["credit" .. num]
+				local caption = args["caption" .. num] or ""
+				local image = {
+					file = value,
+					title = title,
+					credit = credit,
+					caption = caption
+				}
+				table.insert(images, image)
+			end
+		end
+	end
+	local subpageMax = tonumber(args['subpagemax']) or 0
+	if subpageMax &gt; 0
+	then
+		local root = args['demoroot'] or (mw.title.getCurrentTitle().rootPageTitle.prefixedText)
+		local picturesRoot = root .. '/' .. (args['subpage'] or 'Selected picture')
+		for i = 1, subpageMax do
+			table.insert(subpages, picturesRoot .. '/' .. tostring(i))
+		end
+	end
+	return dates, images, subpages
+end
+
+local function getDefaultMoreLink(args)
+	local root = args['demoroot'] or (mw.title.getCurrentTitle().rootPageTitle.prefixedText)
+	local picturesPage = args['subpage'] or 'Selected picture'
+	return "[[" .. root .. "/" .. picturesPage .. "|More selected pictures]]"
+end
+
+-- == Formatting functions ==
+-- transclude [[Template:Portal POTD]]
+local function formatPortalPotd(frame, potdDate)
+	return frame:expandTemplate{
+		title = "Portal POTD",
+		args = {
+			potdDate,
+			more = 'no'
+		}
+	}
+end
+
+local function formatMoreHtml(more)
+	if not yesno(more, true)
+	then
+		return ""
+	end
+	local moreHtml = mw.html.create('div')
+		:attr("class", "noprint")
+		:attr("style", "margin-top:0.5em; font-weight:bold; width:100%; text-align:right;")
+		:wikitext(more)
+	return tostring(moreHtml)
+end
+
+-- manual recreation of the bottom half of [[Template:Portal POTD]]
+local function formatPotdText(frame, titleText, creditText, captionText, moreHtml)
+	local res = frame:expandTemplate{
+		title = "POTD portal layout/text",
+		args = {
+			title = titleText,
+			credit = creditText,
+			caption = captionText,
+			['margin-top']='0.5em'
+		}
+	}
+	if moreHtml
+	then
+		-- ideally, the "more" text should be trancluded _once_ for the whole box
+		-- but we do it for _every_ image for compatibility with portals, which use numbered subpages
+		res = res .. moreHtml
+	end
+	return res
+end
+
+local function formatFile(filename)
+	local html = mw.html.create('div')
+		:attr("class", "center")
+		:wikitext("[[File:" .. filename .. "|380px]]")
+	return tostring(html)
+end
+
+-- Extract value named "paramName" from a subpage of [[Template:POTD]]
+local function getPotdPart(frame, potdSubpage, paramName)
+	return frame:expandTemplate{
+		title = potdSubpage,
+		args = { paramName }
+	}
+end
+
+-- bottom half of [[Template:Portal POTD]] for a POTD subpage
+local function getPotdText(frame, potdDate, moreHtml)
+	local potdText = getPotdPart(frame, "POTD/" .. potdDate, "portal layout/text")
+	potdText = replaceNewlines(potdText)
+	if moreHtml
+	then
+		potdText = potdText .. moreHtml
+	end
+	return potdText
+end
+
+-- prepare arguments for [[Module:Random slideshow]]
+-- alternating: image1, text1, image2, text2, ...
+local function makeSlideShowArgs(frame, dates, images, subpages, more, limit)
+	local slideShowArgs = {}
+	local moreHtml = formatMoreHtml(more)
+	if #dates &gt; 0 then
+		local randomDates = randomModule.main('array', {t=dates, limit=limit})
+		for _, potdDate in ipairs(randomDates) do
+			local image = getPotdPart(frame, "POTD/" .. potdDate, "image")
+			local image2 = ''
+			if image == '{{{image}}}' then
+				image = getPotdPart(frame, "POTD/" .. potdDate, "image1")
+				image2 = '[[File:' .. getPotdPart(frame, "POTD/" .. potdDate, "image2") .. '|200px|center]]'
+			end
+			local text = image2 .. getPotdText(frame, potdDate, moreHtml)
+			table.insert(slideShowArgs, image)
+			table.insert(slideShowArgs, text)
+		end
+	end
+	if #images &gt; 0 then
+		local randomImages = randomModule.main('array', {t=images, limit=limit})
+		for _, image in pairs(randomImages) do
+			table.insert(slideShowArgs, image['file'])
+			local text = formatPotdText(frame, image['title'], image['credit'], image['caption'], moreHtml)
+			table.insert(slideShowArgs, text)
+		end
+	end
+	if #subpages &gt; 0 then
+		local randomSubpages = randomModule.main('array', {t=subpages, limit=math.floor(limit / 2)})
+		for _, subpage in pairs(randomSubpages) do
+			table.insert(slideShowArgs, 'Blank.png')
+			local subpageContent = replaceNewlines(frame:expandTemplate{ title = subpage })
+			table.insert(slideShowArgs, subpageContent)
+		end
+	end
+	return slideShowArgs
+end
+
+-- == Main functions ==
+-- Create a list gallery of all passed images
+local function gallery(frame)
+	local args = getCleanArgs(frame)
+	local dates, images, subpages = extractPictures(args)
+	local texts = {}
+
+	for _, value in pairs(dates) do
+		local topText = '&lt;span id="Template:POTD/' .. value .. '"&gt;&lt;/span&gt;' .. "[[Template:POTD/" .. value .. "]]\n\n"
+		table.insert(texts,	topText .. formatPortalPotd(frame, value))
+	end
+	for _, image in pairs(images) do
+		local topText = "[[:File:" .. image['file'] .. "]]\n\n"
+		local bottomText = formatPotdText(frame, image['title'], image['credit'], image['caption'])
+		table.insert(texts, topText .. formatFile(image['file']) .. "\n\n" .. bottomText)
+	end
+	for _, subpage in pairs(subpages) do
+		local topText = "[[:" .. subpage .. "]]\n\n"
+		local subpageContent = frame:expandTemplate{ title = subpage }
+		table.insert(texts, topText .. subpageContent)
+	end
+	return frame:preprocess(table.concat(texts, "\n----\n"))
+end
+
+-- Create a slideshow of passed images using [[Module:Random slideshow]]
+local function slideShow(frame)
+	local args = getCleanArgs(frame)
+	local more = args["more"] or getDefaultMoreLink(args)
+	local dates, images, subpages = extractPictures(args)
+	local limit = 15
+
+	local slideShowArgs = makeSlideShowArgs(frame, dates, images, subpages, more, limit)
+
+	local slideShow = slideshowModule._main(slideShowArgs, false, 'portalSlideshow-container')
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } .. frame:preprocess(slideShow)
+end
+
+-- entry point for the module
+function main(frame)
+	local title = mw.title.getCurrentTitle()
+	if title.isSubpage
+	then
+		return gallery(frame)
+	else
+		return slideShow(frame)
+	end
+end
+
+p.main = main
+p.slideShow = slideShow
+p.gallery = gallery
+
+return p</text>
+      <sha1>hurtasqfs3xhonxakk7t15lp9rclj29</sha1>
+    </revision>
+    <revision>
+      <id>787899</id>
+      <parentid>787898</parentid>
+      <timestamp>2024-12-21T00:40:14Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Adding [[Category:Pages and Categories from wikipedia0]] using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>787899</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7293" sha1="tkl1qbl7hgzymjpxje79vbau5uifaoo" xml:space="preserve">local getArgs = require('Module:Arguments').getArgs
+local randomModule = require('Module:Random')
+local yesno = require('Module:Yesno')
+local slideshowModule = require('Module:Random slideshow')
+
+p = {}
+
+-- == Utility functions ==
+local function getCleanArgs(frame)
+	return getArgs(frame, {
+		trim = true,
+		removeBlanks = true
+	})
+end
+
+local function wikiError(message)
+	return mw.html.create('div'):addClass('error'):wikitext(message)
+end
+
+-- replace all newlines in the string with break tags
+-- slideshow only supports single line captions
+local function replaceNewlines(s)
+	return mw.ustring.gsub(s, '%c', '&lt;br /&gt;')
+end
+
+-- == Argument preparation functions ==
+-- Extracts dates, custom images, and subpages from args
+local function extractPictures(args)
+	local dates = {}
+	local images = {}
+	local subpages = {}
+	for key, value in pairs(args) do
+		if value then
+			if type(key) == "number" then
+				-- positional parameters correspond to POTD dates
+				table.insert(dates, value)
+			elseif string.sub(key, 1, 1) == "i" then
+				-- named parameters with prefixes "i", "title", "credit", and "caption"
+				-- correspond to custom images
+				local num = string.sub(key, 2)
+				local title = args["title" .. num]
+				local credit = args["credit" .. num]
+				local caption = args["caption" .. num] or ""
+				local image = {
+					file = value,
+					title = title,
+					credit = credit,
+					caption = caption
+				}
+				table.insert(images, image)
+			end
+		end
+	end
+	local subpageMax = tonumber(args['subpagemax']) or 0
+	if subpageMax &gt; 0
+	then
+		local root = args['demoroot'] or (mw.title.getCurrentTitle().rootPageTitle.prefixedText)
+		local picturesRoot = root .. '/' .. (args['subpage'] or 'Selected picture')
+		for i = 1, subpageMax do
+			table.insert(subpages, picturesRoot .. '/' .. tostring(i))
+		end
+	end
+	return dates, images, subpages
+end
+
+local function getDefaultMoreLink(args)
+	local root = args['demoroot'] or (mw.title.getCurrentTitle().rootPageTitle.prefixedText)
+	local picturesPage = args['subpage'] or 'Selected picture'
+	return "[[" .. root .. "/" .. picturesPage .. "|More selected pictures]]"
+end
+
+-- == Formatting functions ==
+-- transclude [[Template:Portal POTD]]
+local function formatPortalPotd(frame, potdDate)
+	return frame:expandTemplate{
+		title = "Portal POTD",
+		args = {
+			potdDate,
+			more = 'no'
+		}
+	}
+end
+
+local function formatMoreHtml(more)
+	if not yesno(more, true)
+	then
+		return ""
+	end
+	local moreHtml = mw.html.create('div')
+		:attr("class", "noprint")
+		:attr("style", "margin-top:0.5em; font-weight:bold; width:100%; text-align:right;")
+		:wikitext(more)
+	return tostring(moreHtml)
+end
+
+-- manual recreation of the bottom half of [[Template:Portal POTD]]
+local function formatPotdText(frame, titleText, creditText, captionText, moreHtml)
+	local res = frame:expandTemplate{
+		title = "POTD portal layout/text",
+		args = {
+			title = titleText,
+			credit = creditText,
+			caption = captionText,
+			['margin-top']='0.5em'
+		}
+	}
+	if moreHtml
+	then
+		-- ideally, the "more" text should be trancluded _once_ for the whole box
+		-- but we do it for _every_ image for compatibility with portals, which use numbered subpages
+		res = res .. moreHtml
+	end
+	return res
+end
+
+local function formatFile(filename)
+	local html = mw.html.create('div')
+		:attr("class", "center")
+		:wikitext("[[File:" .. filename .. "|380px]]")
+	return tostring(html)
+end
+
+-- Extract value named "paramName" from a subpage of [[Template:POTD]]
+local function getPotdPart(frame, potdSubpage, paramName)
+	return frame:expandTemplate{
+		title = potdSubpage,
+		args = { paramName }
+	}
+end
+
+-- bottom half of [[Template:Portal POTD]] for a POTD subpage
+local function getPotdText(frame, potdDate, moreHtml)
+	local potdText = getPotdPart(frame, "POTD/" .. potdDate, "portal layout/text")
+	potdText = replaceNewlines(potdText)
+	if moreHtml
+	then
+		potdText = potdText .. moreHtml
+	end
+	return potdText
+end
+
+-- prepare arguments for [[Module:Random slideshow]]
+-- alternating: image1, text1, image2, text2, ...
+local function makeSlideShowArgs(frame, dates, images, subpages, more, limit)
+	local slideShowArgs = {}
+	local moreHtml = formatMoreHtml(more)
+	if #dates &gt; 0 then
+		local randomDates = randomModule.main('array', {t=dates, limit=limit})
+		for _, potdDate in ipairs(randomDates) do
+			local image = getPotdPart(frame, "POTD/" .. potdDate, "image")
+			local image2 = ''
+			if image == '{{{image}}}' then
+				image = getPotdPart(frame, "POTD/" .. potdDate, "image1")
+				image2 = '[[File:' .. getPotdPart(frame, "POTD/" .. potdDate, "image2") .. '|200px|center]]'
+			end
+			local text = image2 .. getPotdText(frame, potdDate, moreHtml)
+			table.insert(slideShowArgs, image)
+			table.insert(slideShowArgs, text)
+		end
+	end
+	if #images &gt; 0 then
+		local randomImages = randomModule.main('array', {t=images, limit=limit})
+		for _, image in pairs(randomImages) do
+			table.insert(slideShowArgs, image['file'])
+			local text = formatPotdText(frame, image['title'], image['credit'], image['caption'], moreHtml)
+			table.insert(slideShowArgs, text)
+		end
+	end
+	if #subpages &gt; 0 then
+		local randomSubpages = randomModule.main('array', {t=subpages, limit=math.floor(limit / 2)})
+		for _, subpage in pairs(randomSubpages) do
+			table.insert(slideShowArgs, 'Blank.png')
+			local subpageContent = replaceNewlines(frame:expandTemplate{ title = subpage })
+			table.insert(slideShowArgs, subpageContent)
+		end
+	end
+	return slideShowArgs
+end
+
+-- == Main functions ==
+-- Create a list gallery of all passed images
+local function gallery(frame)
+	local args = getCleanArgs(frame)
+	local dates, images, subpages = extractPictures(args)
+	local texts = {}
+
+	for _, value in pairs(dates) do
+		local topText = '&lt;span id="Template:POTD/' .. value .. '"&gt;&lt;/span&gt;' .. "[[Template:POTD/" .. value .. "]]\n\n"
+		table.insert(texts,	topText .. formatPortalPotd(frame, value))
+	end
+	for _, image in pairs(images) do
+		local topText = "[[:File:" .. image['file'] .. "]]\n\n"
+		local bottomText = formatPotdText(frame, image['title'], image['credit'], image['caption'])
+		table.insert(texts, topText .. formatFile(image['file']) .. "\n\n" .. bottomText)
+	end
+	for _, subpage in pairs(subpages) do
+		local topText = "[[:" .. subpage .. "]]\n\n"
+		local subpageContent = frame:expandTemplate{ title = subpage }
+		table.insert(texts, topText .. subpageContent)
+	end
+	return frame:preprocess(table.concat(texts, "\n----\n"))
+end
+
+-- Create a slideshow of passed images using [[Module:Random slideshow]]
+local function slideShow(frame)
+	local args = getCleanArgs(frame)
+	local more = args["more"] or getDefaultMoreLink(args)
+	local dates, images, subpages = extractPictures(args)
+	local limit = 15
+
+	local slideShowArgs = makeSlideShowArgs(frame, dates, images, subpages, more, limit)
+
+	local slideShow = slideshowModule._main(slideShowArgs, false, 'portalSlideshow-container')
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } .. frame:preprocess(slideShow)
+end
+
+-- entry point for the module
+function main(frame)
+	local title = mw.title.getCurrentTitle()
+	if title.isSubpage
+	then
+		return gallery(frame)
+	else
+		return slideShow(frame)
+	end
+end
+
+p.main = main
+p.slideShow = slideShow
+p.gallery = gallery
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]</text>
+      <sha1>tkl1qbl7hgzymjpxje79vbau5uifaoo</sha1>
+    </revision>
+    <revision>
+      <id>787900</id>
+      <parentid>787899</parentid>
+      <timestamp>2025-01-26T23:07:35Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Adding [[Category:Pages and Categories from Wikipedia]][[en:{{subst:PAGENAME}}]][[Category:kk]] on using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>787900</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7382" sha1="cn3l02xuc2hwzd56s3dekaufotmyvq6" xml:space="preserve">local getArgs = require('Module:Arguments').getArgs
+local randomModule = require('Module:Random')
+local yesno = require('Module:Yesno')
+local slideshowModule = require('Module:Random slideshow')
+
+p = {}
+
+-- == Utility functions ==
+local function getCleanArgs(frame)
+	return getArgs(frame, {
+		trim = true,
+		removeBlanks = true
+	})
+end
+
+local function wikiError(message)
+	return mw.html.create('div'):addClass('error'):wikitext(message)
+end
+
+-- replace all newlines in the string with break tags
+-- slideshow only supports single line captions
+local function replaceNewlines(s)
+	return mw.ustring.gsub(s, '%c', '&lt;br /&gt;')
+end
+
+-- == Argument preparation functions ==
+-- Extracts dates, custom images, and subpages from args
+local function extractPictures(args)
+	local dates = {}
+	local images = {}
+	local subpages = {}
+	for key, value in pairs(args) do
+		if value then
+			if type(key) == "number" then
+				-- positional parameters correspond to POTD dates
+				table.insert(dates, value)
+			elseif string.sub(key, 1, 1) == "i" then
+				-- named parameters with prefixes "i", "title", "credit", and "caption"
+				-- correspond to custom images
+				local num = string.sub(key, 2)
+				local title = args["title" .. num]
+				local credit = args["credit" .. num]
+				local caption = args["caption" .. num] or ""
+				local image = {
+					file = value,
+					title = title,
+					credit = credit,
+					caption = caption
+				}
+				table.insert(images, image)
+			end
+		end
+	end
+	local subpageMax = tonumber(args['subpagemax']) or 0
+	if subpageMax &gt; 0
+	then
+		local root = args['demoroot'] or (mw.title.getCurrentTitle().rootPageTitle.prefixedText)
+		local picturesRoot = root .. '/' .. (args['subpage'] or 'Selected picture')
+		for i = 1, subpageMax do
+			table.insert(subpages, picturesRoot .. '/' .. tostring(i))
+		end
+	end
+	return dates, images, subpages
+end
+
+local function getDefaultMoreLink(args)
+	local root = args['demoroot'] or (mw.title.getCurrentTitle().rootPageTitle.prefixedText)
+	local picturesPage = args['subpage'] or 'Selected picture'
+	return "[[" .. root .. "/" .. picturesPage .. "|More selected pictures]]"
+end
+
+-- == Formatting functions ==
+-- transclude [[Template:Portal POTD]]
+local function formatPortalPotd(frame, potdDate)
+	return frame:expandTemplate{
+		title = "Portal POTD",
+		args = {
+			potdDate,
+			more = 'no'
+		}
+	}
+end
+
+local function formatMoreHtml(more)
+	if not yesno(more, true)
+	then
+		return ""
+	end
+	local moreHtml = mw.html.create('div')
+		:attr("class", "noprint")
+		:attr("style", "margin-top:0.5em; font-weight:bold; width:100%; text-align:right;")
+		:wikitext(more)
+	return tostring(moreHtml)
+end
+
+-- manual recreation of the bottom half of [[Template:Portal POTD]]
+local function formatPotdText(frame, titleText, creditText, captionText, moreHtml)
+	local res = frame:expandTemplate{
+		title = "POTD portal layout/text",
+		args = {
+			title = titleText,
+			credit = creditText,
+			caption = captionText,
+			['margin-top']='0.5em'
+		}
+	}
+	if moreHtml
+	then
+		-- ideally, the "more" text should be trancluded _once_ for the whole box
+		-- but we do it for _every_ image for compatibility with portals, which use numbered subpages
+		res = res .. moreHtml
+	end
+	return res
+end
+
+local function formatFile(filename)
+	local html = mw.html.create('div')
+		:attr("class", "center")
+		:wikitext("[[File:" .. filename .. "|380px]]")
+	return tostring(html)
+end
+
+-- Extract value named "paramName" from a subpage of [[Template:POTD]]
+local function getPotdPart(frame, potdSubpage, paramName)
+	return frame:expandTemplate{
+		title = potdSubpage,
+		args = { paramName }
+	}
+end
+
+-- bottom half of [[Template:Portal POTD]] for a POTD subpage
+local function getPotdText(frame, potdDate, moreHtml)
+	local potdText = getPotdPart(frame, "POTD/" .. potdDate, "portal layout/text")
+	potdText = replaceNewlines(potdText)
+	if moreHtml
+	then
+		potdText = potdText .. moreHtml
+	end
+	return potdText
+end
+
+-- prepare arguments for [[Module:Random slideshow]]
+-- alternating: image1, text1, image2, text2, ...
+local function makeSlideShowArgs(frame, dates, images, subpages, more, limit)
+	local slideShowArgs = {}
+	local moreHtml = formatMoreHtml(more)
+	if #dates &gt; 0 then
+		local randomDates = randomModule.main('array', {t=dates, limit=limit})
+		for _, potdDate in ipairs(randomDates) do
+			local image = getPotdPart(frame, "POTD/" .. potdDate, "image")
+			local image2 = ''
+			if image == '{{{image}}}' then
+				image = getPotdPart(frame, "POTD/" .. potdDate, "image1")
+				image2 = '[[File:' .. getPotdPart(frame, "POTD/" .. potdDate, "image2") .. '|200px|center]]'
+			end
+			local text = image2 .. getPotdText(frame, potdDate, moreHtml)
+			table.insert(slideShowArgs, image)
+			table.insert(slideShowArgs, text)
+		end
+	end
+	if #images &gt; 0 then
+		local randomImages = randomModule.main('array', {t=images, limit=limit})
+		for _, image in pairs(randomImages) do
+			table.insert(slideShowArgs, image['file'])
+			local text = formatPotdText(frame, image['title'], image['credit'], image['caption'], moreHtml)
+			table.insert(slideShowArgs, text)
+		end
+	end
+	if #subpages &gt; 0 then
+		local randomSubpages = randomModule.main('array', {t=subpages, limit=math.floor(limit / 2)})
+		for _, subpage in pairs(randomSubpages) do
+			table.insert(slideShowArgs, 'Blank.png')
+			local subpageContent = replaceNewlines(frame:expandTemplate{ title = subpage })
+			table.insert(slideShowArgs, subpageContent)
+		end
+	end
+	return slideShowArgs
+end
+
+-- == Main functions ==
+-- Create a list gallery of all passed images
+local function gallery(frame)
+	local args = getCleanArgs(frame)
+	local dates, images, subpages = extractPictures(args)
+	local texts = {}
+
+	for _, value in pairs(dates) do
+		local topText = '&lt;span id="Template:POTD/' .. value .. '"&gt;&lt;/span&gt;' .. "[[Template:POTD/" .. value .. "]]\n\n"
+		table.insert(texts,	topText .. formatPortalPotd(frame, value))
+	end
+	for _, image in pairs(images) do
+		local topText = "[[:File:" .. image['file'] .. "]]\n\n"
+		local bottomText = formatPotdText(frame, image['title'], image['credit'], image['caption'])
+		table.insert(texts, topText .. formatFile(image['file']) .. "\n\n" .. bottomText)
+	end
+	for _, subpage in pairs(subpages) do
+		local topText = "[[:" .. subpage .. "]]\n\n"
+		local subpageContent = frame:expandTemplate{ title = subpage }
+		table.insert(texts, topText .. subpageContent)
+	end
+	return frame:preprocess(table.concat(texts, "\n----\n"))
+end
+
+-- Create a slideshow of passed images using [[Module:Random slideshow]]
+local function slideShow(frame)
+	local args = getCleanArgs(frame)
+	local more = args["more"] or getDefaultMoreLink(args)
+	local dates, images, subpages = extractPictures(args)
+	local limit = 15
+
+	local slideShowArgs = makeSlideShowArgs(frame, dates, images, subpages, more, limit)
+
+	local slideShow = slideshowModule._main(slideShowArgs, false, 'portalSlideshow-container')
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } .. frame:preprocess(slideShow)
+end
+
+-- entry point for the module
+function main(frame)
+	local title = mw.title.getCurrentTitle()
+	if title.isSubpage
+	then
+		return gallery(frame)
+	else
+		return slideShow(frame)
+	end
+end
+
+p.main = main
+p.slideShow = slideShow
+p.gallery = gallery
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]
+[[Category:Pages and Categories from Wikipedia]][[en:{{subst:PAGENAME}}]][[Category:kk]]</text>
+      <sha1>cn3l02xuc2hwzd56s3dekaufotmyvq6</sha1>
+    </revision>
+    <revision>
+      <id>787901</id>
+      <parentid>787900</parentid>
+      <timestamp>2025-01-28T02:10:00Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Adding [[Category:second attempt at refreshing on January 27 2024]][[Category:{{subst:PAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]] on using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>787901</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7534" sha1="filw713ge11sq6lofj2u1hzal2szvpd" xml:space="preserve">local getArgs = require('Module:Arguments').getArgs
+local randomModule = require('Module:Random')
+local yesno = require('Module:Yesno')
+local slideshowModule = require('Module:Random slideshow')
+
+p = {}
+
+-- == Utility functions ==
+local function getCleanArgs(frame)
+	return getArgs(frame, {
+		trim = true,
+		removeBlanks = true
+	})
+end
+
+local function wikiError(message)
+	return mw.html.create('div'):addClass('error'):wikitext(message)
+end
+
+-- replace all newlines in the string with break tags
+-- slideshow only supports single line captions
+local function replaceNewlines(s)
+	return mw.ustring.gsub(s, '%c', '&lt;br /&gt;')
+end
+
+-- == Argument preparation functions ==
+-- Extracts dates, custom images, and subpages from args
+local function extractPictures(args)
+	local dates = {}
+	local images = {}
+	local subpages = {}
+	for key, value in pairs(args) do
+		if value then
+			if type(key) == "number" then
+				-- positional parameters correspond to POTD dates
+				table.insert(dates, value)
+			elseif string.sub(key, 1, 1) == "i" then
+				-- named parameters with prefixes "i", "title", "credit", and "caption"
+				-- correspond to custom images
+				local num = string.sub(key, 2)
+				local title = args["title" .. num]
+				local credit = args["credit" .. num]
+				local caption = args["caption" .. num] or ""
+				local image = {
+					file = value,
+					title = title,
+					credit = credit,
+					caption = caption
+				}
+				table.insert(images, image)
+			end
+		end
+	end
+	local subpageMax = tonumber(args['subpagemax']) or 0
+	if subpageMax &gt; 0
+	then
+		local root = args['demoroot'] or (mw.title.getCurrentTitle().rootPageTitle.prefixedText)
+		local picturesRoot = root .. '/' .. (args['subpage'] or 'Selected picture')
+		for i = 1, subpageMax do
+			table.insert(subpages, picturesRoot .. '/' .. tostring(i))
+		end
+	end
+	return dates, images, subpages
+end
+
+local function getDefaultMoreLink(args)
+	local root = args['demoroot'] or (mw.title.getCurrentTitle().rootPageTitle.prefixedText)
+	local picturesPage = args['subpage'] or 'Selected picture'
+	return "[[" .. root .. "/" .. picturesPage .. "|More selected pictures]]"
+end
+
+-- == Formatting functions ==
+-- transclude [[Template:Portal POTD]]
+local function formatPortalPotd(frame, potdDate)
+	return frame:expandTemplate{
+		title = "Portal POTD",
+		args = {
+			potdDate,
+			more = 'no'
+		}
+	}
+end
+
+local function formatMoreHtml(more)
+	if not yesno(more, true)
+	then
+		return ""
+	end
+	local moreHtml = mw.html.create('div')
+		:attr("class", "noprint")
+		:attr("style", "margin-top:0.5em; font-weight:bold; width:100%; text-align:right;")
+		:wikitext(more)
+	return tostring(moreHtml)
+end
+
+-- manual recreation of the bottom half of [[Template:Portal POTD]]
+local function formatPotdText(frame, titleText, creditText, captionText, moreHtml)
+	local res = frame:expandTemplate{
+		title = "POTD portal layout/text",
+		args = {
+			title = titleText,
+			credit = creditText,
+			caption = captionText,
+			['margin-top']='0.5em'
+		}
+	}
+	if moreHtml
+	then
+		-- ideally, the "more" text should be trancluded _once_ for the whole box
+		-- but we do it for _every_ image for compatibility with portals, which use numbered subpages
+		res = res .. moreHtml
+	end
+	return res
+end
+
+local function formatFile(filename)
+	local html = mw.html.create('div')
+		:attr("class", "center")
+		:wikitext("[[File:" .. filename .. "|380px]]")
+	return tostring(html)
+end
+
+-- Extract value named "paramName" from a subpage of [[Template:POTD]]
+local function getPotdPart(frame, potdSubpage, paramName)
+	return frame:expandTemplate{
+		title = potdSubpage,
+		args = { paramName }
+	}
+end
+
+-- bottom half of [[Template:Portal POTD]] for a POTD subpage
+local function getPotdText(frame, potdDate, moreHtml)
+	local potdText = getPotdPart(frame, "POTD/" .. potdDate, "portal layout/text")
+	potdText = replaceNewlines(potdText)
+	if moreHtml
+	then
+		potdText = potdText .. moreHtml
+	end
+	return potdText
+end
+
+-- prepare arguments for [[Module:Random slideshow]]
+-- alternating: image1, text1, image2, text2, ...
+local function makeSlideShowArgs(frame, dates, images, subpages, more, limit)
+	local slideShowArgs = {}
+	local moreHtml = formatMoreHtml(more)
+	if #dates &gt; 0 then
+		local randomDates = randomModule.main('array', {t=dates, limit=limit})
+		for _, potdDate in ipairs(randomDates) do
+			local image = getPotdPart(frame, "POTD/" .. potdDate, "image")
+			local image2 = ''
+			if image == '{{{image}}}' then
+				image = getPotdPart(frame, "POTD/" .. potdDate, "image1")
+				image2 = '[[File:' .. getPotdPart(frame, "POTD/" .. potdDate, "image2") .. '|200px|center]]'
+			end
+			local text = image2 .. getPotdText(frame, potdDate, moreHtml)
+			table.insert(slideShowArgs, image)
+			table.insert(slideShowArgs, text)
+		end
+	end
+	if #images &gt; 0 then
+		local randomImages = randomModule.main('array', {t=images, limit=limit})
+		for _, image in pairs(randomImages) do
+			table.insert(slideShowArgs, image['file'])
+			local text = formatPotdText(frame, image['title'], image['credit'], image['caption'], moreHtml)
+			table.insert(slideShowArgs, text)
+		end
+	end
+	if #subpages &gt; 0 then
+		local randomSubpages = randomModule.main('array', {t=subpages, limit=math.floor(limit / 2)})
+		for _, subpage in pairs(randomSubpages) do
+			table.insert(slideShowArgs, 'Blank.png')
+			local subpageContent = replaceNewlines(frame:expandTemplate{ title = subpage })
+			table.insert(slideShowArgs, subpageContent)
+		end
+	end
+	return slideShowArgs
+end
+
+-- == Main functions ==
+-- Create a list gallery of all passed images
+local function gallery(frame)
+	local args = getCleanArgs(frame)
+	local dates, images, subpages = extractPictures(args)
+	local texts = {}
+
+	for _, value in pairs(dates) do
+		local topText = '&lt;span id="Template:POTD/' .. value .. '"&gt;&lt;/span&gt;' .. "[[Template:POTD/" .. value .. "]]\n\n"
+		table.insert(texts,	topText .. formatPortalPotd(frame, value))
+	end
+	for _, image in pairs(images) do
+		local topText = "[[:File:" .. image['file'] .. "]]\n\n"
+		local bottomText = formatPotdText(frame, image['title'], image['credit'], image['caption'])
+		table.insert(texts, topText .. formatFile(image['file']) .. "\n\n" .. bottomText)
+	end
+	for _, subpage in pairs(subpages) do
+		local topText = "[[:" .. subpage .. "]]\n\n"
+		local subpageContent = frame:expandTemplate{ title = subpage }
+		table.insert(texts, topText .. subpageContent)
+	end
+	return frame:preprocess(table.concat(texts, "\n----\n"))
+end
+
+-- Create a slideshow of passed images using [[Module:Random slideshow]]
+local function slideShow(frame)
+	local args = getCleanArgs(frame)
+	local more = args["more"] or getDefaultMoreLink(args)
+	local dates, images, subpages = extractPictures(args)
+	local limit = 15
+
+	local slideShowArgs = makeSlideShowArgs(frame, dates, images, subpages, more, limit)
+
+	local slideShow = slideshowModule._main(slideShowArgs, false, 'portalSlideshow-container')
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } .. frame:preprocess(slideShow)
+end
+
+-- entry point for the module
+function main(frame)
+	local title = mw.title.getCurrentTitle()
+	if title.isSubpage
+	then
+		return gallery(frame)
+	else
+		return slideShow(frame)
+	end
+end
+
+p.main = main
+p.slideShow = slideShow
+p.gallery = gallery
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]
+[[Category:Pages and Categories from Wikipedia]][[en:{{subst:PAGENAME}}]][[Category:kk]]
+[[Category:second attempt at refreshing on January 27 2024]][[Category:{{subst:PAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]]</text>
+      <sha1>filw713ge11sq6lofj2u1hzal2szvpd</sha1>
+    </revision>
+    <revision>
+      <id>787902</id>
+      <parentid>787901</parentid>
+      <timestamp>2025-03-13T21:23:18Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "Category:{" to "Category:"</comment>
+      <origin>787902</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7533" sha1="l6ppyhy9ay11koi8jtrjhpm7m7iq3er" xml:space="preserve">local getArgs = require('Module:Arguments').getArgs
+local randomModule = require('Module:Random')
+local yesno = require('Module:Yesno')
+local slideshowModule = require('Module:Random slideshow')
+
+p = {}
+
+-- == Utility functions ==
+local function getCleanArgs(frame)
+	return getArgs(frame, {
+		trim = true,
+		removeBlanks = true
+	})
+end
+
+local function wikiError(message)
+	return mw.html.create('div'):addClass('error'):wikitext(message)
+end
+
+-- replace all newlines in the string with break tags
+-- slideshow only supports single line captions
+local function replaceNewlines(s)
+	return mw.ustring.gsub(s, '%c', '&lt;br /&gt;')
+end
+
+-- == Argument preparation functions ==
+-- Extracts dates, custom images, and subpages from args
+local function extractPictures(args)
+	local dates = {}
+	local images = {}
+	local subpages = {}
+	for key, value in pairs(args) do
+		if value then
+			if type(key) == "number" then
+				-- positional parameters correspond to POTD dates
+				table.insert(dates, value)
+			elseif string.sub(key, 1, 1) == "i" then
+				-- named parameters with prefixes "i", "title", "credit", and "caption"
+				-- correspond to custom images
+				local num = string.sub(key, 2)
+				local title = args["title" .. num]
+				local credit = args["credit" .. num]
+				local caption = args["caption" .. num] or ""
+				local image = {
+					file = value,
+					title = title,
+					credit = credit,
+					caption = caption
+				}
+				table.insert(images, image)
+			end
+		end
+	end
+	local subpageMax = tonumber(args['subpagemax']) or 0
+	if subpageMax &gt; 0
+	then
+		local root = args['demoroot'] or (mw.title.getCurrentTitle().rootPageTitle.prefixedText)
+		local picturesRoot = root .. '/' .. (args['subpage'] or 'Selected picture')
+		for i = 1, subpageMax do
+			table.insert(subpages, picturesRoot .. '/' .. tostring(i))
+		end
+	end
+	return dates, images, subpages
+end
+
+local function getDefaultMoreLink(args)
+	local root = args['demoroot'] or (mw.title.getCurrentTitle().rootPageTitle.prefixedText)
+	local picturesPage = args['subpage'] or 'Selected picture'
+	return "[[" .. root .. "/" .. picturesPage .. "|More selected pictures]]"
+end
+
+-- == Formatting functions ==
+-- transclude [[Template:Portal POTD]]
+local function formatPortalPotd(frame, potdDate)
+	return frame:expandTemplate{
+		title = "Portal POTD",
+		args = {
+			potdDate,
+			more = 'no'
+		}
+	}
+end
+
+local function formatMoreHtml(more)
+	if not yesno(more, true)
+	then
+		return ""
+	end
+	local moreHtml = mw.html.create('div')
+		:attr("class", "noprint")
+		:attr("style", "margin-top:0.5em; font-weight:bold; width:100%; text-align:right;")
+		:wikitext(more)
+	return tostring(moreHtml)
+end
+
+-- manual recreation of the bottom half of [[Template:Portal POTD]]
+local function formatPotdText(frame, titleText, creditText, captionText, moreHtml)
+	local res = frame:expandTemplate{
+		title = "POTD portal layout/text",
+		args = {
+			title = titleText,
+			credit = creditText,
+			caption = captionText,
+			['margin-top']='0.5em'
+		}
+	}
+	if moreHtml
+	then
+		-- ideally, the "more" text should be trancluded _once_ for the whole box
+		-- but we do it for _every_ image for compatibility with portals, which use numbered subpages
+		res = res .. moreHtml
+	end
+	return res
+end
+
+local function formatFile(filename)
+	local html = mw.html.create('div')
+		:attr("class", "center")
+		:wikitext("[[File:" .. filename .. "|380px]]")
+	return tostring(html)
+end
+
+-- Extract value named "paramName" from a subpage of [[Template:POTD]]
+local function getPotdPart(frame, potdSubpage, paramName)
+	return frame:expandTemplate{
+		title = potdSubpage,
+		args = { paramName }
+	}
+end
+
+-- bottom half of [[Template:Portal POTD]] for a POTD subpage
+local function getPotdText(frame, potdDate, moreHtml)
+	local potdText = getPotdPart(frame, "POTD/" .. potdDate, "portal layout/text")
+	potdText = replaceNewlines(potdText)
+	if moreHtml
+	then
+		potdText = potdText .. moreHtml
+	end
+	return potdText
+end
+
+-- prepare arguments for [[Module:Random slideshow]]
+-- alternating: image1, text1, image2, text2, ...
+local function makeSlideShowArgs(frame, dates, images, subpages, more, limit)
+	local slideShowArgs = {}
+	local moreHtml = formatMoreHtml(more)
+	if #dates &gt; 0 then
+		local randomDates = randomModule.main('array', {t=dates, limit=limit})
+		for _, potdDate in ipairs(randomDates) do
+			local image = getPotdPart(frame, "POTD/" .. potdDate, "image")
+			local image2 = ''
+			if image == '{{{image}}}' then
+				image = getPotdPart(frame, "POTD/" .. potdDate, "image1")
+				image2 = '[[File:' .. getPotdPart(frame, "POTD/" .. potdDate, "image2") .. '|200px|center]]'
+			end
+			local text = image2 .. getPotdText(frame, potdDate, moreHtml)
+			table.insert(slideShowArgs, image)
+			table.insert(slideShowArgs, text)
+		end
+	end
+	if #images &gt; 0 then
+		local randomImages = randomModule.main('array', {t=images, limit=limit})
+		for _, image in pairs(randomImages) do
+			table.insert(slideShowArgs, image['file'])
+			local text = formatPotdText(frame, image['title'], image['credit'], image['caption'], moreHtml)
+			table.insert(slideShowArgs, text)
+		end
+	end
+	if #subpages &gt; 0 then
+		local randomSubpages = randomModule.main('array', {t=subpages, limit=math.floor(limit / 2)})
+		for _, subpage in pairs(randomSubpages) do
+			table.insert(slideShowArgs, 'Blank.png')
+			local subpageContent = replaceNewlines(frame:expandTemplate{ title = subpage })
+			table.insert(slideShowArgs, subpageContent)
+		end
+	end
+	return slideShowArgs
+end
+
+-- == Main functions ==
+-- Create a list gallery of all passed images
+local function gallery(frame)
+	local args = getCleanArgs(frame)
+	local dates, images, subpages = extractPictures(args)
+	local texts = {}
+
+	for _, value in pairs(dates) do
+		local topText = '&lt;span id="Template:POTD/' .. value .. '"&gt;&lt;/span&gt;' .. "[[Template:POTD/" .. value .. "]]\n\n"
+		table.insert(texts,	topText .. formatPortalPotd(frame, value))
+	end
+	for _, image in pairs(images) do
+		local topText = "[[:File:" .. image['file'] .. "]]\n\n"
+		local bottomText = formatPotdText(frame, image['title'], image['credit'], image['caption'])
+		table.insert(texts, topText .. formatFile(image['file']) .. "\n\n" .. bottomText)
+	end
+	for _, subpage in pairs(subpages) do
+		local topText = "[[:" .. subpage .. "]]\n\n"
+		local subpageContent = frame:expandTemplate{ title = subpage }
+		table.insert(texts, topText .. subpageContent)
+	end
+	return frame:preprocess(table.concat(texts, "\n----\n"))
+end
+
+-- Create a slideshow of passed images using [[Module:Random slideshow]]
+local function slideShow(frame)
+	local args = getCleanArgs(frame)
+	local more = args["more"] or getDefaultMoreLink(args)
+	local dates, images, subpages = extractPictures(args)
+	local limit = 15
+
+	local slideShowArgs = makeSlideShowArgs(frame, dates, images, subpages, more, limit)
+
+	local slideShow = slideshowModule._main(slideShowArgs, false, 'portalSlideshow-container')
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } .. frame:preprocess(slideShow)
+end
+
+-- entry point for the module
+function main(frame)
+	local title = mw.title.getCurrentTitle()
+	if title.isSubpage
+	then
+		return gallery(frame)
+	else
+		return slideShow(frame)
+	end
+end
+
+p.main = main
+p.slideShow = slideShow
+p.gallery = gallery
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]
+[[Category:Pages and Categories from Wikipedia]][[en:{{subst:PAGENAME}}]][[Category:kk]]
+[[Category:second attempt at refreshing on January 27 2024]][[Category:{subst:PAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]]</text>
+      <sha1>l6ppyhy9ay11koi8jtrjhpm7m7iq3er</sha1>
+    </revision>
+    <revision>
+      <id>787903</id>
+      <parentid>787902</parentid>
+      <timestamp>2025-03-13T21:23:49Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "Category:{" to "Category:"</comment>
+      <origin>787903</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7532" sha1="a6gicpdil01ta3wlcyvoe8oxcjovh4o" xml:space="preserve">local getArgs = require('Module:Arguments').getArgs
+local randomModule = require('Module:Random')
+local yesno = require('Module:Yesno')
+local slideshowModule = require('Module:Random slideshow')
+
+p = {}
+
+-- == Utility functions ==
+local function getCleanArgs(frame)
+	return getArgs(frame, {
+		trim = true,
+		removeBlanks = true
+	})
+end
+
+local function wikiError(message)
+	return mw.html.create('div'):addClass('error'):wikitext(message)
+end
+
+-- replace all newlines in the string with break tags
+-- slideshow only supports single line captions
+local function replaceNewlines(s)
+	return mw.ustring.gsub(s, '%c', '&lt;br /&gt;')
+end
+
+-- == Argument preparation functions ==
+-- Extracts dates, custom images, and subpages from args
+local function extractPictures(args)
+	local dates = {}
+	local images = {}
+	local subpages = {}
+	for key, value in pairs(args) do
+		if value then
+			if type(key) == "number" then
+				-- positional parameters correspond to POTD dates
+				table.insert(dates, value)
+			elseif string.sub(key, 1, 1) == "i" then
+				-- named parameters with prefixes "i", "title", "credit", and "caption"
+				-- correspond to custom images
+				local num = string.sub(key, 2)
+				local title = args["title" .. num]
+				local credit = args["credit" .. num]
+				local caption = args["caption" .. num] or ""
+				local image = {
+					file = value,
+					title = title,
+					credit = credit,
+					caption = caption
+				}
+				table.insert(images, image)
+			end
+		end
+	end
+	local subpageMax = tonumber(args['subpagemax']) or 0
+	if subpageMax &gt; 0
+	then
+		local root = args['demoroot'] or (mw.title.getCurrentTitle().rootPageTitle.prefixedText)
+		local picturesRoot = root .. '/' .. (args['subpage'] or 'Selected picture')
+		for i = 1, subpageMax do
+			table.insert(subpages, picturesRoot .. '/' .. tostring(i))
+		end
+	end
+	return dates, images, subpages
+end
+
+local function getDefaultMoreLink(args)
+	local root = args['demoroot'] or (mw.title.getCurrentTitle().rootPageTitle.prefixedText)
+	local picturesPage = args['subpage'] or 'Selected picture'
+	return "[[" .. root .. "/" .. picturesPage .. "|More selected pictures]]"
+end
+
+-- == Formatting functions ==
+-- transclude [[Template:Portal POTD]]
+local function formatPortalPotd(frame, potdDate)
+	return frame:expandTemplate{
+		title = "Portal POTD",
+		args = {
+			potdDate,
+			more = 'no'
+		}
+	}
+end
+
+local function formatMoreHtml(more)
+	if not yesno(more, true)
+	then
+		return ""
+	end
+	local moreHtml = mw.html.create('div')
+		:attr("class", "noprint")
+		:attr("style", "margin-top:0.5em; font-weight:bold; width:100%; text-align:right;")
+		:wikitext(more)
+	return tostring(moreHtml)
+end
+
+-- manual recreation of the bottom half of [[Template:Portal POTD]]
+local function formatPotdText(frame, titleText, creditText, captionText, moreHtml)
+	local res = frame:expandTemplate{
+		title = "POTD portal layout/text",
+		args = {
+			title = titleText,
+			credit = creditText,
+			caption = captionText,
+			['margin-top']='0.5em'
+		}
+	}
+	if moreHtml
+	then
+		-- ideally, the "more" text should be trancluded _once_ for the whole box
+		-- but we do it for _every_ image for compatibility with portals, which use numbered subpages
+		res = res .. moreHtml
+	end
+	return res
+end
+
+local function formatFile(filename)
+	local html = mw.html.create('div')
+		:attr("class", "center")
+		:wikitext("[[File:" .. filename .. "|380px]]")
+	return tostring(html)
+end
+
+-- Extract value named "paramName" from a subpage of [[Template:POTD]]
+local function getPotdPart(frame, potdSubpage, paramName)
+	return frame:expandTemplate{
+		title = potdSubpage,
+		args = { paramName }
+	}
+end
+
+-- bottom half of [[Template:Portal POTD]] for a POTD subpage
+local function getPotdText(frame, potdDate, moreHtml)
+	local potdText = getPotdPart(frame, "POTD/" .. potdDate, "portal layout/text")
+	potdText = replaceNewlines(potdText)
+	if moreHtml
+	then
+		potdText = potdText .. moreHtml
+	end
+	return potdText
+end
+
+-- prepare arguments for [[Module:Random slideshow]]
+-- alternating: image1, text1, image2, text2, ...
+local function makeSlideShowArgs(frame, dates, images, subpages, more, limit)
+	local slideShowArgs = {}
+	local moreHtml = formatMoreHtml(more)
+	if #dates &gt; 0 then
+		local randomDates = randomModule.main('array', {t=dates, limit=limit})
+		for _, potdDate in ipairs(randomDates) do
+			local image = getPotdPart(frame, "POTD/" .. potdDate, "image")
+			local image2 = ''
+			if image == '{{{image}}}' then
+				image = getPotdPart(frame, "POTD/" .. potdDate, "image1")
+				image2 = '[[File:' .. getPotdPart(frame, "POTD/" .. potdDate, "image2") .. '|200px|center]]'
+			end
+			local text = image2 .. getPotdText(frame, potdDate, moreHtml)
+			table.insert(slideShowArgs, image)
+			table.insert(slideShowArgs, text)
+		end
+	end
+	if #images &gt; 0 then
+		local randomImages = randomModule.main('array', {t=images, limit=limit})
+		for _, image in pairs(randomImages) do
+			table.insert(slideShowArgs, image['file'])
+			local text = formatPotdText(frame, image['title'], image['credit'], image['caption'], moreHtml)
+			table.insert(slideShowArgs, text)
+		end
+	end
+	if #subpages &gt; 0 then
+		local randomSubpages = randomModule.main('array', {t=subpages, limit=math.floor(limit / 2)})
+		for _, subpage in pairs(randomSubpages) do
+			table.insert(slideShowArgs, 'Blank.png')
+			local subpageContent = replaceNewlines(frame:expandTemplate{ title = subpage })
+			table.insert(slideShowArgs, subpageContent)
+		end
+	end
+	return slideShowArgs
+end
+
+-- == Main functions ==
+-- Create a list gallery of all passed images
+local function gallery(frame)
+	local args = getCleanArgs(frame)
+	local dates, images, subpages = extractPictures(args)
+	local texts = {}
+
+	for _, value in pairs(dates) do
+		local topText = '&lt;span id="Template:POTD/' .. value .. '"&gt;&lt;/span&gt;' .. "[[Template:POTD/" .. value .. "]]\n\n"
+		table.insert(texts,	topText .. formatPortalPotd(frame, value))
+	end
+	for _, image in pairs(images) do
+		local topText = "[[:File:" .. image['file'] .. "]]\n\n"
+		local bottomText = formatPotdText(frame, image['title'], image['credit'], image['caption'])
+		table.insert(texts, topText .. formatFile(image['file']) .. "\n\n" .. bottomText)
+	end
+	for _, subpage in pairs(subpages) do
+		local topText = "[[:" .. subpage .. "]]\n\n"
+		local subpageContent = frame:expandTemplate{ title = subpage }
+		table.insert(texts, topText .. subpageContent)
+	end
+	return frame:preprocess(table.concat(texts, "\n----\n"))
+end
+
+-- Create a slideshow of passed images using [[Module:Random slideshow]]
+local function slideShow(frame)
+	local args = getCleanArgs(frame)
+	local more = args["more"] or getDefaultMoreLink(args)
+	local dates, images, subpages = extractPictures(args)
+	local limit = 15
+
+	local slideShowArgs = makeSlideShowArgs(frame, dates, images, subpages, more, limit)
+
+	local slideShow = slideshowModule._main(slideShowArgs, false, 'portalSlideshow-container')
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } .. frame:preprocess(slideShow)
+end
+
+-- entry point for the module
+function main(frame)
+	local title = mw.title.getCurrentTitle()
+	if title.isSubpage
+	then
+		return gallery(frame)
+	else
+		return slideShow(frame)
+	end
+end
+
+p.main = main
+p.slideShow = slideShow
+p.gallery = gallery
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]
+[[Category:Pages and Categories from Wikipedia]][[en:{{subst:PAGENAME}}]][[Category:kk]]
+[[Category:second attempt at refreshing on January 27 2024]][[Category:subst:PAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]]</text>
+      <sha1>a6gicpdil01ta3wlcyvoe8oxcjovh4o</sha1>
+    </revision>
+    <revision>
+      <id>787904</id>
+      <parentid>787903</parentid>
+      <timestamp>2025-04-24T05:35:40Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "second attempt at refreshing on January 27 2024" to "qq"</comment>
+      <origin>787904</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7442" sha1="7bdzu6f2qarjatjtwv7ecoa7zc8veb8" xml:space="preserve">local getArgs = require('Module:Arguments').getArgs
+local randomModule = require('Module:Random')
+local yesno = require('Module:Yesno')
+local slideshowModule = require('Module:Random slideshow')
+
+p = {}
+
+-- == Utility functions ==
+local function getCleanArgs(frame)
+	return getArgs(frame, {
+		trim = true,
+		removeBlanks = true
+	})
+end
+
+local function wikiError(message)
+	return mw.html.create('div'):addClass('error'):wikitext(message)
+end
+
+-- replace all newlines in the string with break tags
+-- slideshow only supports single line captions
+local function replaceNewlines(s)
+	return mw.ustring.gsub(s, '%c', '&lt;br /&gt;')
+end
+
+-- == Argument preparation functions ==
+-- Extracts dates, custom images, and subpages from args
+local function extractPictures(args)
+	local dates = {}
+	local images = {}
+	local subpages = {}
+	for key, value in pairs(args) do
+		if value then
+			if type(key) == "number" then
+				-- positional parameters correspond to POTD dates
+				table.insert(dates, value)
+			elseif string.sub(key, 1, 1) == "i" then
+				-- named parameters with prefixes "i", "title", "credit", and "caption"
+				-- correspond to custom images
+				local num = string.sub(key, 2)
+				local title = args["title" .. num]
+				local credit = args["credit" .. num]
+				local caption = args["caption" .. num] or ""
+				local image = {
+					file = value,
+					title = title,
+					credit = credit,
+					caption = caption
+				}
+				table.insert(images, image)
+			end
+		end
+	end
+	local subpageMax = tonumber(args['subpagemax']) or 0
+	if subpageMax &gt; 0
+	then
+		local root = args['demoroot'] or (mw.title.getCurrentTitle().rootPageTitle.prefixedText)
+		local picturesRoot = root .. '/' .. (args['subpage'] or 'Selected picture')
+		for i = 1, subpageMax do
+			table.insert(subpages, picturesRoot .. '/' .. tostring(i))
+		end
+	end
+	return dates, images, subpages
+end
+
+local function getDefaultMoreLink(args)
+	local root = args['demoroot'] or (mw.title.getCurrentTitle().rootPageTitle.prefixedText)
+	local picturesPage = args['subpage'] or 'Selected picture'
+	return "[[" .. root .. "/" .. picturesPage .. "|More selected pictures]]"
+end
+
+-- == Formatting functions ==
+-- transclude [[Template:Portal POTD]]
+local function formatPortalPotd(frame, potdDate)
+	return frame:expandTemplate{
+		title = "Portal POTD",
+		args = {
+			potdDate,
+			more = 'no'
+		}
+	}
+end
+
+local function formatMoreHtml(more)
+	if not yesno(more, true)
+	then
+		return ""
+	end
+	local moreHtml = mw.html.create('div')
+		:attr("class", "noprint")
+		:attr("style", "margin-top:0.5em; font-weight:bold; width:100%; text-align:right;")
+		:wikitext(more)
+	return tostring(moreHtml)
+end
+
+-- manual recreation of the bottom half of [[Template:Portal POTD]]
+local function formatPotdText(frame, titleText, creditText, captionText, moreHtml)
+	local res = frame:expandTemplate{
+		title = "POTD portal layout/text",
+		args = {
+			title = titleText,
+			credit = creditText,
+			caption = captionText,
+			['margin-top']='0.5em'
+		}
+	}
+	if moreHtml
+	then
+		-- ideally, the "more" text should be trancluded _once_ for the whole box
+		-- but we do it for _every_ image for compatibility with portals, which use numbered subpages
+		res = res .. moreHtml
+	end
+	return res
+end
+
+local function formatFile(filename)
+	local html = mw.html.create('div')
+		:attr("class", "center")
+		:wikitext("[[File:" .. filename .. "|380px]]")
+	return tostring(html)
+end
+
+-- Extract value named "paramName" from a subpage of [[Template:POTD]]
+local function getPotdPart(frame, potdSubpage, paramName)
+	return frame:expandTemplate{
+		title = potdSubpage,
+		args = { paramName }
+	}
+end
+
+-- bottom half of [[Template:Portal POTD]] for a POTD subpage
+local function getPotdText(frame, potdDate, moreHtml)
+	local potdText = getPotdPart(frame, "POTD/" .. potdDate, "portal layout/text")
+	potdText = replaceNewlines(potdText)
+	if moreHtml
+	then
+		potdText = potdText .. moreHtml
+	end
+	return potdText
+end
+
+-- prepare arguments for [[Module:Random slideshow]]
+-- alternating: image1, text1, image2, text2, ...
+local function makeSlideShowArgs(frame, dates, images, subpages, more, limit)
+	local slideShowArgs = {}
+	local moreHtml = formatMoreHtml(more)
+	if #dates &gt; 0 then
+		local randomDates = randomModule.main('array', {t=dates, limit=limit})
+		for _, potdDate in ipairs(randomDates) do
+			local image = getPotdPart(frame, "POTD/" .. potdDate, "image")
+			local image2 = ''
+			if image == '{{{image}}}' then
+				image = getPotdPart(frame, "POTD/" .. potdDate, "image1")
+				image2 = '[[File:' .. getPotdPart(frame, "POTD/" .. potdDate, "image2") .. '|200px|center]]'
+			end
+			local text = image2 .. getPotdText(frame, potdDate, moreHtml)
+			table.insert(slideShowArgs, image)
+			table.insert(slideShowArgs, text)
+		end
+	end
+	if #images &gt; 0 then
+		local randomImages = randomModule.main('array', {t=images, limit=limit})
+		for _, image in pairs(randomImages) do
+			table.insert(slideShowArgs, image['file'])
+			local text = formatPotdText(frame, image['title'], image['credit'], image['caption'], moreHtml)
+			table.insert(slideShowArgs, text)
+		end
+	end
+	if #subpages &gt; 0 then
+		local randomSubpages = randomModule.main('array', {t=subpages, limit=math.floor(limit / 2)})
+		for _, subpage in pairs(randomSubpages) do
+			table.insert(slideShowArgs, 'Blank.png')
+			local subpageContent = replaceNewlines(frame:expandTemplate{ title = subpage })
+			table.insert(slideShowArgs, subpageContent)
+		end
+	end
+	return slideShowArgs
+end
+
+-- == Main functions ==
+-- Create a list gallery of all passed images
+local function gallery(frame)
+	local args = getCleanArgs(frame)
+	local dates, images, subpages = extractPictures(args)
+	local texts = {}
+
+	for _, value in pairs(dates) do
+		local topText = '&lt;span id="Template:POTD/' .. value .. '"&gt;&lt;/span&gt;' .. "[[Template:POTD/" .. value .. "]]\n\n"
+		table.insert(texts,	topText .. formatPortalPotd(frame, value))
+	end
+	for _, image in pairs(images) do
+		local topText = "[[:File:" .. image['file'] .. "]]\n\n"
+		local bottomText = formatPotdText(frame, image['title'], image['credit'], image['caption'])
+		table.insert(texts, topText .. formatFile(image['file']) .. "\n\n" .. bottomText)
+	end
+	for _, subpage in pairs(subpages) do
+		local topText = "[[:" .. subpage .. "]]\n\n"
+		local subpageContent = frame:expandTemplate{ title = subpage }
+		table.insert(texts, topText .. subpageContent)
+	end
+	return frame:preprocess(table.concat(texts, "\n----\n"))
+end
+
+-- Create a slideshow of passed images using [[Module:Random slideshow]]
+local function slideShow(frame)
+	local args = getCleanArgs(frame)
+	local more = args["more"] or getDefaultMoreLink(args)
+	local dates, images, subpages = extractPictures(args)
+	local limit = 15
+
+	local slideShowArgs = makeSlideShowArgs(frame, dates, images, subpages, more, limit)
+
+	local slideShow = slideshowModule._main(slideShowArgs, false, 'portalSlideshow-container')
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } .. frame:preprocess(slideShow)
+end
+
+-- entry point for the module
+function main(frame)
+	local title = mw.title.getCurrentTitle()
+	if title.isSubpage
+	then
+		return gallery(frame)
+	else
+		return slideShow(frame)
+	end
+end
+
+p.main = main
+p.slideShow = slideShow
+p.gallery = gallery
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]
+[[Category:Pages and Categories from Wikipedia]][[en:{{subst:PAGENAME}}]][[Category:kk]]
+[[Category:qq]][[Category:subst:PAGENAME}}]][[Category:qq]]</text>
+      <sha1>7bdzu6f2qarjatjtwv7ecoa7zc8veb8</sha1>
+    </revision>
+    <revision>
+      <id>787905</id>
+      <parentid>787904</parentid>
+      <timestamp>2025-04-25T22:59:59Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "{subst:PAGENAME}" to "{{subst:PAGENAME}}"</comment>
+      <origin>787905</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7444" sha1="j679nyzctu71n6lv24zb7wghclzo0j1" xml:space="preserve">local getArgs = require('Module:Arguments').getArgs
+local randomModule = require('Module:Random')
+local yesno = require('Module:Yesno')
+local slideshowModule = require('Module:Random slideshow')
+
+p = {}
+
+-- == Utility functions ==
+local function getCleanArgs(frame)
+	return getArgs(frame, {
+		trim = true,
+		removeBlanks = true
+	})
+end
+
+local function wikiError(message)
+	return mw.html.create('div'):addClass('error'):wikitext(message)
+end
+
+-- replace all newlines in the string with break tags
+-- slideshow only supports single line captions
+local function replaceNewlines(s)
+	return mw.ustring.gsub(s, '%c', '&lt;br /&gt;')
+end
+
+-- == Argument preparation functions ==
+-- Extracts dates, custom images, and subpages from args
+local function extractPictures(args)
+	local dates = {}
+	local images = {}
+	local subpages = {}
+	for key, value in pairs(args) do
+		if value then
+			if type(key) == "number" then
+				-- positional parameters correspond to POTD dates
+				table.insert(dates, value)
+			elseif string.sub(key, 1, 1) == "i" then
+				-- named parameters with prefixes "i", "title", "credit", and "caption"
+				-- correspond to custom images
+				local num = string.sub(key, 2)
+				local title = args["title" .. num]
+				local credit = args["credit" .. num]
+				local caption = args["caption" .. num] or ""
+				local image = {
+					file = value,
+					title = title,
+					credit = credit,
+					caption = caption
+				}
+				table.insert(images, image)
+			end
+		end
+	end
+	local subpageMax = tonumber(args['subpagemax']) or 0
+	if subpageMax &gt; 0
+	then
+		local root = args['demoroot'] or (mw.title.getCurrentTitle().rootPageTitle.prefixedText)
+		local picturesRoot = root .. '/' .. (args['subpage'] or 'Selected picture')
+		for i = 1, subpageMax do
+			table.insert(subpages, picturesRoot .. '/' .. tostring(i))
+		end
+	end
+	return dates, images, subpages
+end
+
+local function getDefaultMoreLink(args)
+	local root = args['demoroot'] or (mw.title.getCurrentTitle().rootPageTitle.prefixedText)
+	local picturesPage = args['subpage'] or 'Selected picture'
+	return "[[" .. root .. "/" .. picturesPage .. "|More selected pictures]]"
+end
+
+-- == Formatting functions ==
+-- transclude [[Template:Portal POTD]]
+local function formatPortalPotd(frame, potdDate)
+	return frame:expandTemplate{
+		title = "Portal POTD",
+		args = {
+			potdDate,
+			more = 'no'
+		}
+	}
+end
+
+local function formatMoreHtml(more)
+	if not yesno(more, true)
+	then
+		return ""
+	end
+	local moreHtml = mw.html.create('div')
+		:attr("class", "noprint")
+		:attr("style", "margin-top:0.5em; font-weight:bold; width:100%; text-align:right;")
+		:wikitext(more)
+	return tostring(moreHtml)
+end
+
+-- manual recreation of the bottom half of [[Template:Portal POTD]]
+local function formatPotdText(frame, titleText, creditText, captionText, moreHtml)
+	local res = frame:expandTemplate{
+		title = "POTD portal layout/text",
+		args = {
+			title = titleText,
+			credit = creditText,
+			caption = captionText,
+			['margin-top']='0.5em'
+		}
+	}
+	if moreHtml
+	then
+		-- ideally, the "more" text should be trancluded _once_ for the whole box
+		-- but we do it for _every_ image for compatibility with portals, which use numbered subpages
+		res = res .. moreHtml
+	end
+	return res
+end
+
+local function formatFile(filename)
+	local html = mw.html.create('div')
+		:attr("class", "center")
+		:wikitext("[[File:" .. filename .. "|380px]]")
+	return tostring(html)
+end
+
+-- Extract value named "paramName" from a subpage of [[Template:POTD]]
+local function getPotdPart(frame, potdSubpage, paramName)
+	return frame:expandTemplate{
+		title = potdSubpage,
+		args = { paramName }
+	}
+end
+
+-- bottom half of [[Template:Portal POTD]] for a POTD subpage
+local function getPotdText(frame, potdDate, moreHtml)
+	local potdText = getPotdPart(frame, "POTD/" .. potdDate, "portal layout/text")
+	potdText = replaceNewlines(potdText)
+	if moreHtml
+	then
+		potdText = potdText .. moreHtml
+	end
+	return potdText
+end
+
+-- prepare arguments for [[Module:Random slideshow]]
+-- alternating: image1, text1, image2, text2, ...
+local function makeSlideShowArgs(frame, dates, images, subpages, more, limit)
+	local slideShowArgs = {}
+	local moreHtml = formatMoreHtml(more)
+	if #dates &gt; 0 then
+		local randomDates = randomModule.main('array', {t=dates, limit=limit})
+		for _, potdDate in ipairs(randomDates) do
+			local image = getPotdPart(frame, "POTD/" .. potdDate, "image")
+			local image2 = ''
+			if image == '{{{image}}}' then
+				image = getPotdPart(frame, "POTD/" .. potdDate, "image1")
+				image2 = '[[File:' .. getPotdPart(frame, "POTD/" .. potdDate, "image2") .. '|200px|center]]'
+			end
+			local text = image2 .. getPotdText(frame, potdDate, moreHtml)
+			table.insert(slideShowArgs, image)
+			table.insert(slideShowArgs, text)
+		end
+	end
+	if #images &gt; 0 then
+		local randomImages = randomModule.main('array', {t=images, limit=limit})
+		for _, image in pairs(randomImages) do
+			table.insert(slideShowArgs, image['file'])
+			local text = formatPotdText(frame, image['title'], image['credit'], image['caption'], moreHtml)
+			table.insert(slideShowArgs, text)
+		end
+	end
+	if #subpages &gt; 0 then
+		local randomSubpages = randomModule.main('array', {t=subpages, limit=math.floor(limit / 2)})
+		for _, subpage in pairs(randomSubpages) do
+			table.insert(slideShowArgs, 'Blank.png')
+			local subpageContent = replaceNewlines(frame:expandTemplate{ title = subpage })
+			table.insert(slideShowArgs, subpageContent)
+		end
+	end
+	return slideShowArgs
+end
+
+-- == Main functions ==
+-- Create a list gallery of all passed images
+local function gallery(frame)
+	local args = getCleanArgs(frame)
+	local dates, images, subpages = extractPictures(args)
+	local texts = {}
+
+	for _, value in pairs(dates) do
+		local topText = '&lt;span id="Template:POTD/' .. value .. '"&gt;&lt;/span&gt;' .. "[[Template:POTD/" .. value .. "]]\n\n"
+		table.insert(texts,	topText .. formatPortalPotd(frame, value))
+	end
+	for _, image in pairs(images) do
+		local topText = "[[:File:" .. image['file'] .. "]]\n\n"
+		local bottomText = formatPotdText(frame, image['title'], image['credit'], image['caption'])
+		table.insert(texts, topText .. formatFile(image['file']) .. "\n\n" .. bottomText)
+	end
+	for _, subpage in pairs(subpages) do
+		local topText = "[[:" .. subpage .. "]]\n\n"
+		local subpageContent = frame:expandTemplate{ title = subpage }
+		table.insert(texts, topText .. subpageContent)
+	end
+	return frame:preprocess(table.concat(texts, "\n----\n"))
+end
+
+-- Create a slideshow of passed images using [[Module:Random slideshow]]
+local function slideShow(frame)
+	local args = getCleanArgs(frame)
+	local more = args["more"] or getDefaultMoreLink(args)
+	local dates, images, subpages = extractPictures(args)
+	local limit = 15
+
+	local slideShowArgs = makeSlideShowArgs(frame, dates, images, subpages, more, limit)
+
+	local slideShow = slideshowModule._main(slideShowArgs, false, 'portalSlideshow-container')
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } .. frame:preprocess(slideShow)
+end
+
+-- entry point for the module
+function main(frame)
+	local title = mw.title.getCurrentTitle()
+	if title.isSubpage
+	then
+		return gallery(frame)
+	else
+		return slideShow(frame)
+	end
+end
+
+p.main = main
+p.slideShow = slideShow
+p.gallery = gallery
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]
+[[Category:Pages and Categories from Wikipedia]][[en:{{{subst:PAGENAME}}}]][[Category:kk]]
+[[Category:qq]][[Category:subst:PAGENAME}}]][[Category:qq]]</text>
+      <sha1>j679nyzctu71n6lv24zb7wghclzo0j1</sha1>
+    </revision>
+    <revision>
+      <id>787906</id>
+      <parentid>787905</parentid>
+      <timestamp>2025-04-29T10:47:15Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "[[Category:qq]]" to ""</comment>
+      <origin>787906</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7414" sha1="t7mpxsryevc4i2k8wcqlmb4dxn76zz6" xml:space="preserve">local getArgs = require('Module:Arguments').getArgs
+local randomModule = require('Module:Random')
+local yesno = require('Module:Yesno')
+local slideshowModule = require('Module:Random slideshow')
+
+p = {}
+
+-- == Utility functions ==
+local function getCleanArgs(frame)
+	return getArgs(frame, {
+		trim = true,
+		removeBlanks = true
+	})
+end
+
+local function wikiError(message)
+	return mw.html.create('div'):addClass('error'):wikitext(message)
+end
+
+-- replace all newlines in the string with break tags
+-- slideshow only supports single line captions
+local function replaceNewlines(s)
+	return mw.ustring.gsub(s, '%c', '&lt;br /&gt;')
+end
+
+-- == Argument preparation functions ==
+-- Extracts dates, custom images, and subpages from args
+local function extractPictures(args)
+	local dates = {}
+	local images = {}
+	local subpages = {}
+	for key, value in pairs(args) do
+		if value then
+			if type(key) == "number" then
+				-- positional parameters correspond to POTD dates
+				table.insert(dates, value)
+			elseif string.sub(key, 1, 1) == "i" then
+				-- named parameters with prefixes "i", "title", "credit", and "caption"
+				-- correspond to custom images
+				local num = string.sub(key, 2)
+				local title = args["title" .. num]
+				local credit = args["credit" .. num]
+				local caption = args["caption" .. num] or ""
+				local image = {
+					file = value,
+					title = title,
+					credit = credit,
+					caption = caption
+				}
+				table.insert(images, image)
+			end
+		end
+	end
+	local subpageMax = tonumber(args['subpagemax']) or 0
+	if subpageMax &gt; 0
+	then
+		local root = args['demoroot'] or (mw.title.getCurrentTitle().rootPageTitle.prefixedText)
+		local picturesRoot = root .. '/' .. (args['subpage'] or 'Selected picture')
+		for i = 1, subpageMax do
+			table.insert(subpages, picturesRoot .. '/' .. tostring(i))
+		end
+	end
+	return dates, images, subpages
+end
+
+local function getDefaultMoreLink(args)
+	local root = args['demoroot'] or (mw.title.getCurrentTitle().rootPageTitle.prefixedText)
+	local picturesPage = args['subpage'] or 'Selected picture'
+	return "[[" .. root .. "/" .. picturesPage .. "|More selected pictures]]"
+end
+
+-- == Formatting functions ==
+-- transclude [[Template:Portal POTD]]
+local function formatPortalPotd(frame, potdDate)
+	return frame:expandTemplate{
+		title = "Portal POTD",
+		args = {
+			potdDate,
+			more = 'no'
+		}
+	}
+end
+
+local function formatMoreHtml(more)
+	if not yesno(more, true)
+	then
+		return ""
+	end
+	local moreHtml = mw.html.create('div')
+		:attr("class", "noprint")
+		:attr("style", "margin-top:0.5em; font-weight:bold; width:100%; text-align:right;")
+		:wikitext(more)
+	return tostring(moreHtml)
+end
+
+-- manual recreation of the bottom half of [[Template:Portal POTD]]
+local function formatPotdText(frame, titleText, creditText, captionText, moreHtml)
+	local res = frame:expandTemplate{
+		title = "POTD portal layout/text",
+		args = {
+			title = titleText,
+			credit = creditText,
+			caption = captionText,
+			['margin-top']='0.5em'
+		}
+	}
+	if moreHtml
+	then
+		-- ideally, the "more" text should be trancluded _once_ for the whole box
+		-- but we do it for _every_ image for compatibility with portals, which use numbered subpages
+		res = res .. moreHtml
+	end
+	return res
+end
+
+local function formatFile(filename)
+	local html = mw.html.create('div')
+		:attr("class", "center")
+		:wikitext("[[File:" .. filename .. "|380px]]")
+	return tostring(html)
+end
+
+-- Extract value named "paramName" from a subpage of [[Template:POTD]]
+local function getPotdPart(frame, potdSubpage, paramName)
+	return frame:expandTemplate{
+		title = potdSubpage,
+		args = { paramName }
+	}
+end
+
+-- bottom half of [[Template:Portal POTD]] for a POTD subpage
+local function getPotdText(frame, potdDate, moreHtml)
+	local potdText = getPotdPart(frame, "POTD/" .. potdDate, "portal layout/text")
+	potdText = replaceNewlines(potdText)
+	if moreHtml
+	then
+		potdText = potdText .. moreHtml
+	end
+	return potdText
+end
+
+-- prepare arguments for [[Module:Random slideshow]]
+-- alternating: image1, text1, image2, text2, ...
+local function makeSlideShowArgs(frame, dates, images, subpages, more, limit)
+	local slideShowArgs = {}
+	local moreHtml = formatMoreHtml(more)
+	if #dates &gt; 0 then
+		local randomDates = randomModule.main('array', {t=dates, limit=limit})
+		for _, potdDate in ipairs(randomDates) do
+			local image = getPotdPart(frame, "POTD/" .. potdDate, "image")
+			local image2 = ''
+			if image == '{{{image}}}' then
+				image = getPotdPart(frame, "POTD/" .. potdDate, "image1")
+				image2 = '[[File:' .. getPotdPart(frame, "POTD/" .. potdDate, "image2") .. '|200px|center]]'
+			end
+			local text = image2 .. getPotdText(frame, potdDate, moreHtml)
+			table.insert(slideShowArgs, image)
+			table.insert(slideShowArgs, text)
+		end
+	end
+	if #images &gt; 0 then
+		local randomImages = randomModule.main('array', {t=images, limit=limit})
+		for _, image in pairs(randomImages) do
+			table.insert(slideShowArgs, image['file'])
+			local text = formatPotdText(frame, image['title'], image['credit'], image['caption'], moreHtml)
+			table.insert(slideShowArgs, text)
+		end
+	end
+	if #subpages &gt; 0 then
+		local randomSubpages = randomModule.main('array', {t=subpages, limit=math.floor(limit / 2)})
+		for _, subpage in pairs(randomSubpages) do
+			table.insert(slideShowArgs, 'Blank.png')
+			local subpageContent = replaceNewlines(frame:expandTemplate{ title = subpage })
+			table.insert(slideShowArgs, subpageContent)
+		end
+	end
+	return slideShowArgs
+end
+
+-- == Main functions ==
+-- Create a list gallery of all passed images
+local function gallery(frame)
+	local args = getCleanArgs(frame)
+	local dates, images, subpages = extractPictures(args)
+	local texts = {}
+
+	for _, value in pairs(dates) do
+		local topText = '&lt;span id="Template:POTD/' .. value .. '"&gt;&lt;/span&gt;' .. "[[Template:POTD/" .. value .. "]]\n\n"
+		table.insert(texts,	topText .. formatPortalPotd(frame, value))
+	end
+	for _, image in pairs(images) do
+		local topText = "[[:File:" .. image['file'] .. "]]\n\n"
+		local bottomText = formatPotdText(frame, image['title'], image['credit'], image['caption'])
+		table.insert(texts, topText .. formatFile(image['file']) .. "\n\n" .. bottomText)
+	end
+	for _, subpage in pairs(subpages) do
+		local topText = "[[:" .. subpage .. "]]\n\n"
+		local subpageContent = frame:expandTemplate{ title = subpage }
+		table.insert(texts, topText .. subpageContent)
+	end
+	return frame:preprocess(table.concat(texts, "\n----\n"))
+end
+
+-- Create a slideshow of passed images using [[Module:Random slideshow]]
+local function slideShow(frame)
+	local args = getCleanArgs(frame)
+	local more = args["more"] or getDefaultMoreLink(args)
+	local dates, images, subpages = extractPictures(args)
+	local limit = 15
+
+	local slideShowArgs = makeSlideShowArgs(frame, dates, images, subpages, more, limit)
+
+	local slideShow = slideshowModule._main(slideShowArgs, false, 'portalSlideshow-container')
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } .. frame:preprocess(slideShow)
+end
+
+-- entry point for the module
+function main(frame)
+	local title = mw.title.getCurrentTitle()
+	if title.isSubpage
+	then
+		return gallery(frame)
+	else
+		return slideShow(frame)
+	end
+end
+
+p.main = main
+p.slideShow = slideShow
+p.gallery = gallery
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]
+[[Category:Pages and Categories from Wikipedia]][[en:{{{subst:PAGENAME}}}]][[Category:kk]]
+[[Category:subst:PAGENAME}}]]</text>
+      <sha1>t7mpxsryevc4i2k8wcqlmb4dxn76zz6</sha1>
+    </revision>
+    <revision>
+      <id>787907</id>
+      <parentid>787906</parentid>
+      <timestamp>2025-05-03T01:10:53Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "{{{subst:PAGENAME}}}" to "{{subst:PAGENAME}}"</comment>
+      <origin>787907</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7412" sha1="82nww6zv586si6z2xfzbut3ygsf7z1a" xml:space="preserve">local getArgs = require('Module:Arguments').getArgs
+local randomModule = require('Module:Random')
+local yesno = require('Module:Yesno')
+local slideshowModule = require('Module:Random slideshow')
+
+p = {}
+
+-- == Utility functions ==
+local function getCleanArgs(frame)
+	return getArgs(frame, {
+		trim = true,
+		removeBlanks = true
+	})
+end
+
+local function wikiError(message)
+	return mw.html.create('div'):addClass('error'):wikitext(message)
+end
+
+-- replace all newlines in the string with break tags
+-- slideshow only supports single line captions
+local function replaceNewlines(s)
+	return mw.ustring.gsub(s, '%c', '&lt;br /&gt;')
+end
+
+-- == Argument preparation functions ==
+-- Extracts dates, custom images, and subpages from args
+local function extractPictures(args)
+	local dates = {}
+	local images = {}
+	local subpages = {}
+	for key, value in pairs(args) do
+		if value then
+			if type(key) == "number" then
+				-- positional parameters correspond to POTD dates
+				table.insert(dates, value)
+			elseif string.sub(key, 1, 1) == "i" then
+				-- named parameters with prefixes "i", "title", "credit", and "caption"
+				-- correspond to custom images
+				local num = string.sub(key, 2)
+				local title = args["title" .. num]
+				local credit = args["credit" .. num]
+				local caption = args["caption" .. num] or ""
+				local image = {
+					file = value,
+					title = title,
+					credit = credit,
+					caption = caption
+				}
+				table.insert(images, image)
+			end
+		end
+	end
+	local subpageMax = tonumber(args['subpagemax']) or 0
+	if subpageMax &gt; 0
+	then
+		local root = args['demoroot'] or (mw.title.getCurrentTitle().rootPageTitle.prefixedText)
+		local picturesRoot = root .. '/' .. (args['subpage'] or 'Selected picture')
+		for i = 1, subpageMax do
+			table.insert(subpages, picturesRoot .. '/' .. tostring(i))
+		end
+	end
+	return dates, images, subpages
+end
+
+local function getDefaultMoreLink(args)
+	local root = args['demoroot'] or (mw.title.getCurrentTitle().rootPageTitle.prefixedText)
+	local picturesPage = args['subpage'] or 'Selected picture'
+	return "[[" .. root .. "/" .. picturesPage .. "|More selected pictures]]"
+end
+
+-- == Formatting functions ==
+-- transclude [[Template:Portal POTD]]
+local function formatPortalPotd(frame, potdDate)
+	return frame:expandTemplate{
+		title = "Portal POTD",
+		args = {
+			potdDate,
+			more = 'no'
+		}
+	}
+end
+
+local function formatMoreHtml(more)
+	if not yesno(more, true)
+	then
+		return ""
+	end
+	local moreHtml = mw.html.create('div')
+		:attr("class", "noprint")
+		:attr("style", "margin-top:0.5em; font-weight:bold; width:100%; text-align:right;")
+		:wikitext(more)
+	return tostring(moreHtml)
+end
+
+-- manual recreation of the bottom half of [[Template:Portal POTD]]
+local function formatPotdText(frame, titleText, creditText, captionText, moreHtml)
+	local res = frame:expandTemplate{
+		title = "POTD portal layout/text",
+		args = {
+			title = titleText,
+			credit = creditText,
+			caption = captionText,
+			['margin-top']='0.5em'
+		}
+	}
+	if moreHtml
+	then
+		-- ideally, the "more" text should be trancluded _once_ for the whole box
+		-- but we do it for _every_ image for compatibility with portals, which use numbered subpages
+		res = res .. moreHtml
+	end
+	return res
+end
+
+local function formatFile(filename)
+	local html = mw.html.create('div')
+		:attr("class", "center")
+		:wikitext("[[File:" .. filename .. "|380px]]")
+	return tostring(html)
+end
+
+-- Extract value named "paramName" from a subpage of [[Template:POTD]]
+local function getPotdPart(frame, potdSubpage, paramName)
+	return frame:expandTemplate{
+		title = potdSubpage,
+		args = { paramName }
+	}
+end
+
+-- bottom half of [[Template:Portal POTD]] for a POTD subpage
+local function getPotdText(frame, potdDate, moreHtml)
+	local potdText = getPotdPart(frame, "POTD/" .. potdDate, "portal layout/text")
+	potdText = replaceNewlines(potdText)
+	if moreHtml
+	then
+		potdText = potdText .. moreHtml
+	end
+	return potdText
+end
+
+-- prepare arguments for [[Module:Random slideshow]]
+-- alternating: image1, text1, image2, text2, ...
+local function makeSlideShowArgs(frame, dates, images, subpages, more, limit)
+	local slideShowArgs = {}
+	local moreHtml = formatMoreHtml(more)
+	if #dates &gt; 0 then
+		local randomDates = randomModule.main('array', {t=dates, limit=limit})
+		for _, potdDate in ipairs(randomDates) do
+			local image = getPotdPart(frame, "POTD/" .. potdDate, "image")
+			local image2 = ''
+			if image == '{{{image}}}' then
+				image = getPotdPart(frame, "POTD/" .. potdDate, "image1")
+				image2 = '[[File:' .. getPotdPart(frame, "POTD/" .. potdDate, "image2") .. '|200px|center]]'
+			end
+			local text = image2 .. getPotdText(frame, potdDate, moreHtml)
+			table.insert(slideShowArgs, image)
+			table.insert(slideShowArgs, text)
+		end
+	end
+	if #images &gt; 0 then
+		local randomImages = randomModule.main('array', {t=images, limit=limit})
+		for _, image in pairs(randomImages) do
+			table.insert(slideShowArgs, image['file'])
+			local text = formatPotdText(frame, image['title'], image['credit'], image['caption'], moreHtml)
+			table.insert(slideShowArgs, text)
+		end
+	end
+	if #subpages &gt; 0 then
+		local randomSubpages = randomModule.main('array', {t=subpages, limit=math.floor(limit / 2)})
+		for _, subpage in pairs(randomSubpages) do
+			table.insert(slideShowArgs, 'Blank.png')
+			local subpageContent = replaceNewlines(frame:expandTemplate{ title = subpage })
+			table.insert(slideShowArgs, subpageContent)
+		end
+	end
+	return slideShowArgs
+end
+
+-- == Main functions ==
+-- Create a list gallery of all passed images
+local function gallery(frame)
+	local args = getCleanArgs(frame)
+	local dates, images, subpages = extractPictures(args)
+	local texts = {}
+
+	for _, value in pairs(dates) do
+		local topText = '&lt;span id="Template:POTD/' .. value .. '"&gt;&lt;/span&gt;' .. "[[Template:POTD/" .. value .. "]]\n\n"
+		table.insert(texts,	topText .. formatPortalPotd(frame, value))
+	end
+	for _, image in pairs(images) do
+		local topText = "[[:File:" .. image['file'] .. "]]\n\n"
+		local bottomText = formatPotdText(frame, image['title'], image['credit'], image['caption'])
+		table.insert(texts, topText .. formatFile(image['file']) .. "\n\n" .. bottomText)
+	end
+	for _, subpage in pairs(subpages) do
+		local topText = "[[:" .. subpage .. "]]\n\n"
+		local subpageContent = frame:expandTemplate{ title = subpage }
+		table.insert(texts, topText .. subpageContent)
+	end
+	return frame:preprocess(table.concat(texts, "\n----\n"))
+end
+
+-- Create a slideshow of passed images using [[Module:Random slideshow]]
+local function slideShow(frame)
+	local args = getCleanArgs(frame)
+	local more = args["more"] or getDefaultMoreLink(args)
+	local dates, images, subpages = extractPictures(args)
+	local limit = 15
+
+	local slideShowArgs = makeSlideShowArgs(frame, dates, images, subpages, more, limit)
+
+	local slideShow = slideshowModule._main(slideShowArgs, false, 'portalSlideshow-container')
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } .. frame:preprocess(slideShow)
+end
+
+-- entry point for the module
+function main(frame)
+	local title = mw.title.getCurrentTitle()
+	if title.isSubpage
+	then
+		return gallery(frame)
+	else
+		return slideShow(frame)
+	end
+end
+
+p.main = main
+p.slideShow = slideShow
+p.gallery = gallery
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]
+[[Category:Pages and Categories from Wikipedia]][[en:{{subst:PAGENAME}}]][[Category:kk]]
+[[Category:subst:PAGENAME}}]]</text>
+      <sha1>82nww6zv586si6z2xfzbut3ygsf7z1a</sha1>
+    </revision>
+    <revision>
+      <id>5012</id>
+      <timestamp>2025-05-22T09:14:54Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Bot: convert local/ILL link → enwiki interwiki</comment>
+      <origin>5012</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="7487" sha1="5tyxucxjpikq1nnshxz3ojz1k7756fy" xml:space="preserve">local getArgs = require('Module:Arguments').getArgs
+local randomModule = require('Module:Random')
+local yesno = require('Module:Yesno')
+local slideshowModule = require('Module:Random slideshow')
+
+p = {}
+
+-- == Utility functions ==
+local function getCleanArgs(frame)
+	return getArgs(frame, {
+		trim = true,
+		removeBlanks = true
+	})
+end
+
+local function wikiError(message)
+	return mw.html.create('div'):addClass('error'):wikitext(message)
+end
+
+-- replace all newlines in the string with break tags
+-- slideshow only supports single line captions
+local function replaceNewlines(s)
+	return mw.ustring.gsub(s, '%c', '&lt;br /&gt;')
+end
+
+-- == Argument preparation functions ==
+-- Extracts dates, custom images, and subpages from args
+local function extractPictures(args)
+	local dates = {}
+	local images = {}
+	local subpages = {}
+	for key, value in pairs(args) do
+		if value then
+			if type(key) == "number" then
+				-- positional parameters correspond to POTD dates
+				table.insert(dates, value)
+			elseif string.sub(key, 1, 1) == "i" then
+				-- named parameters with prefixes "i", "title", "credit", and "caption"
+				-- correspond to custom images
+				local num = string.sub(key, 2)
+				local title = args["title" .. num]
+				local credit = args["credit" .. num]
+				local caption = args["caption" .. num] or ""
+				local image = {
+					file = value,
+					title = title,
+					credit = credit,
+					caption = caption
+				}
+				table.insert(images, image)
+			end
+		end
+	end
+	local subpageMax = tonumber(args['subpagemax']) or 0
+	if subpageMax &gt; 0
+	then
+		local root = args['demoroot'] or (mw.title.getCurrentTitle().rootPageTitle.prefixedText)
+		local picturesRoot = root .. '/' .. (args['subpage'] or 'Selected picture')
+		for i = 1, subpageMax do
+			table.insert(subpages, picturesRoot .. '/' .. tostring(i))
+		end
+	end
+	return dates, images, subpages
+end
+
+local function getDefaultMoreLink(args)
+	local root = args['demoroot'] or (mw.title.getCurrentTitle().rootPageTitle.prefixedText)
+	local picturesPage = args['subpage'] or 'Selected picture'
+	return "[[" .. root .. "/" .. picturesPage .. "|More selected pictures]]"
+end
+
+-- == Formatting functions ==
+-- transclude [[:en:Template:Portal POTD|Template:Portal POTD]]
+local function formatPortalPotd(frame, potdDate)
+	return frame:expandTemplate{
+		title = "Portal POTD",
+		args = {
+			potdDate,
+			more = 'no'
+		}
+	}
+end
+
+local function formatMoreHtml(more)
+	if not yesno(more, true)
+	then
+		return ""
+	end
+	local moreHtml = mw.html.create('div')
+		:attr("class", "noprint")
+		:attr("style", "margin-top:0.5em; font-weight:bold; width:100%; text-align:right;")
+		:wikitext(more)
+	return tostring(moreHtml)
+end
+
+-- manual recreation of the bottom half of [[:en:Template:Portal POTD|Template:Portal POTD]]
+local function formatPotdText(frame, titleText, creditText, captionText, moreHtml)
+	local res = frame:expandTemplate{
+		title = "POTD portal layout/text",
+		args = {
+			title = titleText,
+			credit = creditText,
+			caption = captionText,
+			['margin-top']='0.5em'
+		}
+	}
+	if moreHtml
+	then
+		-- ideally, the "more" text should be trancluded _once_ for the whole box
+		-- but we do it for _every_ image for compatibility with portals, which use numbered subpages
+		res = res .. moreHtml
+	end
+	return res
+end
+
+local function formatFile(filename)
+	local html = mw.html.create('div')
+		:attr("class", "center")
+		:wikitext("[[File:" .. filename .. "|380px]]")
+	return tostring(html)
+end
+
+-- Extract value named "paramName" from a subpage of [[Template:POTD]]
+local function getPotdPart(frame, potdSubpage, paramName)
+	return frame:expandTemplate{
+		title = potdSubpage,
+		args = { paramName }
+	}
+end
+
+-- bottom half of [[:en:Template:Portal POTD|Template:Portal POTD]] for a POTD subpage
+local function getPotdText(frame, potdDate, moreHtml)
+	local potdText = getPotdPart(frame, "POTD/" .. potdDate, "portal layout/text")
+	potdText = replaceNewlines(potdText)
+	if moreHtml
+	then
+		potdText = potdText .. moreHtml
+	end
+	return potdText
+end
+
+-- prepare arguments for [[Module:Random slideshow]]
+-- alternating: image1, text1, image2, text2, ...
+local function makeSlideShowArgs(frame, dates, images, subpages, more, limit)
+	local slideShowArgs = {}
+	local moreHtml = formatMoreHtml(more)
+	if #dates &gt; 0 then
+		local randomDates = randomModule.main('array', {t=dates, limit=limit})
+		for _, potdDate in ipairs(randomDates) do
+			local image = getPotdPart(frame, "POTD/" .. potdDate, "image")
+			local image2 = ''
+			if image == '{{{image}}}' then
+				image = getPotdPart(frame, "POTD/" .. potdDate, "image1")
+				image2 = '[[File:' .. getPotdPart(frame, "POTD/" .. potdDate, "image2") .. '|200px|center]]'
+			end
+			local text = image2 .. getPotdText(frame, potdDate, moreHtml)
+			table.insert(slideShowArgs, image)
+			table.insert(slideShowArgs, text)
+		end
+	end
+	if #images &gt; 0 then
+		local randomImages = randomModule.main('array', {t=images, limit=limit})
+		for _, image in pairs(randomImages) do
+			table.insert(slideShowArgs, image['file'])
+			local text = formatPotdText(frame, image['title'], image['credit'], image['caption'], moreHtml)
+			table.insert(slideShowArgs, text)
+		end
+	end
+	if #subpages &gt; 0 then
+		local randomSubpages = randomModule.main('array', {t=subpages, limit=math.floor(limit / 2)})
+		for _, subpage in pairs(randomSubpages) do
+			table.insert(slideShowArgs, 'Blank.png')
+			local subpageContent = replaceNewlines(frame:expandTemplate{ title = subpage })
+			table.insert(slideShowArgs, subpageContent)
+		end
+	end
+	return slideShowArgs
+end
+
+-- == Main functions ==
+-- Create a list gallery of all passed images
+local function gallery(frame)
+	local args = getCleanArgs(frame)
+	local dates, images, subpages = extractPictures(args)
+	local texts = {}
+
+	for _, value in pairs(dates) do
+		local topText = '&lt;span id="Template:POTD/' .. value .. '"&gt;&lt;/span&gt;' .. "[[Template:POTD/" .. value .. "]]\n\n"
+		table.insert(texts,	topText .. formatPortalPotd(frame, value))
+	end
+	for _, image in pairs(images) do
+		local topText = "[[:File:" .. image['file'] .. "]]\n\n"
+		local bottomText = formatPotdText(frame, image['title'], image['credit'], image['caption'])
+		table.insert(texts, topText .. formatFile(image['file']) .. "\n\n" .. bottomText)
+	end
+	for _, subpage in pairs(subpages) do
+		local topText = "[[:" .. subpage .. "]]\n\n"
+		local subpageContent = frame:expandTemplate{ title = subpage }
+		table.insert(texts, topText .. subpageContent)
+	end
+	return frame:preprocess(table.concat(texts, "\n----\n"))
+end
+
+-- Create a slideshow of passed images using [[Module:Random slideshow]]
+local function slideShow(frame)
+	local args = getCleanArgs(frame)
+	local more = args["more"] or getDefaultMoreLink(args)
+	local dates, images, subpages = extractPictures(args)
+	local limit = 15
+
+	local slideShowArgs = makeSlideShowArgs(frame, dates, images, subpages, more, limit)
+
+	local slideShow = slideshowModule._main(slideShowArgs, false, 'portalSlideshow-container')
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } .. frame:preprocess(slideShow)
+end
+
+-- entry point for the module
+function main(frame)
+	local title = mw.title.getCurrentTitle()
+	if title.isSubpage
+	then
+		return gallery(frame)
+	else
+		return slideShow(frame)
+	end
+end
+
+p.main = main
+p.slideShow = slideShow
+p.gallery = gallery
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]
+[[Category:Pages and Categories from Wikipedia]][[en:{{subst:PAGENAME}}]][[Category:kk]]
+[[Category:subst:PAGENAME}}]]</text>
+      <sha1>5tyxucxjpikq1nnshxz3ojz1k7756fy</sha1>
+    </revision>
+  </page>
+</mediawiki>

@@ -1,0 +1,565 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:WikidataCheck/sandbox</title>
+    <ns>828</ns>
+    <id>5961</id>
+    <revision>
+      <id>832611</id>
+      <timestamp>2023-11-30T10:34:06Z</timestamp>
+      <contributor>
+        <username>en&gt;DefaultFree</username>
+        <id>0</id>
+      </contributor>
+      <comment>fix bug that was causing onlysourced logic to apply even when onlysourced parameter is absent</comment>
+      <origin>832611</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2335" sha1="0aruyv7g8m0jjwgb2002hlhcpqup2xw" xml:space="preserve">local p = {}
+
+function p.wikidatacheck(frame)
+	local pframe = frame:getParent()
+	local config = frame.args -- the arguments passed BY the template, in the wikitext of the template itself
+	local args = pframe.args -- the arguments passed TO the template, in the wikitext that transcludes the template
+
+	local property = config.property
+	local value = config.value or ""
+	local catbase = config.category
+	local namespaces = config.namespaces
+	local nocatsame = config.nocatsame or ""
+	local ignorecase = config.ignorecase or ""
+	local qid = config.qid or ""
+	local onlysourced = (config.onlysourced == 'yes') or false
+	local ok = false -- one-way flag to check if we're in a good namespace
+	local ns = mw.title.getCurrentTitle().namespace
+	
+	for v in mw.text.gsplit( namespaces, ",", true) do
+		if tonumber(v) == ns then
+			ok = true
+		end
+	end
+	if not ok then -- not in one of the approved namespaces
+		return ""
+	end
+	local entity
+	if qid == "" then
+		entity = mw.wikibase.getEntityObject()
+	else
+		entity = mw.wikibase.getEntityObject(qid)
+	end
+	if not entity then -- no Wikidata item
+		return "[[Category:" .. catbase .. " not in Wikidata]]"
+	end
+	if value == "" then
+		return nil -- Using Wikidata
+	end
+	local claims = entity.claims or {}
+	local hasProp = claims[property]
+	if not hasProp then -- no claim of that property
+		return "[[Category:" .. catbase .. " not in Wikidata]]" -- bad. Bot needs to add the property
+	end
+	if ignorecase ~= "" then
+		value = string.lower( value )
+	end
+	for i, v in ipairs(hasProp) do -- Now we try to iterate over all possible values?
+		propValue = (v.mainsnak.datavalue or {}).value
+		if ignorecase ~= "" then
+			propValue = string.lower( propValue )
+		end
+		local sourced = false -- check for external refs a la Module:WikidataIB onlysourced
+		if v.references then
+			for j, vr in ipairs(v.references) do
+				local ref = mw.wikibase.renderSnaks(vr.snaks)
+				if not ref:find("Wiki") then
+					sourced = true
+					break
+				end
+			end
+		end
+		if propValue == value and (not onlysourced or sourced) then
+			if nocatsame == "" then
+				return "[[Category:" .. catbase .. " same as Wikidata]]" -- yay!
+			else
+				return nil -- if nocatsame, the "same as" category is not added
+			end
+		end
+	end
+	return "[[Category:" .. catbase .. " different from Wikidata]]" -- needs human review :(
+end
+
+return p</text>
+      <sha1>0aruyv7g8m0jjwgb2002hlhcpqup2xw</sha1>
+    </revision>
+    <revision>
+      <id>5962</id>
+      <timestamp>2024-12-31T06:41:36Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: Mass importing wikipedia categories, not taking histories because these are unused ones and it is kind of obvious where they came from</comment>
+      <origin>5962</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2335" sha1="0aruyv7g8m0jjwgb2002hlhcpqup2xw" xml:space="preserve">local p = {}
+
+function p.wikidatacheck(frame)
+	local pframe = frame:getParent()
+	local config = frame.args -- the arguments passed BY the template, in the wikitext of the template itself
+	local args = pframe.args -- the arguments passed TO the template, in the wikitext that transcludes the template
+
+	local property = config.property
+	local value = config.value or ""
+	local catbase = config.category
+	local namespaces = config.namespaces
+	local nocatsame = config.nocatsame or ""
+	local ignorecase = config.ignorecase or ""
+	local qid = config.qid or ""
+	local onlysourced = (config.onlysourced == 'yes') or false
+	local ok = false -- one-way flag to check if we're in a good namespace
+	local ns = mw.title.getCurrentTitle().namespace
+	
+	for v in mw.text.gsplit( namespaces, ",", true) do
+		if tonumber(v) == ns then
+			ok = true
+		end
+	end
+	if not ok then -- not in one of the approved namespaces
+		return ""
+	end
+	local entity
+	if qid == "" then
+		entity = mw.wikibase.getEntityObject()
+	else
+		entity = mw.wikibase.getEntityObject(qid)
+	end
+	if not entity then -- no Wikidata item
+		return "[[Category:" .. catbase .. " not in Wikidata]]"
+	end
+	if value == "" then
+		return nil -- Using Wikidata
+	end
+	local claims = entity.claims or {}
+	local hasProp = claims[property]
+	if not hasProp then -- no claim of that property
+		return "[[Category:" .. catbase .. " not in Wikidata]]" -- bad. Bot needs to add the property
+	end
+	if ignorecase ~= "" then
+		value = string.lower( value )
+	end
+	for i, v in ipairs(hasProp) do -- Now we try to iterate over all possible values?
+		propValue = (v.mainsnak.datavalue or {}).value
+		if ignorecase ~= "" then
+			propValue = string.lower( propValue )
+		end
+		local sourced = false -- check for external refs a la Module:WikidataIB onlysourced
+		if v.references then
+			for j, vr in ipairs(v.references) do
+				local ref = mw.wikibase.renderSnaks(vr.snaks)
+				if not ref:find("Wiki") then
+					sourced = true
+					break
+				end
+			end
+		end
+		if propValue == value and (not onlysourced or sourced) then
+			if nocatsame == "" then
+				return "[[Category:" .. catbase .. " same as Wikidata]]" -- yay!
+			else
+				return nil -- if nocatsame, the "same as" category is not added
+			end
+		end
+	end
+	return "[[Category:" .. catbase .. " different from Wikidata]]" -- needs human review :(
+end
+
+return p</text>
+      <sha1>0aruyv7g8m0jjwgb2002hlhcpqup2xw</sha1>
+    </revision>
+    <revision>
+      <id>3412073</id>
+      <parentid>5962</parentid>
+      <timestamp>2026-03-13T00:15:53Z</timestamp>
+      <contributor>
+        <username>en&gt;DefaultFree</username>
+        <id>0</id>
+      </contributor>
+      <comment>fix bug that was causing onlysourced logic to apply even when onlysourced parameter is absent</comment>
+      <origin>5962</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2335" sha1="0aruyv7g8m0jjwgb2002hlhcpqup2xw" xml:space="preserve">local p = {}
+
+function p.wikidatacheck(frame)
+	local pframe = frame:getParent()
+	local config = frame.args -- the arguments passed BY the template, in the wikitext of the template itself
+	local args = pframe.args -- the arguments passed TO the template, in the wikitext that transcludes the template
+
+	local property = config.property
+	local value = config.value or ""
+	local catbase = config.category
+	local namespaces = config.namespaces
+	local nocatsame = config.nocatsame or ""
+	local ignorecase = config.ignorecase or ""
+	local qid = config.qid or ""
+	local onlysourced = (config.onlysourced == 'yes') or false
+	local ok = false -- one-way flag to check if we're in a good namespace
+	local ns = mw.title.getCurrentTitle().namespace
+	
+	for v in mw.text.gsplit( namespaces, ",", true) do
+		if tonumber(v) == ns then
+			ok = true
+		end
+	end
+	if not ok then -- not in one of the approved namespaces
+		return ""
+	end
+	local entity
+	if qid == "" then
+		entity = mw.wikibase.getEntityObject()
+	else
+		entity = mw.wikibase.getEntityObject(qid)
+	end
+	if not entity then -- no Wikidata item
+		return "[[Category:" .. catbase .. " not in Wikidata]]"
+	end
+	if value == "" then
+		return nil -- Using Wikidata
+	end
+	local claims = entity.claims or {}
+	local hasProp = claims[property]
+	if not hasProp then -- no claim of that property
+		return "[[Category:" .. catbase .. " not in Wikidata]]" -- bad. Bot needs to add the property
+	end
+	if ignorecase ~= "" then
+		value = string.lower( value )
+	end
+	for i, v in ipairs(hasProp) do -- Now we try to iterate over all possible values?
+		propValue = (v.mainsnak.datavalue or {}).value
+		if ignorecase ~= "" then
+			propValue = string.lower( propValue )
+		end
+		local sourced = false -- check for external refs a la Module:WikidataIB onlysourced
+		if v.references then
+			for j, vr in ipairs(v.references) do
+				local ref = mw.wikibase.renderSnaks(vr.snaks)
+				if not ref:find("Wiki") then
+					sourced = true
+					break
+				end
+			end
+		end
+		if propValue == value and (not onlysourced or sourced) then
+			if nocatsame == "" then
+				return "[[Category:" .. catbase .. " same as Wikidata]]" -- yay!
+			else
+				return nil -- if nocatsame, the "same as" category is not added
+			end
+		end
+	end
+	return "[[Category:" .. catbase .. " different from Wikidata]]" -- needs human review :(
+end
+
+return p</text>
+      <sha1>0aruyv7g8m0jjwgb2002hlhcpqup2xw</sha1>
+    </revision>
+    <revision>
+      <id>3412074</id>
+      <parentid>3412073</parentid>
+      <timestamp>2026-03-13T00:15:53Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: importing</comment>
+      <origin>5962</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2335" sha1="0aruyv7g8m0jjwgb2002hlhcpqup2xw" xml:space="preserve">local p = {}
+
+function p.wikidatacheck(frame)
+	local pframe = frame:getParent()
+	local config = frame.args -- the arguments passed BY the template, in the wikitext of the template itself
+	local args = pframe.args -- the arguments passed TO the template, in the wikitext that transcludes the template
+
+	local property = config.property
+	local value = config.value or ""
+	local catbase = config.category
+	local namespaces = config.namespaces
+	local nocatsame = config.nocatsame or ""
+	local ignorecase = config.ignorecase or ""
+	local qid = config.qid or ""
+	local onlysourced = (config.onlysourced == 'yes') or false
+	local ok = false -- one-way flag to check if we're in a good namespace
+	local ns = mw.title.getCurrentTitle().namespace
+	
+	for v in mw.text.gsplit( namespaces, ",", true) do
+		if tonumber(v) == ns then
+			ok = true
+		end
+	end
+	if not ok then -- not in one of the approved namespaces
+		return ""
+	end
+	local entity
+	if qid == "" then
+		entity = mw.wikibase.getEntityObject()
+	else
+		entity = mw.wikibase.getEntityObject(qid)
+	end
+	if not entity then -- no Wikidata item
+		return "[[Category:" .. catbase .. " not in Wikidata]]"
+	end
+	if value == "" then
+		return nil -- Using Wikidata
+	end
+	local claims = entity.claims or {}
+	local hasProp = claims[property]
+	if not hasProp then -- no claim of that property
+		return "[[Category:" .. catbase .. " not in Wikidata]]" -- bad. Bot needs to add the property
+	end
+	if ignorecase ~= "" then
+		value = string.lower( value )
+	end
+	for i, v in ipairs(hasProp) do -- Now we try to iterate over all possible values?
+		propValue = (v.mainsnak.datavalue or {}).value
+		if ignorecase ~= "" then
+			propValue = string.lower( propValue )
+		end
+		local sourced = false -- check for external refs a la Module:WikidataIB onlysourced
+		if v.references then
+			for j, vr in ipairs(v.references) do
+				local ref = mw.wikibase.renderSnaks(vr.snaks)
+				if not ref:find("Wiki") then
+					sourced = true
+					break
+				end
+			end
+		end
+		if propValue == value and (not onlysourced or sourced) then
+			if nocatsame == "" then
+				return "[[Category:" .. catbase .. " same as Wikidata]]" -- yay!
+			else
+				return nil -- if nocatsame, the "same as" category is not added
+			end
+		end
+	end
+	return "[[Category:" .. catbase .. " different from Wikidata]]" -- needs human review :(
+end
+
+return p</text>
+      <sha1>0aruyv7g8m0jjwgb2002hlhcpqup2xw</sha1>
+    </revision>
+    <revision>
+      <id>3412442</id>
+      <parentid>3412074</parentid>
+      <timestamp>2026-03-13T00:16:59Z</timestamp>
+      <contributor>
+        <username>en&gt;DefaultFree</username>
+        <id>0</id>
+      </contributor>
+      <comment>fix bug that was causing onlysourced logic to apply even when onlysourced parameter is absent</comment>
+      <origin>5962</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2335" sha1="0aruyv7g8m0jjwgb2002hlhcpqup2xw" xml:space="preserve">local p = {}
+
+function p.wikidatacheck(frame)
+	local pframe = frame:getParent()
+	local config = frame.args -- the arguments passed BY the template, in the wikitext of the template itself
+	local args = pframe.args -- the arguments passed TO the template, in the wikitext that transcludes the template
+
+	local property = config.property
+	local value = config.value or ""
+	local catbase = config.category
+	local namespaces = config.namespaces
+	local nocatsame = config.nocatsame or ""
+	local ignorecase = config.ignorecase or ""
+	local qid = config.qid or ""
+	local onlysourced = (config.onlysourced == 'yes') or false
+	local ok = false -- one-way flag to check if we're in a good namespace
+	local ns = mw.title.getCurrentTitle().namespace
+	
+	for v in mw.text.gsplit( namespaces, ",", true) do
+		if tonumber(v) == ns then
+			ok = true
+		end
+	end
+	if not ok then -- not in one of the approved namespaces
+		return ""
+	end
+	local entity
+	if qid == "" then
+		entity = mw.wikibase.getEntityObject()
+	else
+		entity = mw.wikibase.getEntityObject(qid)
+	end
+	if not entity then -- no Wikidata item
+		return "[[Category:" .. catbase .. " not in Wikidata]]"
+	end
+	if value == "" then
+		return nil -- Using Wikidata
+	end
+	local claims = entity.claims or {}
+	local hasProp = claims[property]
+	if not hasProp then -- no claim of that property
+		return "[[Category:" .. catbase .. " not in Wikidata]]" -- bad. Bot needs to add the property
+	end
+	if ignorecase ~= "" then
+		value = string.lower( value )
+	end
+	for i, v in ipairs(hasProp) do -- Now we try to iterate over all possible values?
+		propValue = (v.mainsnak.datavalue or {}).value
+		if ignorecase ~= "" then
+			propValue = string.lower( propValue )
+		end
+		local sourced = false -- check for external refs a la Module:WikidataIB onlysourced
+		if v.references then
+			for j, vr in ipairs(v.references) do
+				local ref = mw.wikibase.renderSnaks(vr.snaks)
+				if not ref:find("Wiki") then
+					sourced = true
+					break
+				end
+			end
+		end
+		if propValue == value and (not onlysourced or sourced) then
+			if nocatsame == "" then
+				return "[[Category:" .. catbase .. " same as Wikidata]]" -- yay!
+			else
+				return nil -- if nocatsame, the "same as" category is not added
+			end
+		end
+	end
+	return "[[Category:" .. catbase .. " different from Wikidata]]" -- needs human review :(
+end
+
+return p</text>
+      <sha1>0aruyv7g8m0jjwgb2002hlhcpqup2xw</sha1>
+    </revision>
+    <revision>
+      <id>3412444</id>
+      <parentid>3412442</parentid>
+      <timestamp>2026-03-13T00:16:59Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>5962</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2335" sha1="0aruyv7g8m0jjwgb2002hlhcpqup2xw" xml:space="preserve">local p = {}
+
+function p.wikidatacheck(frame)
+	local pframe = frame:getParent()
+	local config = frame.args -- the arguments passed BY the template, in the wikitext of the template itself
+	local args = pframe.args -- the arguments passed TO the template, in the wikitext that transcludes the template
+
+	local property = config.property
+	local value = config.value or ""
+	local catbase = config.category
+	local namespaces = config.namespaces
+	local nocatsame = config.nocatsame or ""
+	local ignorecase = config.ignorecase or ""
+	local qid = config.qid or ""
+	local onlysourced = (config.onlysourced == 'yes') or false
+	local ok = false -- one-way flag to check if we're in a good namespace
+	local ns = mw.title.getCurrentTitle().namespace
+	
+	for v in mw.text.gsplit( namespaces, ",", true) do
+		if tonumber(v) == ns then
+			ok = true
+		end
+	end
+	if not ok then -- not in one of the approved namespaces
+		return ""
+	end
+	local entity
+	if qid == "" then
+		entity = mw.wikibase.getEntityObject()
+	else
+		entity = mw.wikibase.getEntityObject(qid)
+	end
+	if not entity then -- no Wikidata item
+		return "[[Category:" .. catbase .. " not in Wikidata]]"
+	end
+	if value == "" then
+		return nil -- Using Wikidata
+	end
+	local claims = entity.claims or {}
+	local hasProp = claims[property]
+	if not hasProp then -- no claim of that property
+		return "[[Category:" .. catbase .. " not in Wikidata]]" -- bad. Bot needs to add the property
+	end
+	if ignorecase ~= "" then
+		value = string.lower( value )
+	end
+	for i, v in ipairs(hasProp) do -- Now we try to iterate over all possible values?
+		propValue = (v.mainsnak.datavalue or {}).value
+		if ignorecase ~= "" then
+			propValue = string.lower( propValue )
+		end
+		local sourced = false -- check for external refs a la Module:WikidataIB onlysourced
+		if v.references then
+			for j, vr in ipairs(v.references) do
+				local ref = mw.wikibase.renderSnaks(vr.snaks)
+				if not ref:find("Wiki") then
+					sourced = true
+					break
+				end
+			end
+		end
+		if propValue == value and (not onlysourced or sourced) then
+			if nocatsame == "" then
+				return "[[Category:" .. catbase .. " same as Wikidata]]" -- yay!
+			else
+				return nil -- if nocatsame, the "same as" category is not added
+			end
+		end
+	end
+	return "[[Category:" .. catbase .. " different from Wikidata]]" -- needs human review :(
+end
+
+return p</text>
+      <sha1>0aruyv7g8m0jjwgb2002hlhcpqup2xw</sha1>
+    </revision>
+  </page>
+</mediawiki>

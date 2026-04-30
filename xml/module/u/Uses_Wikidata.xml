@@ -1,0 +1,1620 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Uses Wikidata</title>
+    <ns>828</ns>
+    <id>178</id>
+    <revision>
+      <id>463959</id>
+      <timestamp>2022-06-08T17:12:17Z</timestamp>
+      <contributor>
+        <username>Legoktm</username>
+        <id>28</id>
+      </contributor>
+      <comment>fix capitalization of Wikidata and Wikipedia in query output</comment>
+      <origin>463959</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+    <revision>
+      <id>463960</id>
+      <parentid>463959</parentid>
+      <timestamp>2024-06-25T11:00:53Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:Uses_Wikidata]]: importing template for usage on this wiki. It is used a lot</comment>
+      <origin>463959</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+    <revision>
+      <id>463961</id>
+      <parentid>463960</parentid>
+      <timestamp>2025-02-27T21:13:15Z</timestamp>
+      <contributor>
+        <username>Legoktm</username>
+        <id>28</id>
+      </contributor>
+      <comment>fix capitalization of Wikidata and Wikipedia in query output</comment>
+      <origin>463959</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+    <revision>
+      <id>463962</id>
+      <parentid>463961</parentid>
+      <timestamp>2025-02-27T21:13:16Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: importing all the coordinates module stuff with the timestamps removed in order to force updates</comment>
+      <origin>463959</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+    <revision>
+      <id>463963</id>
+      <parentid>463962</parentid>
+      <timestamp>2025-02-27T21:15:55Z</timestamp>
+      <contributor>
+        <username>Legoktm</username>
+        <id>28</id>
+      </contributor>
+      <comment>fix capitalization of Wikidata and Wikipedia in query output</comment>
+      <origin>463959</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+    <revision>
+      <id>463964</id>
+      <parentid>463963</parentid>
+      <timestamp>2025-02-27T21:15:56Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: importing all the coordinates module stuff with the timestamps removed in order to force updates</comment>
+      <origin>463959</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+    <revision>
+      <id>463965</id>
+      <parentid>463964</parentid>
+      <timestamp>2025-04-25T22:09:16Z</timestamp>
+      <contributor>
+        <username>Legoktm</username>
+        <id>28</id>
+      </contributor>
+      <comment>fix capitalization of Wikidata and Wikipedia in query output</comment>
+      <origin>463959</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+    <revision>
+      <id>463966</id>
+      <parentid>463965</parentid>
+      <timestamp>2025-05-04T10:04:00Z</timestamp>
+      <contributor>
+        <username>Legoktm</username>
+        <id>28</id>
+      </contributor>
+      <comment>fix capitalization of Wikidata and Wikipedia in query output</comment>
+      <origin>463959</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+    <revision>
+      <id>463967</id>
+      <parentid>463966</parentid>
+      <timestamp>2025-05-05T21:26:16Z</timestamp>
+      <contributor>
+        <username>Legoktm</username>
+        <id>28</id>
+      </contributor>
+      <comment>fix capitalization of Wikidata and Wikipedia in query output</comment>
+      <origin>463959</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+    <revision>
+      <id>463968</id>
+      <parentid>463967</parentid>
+      <timestamp>2025-05-05T21:26:17Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>463959</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+    <revision>
+      <id>463969</id>
+      <parentid>463968</parentid>
+      <timestamp>2025-07-07T21:44:23Z</timestamp>
+      <contributor>
+        <username>Legoktm</username>
+        <id>28</id>
+      </contributor>
+      <comment>fix capitalization of Wikidata and Wikipedia in query output</comment>
+      <origin>463959</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+    <revision>
+      <id>463970</id>
+      <parentid>463969</parentid>
+      <timestamp>2025-07-07T22:04:39Z</timestamp>
+      <contributor>
+        <username>Legoktm</username>
+        <id>28</id>
+      </contributor>
+      <comment>fix capitalization of Wikidata and Wikipedia in query output</comment>
+      <origin>463959</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+    <revision>
+      <id>463971</id>
+      <parentid>463970</parentid>
+      <timestamp>2025-07-07T22:04:40Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>463959</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+    <revision>
+      <id>463972</id>
+      <parentid>463971</parentid>
+      <timestamp>2025-11-21T00:34:49Z</timestamp>
+      <contributor>
+        <username>en&gt;Djsasso</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:en:Module:Uses_Wikidata]]</comment>
+      <origin>463959</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+    <revision>
+      <id>179</id>
+      <timestamp>2025-11-21T00:36:10Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: overwriting coordinates so I hope they start working</comment>
+      <origin>179</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+    <revision>
+      <id>219309</id>
+      <parentid>179</parentid>
+      <timestamp>2026-02-16T18:54:09Z</timestamp>
+      <contributor>
+        <username>Legoktm</username>
+        <id>28</id>
+      </contributor>
+      <comment>fix capitalization of Wikidata and Wikipedia in query output</comment>
+      <origin>179</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+    <revision>
+      <id>219310</id>
+      <parentid>219309</parentid>
+      <timestamp>2026-02-16T18:54:09Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting this template since it seems broken in how it treats unknown parameters in [[Category:Wikidata generated shikinaisha pages]]</comment>
+      <origin>179</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+    <revision>
+      <id>3303833</id>
+      <parentid>219310</parentid>
+      <timestamp>2026-02-26T20:11:04Z</timestamp>
+      <contributor>
+        <username>Legoktm</username>
+        <id>28</id>
+      </contributor>
+      <comment>fix capitalization of Wikidata and Wikipedia in query output</comment>
+      <origin>179</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+    <revision>
+      <id>3303835</id>
+      <parentid>3303833</parentid>
+      <timestamp>2026-02-26T20:11:05Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: reimporting these to fix older errors</comment>
+      <origin>179</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+    <revision>
+      <id>3405089</id>
+      <parentid>3303835</parentid>
+      <timestamp>2026-03-12T18:09:52Z</timestamp>
+      <contributor>
+        <username>Legoktm</username>
+        <id>28</id>
+      </contributor>
+      <comment>fix capitalization of Wikidata and Wikipedia in query output</comment>
+      <origin>179</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+    <revision>
+      <id>3405090</id>
+      <parentid>3405089</parentid>
+      <timestamp>2026-03-12T18:09:52Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>179</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+    <revision>
+      <id>3407065</id>
+      <parentid>3405090</parentid>
+      <timestamp>2026-03-12T20:03:18Z</timestamp>
+      <contributor>
+        <username>Legoktm</username>
+        <id>28</id>
+      </contributor>
+      <comment>fix capitalization of Wikidata and Wikipedia in query output</comment>
+      <origin>179</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+    <revision>
+      <id>3407066</id>
+      <parentid>3407065</parentid>
+      <timestamp>2026-03-12T20:03:18Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>179</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+    <revision>
+      <id>3408204</id>
+      <parentid>3407066</parentid>
+      <timestamp>2026-03-12T20:30:45Z</timestamp>
+      <contributor>
+        <username>Legoktm</username>
+        <id>28</id>
+      </contributor>
+      <comment>fix capitalization of Wikidata and Wikipedia in query output</comment>
+      <origin>179</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+    <revision>
+      <id>3408205</id>
+      <parentid>3408204</parentid>
+      <timestamp>2026-03-12T20:30:45Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>179</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+    <revision>
+      <id>3561005</id>
+      <parentid>3408205</parentid>
+      <timestamp>2026-03-21T20:11:11Z</timestamp>
+      <contributor>
+        <username>Legoktm</username>
+        <id>28</id>
+      </contributor>
+      <comment>fix capitalization of Wikidata and Wikipedia in query output</comment>
+      <origin>179</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+    <revision>
+      <id>3561006</id>
+      <parentid>3561005</parentid>
+      <timestamp>2026-03-21T20:11:11Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>179</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+    <revision>
+      <id>3647031</id>
+      <parentid>3561006</parentid>
+      <timestamp>2026-04-24T16:34:18Z</timestamp>
+      <contributor>
+        <username>Legoktm</username>
+        <id>28</id>
+      </contributor>
+      <comment>fix capitalization of Wikidata and Wikipedia in query output</comment>
+      <origin>179</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+    <revision>
+      <id>3647032</id>
+      <parentid>3647031</parentid>
+      <timestamp>2026-04-24T16:34:19Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: en</comment>
+      <origin>179</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2066" sha1="gad8tmz2g178xujb54f023qxaos8yw9" xml:space="preserve">local p = {}
+
+function p.usesProperty(frame)
+	local args = frame.getParent(frame).args or nil
+	if mw.text.trim(args[1] or '') == '' then
+		args = frame.args
+	end
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;[[File:Disc Plain blue dark.svg|middle|4px|link=|alt=]] &lt;b&gt;&lt;i&gt;[[d:Property talk:" .. p_num .. "|" .. label .. " (" .. string.upper(p_num) .. ")]]&lt;/i&gt;&lt;/b&gt; (see &lt;span class='plainlinks'&gt;[https://query.wikidata.org/embed.html#SELECT%20%3FWikidata_item_%20%3FWikidata_item_Label%20%3Fvalue%20%3FvalueLabel%20%3FEnglish_Wikipedia_article%20%23Show%20data%20in%20this%20order%0A%7B%0A%09%3FWikidata_item_%20wdt%3A" .. p_num .. "%20%3Fvalue%20.%20%23Collecting%20all%20items%20which%20have%20" .. p_num .. "%20data%2C%20from%20whole%20Wikidata%20item%20pages%0A%09OPTIONAL%20%7B%3FEnglish_Wikipedia_article%20schema%3Aabout%20%3FWikidata_item_%3B%20schema%3AisPartOf%20%3Chttps%3A%2F%2Fen.wikipedia.org%2F%3E%20.%7D%20%23If%20collected%20item%20has%20link%20to%20English%20Wikipedia%2C%20show%20that%0A%09SERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22en%22%20%20%7D%20%23Show%20label%20in%20this%20language.%20%22en%22%20is%20English.%20%20%20%0A%7D%0ALIMIT%201000 uses]&lt;/span&gt;)&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+function p.tuProperty(frame)
+	local parent = frame.getParent(frame)
+	local result = '&lt;ul&gt;'
+	local ii = 1
+	while true do
+		local p_num = mw.text.trim(parent.args[ii] or '')
+		if p_num ~= '' then
+			local label = mw.wikibase.getLabel(p_num) or "NO LABEL"
+			result = result .. "&lt;li&gt;&lt;span style='font-size:90%;line-height:1;'&gt;●&lt;/span&gt;&amp;nbsp;&amp;nbsp;&lt;b&gt;[[d:Property:" .. p_num .. "|" .. label .. "]]&lt;/b&gt; &lt;span style='font-size:90%;'&gt;([[d:Property talk:" .. string.upper(p_num) .. "|" .. p_num .. "]])&lt;/span&gt;&lt;/li&gt;"
+			ii = ii + 1
+		else break
+		end
+	end
+	result = result.."&lt;/ul&gt;"
+	return result
+end
+
+return p</text>
+      <sha1>gad8tmz2g178xujb54f023qxaos8yw9</sha1>
+    </revision>
+  </page>
+</mediawiki>

@@ -1,0 +1,181 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Search</title>
+    <ns>828</ns>
+    <id>12036</id>
+    <revision>
+      <id>1065464</id>
+      <timestamp>2023-06-21T23:48:15Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Izno</username>
+        <id>0</id>
+      </contributor>
+      <comment>[[phab:T337149#8953569]]</comment>
+      <origin>1065464</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2694" sha1="fb6ff5wpmw7tkeeg5jnfnehdmstd8ey" xml:space="preserve">local p = {}
+
+local function urlencode(text)
+	-- Return equivalent of {{urlencode:text}}.
+	local function byte(char)
+		return string.format('%%%02X', string.byte(char))
+	end
+	return text:gsub('[^ %w%-._]', byte):gsub(' ', '+')
+end
+
+local function make_link(url, expansion, display_text, after)
+	return mw.ustring.format(
+		'[%s &lt;abbr title="%s"&gt;%s&lt;/abbr&gt;]%s',
+		url,
+		expansion,
+		display_text,
+		after or ''
+	)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {
+		wrappers = 'Template:Search'
+	})
+
+	local search_phrase_encoded = urlencode(args[1] or 'example phrase')
+	local short_module_args = {
+		class = 'template-search plainlinks',
+		make_link('https://en.wikipedia.org/w/index.php?title=Special:Search&amp;search=' .. search_phrase_encoded, 'Wikipedia', 'wp'),
+		make_link('https://www.google.com/search?q=' .. search_phrase_encoded, 'Google', 'g'),
+		make_link('https://www.bing.com/search?q=' .. search_phrase_encoded, 'Bing', 'b'),
+	}
+	local long_module_args = {
+		class = 'template-search plainlinks',
+		make_link('https://en.wikipedia.org/w/index.php?title=Special:Search&amp;search=' .. search_phrase_encoded, 'Wikipedia', 'wp'),
+		make_link('https://www.google.com/search?q=site%3Awikipedia.org+' .. search_phrase_encoded, 'Wikipedia over Google', 'gwp'),
+		make_link('https://www.google.com/search?q=' .. search_phrase_encoded, 'Google', 'g'),
+		make_link('https://www.bing.com/search?q=site%3Awikipedia.org+' .. search_phrase_encoded, 'Wikipedia over Bing', 'bwp'),
+		make_link('https://www.bing.com/search?q=' .. search_phrase_encoded, 'Bing', 'b', ' |'),
+		make_link('https://www.britannica.com/search?nop&amp;query=' .. search_phrase_encoded, 'Encyclopaedia Britannica', 'eb'),
+		make_link('https://www.bartleby.com/cgi-bin/texis/webinator/65search?query=' .. search_phrase_encoded, 'Columbia Encyclopedia', 'co'),
+		make_link('https://www.google.com/search?q=site%3Ahttp%3A%2F%2Fwww.pcmag.com%2Fencyclopedia_term%2F+' .. search_phrase_encoded, 'PC Magazine Encyclopedia over Google', 'gct'),
+		make_link('https://scienceworld.wolfram.com/search/index.cgi?as_q=' .. search_phrase_encoded, 'World of Science', 'sw'),
+		make_link('https://archive.org/search.php?query=' .. search_phrase_encoded, 'Internet Archive', 'arc'),
+		make_link('https://babel.hathitrust.org/cgi/ls?field1=ocr;q1=' .. search_phrase_encoded .. ';a=srchls;lmt=ft', 'HathiTrust', 'ht'),	
+	}
+	
+	local long = (args.long or '') ~= ''
+	local ubl = require('Module:List').unbulleted
+	local list = ubl(long and long_module_args or short_module_args)
+	return frame:extensionTag{
+		name = 'templatestyles', args = { src = 'Module:Search/styles.css' }
+	} .. '(' .. list .. ')'
+end
+
+return p</text>
+      <sha1>fb6ff5wpmw7tkeeg5jnfnehdmstd8ey</sha1>
+    </revision>
+    <revision>
+      <id>12037</id>
+      <timestamp>2025-02-26T01:42:37Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported from [[:wikipedia:Module:Search]]</comment>
+      <origin>12037</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2694" sha1="fb6ff5wpmw7tkeeg5jnfnehdmstd8ey" xml:space="preserve">local p = {}
+
+local function urlencode(text)
+	-- Return equivalent of {{urlencode:text}}.
+	local function byte(char)
+		return string.format('%%%02X', string.byte(char))
+	end
+	return text:gsub('[^ %w%-._]', byte):gsub(' ', '+')
+end
+
+local function make_link(url, expansion, display_text, after)
+	return mw.ustring.format(
+		'[%s &lt;abbr title="%s"&gt;%s&lt;/abbr&gt;]%s',
+		url,
+		expansion,
+		display_text,
+		after or ''
+	)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {
+		wrappers = 'Template:Search'
+	})
+
+	local search_phrase_encoded = urlencode(args[1] or 'example phrase')
+	local short_module_args = {
+		class = 'template-search plainlinks',
+		make_link('https://en.wikipedia.org/w/index.php?title=Special:Search&amp;search=' .. search_phrase_encoded, 'Wikipedia', 'wp'),
+		make_link('https://www.google.com/search?q=' .. search_phrase_encoded, 'Google', 'g'),
+		make_link('https://www.bing.com/search?q=' .. search_phrase_encoded, 'Bing', 'b'),
+	}
+	local long_module_args = {
+		class = 'template-search plainlinks',
+		make_link('https://en.wikipedia.org/w/index.php?title=Special:Search&amp;search=' .. search_phrase_encoded, 'Wikipedia', 'wp'),
+		make_link('https://www.google.com/search?q=site%3Awikipedia.org+' .. search_phrase_encoded, 'Wikipedia over Google', 'gwp'),
+		make_link('https://www.google.com/search?q=' .. search_phrase_encoded, 'Google', 'g'),
+		make_link('https://www.bing.com/search?q=site%3Awikipedia.org+' .. search_phrase_encoded, 'Wikipedia over Bing', 'bwp'),
+		make_link('https://www.bing.com/search?q=' .. search_phrase_encoded, 'Bing', 'b', ' |'),
+		make_link('https://www.britannica.com/search?nop&amp;query=' .. search_phrase_encoded, 'Encyclopaedia Britannica', 'eb'),
+		make_link('https://www.bartleby.com/cgi-bin/texis/webinator/65search?query=' .. search_phrase_encoded, 'Columbia Encyclopedia', 'co'),
+		make_link('https://www.google.com/search?q=site%3Ahttp%3A%2F%2Fwww.pcmag.com%2Fencyclopedia_term%2F+' .. search_phrase_encoded, 'PC Magazine Encyclopedia over Google', 'gct'),
+		make_link('https://scienceworld.wolfram.com/search/index.cgi?as_q=' .. search_phrase_encoded, 'World of Science', 'sw'),
+		make_link('https://archive.org/search.php?query=' .. search_phrase_encoded, 'Internet Archive', 'arc'),
+		make_link('https://babel.hathitrust.org/cgi/ls?field1=ocr;q1=' .. search_phrase_encoded .. ';a=srchls;lmt=ft', 'HathiTrust', 'ht'),	
+	}
+	
+	local long = (args.long or '') ~= ''
+	local ubl = require('Module:List').unbulleted
+	local list = ubl(long and long_module_args or short_module_args)
+	return frame:extensionTag{
+		name = 'templatestyles', args = { src = 'Module:Search/styles.css' }
+	} .. '(' .. list .. ')'
+end
+
+return p</text>
+      <sha1>fb6ff5wpmw7tkeeg5jnfnehdmstd8ey</sha1>
+    </revision>
+  </page>
+</mediawiki>

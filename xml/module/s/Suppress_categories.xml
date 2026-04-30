@@ -1,0 +1,711 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Suppress categories</title>
+    <ns>828</ns>
+    <id>151200</id>
+    <revision>
+      <id>3407284</id>
+      <timestamp>2025-08-13T00:59:36Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Suppress categories]]" ([Edit=Require template editor access] (indefinite) [Move=Require template editor access] (indefinite))</comment>
+      <origin>3407284</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1670" sha1="1q32hr238py5zckhzhojzbjzsdqguig" xml:space="preserve">-- This is a simple module to strip categories from wikitext. It does
+-- not support nested links or magic words like __TOC__, etc. Even so,
+-- it should still handle most categories.
+
+local p = {}
+
+-- Detects if a category link is valid or not. If it is valid,
+-- the function returns the blank string. If not, the input
+-- is returned with no changes.
+local function processCategory( all, submatch )
+    local beforePipe = mw.ustring.match( submatch, '^(.-)[%s_]*|[%s_]*.-$' )
+    beforePipe = beforePipe or submatch
+    if mw.ustring.match( beforePipe, '[%[%]&lt;&gt;{}%c\n]' ) then
+        return all
+    else
+        return ''
+    end
+end
+
+-- Preprocess the content if we aren't being called from #invoke,
+-- and pass it to gsub to remove valid category links.
+local function suppress( content, isPreprocessed )
+    if not isPreprocessed then
+        content = mw.getCurrentFrame():preprocess( content )
+    end
+    content = mw.ustring.gsub(
+        content,
+        '(%[%[[%s_]*[cC][aA][tT][eE][gG][oO][rR][yY][%s_]*:[%s_]*(.-)[%s_]*%]%])',
+        processCategory
+    )
+    return content
+end
+
+-- Get the content to suppress categories from, and find
+-- whether the content has already been preprocessed. (If the
+-- module is called from #invoke, it has been preprocessed already.)
+function p.main( frame )
+    local content, isPreprocessed
+    if frame == mw.getCurrentFrame() then
+        content = frame:getParent().args[1]
+        if frame.args[1] then
+            content = frame.args[1]
+        end
+        isPreprocessed = true
+    else
+        content = frame
+        isPreprocessed = false
+    end
+    return suppress( content, isPreprocessed )
+end
+
+return p</text>
+      <sha1>1q32hr238py5zckhzhojzbjzsdqguig</sha1>
+    </revision>
+    <revision>
+      <id>3407285</id>
+      <parentid>3407284</parentid>
+      <timestamp>2026-03-12T20:21:21Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3407284</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1670" sha1="1q32hr238py5zckhzhojzbjzsdqguig" xml:space="preserve">-- This is a simple module to strip categories from wikitext. It does
+-- not support nested links or magic words like __TOC__, etc. Even so,
+-- it should still handle most categories.
+
+local p = {}
+
+-- Detects if a category link is valid or not. If it is valid,
+-- the function returns the blank string. If not, the input
+-- is returned with no changes.
+local function processCategory( all, submatch )
+    local beforePipe = mw.ustring.match( submatch, '^(.-)[%s_]*|[%s_]*.-$' )
+    beforePipe = beforePipe or submatch
+    if mw.ustring.match( beforePipe, '[%[%]&lt;&gt;{}%c\n]' ) then
+        return all
+    else
+        return ''
+    end
+end
+
+-- Preprocess the content if we aren't being called from #invoke,
+-- and pass it to gsub to remove valid category links.
+local function suppress( content, isPreprocessed )
+    if not isPreprocessed then
+        content = mw.getCurrentFrame():preprocess( content )
+    end
+    content = mw.ustring.gsub(
+        content,
+        '(%[%[[%s_]*[cC][aA][tT][eE][gG][oO][rR][yY][%s_]*:[%s_]*(.-)[%s_]*%]%])',
+        processCategory
+    )
+    return content
+end
+
+-- Get the content to suppress categories from, and find
+-- whether the content has already been preprocessed. (If the
+-- module is called from #invoke, it has been preprocessed already.)
+function p.main( frame )
+    local content, isPreprocessed
+    if frame == mw.getCurrentFrame() then
+        content = frame:getParent().args[1]
+        if frame.args[1] then
+            content = frame.args[1]
+        end
+        isPreprocessed = true
+    else
+        content = frame
+        isPreprocessed = false
+    end
+    return suppress( content, isPreprocessed )
+end
+
+return p</text>
+      <sha1>1q32hr238py5zckhzhojzbjzsdqguig</sha1>
+    </revision>
+    <revision>
+      <id>3407856</id>
+      <parentid>3407285</parentid>
+      <timestamp>2026-03-12T20:26:08Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Suppress categories]]" ([Edit=Require template editor access] (indefinite) [Move=Require template editor access] (indefinite))</comment>
+      <origin>3407284</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1670" sha1="1q32hr238py5zckhzhojzbjzsdqguig" xml:space="preserve">-- This is a simple module to strip categories from wikitext. It does
+-- not support nested links or magic words like __TOC__, etc. Even so,
+-- it should still handle most categories.
+
+local p = {}
+
+-- Detects if a category link is valid or not. If it is valid,
+-- the function returns the blank string. If not, the input
+-- is returned with no changes.
+local function processCategory( all, submatch )
+    local beforePipe = mw.ustring.match( submatch, '^(.-)[%s_]*|[%s_]*.-$' )
+    beforePipe = beforePipe or submatch
+    if mw.ustring.match( beforePipe, '[%[%]&lt;&gt;{}%c\n]' ) then
+        return all
+    else
+        return ''
+    end
+end
+
+-- Preprocess the content if we aren't being called from #invoke,
+-- and pass it to gsub to remove valid category links.
+local function suppress( content, isPreprocessed )
+    if not isPreprocessed then
+        content = mw.getCurrentFrame():preprocess( content )
+    end
+    content = mw.ustring.gsub(
+        content,
+        '(%[%[[%s_]*[cC][aA][tT][eE][gG][oO][rR][yY][%s_]*:[%s_]*(.-)[%s_]*%]%])',
+        processCategory
+    )
+    return content
+end
+
+-- Get the content to suppress categories from, and find
+-- whether the content has already been preprocessed. (If the
+-- module is called from #invoke, it has been preprocessed already.)
+function p.main( frame )
+    local content, isPreprocessed
+    if frame == mw.getCurrentFrame() then
+        content = frame:getParent().args[1]
+        if frame.args[1] then
+            content = frame.args[1]
+        end
+        isPreprocessed = true
+    else
+        content = frame
+        isPreprocessed = false
+    end
+    return suppress( content, isPreprocessed )
+end
+
+return p</text>
+      <sha1>1q32hr238py5zckhzhojzbjzsdqguig</sha1>
+    </revision>
+    <revision>
+      <id>3407857</id>
+      <parentid>3407856</parentid>
+      <timestamp>2026-03-12T20:26:08Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3407284</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1670" sha1="1q32hr238py5zckhzhojzbjzsdqguig" xml:space="preserve">-- This is a simple module to strip categories from wikitext. It does
+-- not support nested links or magic words like __TOC__, etc. Even so,
+-- it should still handle most categories.
+
+local p = {}
+
+-- Detects if a category link is valid or not. If it is valid,
+-- the function returns the blank string. If not, the input
+-- is returned with no changes.
+local function processCategory( all, submatch )
+    local beforePipe = mw.ustring.match( submatch, '^(.-)[%s_]*|[%s_]*.-$' )
+    beforePipe = beforePipe or submatch
+    if mw.ustring.match( beforePipe, '[%[%]&lt;&gt;{}%c\n]' ) then
+        return all
+    else
+        return ''
+    end
+end
+
+-- Preprocess the content if we aren't being called from #invoke,
+-- and pass it to gsub to remove valid category links.
+local function suppress( content, isPreprocessed )
+    if not isPreprocessed then
+        content = mw.getCurrentFrame():preprocess( content )
+    end
+    content = mw.ustring.gsub(
+        content,
+        '(%[%[[%s_]*[cC][aA][tT][eE][gG][oO][rR][yY][%s_]*:[%s_]*(.-)[%s_]*%]%])',
+        processCategory
+    )
+    return content
+end
+
+-- Get the content to suppress categories from, and find
+-- whether the content has already been preprocessed. (If the
+-- module is called from #invoke, it has been preprocessed already.)
+function p.main( frame )
+    local content, isPreprocessed
+    if frame == mw.getCurrentFrame() then
+        content = frame:getParent().args[1]
+        if frame.args[1] then
+            content = frame.args[1]
+        end
+        isPreprocessed = true
+    else
+        content = frame
+        isPreprocessed = false
+    end
+    return suppress( content, isPreprocessed )
+end
+
+return p</text>
+      <sha1>1q32hr238py5zckhzhojzbjzsdqguig</sha1>
+    </revision>
+    <revision>
+      <id>3417544</id>
+      <parentid>3407857</parentid>
+      <timestamp>2026-03-13T02:56:39Z</timestamp>
+      <contributor>
+        <username>en&gt;Pppery</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Suppress categories]]" ([Edit=Require template editor access] (indefinite) [Move=Require template editor access] (indefinite))</comment>
+      <origin>3407284</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1670" sha1="1q32hr238py5zckhzhojzbjzsdqguig" xml:space="preserve">-- This is a simple module to strip categories from wikitext. It does
+-- not support nested links or magic words like __TOC__, etc. Even so,
+-- it should still handle most categories.
+
+local p = {}
+
+-- Detects if a category link is valid or not. If it is valid,
+-- the function returns the blank string. If not, the input
+-- is returned with no changes.
+local function processCategory( all, submatch )
+    local beforePipe = mw.ustring.match( submatch, '^(.-)[%s_]*|[%s_]*.-$' )
+    beforePipe = beforePipe or submatch
+    if mw.ustring.match( beforePipe, '[%[%]&lt;&gt;{}%c\n]' ) then
+        return all
+    else
+        return ''
+    end
+end
+
+-- Preprocess the content if we aren't being called from #invoke,
+-- and pass it to gsub to remove valid category links.
+local function suppress( content, isPreprocessed )
+    if not isPreprocessed then
+        content = mw.getCurrentFrame():preprocess( content )
+    end
+    content = mw.ustring.gsub(
+        content,
+        '(%[%[[%s_]*[cC][aA][tT][eE][gG][oO][rR][yY][%s_]*:[%s_]*(.-)[%s_]*%]%])',
+        processCategory
+    )
+    return content
+end
+
+-- Get the content to suppress categories from, and find
+-- whether the content has already been preprocessed. (If the
+-- module is called from #invoke, it has been preprocessed already.)
+function p.main( frame )
+    local content, isPreprocessed
+    if frame == mw.getCurrentFrame() then
+        content = frame:getParent().args[1]
+        if frame.args[1] then
+            content = frame.args[1]
+        end
+        isPreprocessed = true
+    else
+        content = frame
+        isPreprocessed = false
+    end
+    return suppress( content, isPreprocessed )
+end
+
+return p</text>
+      <sha1>1q32hr238py5zckhzhojzbjzsdqguig</sha1>
+    </revision>
+    <revision>
+      <id>3417545</id>
+      <parentid>3417544</parentid>
+      <timestamp>2026-03-13T02:56:39Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Bot: reimport from enwiki to fix erroneous transclusions [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23034089081|commit triggered pipeline]]</comment>
+      <origin>3407284</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1670" sha1="1q32hr238py5zckhzhojzbjzsdqguig" xml:space="preserve">-- This is a simple module to strip categories from wikitext. It does
+-- not support nested links or magic words like __TOC__, etc. Even so,
+-- it should still handle most categories.
+
+local p = {}
+
+-- Detects if a category link is valid or not. If it is valid,
+-- the function returns the blank string. If not, the input
+-- is returned with no changes.
+local function processCategory( all, submatch )
+    local beforePipe = mw.ustring.match( submatch, '^(.-)[%s_]*|[%s_]*.-$' )
+    beforePipe = beforePipe or submatch
+    if mw.ustring.match( beforePipe, '[%[%]&lt;&gt;{}%c\n]' ) then
+        return all
+    else
+        return ''
+    end
+end
+
+-- Preprocess the content if we aren't being called from #invoke,
+-- and pass it to gsub to remove valid category links.
+local function suppress( content, isPreprocessed )
+    if not isPreprocessed then
+        content = mw.getCurrentFrame():preprocess( content )
+    end
+    content = mw.ustring.gsub(
+        content,
+        '(%[%[[%s_]*[cC][aA][tT][eE][gG][oO][rR][yY][%s_]*:[%s_]*(.-)[%s_]*%]%])',
+        processCategory
+    )
+    return content
+end
+
+-- Get the content to suppress categories from, and find
+-- whether the content has already been preprocessed. (If the
+-- module is called from #invoke, it has been preprocessed already.)
+function p.main( frame )
+    local content, isPreprocessed
+    if frame == mw.getCurrentFrame() then
+        content = frame:getParent().args[1]
+        if frame.args[1] then
+            content = frame.args[1]
+        end
+        isPreprocessed = true
+    else
+        content = frame
+        isPreprocessed = false
+    end
+    return suppress( content, isPreprocessed )
+end
+
+return p</text>
+      <sha1>1q32hr238py5zckhzhojzbjzsdqguig</sha1>
+    </revision>
+    <revision>
+      <id>3418212</id>
+      <parentid>3417545</parentid>
+      <timestamp>2026-03-13T03:50:57Z</timestamp>
+      <contributor>
+        <username>en&gt;Pppery</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Suppress categories]]" ([Edit=Require template editor access] (indefinite) [Move=Require template editor access] (indefinite))</comment>
+      <origin>3407284</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1670" sha1="1q32hr238py5zckhzhojzbjzsdqguig" xml:space="preserve">-- This is a simple module to strip categories from wikitext. It does
+-- not support nested links or magic words like __TOC__, etc. Even so,
+-- it should still handle most categories.
+
+local p = {}
+
+-- Detects if a category link is valid or not. If it is valid,
+-- the function returns the blank string. If not, the input
+-- is returned with no changes.
+local function processCategory( all, submatch )
+    local beforePipe = mw.ustring.match( submatch, '^(.-)[%s_]*|[%s_]*.-$' )
+    beforePipe = beforePipe or submatch
+    if mw.ustring.match( beforePipe, '[%[%]&lt;&gt;{}%c\n]' ) then
+        return all
+    else
+        return ''
+    end
+end
+
+-- Preprocess the content if we aren't being called from #invoke,
+-- and pass it to gsub to remove valid category links.
+local function suppress( content, isPreprocessed )
+    if not isPreprocessed then
+        content = mw.getCurrentFrame():preprocess( content )
+    end
+    content = mw.ustring.gsub(
+        content,
+        '(%[%[[%s_]*[cC][aA][tT][eE][gG][oO][rR][yY][%s_]*:[%s_]*(.-)[%s_]*%]%])',
+        processCategory
+    )
+    return content
+end
+
+-- Get the content to suppress categories from, and find
+-- whether the content has already been preprocessed. (If the
+-- module is called from #invoke, it has been preprocessed already.)
+function p.main( frame )
+    local content, isPreprocessed
+    if frame == mw.getCurrentFrame() then
+        content = frame:getParent().args[1]
+        if frame.args[1] then
+            content = frame.args[1]
+        end
+        isPreprocessed = true
+    else
+        content = frame
+        isPreprocessed = false
+    end
+    return suppress( content, isPreprocessed )
+end
+
+return p</text>
+      <sha1>1q32hr238py5zckhzhojzbjzsdqguig</sha1>
+    </revision>
+    <revision>
+      <id>3418213</id>
+      <parentid>3418212</parentid>
+      <timestamp>2026-03-13T03:50:57Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Bot: reimport from enwiki to fix erroneous transclusions [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23034168414|commit triggered pipeline]]</comment>
+      <origin>3407284</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1670" sha1="1q32hr238py5zckhzhojzbjzsdqguig" xml:space="preserve">-- This is a simple module to strip categories from wikitext. It does
+-- not support nested links or magic words like __TOC__, etc. Even so,
+-- it should still handle most categories.
+
+local p = {}
+
+-- Detects if a category link is valid or not. If it is valid,
+-- the function returns the blank string. If not, the input
+-- is returned with no changes.
+local function processCategory( all, submatch )
+    local beforePipe = mw.ustring.match( submatch, '^(.-)[%s_]*|[%s_]*.-$' )
+    beforePipe = beforePipe or submatch
+    if mw.ustring.match( beforePipe, '[%[%]&lt;&gt;{}%c\n]' ) then
+        return all
+    else
+        return ''
+    end
+end
+
+-- Preprocess the content if we aren't being called from #invoke,
+-- and pass it to gsub to remove valid category links.
+local function suppress( content, isPreprocessed )
+    if not isPreprocessed then
+        content = mw.getCurrentFrame():preprocess( content )
+    end
+    content = mw.ustring.gsub(
+        content,
+        '(%[%[[%s_]*[cC][aA][tT][eE][gG][oO][rR][yY][%s_]*:[%s_]*(.-)[%s_]*%]%])',
+        processCategory
+    )
+    return content
+end
+
+-- Get the content to suppress categories from, and find
+-- whether the content has already been preprocessed. (If the
+-- module is called from #invoke, it has been preprocessed already.)
+function p.main( frame )
+    local content, isPreprocessed
+    if frame == mw.getCurrentFrame() then
+        content = frame:getParent().args[1]
+        if frame.args[1] then
+            content = frame.args[1]
+        end
+        isPreprocessed = true
+    else
+        content = frame
+        isPreprocessed = false
+    end
+    return suppress( content, isPreprocessed )
+end
+
+return p</text>
+      <sha1>1q32hr238py5zckhzhojzbjzsdqguig</sha1>
+    </revision>
+    <revision>
+      <id>3418805</id>
+      <parentid>3418213</parentid>
+      <timestamp>2026-03-13T04:32:42Z</timestamp>
+      <contributor>
+        <username>en&gt;Pppery</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Suppress categories]]" ([Edit=Require template editor access] (indefinite) [Move=Require template editor access] (indefinite))</comment>
+      <origin>3407284</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1670" sha1="1q32hr238py5zckhzhojzbjzsdqguig" xml:space="preserve">-- This is a simple module to strip categories from wikitext. It does
+-- not support nested links or magic words like __TOC__, etc. Even so,
+-- it should still handle most categories.
+
+local p = {}
+
+-- Detects if a category link is valid or not. If it is valid,
+-- the function returns the blank string. If not, the input
+-- is returned with no changes.
+local function processCategory( all, submatch )
+    local beforePipe = mw.ustring.match( submatch, '^(.-)[%s_]*|[%s_]*.-$' )
+    beforePipe = beforePipe or submatch
+    if mw.ustring.match( beforePipe, '[%[%]&lt;&gt;{}%c\n]' ) then
+        return all
+    else
+        return ''
+    end
+end
+
+-- Preprocess the content if we aren't being called from #invoke,
+-- and pass it to gsub to remove valid category links.
+local function suppress( content, isPreprocessed )
+    if not isPreprocessed then
+        content = mw.getCurrentFrame():preprocess( content )
+    end
+    content = mw.ustring.gsub(
+        content,
+        '(%[%[[%s_]*[cC][aA][tT][eE][gG][oO][rR][yY][%s_]*:[%s_]*(.-)[%s_]*%]%])',
+        processCategory
+    )
+    return content
+end
+
+-- Get the content to suppress categories from, and find
+-- whether the content has already been preprocessed. (If the
+-- module is called from #invoke, it has been preprocessed already.)
+function p.main( frame )
+    local content, isPreprocessed
+    if frame == mw.getCurrentFrame() then
+        content = frame:getParent().args[1]
+        if frame.args[1] then
+            content = frame.args[1]
+        end
+        isPreprocessed = true
+    else
+        content = frame
+        isPreprocessed = false
+    end
+    return suppress( content, isPreprocessed )
+end
+
+return p</text>
+      <sha1>1q32hr238py5zckhzhojzbjzsdqguig</sha1>
+    </revision>
+    <revision>
+      <id>3418806</id>
+      <parentid>3418805</parentid>
+      <timestamp>2026-03-13T04:32:42Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Bot: reimport from enwiki to fix erroneous transclusions [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23035542121|commit triggered pipeline]]</comment>
+      <origin>3407284</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1670" sha1="1q32hr238py5zckhzhojzbjzsdqguig" xml:space="preserve">-- This is a simple module to strip categories from wikitext. It does
+-- not support nested links or magic words like __TOC__, etc. Even so,
+-- it should still handle most categories.
+
+local p = {}
+
+-- Detects if a category link is valid or not. If it is valid,
+-- the function returns the blank string. If not, the input
+-- is returned with no changes.
+local function processCategory( all, submatch )
+    local beforePipe = mw.ustring.match( submatch, '^(.-)[%s_]*|[%s_]*.-$' )
+    beforePipe = beforePipe or submatch
+    if mw.ustring.match( beforePipe, '[%[%]&lt;&gt;{}%c\n]' ) then
+        return all
+    else
+        return ''
+    end
+end
+
+-- Preprocess the content if we aren't being called from #invoke,
+-- and pass it to gsub to remove valid category links.
+local function suppress( content, isPreprocessed )
+    if not isPreprocessed then
+        content = mw.getCurrentFrame():preprocess( content )
+    end
+    content = mw.ustring.gsub(
+        content,
+        '(%[%[[%s_]*[cC][aA][tT][eE][gG][oO][rR][yY][%s_]*:[%s_]*(.-)[%s_]*%]%])',
+        processCategory
+    )
+    return content
+end
+
+-- Get the content to suppress categories from, and find
+-- whether the content has already been preprocessed. (If the
+-- module is called from #invoke, it has been preprocessed already.)
+function p.main( frame )
+    local content, isPreprocessed
+    if frame == mw.getCurrentFrame() then
+        content = frame:getParent().args[1]
+        if frame.args[1] then
+            content = frame.args[1]
+        end
+        isPreprocessed = true
+    else
+        content = frame
+        isPreprocessed = false
+    end
+    return suppress( content, isPreprocessed )
+end
+
+return p</text>
+      <sha1>1q32hr238py5zckhzhojzbjzsdqguig</sha1>
+    </revision>
+  </page>
+</mediawiki>

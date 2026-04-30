@@ -1,0 +1,244 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Protection banner/documentation</title>
+    <ns>828</ns>
+    <id>152603</id>
+    <revision>
+      <id>3558278</id>
+      <timestamp>2026-03-20T19:49:25Z</timestamp>
+      <contributor>
+        <username>en&gt;Jackmcbarn</username>
+        <id>0</id>
+      </contributor>
+      <comment>Middleclass is way overkill here</comment>
+      <origin>3558278</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2236" sha1="imbe3ltwmegb6fcpqrsgth07bd9uybu" xml:space="preserve">-- This module generates documentation for [[Module:Protection banner]].
+
+--------------------------------------------------------------------------------
+-- Documentation class
+--------------------------------------------------------------------------------
+
+local Documentation = {}
+Documentation.__index = Documentation
+
+function Documentation:new(mainCfg, docCfg)
+	return setmetatable({
+		_mainCfg = mainCfg,
+		_docCfg = docCfg
+	}, self)
+end
+
+function Documentation:makeReasonTable()
+	-- Get the data from the cfg.banners table.
+	local rowData = {}
+	for action, reasonTables in pairs(self._mainCfg.banners) do
+		for reason, t in pairs(reasonTables) do
+			rowData[#rowData + 1] = {
+				reason = reason,
+				action = action,
+				description = t.description
+			}
+		end
+	end
+
+	-- Sort the table into alphabetical order, first by action and then by
+	-- reason.
+	table.sort(rowData, function (t1, t2)
+		if t1.action == t2.action then
+			return t1.reason &lt; t2.reason
+		else
+			return t1.action &lt; t2.action
+		end
+	end)
+	
+	-- Assemble a wikitable of the data.
+	local ret = {}
+	ret[#ret + 1] = '{| class="wikitable"'
+	if #rowData &lt; 1 then
+		ret[#ret + 1] = '|-'
+		ret[#ret + 1] = string.format(
+			'| colspan="3" | %s',
+			self._docCfg['documentation-blurb-noreasons']
+		)
+	else
+		-- Header
+		ret[#ret + 1] = '|-'
+		ret[#ret + 1] = string.format(
+			'! %s\n! %s\n! %s',
+			self._docCfg['documentation-heading-reason'],
+			self._docCfg['documentation-heading-action'],
+			self._docCfg['documentation-heading-description']
+		)
+		-- Rows
+		for _, t in ipairs(rowData) do
+			ret[#ret + 1] = '|-'
+			ret[#ret + 1] = string.format(
+				'| %s\n| %s\n| %s',
+				t.reason,
+				t.action,
+				t.description or ''
+			)
+		end
+	end
+	ret[#ret + 1] = '|}'
+	
+	return table.concat(ret, '\n')
+end
+
+--------------------------------------------------------------------------------
+-- Exports
+--------------------------------------------------------------------------------
+
+local p = {}
+
+function p.reasonTable()
+	local mainCfg = require('Module:Protection banner/config')
+	local docCfg = require('Module:Protection banner/documentation/config')
+	local documentationObj = Documentation:new(mainCfg, docCfg)
+	return documentationObj:makeReasonTable()
+end
+
+return p</text>
+      <sha1>imbe3ltwmegb6fcpqrsgth07bd9uybu</sha1>
+    </revision>
+    <revision>
+      <id>3558279</id>
+      <parentid>3558278</parentid>
+      <timestamp>2026-03-20T19:49:25Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting </comment>
+      <origin>3558278</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2236" sha1="imbe3ltwmegb6fcpqrsgth07bd9uybu" xml:space="preserve">-- This module generates documentation for [[Module:Protection banner]].
+
+--------------------------------------------------------------------------------
+-- Documentation class
+--------------------------------------------------------------------------------
+
+local Documentation = {}
+Documentation.__index = Documentation
+
+function Documentation:new(mainCfg, docCfg)
+	return setmetatable({
+		_mainCfg = mainCfg,
+		_docCfg = docCfg
+	}, self)
+end
+
+function Documentation:makeReasonTable()
+	-- Get the data from the cfg.banners table.
+	local rowData = {}
+	for action, reasonTables in pairs(self._mainCfg.banners) do
+		for reason, t in pairs(reasonTables) do
+			rowData[#rowData + 1] = {
+				reason = reason,
+				action = action,
+				description = t.description
+			}
+		end
+	end
+
+	-- Sort the table into alphabetical order, first by action and then by
+	-- reason.
+	table.sort(rowData, function (t1, t2)
+		if t1.action == t2.action then
+			return t1.reason &lt; t2.reason
+		else
+			return t1.action &lt; t2.action
+		end
+	end)
+	
+	-- Assemble a wikitable of the data.
+	local ret = {}
+	ret[#ret + 1] = '{| class="wikitable"'
+	if #rowData &lt; 1 then
+		ret[#ret + 1] = '|-'
+		ret[#ret + 1] = string.format(
+			'| colspan="3" | %s',
+			self._docCfg['documentation-blurb-noreasons']
+		)
+	else
+		-- Header
+		ret[#ret + 1] = '|-'
+		ret[#ret + 1] = string.format(
+			'! %s\n! %s\n! %s',
+			self._docCfg['documentation-heading-reason'],
+			self._docCfg['documentation-heading-action'],
+			self._docCfg['documentation-heading-description']
+		)
+		-- Rows
+		for _, t in ipairs(rowData) do
+			ret[#ret + 1] = '|-'
+			ret[#ret + 1] = string.format(
+				'| %s\n| %s\n| %s',
+				t.reason,
+				t.action,
+				t.description or ''
+			)
+		end
+	end
+	ret[#ret + 1] = '|}'
+	
+	return table.concat(ret, '\n')
+end
+
+--------------------------------------------------------------------------------
+-- Exports
+--------------------------------------------------------------------------------
+
+local p = {}
+
+function p.reasonTable()
+	local mainCfg = require('Module:Protection banner/config')
+	local docCfg = require('Module:Protection banner/documentation/config')
+	local documentationObj = Documentation:new(mainCfg, docCfg)
+	return documentationObj:makeReasonTable()
+end
+
+return p</text>
+      <sha1>imbe3ltwmegb6fcpqrsgth07bd9uybu</sha1>
+    </revision>
+  </page>
+</mediawiki>

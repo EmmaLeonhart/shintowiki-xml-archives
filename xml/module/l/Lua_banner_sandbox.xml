@@ -1,0 +1,319 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Lua banner/sandbox</title>
+    <ns>828</ns>
+    <id>7644</id>
+    <revision>
+      <id>885132</id>
+      <timestamp>2024-04-05T13:22:49Z</timestamp>
+      <contributor>
+        <username>Uzume</username>
+        <id>96</id>
+      </contributor>
+      <comment>ensure prot cats work even when current page does not exist (i.e., during initial "preview")</comment>
+      <origin>885132</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3887" sha1="euzmtfqz3prpfkf8s69sqjgo5hwxixr" xml:space="preserve">-- This module implements the {{lua}} template.
+local yesno = require('Module:Yesno')
+local mList = require('Module:List')
+local mTableTools = require('Module:TableTools')
+local mMessageBox = require('Module:Message box')
+
+local p = {}
+
+function p.main(frame)
+	local origArgs = frame:getParent().args
+	local args = {}
+	for k, v in pairs(origArgs) do
+		v = v:match('^%s*(.-)%s*$')
+		if v ~= '' then
+			args[k] = v
+		end
+	end
+	return p._main(args)
+end
+
+function p._main(args)
+	local modules = mTableTools.compressSparseArray(args)
+	local box = p.renderBox(modules)
+	local trackingCategories = p.renderTrackingCategories(args, modules)
+	return box .. trackingCategories
+end
+
+function p.renderBox(modules)
+	local boxArgs = {}
+	if #modules &lt; 1 then
+		boxArgs.text = '&lt;strong class="error"&gt;Error: no modules specified&lt;/strong&gt;'
+	else
+		local moduleLinks = {}
+		for i, module in ipairs(modules) do
+			moduleLinks[i] = string.format('[[:%s]]', module)
+			local maybeSandbox = mw.title.new(module .. '/sandbox')
+			if maybeSandbox and maybeSandbox.exists then
+				moduleLinks[i] = moduleLinks[i] .. string.format(' ([[:%s|sandbox]])', maybeSandbox.fullText)
+			end
+		end
+		local moduleList = mList.makeList('bulleted', moduleLinks)
+		local title = mw.title.getCurrentTitle()
+		if title.subpageText == "doc" then
+			title = title.basePageTitle
+		end
+		if title.contentModel == "Scribunto" then
+			boxArgs.text = 'This module depends on the following other modules:' .. moduleList
+		else
+			boxArgs.text = 'This template uses [[Wikipedia:Lua|Lua]]:\n' .. moduleList
+		end
+	end
+	boxArgs.type = 'notice'
+	boxArgs.small = true
+	boxArgs.image = '[[File:Lua-Logo.svg|30px|alt=|link=]]'
+	return mMessageBox.main('mbox', boxArgs)
+end
+
+function p.renderTrackingCategories(args, modules, titleObj)
+	if yesno(args.nocat) then
+		return ''
+	end
+
+	local cats = {}
+
+	-- Error category
+	if #modules &lt; 1 then
+		cats[#cats + 1] = 'Lua templates with errors'
+	end
+
+	-- Lua templates category
+	titleObj = titleObj or mw.title.getCurrentTitle()
+	local subpageBlacklist = {
+		doc = true,
+		sandbox = true,
+		sandbox2 = true,
+		testcases = true
+	}
+	if not subpageBlacklist[titleObj.subpageText] then
+		local protCatName
+		if 'Scribunto' == titleObj.contentModel then
+			protCatName = "Modules depending on under-protected modules"
+		elseif 'wikitext' == titleObj.contentModel and titleObj.namespace == 10 then
+			local category = args.category
+			if not category then
+				local categories = {
+					['Module:String'] = 'Templates based on the String Lua module',
+					['Module:Math'] = 'Templates based on the Math Lua module',
+					['Module:BaseConvert'] = 'Templates based on the BaseConvert Lua module',
+					['Module:Citation/CS1'] = 'Templates based on the Citation/CS1 Lua module'
+				}
+				category = modules[1] and categories[modules[1]]
+				category = category or 'Lua-based templates'
+			end
+			cats[#cats + 1] = category
+			protCatName = "Templates using under-protected Lua modules"
+		end
+		if not args.noprotcat and protCatName then
+			local protLevels = {
+				autoconfirmed = 1,
+				extendedconfirmed = 2,
+				templateeditor = 3,
+				sysop = 4
+			}
+			local currentProt = titleObj and titleObj.protectionLevels and titleObj.protectionLevels.edit and titleObj.protectionLevels.edit[1]
+			currentProt = protLevels[currentProt] or 0
+			for i, module in ipairs(modules) do
+				local moduleTitle = mw.title.new(module)
+				if 'Scribunto' == moduleTitle.contentModel then
+					local moduleProt = moduleTitle and moduleTitle.protectionLevels and moduleTitle.protectionLevels.edit and moduleTitle.protectionLevels.edit[1]
+					moduleProt = protLevels[moduleProt] or 0
+					if moduleProt &lt; currentProt then
+						cats[#cats + 1] = protCatName
+						break
+					end
+				end
+			end
+		end
+	end
+	for i, cat in ipairs(cats) do
+		cats[i] = string.format('[[Category:%s]]', cat)
+	end
+	return table.concat(cats)
+end
+
+return p</text>
+      <sha1>euzmtfqz3prpfkf8s69sqjgo5hwxixr</sha1>
+    </revision>
+    <revision>
+      <id>7645</id>
+      <timestamp>2025-01-07T10:29:15Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: importing modules</comment>
+      <origin>7645</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3887" sha1="euzmtfqz3prpfkf8s69sqjgo5hwxixr" xml:space="preserve">-- This module implements the {{lua}} template.
+local yesno = require('Module:Yesno')
+local mList = require('Module:List')
+local mTableTools = require('Module:TableTools')
+local mMessageBox = require('Module:Message box')
+
+local p = {}
+
+function p.main(frame)
+	local origArgs = frame:getParent().args
+	local args = {}
+	for k, v in pairs(origArgs) do
+		v = v:match('^%s*(.-)%s*$')
+		if v ~= '' then
+			args[k] = v
+		end
+	end
+	return p._main(args)
+end
+
+function p._main(args)
+	local modules = mTableTools.compressSparseArray(args)
+	local box = p.renderBox(modules)
+	local trackingCategories = p.renderTrackingCategories(args, modules)
+	return box .. trackingCategories
+end
+
+function p.renderBox(modules)
+	local boxArgs = {}
+	if #modules &lt; 1 then
+		boxArgs.text = '&lt;strong class="error"&gt;Error: no modules specified&lt;/strong&gt;'
+	else
+		local moduleLinks = {}
+		for i, module in ipairs(modules) do
+			moduleLinks[i] = string.format('[[:%s]]', module)
+			local maybeSandbox = mw.title.new(module .. '/sandbox')
+			if maybeSandbox and maybeSandbox.exists then
+				moduleLinks[i] = moduleLinks[i] .. string.format(' ([[:%s|sandbox]])', maybeSandbox.fullText)
+			end
+		end
+		local moduleList = mList.makeList('bulleted', moduleLinks)
+		local title = mw.title.getCurrentTitle()
+		if title.subpageText == "doc" then
+			title = title.basePageTitle
+		end
+		if title.contentModel == "Scribunto" then
+			boxArgs.text = 'This module depends on the following other modules:' .. moduleList
+		else
+			boxArgs.text = 'This template uses [[Wikipedia:Lua|Lua]]:\n' .. moduleList
+		end
+	end
+	boxArgs.type = 'notice'
+	boxArgs.small = true
+	boxArgs.image = '[[File:Lua-Logo.svg|30px|alt=|link=]]'
+	return mMessageBox.main('mbox', boxArgs)
+end
+
+function p.renderTrackingCategories(args, modules, titleObj)
+	if yesno(args.nocat) then
+		return ''
+	end
+
+	local cats = {}
+
+	-- Error category
+	if #modules &lt; 1 then
+		cats[#cats + 1] = 'Lua templates with errors'
+	end
+
+	-- Lua templates category
+	titleObj = titleObj or mw.title.getCurrentTitle()
+	local subpageBlacklist = {
+		doc = true,
+		sandbox = true,
+		sandbox2 = true,
+		testcases = true
+	}
+	if not subpageBlacklist[titleObj.subpageText] then
+		local protCatName
+		if 'Scribunto' == titleObj.contentModel then
+			protCatName = "Modules depending on under-protected modules"
+		elseif 'wikitext' == titleObj.contentModel and titleObj.namespace == 10 then
+			local category = args.category
+			if not category then
+				local categories = {
+					['Module:String'] = 'Templates based on the String Lua module',
+					['Module:Math'] = 'Templates based on the Math Lua module',
+					['Module:BaseConvert'] = 'Templates based on the BaseConvert Lua module',
+					['Module:Citation/CS1'] = 'Templates based on the Citation/CS1 Lua module'
+				}
+				category = modules[1] and categories[modules[1]]
+				category = category or 'Lua-based templates'
+			end
+			cats[#cats + 1] = category
+			protCatName = "Templates using under-protected Lua modules"
+		end
+		if not args.noprotcat and protCatName then
+			local protLevels = {
+				autoconfirmed = 1,
+				extendedconfirmed = 2,
+				templateeditor = 3,
+				sysop = 4
+			}
+			local currentProt = titleObj and titleObj.protectionLevels and titleObj.protectionLevels.edit and titleObj.protectionLevels.edit[1]
+			currentProt = protLevels[currentProt] or 0
+			for i, module in ipairs(modules) do
+				local moduleTitle = mw.title.new(module)
+				if 'Scribunto' == moduleTitle.contentModel then
+					local moduleProt = moduleTitle and moduleTitle.protectionLevels and moduleTitle.protectionLevels.edit and moduleTitle.protectionLevels.edit[1]
+					moduleProt = protLevels[moduleProt] or 0
+					if moduleProt &lt; currentProt then
+						cats[#cats + 1] = protCatName
+						break
+					end
+				end
+			end
+		end
+	end
+	for i, cat in ipairs(cats) do
+		cats[i] = string.format('[[Category:%s]]', cat)
+	end
+	return table.concat(cats)
+end
+
+return p</text>
+      <sha1>euzmtfqz3prpfkf8s69sqjgo5hwxixr</sha1>
+    </revision>
+  </page>
+</mediawiki>

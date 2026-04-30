@@ -1,0 +1,553 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Properties</title>
+    <ns>828</ns>
+    <id>56331</id>
+    <revision>
+      <id>2938497</id>
+      <timestamp>2023-01-24T20:36:31Z</timestamp>
+      <contributor>
+        <username>d&gt;SM5POR</username>
+        <id>0</id>
+      </contributor>
+      <comment>Added P11260 "list item" and p.list_item</comment>
+      <origin>2938497</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3395" sha1="b9qznk53awdzy7wcbkg5u4jjmm74i2b" xml:space="preserve">-- this module gives solutions to get the Pnumber of a property by its name
+
+
+-- could be automatized, but for now just defining a muanual mapping
+
+local p = {
+	p_from_name = {
+		["country"] = 17 ;
+		["gender"] = 21 ;
+
+		["instance of"] = 31 ;
+		
+		["field"] = 101 ; 
+		["occupation"] = 106 ;
+		
+		["genre"] = 136 ;
+		
+		["named after"] = 138 ;
+		
+		
+		["preceded by"] = 155;
+		["succeeded by"] = 156;
+		["collection"] = 195;	
+		["subclass of"] = 279 ;
+
+		["category's topic"] = 301;
+
+		["list of"] = 360 ; 
+		["part of"] = 361 ;
+
+		["commons category"] = 373;
+		
+		["terminus"] = 559;
+		["direction"] = 560;
+		
+		["start date"] = 580 ;
+		["begin date"] = 580 ;
+		
+		["end date"] = 582 ;
+		
+		["date"] = 585 ;
+		
+		["of"] = 642 ;
+		
+		["participant"] = 710 ;
+		
+		["edition"] = 747 ;
+		["edition of"] = 629 ;
+		
+		['key event'] = 793 ;
+		['significant event'] = 793 ;
+		
+		["topic's category"] = 910;
+		["subject"] = 921; -- work subject
+		["inspired by"] = 941 ;	
+		
+		["fictional analog of"] = 1074 ;
+
+		["statement disputed by"] = 1310 ;
+		["disputed by"] = 1310 ;
+		
+		["history"] = 2184 ;
+		
+		["property for this type"] = 1963 ;
+        ["metasubclass of"] = 2445 ;
+        
+		["number"] = 1114 ;
+		
+		["union of"] = 2737;
+		["disjoint union of"] = 2738;
+		
+		["has part of the type"] = 2670 ;
+		["dissolution date"] = 576;
+		
+		["list item"] = 11260;
+	}
+}
+
+
+local function string_to_propnumber(label)
+	local res = p.p_from_name[label]
+	if res then
+		return tostring( res )
+	end
+	res = mw.wikibase.resolvePropertyId(label)
+	if res then
+		return string.sub(res, 2)
+	else
+		return nil
+	end
+end
+
+p.numberFromPropertylabel = function(frame)  
+	local label = frame.args[1]
+	return string_to_propnumber(label)
+end
+
+-- returns a pid of the form "Pnnn..." where n is a character in "123456789"
+--from either 
+--* a number representing a property wikidata number
+--* a string number representing a property wikidata number
+--* a pid of the form "Pnnn"
+--* a "property name" corresponding to a property, where the names are listed in the array p.p_from_name
+-- or "nil" if the id does not match to any of the cases above
+p.normalize = function(input_pid)
+
+	if tonumber(input_pid) then
+		return "P" .. tostring(input_pid)
+	end
+	input_pid = tostring(input_pid)
+	if mw.ustring.find(input_pid, 'P%d+') then
+		return mw.ustring.match(input_pid, '(P%d+)') .. ''
+	end
+	input_pid = string_to_propnumber(input_pid)
+	if input_pid then
+		return "P" .. input_pid
+	end
+	return nil
+end
+
+-- function that takes a string with a set of pids and returns an array of properties
+p.expandPropList = function(plist)
+	local props = mw.text.split(plist,",")
+	for ind, val in ipairs(props) do
+		props[ind] = p.normalize(val) or val
+	end
+	return props
+end
+
+function p.datatype(property)
+	if type(property) ~= "table" then
+		local id = p.normalize(property)
+		if id then
+			property = mw.wikibase.getEntityObject(id)
+		end
+	end
+	return property and property.datatype
+end
+
+---------------------------------------------------------------
+-- wikitemplate interface
+---------------------------------------------------------------
+
+p.Pid = function(frame)
+	return p.normalize(frame.args[1])
+end
+
+p.Pdatatype = function(frame)
+	return p.datatype(frame.args[1])
+end
+
+
+p.of = p.normalize("of")
+p.list_item = p.normalize("list item")
+p.union_of = p.normalize("union of")
+p.disjoint_union_of = p.normalize("disjoint union of")
+
+return p</text>
+      <sha1>b9qznk53awdzy7wcbkg5u4jjmm74i2b</sha1>
+    </revision>
+    <revision>
+      <id>2938498</id>
+      <parentid>2938497</parentid>
+      <timestamp>2025-08-11T09:31:24Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: importing wikidata q template</comment>
+      <origin>2938497</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3395" sha1="b9qznk53awdzy7wcbkg5u4jjmm74i2b" xml:space="preserve">-- this module gives solutions to get the Pnumber of a property by its name
+
+
+-- could be automatized, but for now just defining a muanual mapping
+
+local p = {
+	p_from_name = {
+		["country"] = 17 ;
+		["gender"] = 21 ;
+
+		["instance of"] = 31 ;
+		
+		["field"] = 101 ; 
+		["occupation"] = 106 ;
+		
+		["genre"] = 136 ;
+		
+		["named after"] = 138 ;
+		
+		
+		["preceded by"] = 155;
+		["succeeded by"] = 156;
+		["collection"] = 195;	
+		["subclass of"] = 279 ;
+
+		["category's topic"] = 301;
+
+		["list of"] = 360 ; 
+		["part of"] = 361 ;
+
+		["commons category"] = 373;
+		
+		["terminus"] = 559;
+		["direction"] = 560;
+		
+		["start date"] = 580 ;
+		["begin date"] = 580 ;
+		
+		["end date"] = 582 ;
+		
+		["date"] = 585 ;
+		
+		["of"] = 642 ;
+		
+		["participant"] = 710 ;
+		
+		["edition"] = 747 ;
+		["edition of"] = 629 ;
+		
+		['key event'] = 793 ;
+		['significant event'] = 793 ;
+		
+		["topic's category"] = 910;
+		["subject"] = 921; -- work subject
+		["inspired by"] = 941 ;	
+		
+		["fictional analog of"] = 1074 ;
+
+		["statement disputed by"] = 1310 ;
+		["disputed by"] = 1310 ;
+		
+		["history"] = 2184 ;
+		
+		["property for this type"] = 1963 ;
+        ["metasubclass of"] = 2445 ;
+        
+		["number"] = 1114 ;
+		
+		["union of"] = 2737;
+		["disjoint union of"] = 2738;
+		
+		["has part of the type"] = 2670 ;
+		["dissolution date"] = 576;
+		
+		["list item"] = 11260;
+	}
+}
+
+
+local function string_to_propnumber(label)
+	local res = p.p_from_name[label]
+	if res then
+		return tostring( res )
+	end
+	res = mw.wikibase.resolvePropertyId(label)
+	if res then
+		return string.sub(res, 2)
+	else
+		return nil
+	end
+end
+
+p.numberFromPropertylabel = function(frame)  
+	local label = frame.args[1]
+	return string_to_propnumber(label)
+end
+
+-- returns a pid of the form "Pnnn..." where n is a character in "123456789"
+--from either 
+--* a number representing a property wikidata number
+--* a string number representing a property wikidata number
+--* a pid of the form "Pnnn"
+--* a "property name" corresponding to a property, where the names are listed in the array p.p_from_name
+-- or "nil" if the id does not match to any of the cases above
+p.normalize = function(input_pid)
+
+	if tonumber(input_pid) then
+		return "P" .. tostring(input_pid)
+	end
+	input_pid = tostring(input_pid)
+	if mw.ustring.find(input_pid, 'P%d+') then
+		return mw.ustring.match(input_pid, '(P%d+)') .. ''
+	end
+	input_pid = string_to_propnumber(input_pid)
+	if input_pid then
+		return "P" .. input_pid
+	end
+	return nil
+end
+
+-- function that takes a string with a set of pids and returns an array of properties
+p.expandPropList = function(plist)
+	local props = mw.text.split(plist,",")
+	for ind, val in ipairs(props) do
+		props[ind] = p.normalize(val) or val
+	end
+	return props
+end
+
+function p.datatype(property)
+	if type(property) ~= "table" then
+		local id = p.normalize(property)
+		if id then
+			property = mw.wikibase.getEntityObject(id)
+		end
+	end
+	return property and property.datatype
+end
+
+---------------------------------------------------------------
+-- wikitemplate interface
+---------------------------------------------------------------
+
+p.Pid = function(frame)
+	return p.normalize(frame.args[1])
+end
+
+p.Pdatatype = function(frame)
+	return p.datatype(frame.args[1])
+end
+
+
+p.of = p.normalize("of")
+p.list_item = p.normalize("list item")
+p.union_of = p.normalize("union of")
+p.disjoint_union_of = p.normalize("disjoint union of")
+
+return p</text>
+      <sha1>b9qznk53awdzy7wcbkg5u4jjmm74i2b</sha1>
+    </revision>
+    <revision>
+      <id>56332</id>
+      <timestamp>2025-11-22T14:38:06Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Text replacement - "↵↵↵" to "
+"</comment>
+      <origin>56332</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3389" sha1="erx5xf9kv80sdve7tz3l5k4j9obcyk1" xml:space="preserve">-- this module gives solutions to get the Pnumber of a property by its name
+-- could be automatized, but for now just defining a muanual mapping
+
+local p = {
+	p_from_name = {
+		["country"] = 17 ;
+		["gender"] = 21 ;
+
+		["instance of"] = 31 ;
+		
+		["field"] = 101 ; 
+		["occupation"] = 106 ;
+		
+		["genre"] = 136 ;
+		
+		["named after"] = 138 ;
+		
+		
+		["preceded by"] = 155;
+		["succeeded by"] = 156;
+		["collection"] = 195;	
+		["subclass of"] = 279 ;
+
+		["category's topic"] = 301;
+
+		["list of"] = 360 ; 
+		["part of"] = 361 ;
+
+		["commons category"] = 373;
+		
+		["terminus"] = 559;
+		["direction"] = 560;
+		
+		["start date"] = 580 ;
+		["begin date"] = 580 ;
+		
+		["end date"] = 582 ;
+		
+		["date"] = 585 ;
+		
+		["of"] = 642 ;
+		
+		["participant"] = 710 ;
+		
+		["edition"] = 747 ;
+		["edition of"] = 629 ;
+		
+		['key event'] = 793 ;
+		['significant event'] = 793 ;
+		
+		["topic's category"] = 910;
+		["subject"] = 921; -- work subject
+		["inspired by"] = 941 ;	
+		
+		["fictional analog of"] = 1074 ;
+
+		["statement disputed by"] = 1310 ;
+		["disputed by"] = 1310 ;
+		
+		["history"] = 2184 ;
+		
+		["property for this type"] = 1963 ;
+        ["metasubclass of"] = 2445 ;
+        
+		["number"] = 1114 ;
+		
+		["union of"] = 2737;
+		["disjoint union of"] = 2738;
+		
+		["has part of the type"] = 2670 ;
+		["dissolution date"] = 576;
+		
+		["list item"] = 11260;
+	}
+}
+local function string_to_propnumber(label)
+	local res = p.p_from_name[label]
+	if res then
+		return tostring( res )
+	end
+	res = mw.wikibase.resolvePropertyId(label)
+	if res then
+		return string.sub(res, 2)
+	else
+		return nil
+	end
+end
+
+p.numberFromPropertylabel = function(frame)  
+	local label = frame.args[1]
+	return string_to_propnumber(label)
+end
+
+-- returns a pid of the form "Pnnn..." where n is a character in "123456789"
+--from either 
+--* a number representing a property wikidata number
+--* a string number representing a property wikidata number
+--* a pid of the form "Pnnn"
+--* a "property name" corresponding to a property, where the names are listed in the array p.p_from_name
+-- or "nil" if the id does not match to any of the cases above
+p.normalize = function(input_pid)
+
+	if tonumber(input_pid) then
+		return "P" .. tostring(input_pid)
+	end
+	input_pid = tostring(input_pid)
+	if mw.ustring.find(input_pid, 'P%d+') then
+		return mw.ustring.match(input_pid, '(P%d+)') .. ''
+	end
+	input_pid = string_to_propnumber(input_pid)
+	if input_pid then
+		return "P" .. input_pid
+	end
+	return nil
+end
+
+-- function that takes a string with a set of pids and returns an array of properties
+p.expandPropList = function(plist)
+	local props = mw.text.split(plist,",")
+	for ind, val in ipairs(props) do
+		props[ind] = p.normalize(val) or val
+	end
+	return props
+end
+
+function p.datatype(property)
+	if type(property) ~= "table" then
+		local id = p.normalize(property)
+		if id then
+			property = mw.wikibase.getEntityObject(id)
+		end
+	end
+	return property and property.datatype
+end
+
+---------------------------------------------------------------
+-- wikitemplate interface
+---------------------------------------------------------------
+
+p.Pid = function(frame)
+	return p.normalize(frame.args[1])
+end
+
+p.Pdatatype = function(frame)
+	return p.datatype(frame.args[1])
+end
+p.of = p.normalize("of")
+p.list_item = p.normalize("list item")
+p.union_of = p.normalize("union of")
+p.disjoint_union_of = p.normalize("disjoint union of")
+
+return p</text>
+      <sha1>erx5xf9kv80sdve7tz3l5k4j9obcyk1</sha1>
+    </revision>
+  </page>
+</mediawiki>

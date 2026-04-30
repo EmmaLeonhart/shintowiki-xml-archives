@@ -1,0 +1,2776 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Random slideshow</title>
+    <ns>828</ns>
+    <id>5013</id>
+    <revision>
+      <id>787909</id>
+      <timestamp>2024-08-18T11:18:41Z</timestamp>
+      <contributor>
+        <username>en&gt;Aidan9382</username>
+        <id>0</id>
+      </contributor>
+      <comment>ignore &lt;onlyinclude&gt; tags</comment>
+      <origin>787909</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="8819" sha1="nwh7lq5snvw5kyestaqmk973lnjhobn" xml:space="preserve">-- Creates a slideshow gallery where the order is randomised. Intended for use on portal pages.
+local p = {}
+local excerptModule =  require('Module:Excerpt/portals')
+local randomModule = require('Module:Random')
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+function normaliseCssMeasurement(input)
+	local suffix = string.reverse(string.sub(string.reverse(input), 1, 2))
+	if ( suffix == 'px' ) or ( suffix == 'em' ) or ( string.sub(suffix, 2, 2) == '%' ) then
+		return input
+	else
+		return input .. 'px'
+	end
+end
+
+function isDeclined(val)
+	if not val then return false end
+	local declinedWords = " decline declined exclude excluded false none not no n off omit omitted remove removed "
+	return string.find(declinedWords , ' '..val..' ', 1, true ) and true or false
+end
+
+function makeOutput(galleryLines, maxWidth, containerClassName, nonRandom)
+	local randomiseArgs = {	['t'] = galleryLines }
+	local sortedLines = nonRandom and galleryLines or randomModule.main('array', randomiseArgs)
+	for i = 1, #sortedLines do
+		-- insert a switcher-label span just after the first pipe, which should ideally be the caption
+		sortedLines[i] = sortedLines[i]:gsub(
+			"|",
+			'|&lt;span class="switcher-label" style="display:none"&gt;&lt;span class="randomSlideshow-sr-only"&gt;Image ' .. tostring(i) .. '&lt;/span&gt;&lt;/span&gt;',
+			1)
+	end
+	local galleryContent = table.concat(sortedLines, '\n')
+	local output = '&lt;div class="' .. containerClassName .. '" style="max-width:' .. normaliseCssMeasurement(maxWidth) .. '; margin:-4em auto;"&gt;&lt;div class="nomobile"&gt;&lt;!--intentionally empty on desktop, and is not present on mobile website (outside template namesapce)--&gt;&lt;/div&gt;'
+		.. mw.getCurrentFrame():extensionTag({name="gallery",content=galleryContent,args={mode="slideshow",class="switcher-container"}}) .. '&lt;/div&gt;'
+	return output
+end
+
+function makeGalleryLine(file, caption, credit)
+	local title = mw.title.new(file, "File" )
+	if not title
+	then
+		return "File:Blank.png|{{Error|File [[:File:" .. file .. "]] does not exist.}}"
+	end
+	local creditLine = ( credit and '&lt;p&gt;&lt;span style="font-size:88%"&gt;' .. credit .. '&lt;/span&gt;&lt;/p&gt;' or '' )
+	return title.prefixedText .. '|' .. ( caption or '' ) .. creditLine
+end
+
+function makeGalleryLinesTable(args)
+	local galleryLinesTable = {}
+	local i = 1
+	while args[i] do
+		table.insert(galleryLinesTable, makeGalleryLine(args[i], args[i+1], args['credit' .. (i+1)/2]))
+		i = i + 2
+	end
+	return galleryLinesTable 
+end
+
+function hasCaption(line)
+	local caption = mw.ustring.match(line, ".-|(.*)")
+	-- require caption to exist with more than 5 characters (avoids sizes etc being mistaken for captions)
+	return caption and #caption&gt;5 and true or false
+end
+
+function extractGalleryFiles(wikitext)
+	local gallery = mw.ustring.match(wikitext, '&lt;gallery.-&gt;%s*(.-)%s*&lt;/gallery&gt;')
+	if not gallery then
+		return false
+	end
+	return mw.text.split(gallery, '%c')
+end
+
+function extractRegularFiles(wikitext)
+	local files = {}
+	local frame = mw.getCurrentFrame()
+	local expand = function(template)
+		return frame:preprocess(template)
+	end
+	for file in mw.ustring.gmatch(wikitext, '%b[]' ) do
+		-- remove keywords that don't work in galleries
+		file = mw.ustring.gsub(file, '|%s*thumb%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*thumbnail%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*border%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*left%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*right%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*center%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*centre%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*none%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*baseline%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*sub%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*super%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*top%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*text%-top%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*bottom%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*text%-bottom%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*framed?%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*frameless%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*upright%s*[0-9%.]*%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*upright%s*=.-([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*link%s*=.-([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*lang%s*=.-([|%]])', '%1')
+		-- remove spaces prior to captions (which cause pre-formatted text)
+		file = mw.ustring.gsub(file, '|%s*', '|')
+		-- remove sizes, which sometimes get mistaken for captions
+		file = mw.ustring.gsub(file, '|%s*%d*x?%d+%s*px%s*([|%]])', '%1')
+		-- remove linebreaks
+		file = mw.ustring.gsub(file, '\n\n', '&lt;br&gt;')
+		file = mw.ustring.gsub(file, '\n', '')
+		-- remove surrounding square brackets
+		file = mw.ustring.gsub(file, '^%[%[', '')
+		file = mw.ustring.gsub(file, '%]%]$', '')
+		table.insert(files, file)
+	end
+	return files
+end
+
+--Central function for fixing issues that could occur in both gallery-fetched and file-fetched files
+local function doubleCheck(file)
+	-- disable pipes in wikilinks
+	file = file:gsub(
+		"%[%[([^%]]-)|(.-)]]",
+		"[[%1__PIPE__%2]]")
+	-- move any alt parameter to the end to avoid putting the switcher in too early and causing a linter error
+	file = file:gsub(
+		"^(.+)(|alt=[^|]*)(.*)$",
+		"%1%3%2")
+	-- bring back pipes in wikilinks
+	file = file:gsub(
+		"%[%[(.-)__PIPE__(.-)]]",
+		"[[%1|%2]]")
+	return file
+end
+
+function makeTranscludedGalleryLinesTables(args)
+	local namespaceNumber = function(pagetitle)
+		local titleObject = mw.title.new(pagetitle)
+		return titleObject and titleObject.namespace
+	end
+	local lines = {}
+	local i = 1
+	while args[i] do
+		if namespaceNumber(args[i]) == 6 then -- file namespace
+			-- args[i] is either just the filename, or uses syntax File:Name.jpg##Caption##Credit
+			local parts = mw.text.split(args[i], '##%s*')
+			local filename = parts[1]
+			local caption = args['caption'..i] or parts[2] or false
+			local credit = args['credit'..i] or parts[3] or false
+			local line = makeGalleryLine(filename, caption, credit)
+			table.insert(lines, line)
+		else
+			local content, pagename = excerptModule.getContent(args[i])
+			if not pagename then
+				return error('Cannot read a valid page for "' .. args[i] .. '"', 0)
+			elseif not content then
+				return error('No content found on page "' .. args[i] .. '"', 0)
+			end
+			if args['section'..i] then
+				content = excerptModule.getSection(content, args['section'..i]) or ''
+			end
+			content = excerptModule.cleanupText(content, {keepSubsections=true, ignoreOnlyincludes=true}) -- true means keep subsections
+	
+			local galleryFiles = extractGalleryFiles(content)
+			if galleryFiles then
+				for _, f in pairs(galleryFiles) do
+					if hasCaption(f) then
+						local filename = string.gsub(f, '|.*', '')
+						local isOkay = excerptModule.checkImage(filename)
+						if isOkay then
+							table.insert(lines, doubleCheck(f.." (from '''[["..pagename.."]]''')"))
+						end
+					end
+				end
+			end
+	
+			local otherFiles = excerptModule.parse(content, {fileflags="1-100", filesOnly=true})
+			if otherFiles then
+				for _, f in pairs(extractRegularFiles(otherFiles)) do
+					if f and f ~= '' and mw.ustring.sub(f, 1, 5) == 'File:' and hasCaption(f) then
+						table.insert(lines, doubleCheck(f.." (from '''[["..pagename.."]]''')"))
+					end
+				end
+			end
+		
+		end
+		i = i + 1
+	end
+	return ( #lines &gt; 0 ) and lines or error('No images found')
+end
+
+p._main = function(args, transclude, extraClassName)
+	if not args[1] then
+		return error(linked and 'No page specified' or 'No page specified', 0)
+	end
+	local lines = transclude and makeTranscludedGalleryLinesTables(args) or makeGalleryLinesTable(args)
+	local classNames = 'randomSlideshow-container'
+	if extraClassName then classNames = classNames .. ' ' .. extraClassName end
+	return makeOutput(lines, args.width or '100%', classNames, isDeclined(args.random))
+end
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+	local output = p._main(args, false)
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } 
+		.. frame:preprocess(output)
+end
+
+p.transclude = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+	local output = p._main(args, true)
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } 
+		.. frame:preprocess(output)
+end
+
+return p</text>
+      <sha1>nwh7lq5snvw5kyestaqmk973lnjhobn</sha1>
+    </revision>
+    <revision>
+      <id>787910</id>
+      <parentid>787909</parentid>
+      <timestamp>2024-12-20T23:55:37Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: importing wikipedia</comment>
+      <origin>787909</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="8819" sha1="nwh7lq5snvw5kyestaqmk973lnjhobn" xml:space="preserve">-- Creates a slideshow gallery where the order is randomised. Intended for use on portal pages.
+local p = {}
+local excerptModule =  require('Module:Excerpt/portals')
+local randomModule = require('Module:Random')
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+function normaliseCssMeasurement(input)
+	local suffix = string.reverse(string.sub(string.reverse(input), 1, 2))
+	if ( suffix == 'px' ) or ( suffix == 'em' ) or ( string.sub(suffix, 2, 2) == '%' ) then
+		return input
+	else
+		return input .. 'px'
+	end
+end
+
+function isDeclined(val)
+	if not val then return false end
+	local declinedWords = " decline declined exclude excluded false none not no n off omit omitted remove removed "
+	return string.find(declinedWords , ' '..val..' ', 1, true ) and true or false
+end
+
+function makeOutput(galleryLines, maxWidth, containerClassName, nonRandom)
+	local randomiseArgs = {	['t'] = galleryLines }
+	local sortedLines = nonRandom and galleryLines or randomModule.main('array', randomiseArgs)
+	for i = 1, #sortedLines do
+		-- insert a switcher-label span just after the first pipe, which should ideally be the caption
+		sortedLines[i] = sortedLines[i]:gsub(
+			"|",
+			'|&lt;span class="switcher-label" style="display:none"&gt;&lt;span class="randomSlideshow-sr-only"&gt;Image ' .. tostring(i) .. '&lt;/span&gt;&lt;/span&gt;',
+			1)
+	end
+	local galleryContent = table.concat(sortedLines, '\n')
+	local output = '&lt;div class="' .. containerClassName .. '" style="max-width:' .. normaliseCssMeasurement(maxWidth) .. '; margin:-4em auto;"&gt;&lt;div class="nomobile"&gt;&lt;!--intentionally empty on desktop, and is not present on mobile website (outside template namesapce)--&gt;&lt;/div&gt;'
+		.. mw.getCurrentFrame():extensionTag({name="gallery",content=galleryContent,args={mode="slideshow",class="switcher-container"}}) .. '&lt;/div&gt;'
+	return output
+end
+
+function makeGalleryLine(file, caption, credit)
+	local title = mw.title.new(file, "File" )
+	if not title
+	then
+		return "File:Blank.png|{{Error|File [[:File:" .. file .. "]] does not exist.}}"
+	end
+	local creditLine = ( credit and '&lt;p&gt;&lt;span style="font-size:88%"&gt;' .. credit .. '&lt;/span&gt;&lt;/p&gt;' or '' )
+	return title.prefixedText .. '|' .. ( caption or '' ) .. creditLine
+end
+
+function makeGalleryLinesTable(args)
+	local galleryLinesTable = {}
+	local i = 1
+	while args[i] do
+		table.insert(galleryLinesTable, makeGalleryLine(args[i], args[i+1], args['credit' .. (i+1)/2]))
+		i = i + 2
+	end
+	return galleryLinesTable 
+end
+
+function hasCaption(line)
+	local caption = mw.ustring.match(line, ".-|(.*)")
+	-- require caption to exist with more than 5 characters (avoids sizes etc being mistaken for captions)
+	return caption and #caption&gt;5 and true or false
+end
+
+function extractGalleryFiles(wikitext)
+	local gallery = mw.ustring.match(wikitext, '&lt;gallery.-&gt;%s*(.-)%s*&lt;/gallery&gt;')
+	if not gallery then
+		return false
+	end
+	return mw.text.split(gallery, '%c')
+end
+
+function extractRegularFiles(wikitext)
+	local files = {}
+	local frame = mw.getCurrentFrame()
+	local expand = function(template)
+		return frame:preprocess(template)
+	end
+	for file in mw.ustring.gmatch(wikitext, '%b[]' ) do
+		-- remove keywords that don't work in galleries
+		file = mw.ustring.gsub(file, '|%s*thumb%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*thumbnail%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*border%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*left%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*right%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*center%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*centre%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*none%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*baseline%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*sub%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*super%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*top%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*text%-top%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*bottom%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*text%-bottom%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*framed?%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*frameless%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*upright%s*[0-9%.]*%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*upright%s*=.-([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*link%s*=.-([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*lang%s*=.-([|%]])', '%1')
+		-- remove spaces prior to captions (which cause pre-formatted text)
+		file = mw.ustring.gsub(file, '|%s*', '|')
+		-- remove sizes, which sometimes get mistaken for captions
+		file = mw.ustring.gsub(file, '|%s*%d*x?%d+%s*px%s*([|%]])', '%1')
+		-- remove linebreaks
+		file = mw.ustring.gsub(file, '\n\n', '&lt;br&gt;')
+		file = mw.ustring.gsub(file, '\n', '')
+		-- remove surrounding square brackets
+		file = mw.ustring.gsub(file, '^%[%[', '')
+		file = mw.ustring.gsub(file, '%]%]$', '')
+		table.insert(files, file)
+	end
+	return files
+end
+
+--Central function for fixing issues that could occur in both gallery-fetched and file-fetched files
+local function doubleCheck(file)
+	-- disable pipes in wikilinks
+	file = file:gsub(
+		"%[%[([^%]]-)|(.-)]]",
+		"[[%1__PIPE__%2]]")
+	-- move any alt parameter to the end to avoid putting the switcher in too early and causing a linter error
+	file = file:gsub(
+		"^(.+)(|alt=[^|]*)(.*)$",
+		"%1%3%2")
+	-- bring back pipes in wikilinks
+	file = file:gsub(
+		"%[%[(.-)__PIPE__(.-)]]",
+		"[[%1|%2]]")
+	return file
+end
+
+function makeTranscludedGalleryLinesTables(args)
+	local namespaceNumber = function(pagetitle)
+		local titleObject = mw.title.new(pagetitle)
+		return titleObject and titleObject.namespace
+	end
+	local lines = {}
+	local i = 1
+	while args[i] do
+		if namespaceNumber(args[i]) == 6 then -- file namespace
+			-- args[i] is either just the filename, or uses syntax File:Name.jpg##Caption##Credit
+			local parts = mw.text.split(args[i], '##%s*')
+			local filename = parts[1]
+			local caption = args['caption'..i] or parts[2] or false
+			local credit = args['credit'..i] or parts[3] or false
+			local line = makeGalleryLine(filename, caption, credit)
+			table.insert(lines, line)
+		else
+			local content, pagename = excerptModule.getContent(args[i])
+			if not pagename then
+				return error('Cannot read a valid page for "' .. args[i] .. '"', 0)
+			elseif not content then
+				return error('No content found on page "' .. args[i] .. '"', 0)
+			end
+			if args['section'..i] then
+				content = excerptModule.getSection(content, args['section'..i]) or ''
+			end
+			content = excerptModule.cleanupText(content, {keepSubsections=true, ignoreOnlyincludes=true}) -- true means keep subsections
+	
+			local galleryFiles = extractGalleryFiles(content)
+			if galleryFiles then
+				for _, f in pairs(galleryFiles) do
+					if hasCaption(f) then
+						local filename = string.gsub(f, '|.*', '')
+						local isOkay = excerptModule.checkImage(filename)
+						if isOkay then
+							table.insert(lines, doubleCheck(f.." (from '''[["..pagename.."]]''')"))
+						end
+					end
+				end
+			end
+	
+			local otherFiles = excerptModule.parse(content, {fileflags="1-100", filesOnly=true})
+			if otherFiles then
+				for _, f in pairs(extractRegularFiles(otherFiles)) do
+					if f and f ~= '' and mw.ustring.sub(f, 1, 5) == 'File:' and hasCaption(f) then
+						table.insert(lines, doubleCheck(f.." (from '''[["..pagename.."]]''')"))
+					end
+				end
+			end
+		
+		end
+		i = i + 1
+	end
+	return ( #lines &gt; 0 ) and lines or error('No images found')
+end
+
+p._main = function(args, transclude, extraClassName)
+	if not args[1] then
+		return error(linked and 'No page specified' or 'No page specified', 0)
+	end
+	local lines = transclude and makeTranscludedGalleryLinesTables(args) or makeGalleryLinesTable(args)
+	local classNames = 'randomSlideshow-container'
+	if extraClassName then classNames = classNames .. ' ' .. extraClassName end
+	return makeOutput(lines, args.width or '100%', classNames, isDeclined(args.random))
+end
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+	local output = p._main(args, false)
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } 
+		.. frame:preprocess(output)
+end
+
+p.transclude = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+	local output = p._main(args, true)
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } 
+		.. frame:preprocess(output)
+end
+
+return p</text>
+      <sha1>nwh7lq5snvw5kyestaqmk973lnjhobn</sha1>
+    </revision>
+    <revision>
+      <id>787911</id>
+      <parentid>787910</parentid>
+      <timestamp>2024-12-21T00:40:14Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Adding [[Category:Pages and Categories from wikipedia0]] using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>787911</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="8870" sha1="sqiitjekegcafvhylgyjozr593qv0e9" xml:space="preserve">-- Creates a slideshow gallery where the order is randomised. Intended for use on portal pages.
+local p = {}
+local excerptModule =  require('Module:Excerpt/portals')
+local randomModule = require('Module:Random')
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+function normaliseCssMeasurement(input)
+	local suffix = string.reverse(string.sub(string.reverse(input), 1, 2))
+	if ( suffix == 'px' ) or ( suffix == 'em' ) or ( string.sub(suffix, 2, 2) == '%' ) then
+		return input
+	else
+		return input .. 'px'
+	end
+end
+
+function isDeclined(val)
+	if not val then return false end
+	local declinedWords = " decline declined exclude excluded false none not no n off omit omitted remove removed "
+	return string.find(declinedWords , ' '..val..' ', 1, true ) and true or false
+end
+
+function makeOutput(galleryLines, maxWidth, containerClassName, nonRandom)
+	local randomiseArgs = {	['t'] = galleryLines }
+	local sortedLines = nonRandom and galleryLines or randomModule.main('array', randomiseArgs)
+	for i = 1, #sortedLines do
+		-- insert a switcher-label span just after the first pipe, which should ideally be the caption
+		sortedLines[i] = sortedLines[i]:gsub(
+			"|",
+			'|&lt;span class="switcher-label" style="display:none"&gt;&lt;span class="randomSlideshow-sr-only"&gt;Image ' .. tostring(i) .. '&lt;/span&gt;&lt;/span&gt;',
+			1)
+	end
+	local galleryContent = table.concat(sortedLines, '\n')
+	local output = '&lt;div class="' .. containerClassName .. '" style="max-width:' .. normaliseCssMeasurement(maxWidth) .. '; margin:-4em auto;"&gt;&lt;div class="nomobile"&gt;&lt;!--intentionally empty on desktop, and is not present on mobile website (outside template namesapce)--&gt;&lt;/div&gt;'
+		.. mw.getCurrentFrame():extensionTag({name="gallery",content=galleryContent,args={mode="slideshow",class="switcher-container"}}) .. '&lt;/div&gt;'
+	return output
+end
+
+function makeGalleryLine(file, caption, credit)
+	local title = mw.title.new(file, "File" )
+	if not title
+	then
+		return "File:Blank.png|{{Error|File [[:File:" .. file .. "]] does not exist.}}"
+	end
+	local creditLine = ( credit and '&lt;p&gt;&lt;span style="font-size:88%"&gt;' .. credit .. '&lt;/span&gt;&lt;/p&gt;' or '' )
+	return title.prefixedText .. '|' .. ( caption or '' ) .. creditLine
+end
+
+function makeGalleryLinesTable(args)
+	local galleryLinesTable = {}
+	local i = 1
+	while args[i] do
+		table.insert(galleryLinesTable, makeGalleryLine(args[i], args[i+1], args['credit' .. (i+1)/2]))
+		i = i + 2
+	end
+	return galleryLinesTable 
+end
+
+function hasCaption(line)
+	local caption = mw.ustring.match(line, ".-|(.*)")
+	-- require caption to exist with more than 5 characters (avoids sizes etc being mistaken for captions)
+	return caption and #caption&gt;5 and true or false
+end
+
+function extractGalleryFiles(wikitext)
+	local gallery = mw.ustring.match(wikitext, '&lt;gallery.-&gt;%s*(.-)%s*&lt;/gallery&gt;')
+	if not gallery then
+		return false
+	end
+	return mw.text.split(gallery, '%c')
+end
+
+function extractRegularFiles(wikitext)
+	local files = {}
+	local frame = mw.getCurrentFrame()
+	local expand = function(template)
+		return frame:preprocess(template)
+	end
+	for file in mw.ustring.gmatch(wikitext, '%b[]' ) do
+		-- remove keywords that don't work in galleries
+		file = mw.ustring.gsub(file, '|%s*thumb%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*thumbnail%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*border%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*left%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*right%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*center%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*centre%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*none%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*baseline%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*sub%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*super%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*top%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*text%-top%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*bottom%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*text%-bottom%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*framed?%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*frameless%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*upright%s*[0-9%.]*%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*upright%s*=.-([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*link%s*=.-([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*lang%s*=.-([|%]])', '%1')
+		-- remove spaces prior to captions (which cause pre-formatted text)
+		file = mw.ustring.gsub(file, '|%s*', '|')
+		-- remove sizes, which sometimes get mistaken for captions
+		file = mw.ustring.gsub(file, '|%s*%d*x?%d+%s*px%s*([|%]])', '%1')
+		-- remove linebreaks
+		file = mw.ustring.gsub(file, '\n\n', '&lt;br&gt;')
+		file = mw.ustring.gsub(file, '\n', '')
+		-- remove surrounding square brackets
+		file = mw.ustring.gsub(file, '^%[%[', '')
+		file = mw.ustring.gsub(file, '%]%]$', '')
+		table.insert(files, file)
+	end
+	return files
+end
+
+--Central function for fixing issues that could occur in both gallery-fetched and file-fetched files
+local function doubleCheck(file)
+	-- disable pipes in wikilinks
+	file = file:gsub(
+		"%[%[([^%]]-)|(.-)]]",
+		"[[%1__PIPE__%2]]")
+	-- move any alt parameter to the end to avoid putting the switcher in too early and causing a linter error
+	file = file:gsub(
+		"^(.+)(|alt=[^|]*)(.*)$",
+		"%1%3%2")
+	-- bring back pipes in wikilinks
+	file = file:gsub(
+		"%[%[(.-)__PIPE__(.-)]]",
+		"[[%1|%2]]")
+	return file
+end
+
+function makeTranscludedGalleryLinesTables(args)
+	local namespaceNumber = function(pagetitle)
+		local titleObject = mw.title.new(pagetitle)
+		return titleObject and titleObject.namespace
+	end
+	local lines = {}
+	local i = 1
+	while args[i] do
+		if namespaceNumber(args[i]) == 6 then -- file namespace
+			-- args[i] is either just the filename, or uses syntax File:Name.jpg##Caption##Credit
+			local parts = mw.text.split(args[i], '##%s*')
+			local filename = parts[1]
+			local caption = args['caption'..i] or parts[2] or false
+			local credit = args['credit'..i] or parts[3] or false
+			local line = makeGalleryLine(filename, caption, credit)
+			table.insert(lines, line)
+		else
+			local content, pagename = excerptModule.getContent(args[i])
+			if not pagename then
+				return error('Cannot read a valid page for "' .. args[i] .. '"', 0)
+			elseif not content then
+				return error('No content found on page "' .. args[i] .. '"', 0)
+			end
+			if args['section'..i] then
+				content = excerptModule.getSection(content, args['section'..i]) or ''
+			end
+			content = excerptModule.cleanupText(content, {keepSubsections=true, ignoreOnlyincludes=true}) -- true means keep subsections
+	
+			local galleryFiles = extractGalleryFiles(content)
+			if galleryFiles then
+				for _, f in pairs(galleryFiles) do
+					if hasCaption(f) then
+						local filename = string.gsub(f, '|.*', '')
+						local isOkay = excerptModule.checkImage(filename)
+						if isOkay then
+							table.insert(lines, doubleCheck(f.." (from '''[["..pagename.."]]''')"))
+						end
+					end
+				end
+			end
+	
+			local otherFiles = excerptModule.parse(content, {fileflags="1-100", filesOnly=true})
+			if otherFiles then
+				for _, f in pairs(extractRegularFiles(otherFiles)) do
+					if f and f ~= '' and mw.ustring.sub(f, 1, 5) == 'File:' and hasCaption(f) then
+						table.insert(lines, doubleCheck(f.." (from '''[["..pagename.."]]''')"))
+					end
+				end
+			end
+		
+		end
+		i = i + 1
+	end
+	return ( #lines &gt; 0 ) and lines or error('No images found')
+end
+
+p._main = function(args, transclude, extraClassName)
+	if not args[1] then
+		return error(linked and 'No page specified' or 'No page specified', 0)
+	end
+	local lines = transclude and makeTranscludedGalleryLinesTables(args) or makeGalleryLinesTable(args)
+	local classNames = 'randomSlideshow-container'
+	if extraClassName then classNames = classNames .. ' ' .. extraClassName end
+	return makeOutput(lines, args.width or '100%', classNames, isDeclined(args.random))
+end
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+	local output = p._main(args, false)
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } 
+		.. frame:preprocess(output)
+end
+
+p.transclude = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+	local output = p._main(args, true)
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } 
+		.. frame:preprocess(output)
+end
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]</text>
+      <sha1>sqiitjekegcafvhylgyjozr593qv0e9</sha1>
+    </revision>
+    <revision>
+      <id>787912</id>
+      <parentid>787911</parentid>
+      <timestamp>2025-01-26T23:07:33Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Adding [[Category:Pages and Categories from Wikipedia]][[en:{{subst:PAGENAME}}]][[Category:kk]] on using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>787912</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="8959" sha1="j9t5295upwg1ah6qnrls3kwk2zmb092" xml:space="preserve">-- Creates a slideshow gallery where the order is randomised. Intended for use on portal pages.
+local p = {}
+local excerptModule =  require('Module:Excerpt/portals')
+local randomModule = require('Module:Random')
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+function normaliseCssMeasurement(input)
+	local suffix = string.reverse(string.sub(string.reverse(input), 1, 2))
+	if ( suffix == 'px' ) or ( suffix == 'em' ) or ( string.sub(suffix, 2, 2) == '%' ) then
+		return input
+	else
+		return input .. 'px'
+	end
+end
+
+function isDeclined(val)
+	if not val then return false end
+	local declinedWords = " decline declined exclude excluded false none not no n off omit omitted remove removed "
+	return string.find(declinedWords , ' '..val..' ', 1, true ) and true or false
+end
+
+function makeOutput(galleryLines, maxWidth, containerClassName, nonRandom)
+	local randomiseArgs = {	['t'] = galleryLines }
+	local sortedLines = nonRandom and galleryLines or randomModule.main('array', randomiseArgs)
+	for i = 1, #sortedLines do
+		-- insert a switcher-label span just after the first pipe, which should ideally be the caption
+		sortedLines[i] = sortedLines[i]:gsub(
+			"|",
+			'|&lt;span class="switcher-label" style="display:none"&gt;&lt;span class="randomSlideshow-sr-only"&gt;Image ' .. tostring(i) .. '&lt;/span&gt;&lt;/span&gt;',
+			1)
+	end
+	local galleryContent = table.concat(sortedLines, '\n')
+	local output = '&lt;div class="' .. containerClassName .. '" style="max-width:' .. normaliseCssMeasurement(maxWidth) .. '; margin:-4em auto;"&gt;&lt;div class="nomobile"&gt;&lt;!--intentionally empty on desktop, and is not present on mobile website (outside template namesapce)--&gt;&lt;/div&gt;'
+		.. mw.getCurrentFrame():extensionTag({name="gallery",content=galleryContent,args={mode="slideshow",class="switcher-container"}}) .. '&lt;/div&gt;'
+	return output
+end
+
+function makeGalleryLine(file, caption, credit)
+	local title = mw.title.new(file, "File" )
+	if not title
+	then
+		return "File:Blank.png|{{Error|File [[:File:" .. file .. "]] does not exist.}}"
+	end
+	local creditLine = ( credit and '&lt;p&gt;&lt;span style="font-size:88%"&gt;' .. credit .. '&lt;/span&gt;&lt;/p&gt;' or '' )
+	return title.prefixedText .. '|' .. ( caption or '' ) .. creditLine
+end
+
+function makeGalleryLinesTable(args)
+	local galleryLinesTable = {}
+	local i = 1
+	while args[i] do
+		table.insert(galleryLinesTable, makeGalleryLine(args[i], args[i+1], args['credit' .. (i+1)/2]))
+		i = i + 2
+	end
+	return galleryLinesTable 
+end
+
+function hasCaption(line)
+	local caption = mw.ustring.match(line, ".-|(.*)")
+	-- require caption to exist with more than 5 characters (avoids sizes etc being mistaken for captions)
+	return caption and #caption&gt;5 and true or false
+end
+
+function extractGalleryFiles(wikitext)
+	local gallery = mw.ustring.match(wikitext, '&lt;gallery.-&gt;%s*(.-)%s*&lt;/gallery&gt;')
+	if not gallery then
+		return false
+	end
+	return mw.text.split(gallery, '%c')
+end
+
+function extractRegularFiles(wikitext)
+	local files = {}
+	local frame = mw.getCurrentFrame()
+	local expand = function(template)
+		return frame:preprocess(template)
+	end
+	for file in mw.ustring.gmatch(wikitext, '%b[]' ) do
+		-- remove keywords that don't work in galleries
+		file = mw.ustring.gsub(file, '|%s*thumb%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*thumbnail%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*border%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*left%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*right%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*center%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*centre%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*none%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*baseline%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*sub%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*super%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*top%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*text%-top%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*bottom%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*text%-bottom%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*framed?%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*frameless%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*upright%s*[0-9%.]*%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*upright%s*=.-([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*link%s*=.-([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*lang%s*=.-([|%]])', '%1')
+		-- remove spaces prior to captions (which cause pre-formatted text)
+		file = mw.ustring.gsub(file, '|%s*', '|')
+		-- remove sizes, which sometimes get mistaken for captions
+		file = mw.ustring.gsub(file, '|%s*%d*x?%d+%s*px%s*([|%]])', '%1')
+		-- remove linebreaks
+		file = mw.ustring.gsub(file, '\n\n', '&lt;br&gt;')
+		file = mw.ustring.gsub(file, '\n', '')
+		-- remove surrounding square brackets
+		file = mw.ustring.gsub(file, '^%[%[', '')
+		file = mw.ustring.gsub(file, '%]%]$', '')
+		table.insert(files, file)
+	end
+	return files
+end
+
+--Central function for fixing issues that could occur in both gallery-fetched and file-fetched files
+local function doubleCheck(file)
+	-- disable pipes in wikilinks
+	file = file:gsub(
+		"%[%[([^%]]-)|(.-)]]",
+		"[[%1__PIPE__%2]]")
+	-- move any alt parameter to the end to avoid putting the switcher in too early and causing a linter error
+	file = file:gsub(
+		"^(.+)(|alt=[^|]*)(.*)$",
+		"%1%3%2")
+	-- bring back pipes in wikilinks
+	file = file:gsub(
+		"%[%[(.-)__PIPE__(.-)]]",
+		"[[%1|%2]]")
+	return file
+end
+
+function makeTranscludedGalleryLinesTables(args)
+	local namespaceNumber = function(pagetitle)
+		local titleObject = mw.title.new(pagetitle)
+		return titleObject and titleObject.namespace
+	end
+	local lines = {}
+	local i = 1
+	while args[i] do
+		if namespaceNumber(args[i]) == 6 then -- file namespace
+			-- args[i] is either just the filename, or uses syntax File:Name.jpg##Caption##Credit
+			local parts = mw.text.split(args[i], '##%s*')
+			local filename = parts[1]
+			local caption = args['caption'..i] or parts[2] or false
+			local credit = args['credit'..i] or parts[3] or false
+			local line = makeGalleryLine(filename, caption, credit)
+			table.insert(lines, line)
+		else
+			local content, pagename = excerptModule.getContent(args[i])
+			if not pagename then
+				return error('Cannot read a valid page for "' .. args[i] .. '"', 0)
+			elseif not content then
+				return error('No content found on page "' .. args[i] .. '"', 0)
+			end
+			if args['section'..i] then
+				content = excerptModule.getSection(content, args['section'..i]) or ''
+			end
+			content = excerptModule.cleanupText(content, {keepSubsections=true, ignoreOnlyincludes=true}) -- true means keep subsections
+	
+			local galleryFiles = extractGalleryFiles(content)
+			if galleryFiles then
+				for _, f in pairs(galleryFiles) do
+					if hasCaption(f) then
+						local filename = string.gsub(f, '|.*', '')
+						local isOkay = excerptModule.checkImage(filename)
+						if isOkay then
+							table.insert(lines, doubleCheck(f.." (from '''[["..pagename.."]]''')"))
+						end
+					end
+				end
+			end
+	
+			local otherFiles = excerptModule.parse(content, {fileflags="1-100", filesOnly=true})
+			if otherFiles then
+				for _, f in pairs(extractRegularFiles(otherFiles)) do
+					if f and f ~= '' and mw.ustring.sub(f, 1, 5) == 'File:' and hasCaption(f) then
+						table.insert(lines, doubleCheck(f.." (from '''[["..pagename.."]]''')"))
+					end
+				end
+			end
+		
+		end
+		i = i + 1
+	end
+	return ( #lines &gt; 0 ) and lines or error('No images found')
+end
+
+p._main = function(args, transclude, extraClassName)
+	if not args[1] then
+		return error(linked and 'No page specified' or 'No page specified', 0)
+	end
+	local lines = transclude and makeTranscludedGalleryLinesTables(args) or makeGalleryLinesTable(args)
+	local classNames = 'randomSlideshow-container'
+	if extraClassName then classNames = classNames .. ' ' .. extraClassName end
+	return makeOutput(lines, args.width or '100%', classNames, isDeclined(args.random))
+end
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+	local output = p._main(args, false)
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } 
+		.. frame:preprocess(output)
+end
+
+p.transclude = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+	local output = p._main(args, true)
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } 
+		.. frame:preprocess(output)
+end
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]
+[[Category:Pages and Categories from Wikipedia]][[en:{{subst:PAGENAME}}]][[Category:kk]]</text>
+      <sha1>j9t5295upwg1ah6qnrls3kwk2zmb092</sha1>
+    </revision>
+    <revision>
+      <id>787913</id>
+      <parentid>787912</parentid>
+      <timestamp>2025-01-28T02:09:58Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Adding [[Category:second attempt at refreshing on January 27 2024]][[Category:{{subst:PAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]] on using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>787913</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="9111" sha1="ka5ffxoyanuwyoknu279tr9ldt657ev" xml:space="preserve">-- Creates a slideshow gallery where the order is randomised. Intended for use on portal pages.
+local p = {}
+local excerptModule =  require('Module:Excerpt/portals')
+local randomModule = require('Module:Random')
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+function normaliseCssMeasurement(input)
+	local suffix = string.reverse(string.sub(string.reverse(input), 1, 2))
+	if ( suffix == 'px' ) or ( suffix == 'em' ) or ( string.sub(suffix, 2, 2) == '%' ) then
+		return input
+	else
+		return input .. 'px'
+	end
+end
+
+function isDeclined(val)
+	if not val then return false end
+	local declinedWords = " decline declined exclude excluded false none not no n off omit omitted remove removed "
+	return string.find(declinedWords , ' '..val..' ', 1, true ) and true or false
+end
+
+function makeOutput(galleryLines, maxWidth, containerClassName, nonRandom)
+	local randomiseArgs = {	['t'] = galleryLines }
+	local sortedLines = nonRandom and galleryLines or randomModule.main('array', randomiseArgs)
+	for i = 1, #sortedLines do
+		-- insert a switcher-label span just after the first pipe, which should ideally be the caption
+		sortedLines[i] = sortedLines[i]:gsub(
+			"|",
+			'|&lt;span class="switcher-label" style="display:none"&gt;&lt;span class="randomSlideshow-sr-only"&gt;Image ' .. tostring(i) .. '&lt;/span&gt;&lt;/span&gt;',
+			1)
+	end
+	local galleryContent = table.concat(sortedLines, '\n')
+	local output = '&lt;div class="' .. containerClassName .. '" style="max-width:' .. normaliseCssMeasurement(maxWidth) .. '; margin:-4em auto;"&gt;&lt;div class="nomobile"&gt;&lt;!--intentionally empty on desktop, and is not present on mobile website (outside template namesapce)--&gt;&lt;/div&gt;'
+		.. mw.getCurrentFrame():extensionTag({name="gallery",content=galleryContent,args={mode="slideshow",class="switcher-container"}}) .. '&lt;/div&gt;'
+	return output
+end
+
+function makeGalleryLine(file, caption, credit)
+	local title = mw.title.new(file, "File" )
+	if not title
+	then
+		return "File:Blank.png|{{Error|File [[:File:" .. file .. "]] does not exist.}}"
+	end
+	local creditLine = ( credit and '&lt;p&gt;&lt;span style="font-size:88%"&gt;' .. credit .. '&lt;/span&gt;&lt;/p&gt;' or '' )
+	return title.prefixedText .. '|' .. ( caption or '' ) .. creditLine
+end
+
+function makeGalleryLinesTable(args)
+	local galleryLinesTable = {}
+	local i = 1
+	while args[i] do
+		table.insert(galleryLinesTable, makeGalleryLine(args[i], args[i+1], args['credit' .. (i+1)/2]))
+		i = i + 2
+	end
+	return galleryLinesTable 
+end
+
+function hasCaption(line)
+	local caption = mw.ustring.match(line, ".-|(.*)")
+	-- require caption to exist with more than 5 characters (avoids sizes etc being mistaken for captions)
+	return caption and #caption&gt;5 and true or false
+end
+
+function extractGalleryFiles(wikitext)
+	local gallery = mw.ustring.match(wikitext, '&lt;gallery.-&gt;%s*(.-)%s*&lt;/gallery&gt;')
+	if not gallery then
+		return false
+	end
+	return mw.text.split(gallery, '%c')
+end
+
+function extractRegularFiles(wikitext)
+	local files = {}
+	local frame = mw.getCurrentFrame()
+	local expand = function(template)
+		return frame:preprocess(template)
+	end
+	for file in mw.ustring.gmatch(wikitext, '%b[]' ) do
+		-- remove keywords that don't work in galleries
+		file = mw.ustring.gsub(file, '|%s*thumb%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*thumbnail%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*border%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*left%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*right%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*center%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*centre%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*none%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*baseline%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*sub%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*super%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*top%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*text%-top%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*bottom%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*text%-bottom%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*framed?%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*frameless%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*upright%s*[0-9%.]*%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*upright%s*=.-([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*link%s*=.-([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*lang%s*=.-([|%]])', '%1')
+		-- remove spaces prior to captions (which cause pre-formatted text)
+		file = mw.ustring.gsub(file, '|%s*', '|')
+		-- remove sizes, which sometimes get mistaken for captions
+		file = mw.ustring.gsub(file, '|%s*%d*x?%d+%s*px%s*([|%]])', '%1')
+		-- remove linebreaks
+		file = mw.ustring.gsub(file, '\n\n', '&lt;br&gt;')
+		file = mw.ustring.gsub(file, '\n', '')
+		-- remove surrounding square brackets
+		file = mw.ustring.gsub(file, '^%[%[', '')
+		file = mw.ustring.gsub(file, '%]%]$', '')
+		table.insert(files, file)
+	end
+	return files
+end
+
+--Central function for fixing issues that could occur in both gallery-fetched and file-fetched files
+local function doubleCheck(file)
+	-- disable pipes in wikilinks
+	file = file:gsub(
+		"%[%[([^%]]-)|(.-)]]",
+		"[[%1__PIPE__%2]]")
+	-- move any alt parameter to the end to avoid putting the switcher in too early and causing a linter error
+	file = file:gsub(
+		"^(.+)(|alt=[^|]*)(.*)$",
+		"%1%3%2")
+	-- bring back pipes in wikilinks
+	file = file:gsub(
+		"%[%[(.-)__PIPE__(.-)]]",
+		"[[%1|%2]]")
+	return file
+end
+
+function makeTranscludedGalleryLinesTables(args)
+	local namespaceNumber = function(pagetitle)
+		local titleObject = mw.title.new(pagetitle)
+		return titleObject and titleObject.namespace
+	end
+	local lines = {}
+	local i = 1
+	while args[i] do
+		if namespaceNumber(args[i]) == 6 then -- file namespace
+			-- args[i] is either just the filename, or uses syntax File:Name.jpg##Caption##Credit
+			local parts = mw.text.split(args[i], '##%s*')
+			local filename = parts[1]
+			local caption = args['caption'..i] or parts[2] or false
+			local credit = args['credit'..i] or parts[3] or false
+			local line = makeGalleryLine(filename, caption, credit)
+			table.insert(lines, line)
+		else
+			local content, pagename = excerptModule.getContent(args[i])
+			if not pagename then
+				return error('Cannot read a valid page for "' .. args[i] .. '"', 0)
+			elseif not content then
+				return error('No content found on page "' .. args[i] .. '"', 0)
+			end
+			if args['section'..i] then
+				content = excerptModule.getSection(content, args['section'..i]) or ''
+			end
+			content = excerptModule.cleanupText(content, {keepSubsections=true, ignoreOnlyincludes=true}) -- true means keep subsections
+	
+			local galleryFiles = extractGalleryFiles(content)
+			if galleryFiles then
+				for _, f in pairs(galleryFiles) do
+					if hasCaption(f) then
+						local filename = string.gsub(f, '|.*', '')
+						local isOkay = excerptModule.checkImage(filename)
+						if isOkay then
+							table.insert(lines, doubleCheck(f.." (from '''[["..pagename.."]]''')"))
+						end
+					end
+				end
+			end
+	
+			local otherFiles = excerptModule.parse(content, {fileflags="1-100", filesOnly=true})
+			if otherFiles then
+				for _, f in pairs(extractRegularFiles(otherFiles)) do
+					if f and f ~= '' and mw.ustring.sub(f, 1, 5) == 'File:' and hasCaption(f) then
+						table.insert(lines, doubleCheck(f.." (from '''[["..pagename.."]]''')"))
+					end
+				end
+			end
+		
+		end
+		i = i + 1
+	end
+	return ( #lines &gt; 0 ) and lines or error('No images found')
+end
+
+p._main = function(args, transclude, extraClassName)
+	if not args[1] then
+		return error(linked and 'No page specified' or 'No page specified', 0)
+	end
+	local lines = transclude and makeTranscludedGalleryLinesTables(args) or makeGalleryLinesTable(args)
+	local classNames = 'randomSlideshow-container'
+	if extraClassName then classNames = classNames .. ' ' .. extraClassName end
+	return makeOutput(lines, args.width or '100%', classNames, isDeclined(args.random))
+end
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+	local output = p._main(args, false)
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } 
+		.. frame:preprocess(output)
+end
+
+p.transclude = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+	local output = p._main(args, true)
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } 
+		.. frame:preprocess(output)
+end
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]
+[[Category:Pages and Categories from Wikipedia]][[en:{{subst:PAGENAME}}]][[Category:kk]]
+[[Category:second attempt at refreshing on January 27 2024]][[Category:{{subst:PAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]]</text>
+      <sha1>ka5ffxoyanuwyoknu279tr9ldt657ev</sha1>
+    </revision>
+    <revision>
+      <id>787914</id>
+      <parentid>787913</parentid>
+      <timestamp>2025-03-13T21:23:18Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "Category:{" to "Category:"</comment>
+      <origin>787914</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="9110" sha1="ermppsu19v4nrffc2fth7lx5y2dvolp" xml:space="preserve">-- Creates a slideshow gallery where the order is randomised. Intended for use on portal pages.
+local p = {}
+local excerptModule =  require('Module:Excerpt/portals')
+local randomModule = require('Module:Random')
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+function normaliseCssMeasurement(input)
+	local suffix = string.reverse(string.sub(string.reverse(input), 1, 2))
+	if ( suffix == 'px' ) or ( suffix == 'em' ) or ( string.sub(suffix, 2, 2) == '%' ) then
+		return input
+	else
+		return input .. 'px'
+	end
+end
+
+function isDeclined(val)
+	if not val then return false end
+	local declinedWords = " decline declined exclude excluded false none not no n off omit omitted remove removed "
+	return string.find(declinedWords , ' '..val..' ', 1, true ) and true or false
+end
+
+function makeOutput(galleryLines, maxWidth, containerClassName, nonRandom)
+	local randomiseArgs = {	['t'] = galleryLines }
+	local sortedLines = nonRandom and galleryLines or randomModule.main('array', randomiseArgs)
+	for i = 1, #sortedLines do
+		-- insert a switcher-label span just after the first pipe, which should ideally be the caption
+		sortedLines[i] = sortedLines[i]:gsub(
+			"|",
+			'|&lt;span class="switcher-label" style="display:none"&gt;&lt;span class="randomSlideshow-sr-only"&gt;Image ' .. tostring(i) .. '&lt;/span&gt;&lt;/span&gt;',
+			1)
+	end
+	local galleryContent = table.concat(sortedLines, '\n')
+	local output = '&lt;div class="' .. containerClassName .. '" style="max-width:' .. normaliseCssMeasurement(maxWidth) .. '; margin:-4em auto;"&gt;&lt;div class="nomobile"&gt;&lt;!--intentionally empty on desktop, and is not present on mobile website (outside template namesapce)--&gt;&lt;/div&gt;'
+		.. mw.getCurrentFrame():extensionTag({name="gallery",content=galleryContent,args={mode="slideshow",class="switcher-container"}}) .. '&lt;/div&gt;'
+	return output
+end
+
+function makeGalleryLine(file, caption, credit)
+	local title = mw.title.new(file, "File" )
+	if not title
+	then
+		return "File:Blank.png|{{Error|File [[:File:" .. file .. "]] does not exist.}}"
+	end
+	local creditLine = ( credit and '&lt;p&gt;&lt;span style="font-size:88%"&gt;' .. credit .. '&lt;/span&gt;&lt;/p&gt;' or '' )
+	return title.prefixedText .. '|' .. ( caption or '' ) .. creditLine
+end
+
+function makeGalleryLinesTable(args)
+	local galleryLinesTable = {}
+	local i = 1
+	while args[i] do
+		table.insert(galleryLinesTable, makeGalleryLine(args[i], args[i+1], args['credit' .. (i+1)/2]))
+		i = i + 2
+	end
+	return galleryLinesTable 
+end
+
+function hasCaption(line)
+	local caption = mw.ustring.match(line, ".-|(.*)")
+	-- require caption to exist with more than 5 characters (avoids sizes etc being mistaken for captions)
+	return caption and #caption&gt;5 and true or false
+end
+
+function extractGalleryFiles(wikitext)
+	local gallery = mw.ustring.match(wikitext, '&lt;gallery.-&gt;%s*(.-)%s*&lt;/gallery&gt;')
+	if not gallery then
+		return false
+	end
+	return mw.text.split(gallery, '%c')
+end
+
+function extractRegularFiles(wikitext)
+	local files = {}
+	local frame = mw.getCurrentFrame()
+	local expand = function(template)
+		return frame:preprocess(template)
+	end
+	for file in mw.ustring.gmatch(wikitext, '%b[]' ) do
+		-- remove keywords that don't work in galleries
+		file = mw.ustring.gsub(file, '|%s*thumb%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*thumbnail%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*border%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*left%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*right%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*center%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*centre%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*none%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*baseline%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*sub%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*super%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*top%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*text%-top%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*bottom%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*text%-bottom%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*framed?%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*frameless%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*upright%s*[0-9%.]*%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*upright%s*=.-([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*link%s*=.-([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*lang%s*=.-([|%]])', '%1')
+		-- remove spaces prior to captions (which cause pre-formatted text)
+		file = mw.ustring.gsub(file, '|%s*', '|')
+		-- remove sizes, which sometimes get mistaken for captions
+		file = mw.ustring.gsub(file, '|%s*%d*x?%d+%s*px%s*([|%]])', '%1')
+		-- remove linebreaks
+		file = mw.ustring.gsub(file, '\n\n', '&lt;br&gt;')
+		file = mw.ustring.gsub(file, '\n', '')
+		-- remove surrounding square brackets
+		file = mw.ustring.gsub(file, '^%[%[', '')
+		file = mw.ustring.gsub(file, '%]%]$', '')
+		table.insert(files, file)
+	end
+	return files
+end
+
+--Central function for fixing issues that could occur in both gallery-fetched and file-fetched files
+local function doubleCheck(file)
+	-- disable pipes in wikilinks
+	file = file:gsub(
+		"%[%[([^%]]-)|(.-)]]",
+		"[[%1__PIPE__%2]]")
+	-- move any alt parameter to the end to avoid putting the switcher in too early and causing a linter error
+	file = file:gsub(
+		"^(.+)(|alt=[^|]*)(.*)$",
+		"%1%3%2")
+	-- bring back pipes in wikilinks
+	file = file:gsub(
+		"%[%[(.-)__PIPE__(.-)]]",
+		"[[%1|%2]]")
+	return file
+end
+
+function makeTranscludedGalleryLinesTables(args)
+	local namespaceNumber = function(pagetitle)
+		local titleObject = mw.title.new(pagetitle)
+		return titleObject and titleObject.namespace
+	end
+	local lines = {}
+	local i = 1
+	while args[i] do
+		if namespaceNumber(args[i]) == 6 then -- file namespace
+			-- args[i] is either just the filename, or uses syntax File:Name.jpg##Caption##Credit
+			local parts = mw.text.split(args[i], '##%s*')
+			local filename = parts[1]
+			local caption = args['caption'..i] or parts[2] or false
+			local credit = args['credit'..i] or parts[3] or false
+			local line = makeGalleryLine(filename, caption, credit)
+			table.insert(lines, line)
+		else
+			local content, pagename = excerptModule.getContent(args[i])
+			if not pagename then
+				return error('Cannot read a valid page for "' .. args[i] .. '"', 0)
+			elseif not content then
+				return error('No content found on page "' .. args[i] .. '"', 0)
+			end
+			if args['section'..i] then
+				content = excerptModule.getSection(content, args['section'..i]) or ''
+			end
+			content = excerptModule.cleanupText(content, {keepSubsections=true, ignoreOnlyincludes=true}) -- true means keep subsections
+	
+			local galleryFiles = extractGalleryFiles(content)
+			if galleryFiles then
+				for _, f in pairs(galleryFiles) do
+					if hasCaption(f) then
+						local filename = string.gsub(f, '|.*', '')
+						local isOkay = excerptModule.checkImage(filename)
+						if isOkay then
+							table.insert(lines, doubleCheck(f.." (from '''[["..pagename.."]]''')"))
+						end
+					end
+				end
+			end
+	
+			local otherFiles = excerptModule.parse(content, {fileflags="1-100", filesOnly=true})
+			if otherFiles then
+				for _, f in pairs(extractRegularFiles(otherFiles)) do
+					if f and f ~= '' and mw.ustring.sub(f, 1, 5) == 'File:' and hasCaption(f) then
+						table.insert(lines, doubleCheck(f.." (from '''[["..pagename.."]]''')"))
+					end
+				end
+			end
+		
+		end
+		i = i + 1
+	end
+	return ( #lines &gt; 0 ) and lines or error('No images found')
+end
+
+p._main = function(args, transclude, extraClassName)
+	if not args[1] then
+		return error(linked and 'No page specified' or 'No page specified', 0)
+	end
+	local lines = transclude and makeTranscludedGalleryLinesTables(args) or makeGalleryLinesTable(args)
+	local classNames = 'randomSlideshow-container'
+	if extraClassName then classNames = classNames .. ' ' .. extraClassName end
+	return makeOutput(lines, args.width or '100%', classNames, isDeclined(args.random))
+end
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+	local output = p._main(args, false)
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } 
+		.. frame:preprocess(output)
+end
+
+p.transclude = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+	local output = p._main(args, true)
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } 
+		.. frame:preprocess(output)
+end
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]
+[[Category:Pages and Categories from Wikipedia]][[en:{{subst:PAGENAME}}]][[Category:kk]]
+[[Category:second attempt at refreshing on January 27 2024]][[Category:{subst:PAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]]</text>
+      <sha1>ermppsu19v4nrffc2fth7lx5y2dvolp</sha1>
+    </revision>
+    <revision>
+      <id>787915</id>
+      <parentid>787914</parentid>
+      <timestamp>2025-03-13T21:23:49Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "Category:{" to "Category:"</comment>
+      <origin>787915</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="9109" sha1="pvbt4v5gzz45kmmy2c43ews6i6llmiz" xml:space="preserve">-- Creates a slideshow gallery where the order is randomised. Intended for use on portal pages.
+local p = {}
+local excerptModule =  require('Module:Excerpt/portals')
+local randomModule = require('Module:Random')
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+function normaliseCssMeasurement(input)
+	local suffix = string.reverse(string.sub(string.reverse(input), 1, 2))
+	if ( suffix == 'px' ) or ( suffix == 'em' ) or ( string.sub(suffix, 2, 2) == '%' ) then
+		return input
+	else
+		return input .. 'px'
+	end
+end
+
+function isDeclined(val)
+	if not val then return false end
+	local declinedWords = " decline declined exclude excluded false none not no n off omit omitted remove removed "
+	return string.find(declinedWords , ' '..val..' ', 1, true ) and true or false
+end
+
+function makeOutput(galleryLines, maxWidth, containerClassName, nonRandom)
+	local randomiseArgs = {	['t'] = galleryLines }
+	local sortedLines = nonRandom and galleryLines or randomModule.main('array', randomiseArgs)
+	for i = 1, #sortedLines do
+		-- insert a switcher-label span just after the first pipe, which should ideally be the caption
+		sortedLines[i] = sortedLines[i]:gsub(
+			"|",
+			'|&lt;span class="switcher-label" style="display:none"&gt;&lt;span class="randomSlideshow-sr-only"&gt;Image ' .. tostring(i) .. '&lt;/span&gt;&lt;/span&gt;',
+			1)
+	end
+	local galleryContent = table.concat(sortedLines, '\n')
+	local output = '&lt;div class="' .. containerClassName .. '" style="max-width:' .. normaliseCssMeasurement(maxWidth) .. '; margin:-4em auto;"&gt;&lt;div class="nomobile"&gt;&lt;!--intentionally empty on desktop, and is not present on mobile website (outside template namesapce)--&gt;&lt;/div&gt;'
+		.. mw.getCurrentFrame():extensionTag({name="gallery",content=galleryContent,args={mode="slideshow",class="switcher-container"}}) .. '&lt;/div&gt;'
+	return output
+end
+
+function makeGalleryLine(file, caption, credit)
+	local title = mw.title.new(file, "File" )
+	if not title
+	then
+		return "File:Blank.png|{{Error|File [[:File:" .. file .. "]] does not exist.}}"
+	end
+	local creditLine = ( credit and '&lt;p&gt;&lt;span style="font-size:88%"&gt;' .. credit .. '&lt;/span&gt;&lt;/p&gt;' or '' )
+	return title.prefixedText .. '|' .. ( caption or '' ) .. creditLine
+end
+
+function makeGalleryLinesTable(args)
+	local galleryLinesTable = {}
+	local i = 1
+	while args[i] do
+		table.insert(galleryLinesTable, makeGalleryLine(args[i], args[i+1], args['credit' .. (i+1)/2]))
+		i = i + 2
+	end
+	return galleryLinesTable 
+end
+
+function hasCaption(line)
+	local caption = mw.ustring.match(line, ".-|(.*)")
+	-- require caption to exist with more than 5 characters (avoids sizes etc being mistaken for captions)
+	return caption and #caption&gt;5 and true or false
+end
+
+function extractGalleryFiles(wikitext)
+	local gallery = mw.ustring.match(wikitext, '&lt;gallery.-&gt;%s*(.-)%s*&lt;/gallery&gt;')
+	if not gallery then
+		return false
+	end
+	return mw.text.split(gallery, '%c')
+end
+
+function extractRegularFiles(wikitext)
+	local files = {}
+	local frame = mw.getCurrentFrame()
+	local expand = function(template)
+		return frame:preprocess(template)
+	end
+	for file in mw.ustring.gmatch(wikitext, '%b[]' ) do
+		-- remove keywords that don't work in galleries
+		file = mw.ustring.gsub(file, '|%s*thumb%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*thumbnail%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*border%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*left%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*right%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*center%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*centre%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*none%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*baseline%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*sub%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*super%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*top%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*text%-top%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*bottom%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*text%-bottom%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*framed?%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*frameless%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*upright%s*[0-9%.]*%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*upright%s*=.-([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*link%s*=.-([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*lang%s*=.-([|%]])', '%1')
+		-- remove spaces prior to captions (which cause pre-formatted text)
+		file = mw.ustring.gsub(file, '|%s*', '|')
+		-- remove sizes, which sometimes get mistaken for captions
+		file = mw.ustring.gsub(file, '|%s*%d*x?%d+%s*px%s*([|%]])', '%1')
+		-- remove linebreaks
+		file = mw.ustring.gsub(file, '\n\n', '&lt;br&gt;')
+		file = mw.ustring.gsub(file, '\n', '')
+		-- remove surrounding square brackets
+		file = mw.ustring.gsub(file, '^%[%[', '')
+		file = mw.ustring.gsub(file, '%]%]$', '')
+		table.insert(files, file)
+	end
+	return files
+end
+
+--Central function for fixing issues that could occur in both gallery-fetched and file-fetched files
+local function doubleCheck(file)
+	-- disable pipes in wikilinks
+	file = file:gsub(
+		"%[%[([^%]]-)|(.-)]]",
+		"[[%1__PIPE__%2]]")
+	-- move any alt parameter to the end to avoid putting the switcher in too early and causing a linter error
+	file = file:gsub(
+		"^(.+)(|alt=[^|]*)(.*)$",
+		"%1%3%2")
+	-- bring back pipes in wikilinks
+	file = file:gsub(
+		"%[%[(.-)__PIPE__(.-)]]",
+		"[[%1|%2]]")
+	return file
+end
+
+function makeTranscludedGalleryLinesTables(args)
+	local namespaceNumber = function(pagetitle)
+		local titleObject = mw.title.new(pagetitle)
+		return titleObject and titleObject.namespace
+	end
+	local lines = {}
+	local i = 1
+	while args[i] do
+		if namespaceNumber(args[i]) == 6 then -- file namespace
+			-- args[i] is either just the filename, or uses syntax File:Name.jpg##Caption##Credit
+			local parts = mw.text.split(args[i], '##%s*')
+			local filename = parts[1]
+			local caption = args['caption'..i] or parts[2] or false
+			local credit = args['credit'..i] or parts[3] or false
+			local line = makeGalleryLine(filename, caption, credit)
+			table.insert(lines, line)
+		else
+			local content, pagename = excerptModule.getContent(args[i])
+			if not pagename then
+				return error('Cannot read a valid page for "' .. args[i] .. '"', 0)
+			elseif not content then
+				return error('No content found on page "' .. args[i] .. '"', 0)
+			end
+			if args['section'..i] then
+				content = excerptModule.getSection(content, args['section'..i]) or ''
+			end
+			content = excerptModule.cleanupText(content, {keepSubsections=true, ignoreOnlyincludes=true}) -- true means keep subsections
+	
+			local galleryFiles = extractGalleryFiles(content)
+			if galleryFiles then
+				for _, f in pairs(galleryFiles) do
+					if hasCaption(f) then
+						local filename = string.gsub(f, '|.*', '')
+						local isOkay = excerptModule.checkImage(filename)
+						if isOkay then
+							table.insert(lines, doubleCheck(f.." (from '''[["..pagename.."]]''')"))
+						end
+					end
+				end
+			end
+	
+			local otherFiles = excerptModule.parse(content, {fileflags="1-100", filesOnly=true})
+			if otherFiles then
+				for _, f in pairs(extractRegularFiles(otherFiles)) do
+					if f and f ~= '' and mw.ustring.sub(f, 1, 5) == 'File:' and hasCaption(f) then
+						table.insert(lines, doubleCheck(f.." (from '''[["..pagename.."]]''')"))
+					end
+				end
+			end
+		
+		end
+		i = i + 1
+	end
+	return ( #lines &gt; 0 ) and lines or error('No images found')
+end
+
+p._main = function(args, transclude, extraClassName)
+	if not args[1] then
+		return error(linked and 'No page specified' or 'No page specified', 0)
+	end
+	local lines = transclude and makeTranscludedGalleryLinesTables(args) or makeGalleryLinesTable(args)
+	local classNames = 'randomSlideshow-container'
+	if extraClassName then classNames = classNames .. ' ' .. extraClassName end
+	return makeOutput(lines, args.width or '100%', classNames, isDeclined(args.random))
+end
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+	local output = p._main(args, false)
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } 
+		.. frame:preprocess(output)
+end
+
+p.transclude = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+	local output = p._main(args, true)
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } 
+		.. frame:preprocess(output)
+end
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]
+[[Category:Pages and Categories from Wikipedia]][[en:{{subst:PAGENAME}}]][[Category:kk]]
+[[Category:second attempt at refreshing on January 27 2024]][[Category:subst:PAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]]</text>
+      <sha1>pvbt4v5gzz45kmmy2c43ews6i6llmiz</sha1>
+    </revision>
+    <revision>
+      <id>787916</id>
+      <parentid>787915</parentid>
+      <timestamp>2025-04-24T05:35:40Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "second attempt at refreshing on January 27 2024" to "qq"</comment>
+      <origin>787916</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="9019" sha1="6kujg3io4vg1kutcwvup1pthpht2ynk" xml:space="preserve">-- Creates a slideshow gallery where the order is randomised. Intended for use on portal pages.
+local p = {}
+local excerptModule =  require('Module:Excerpt/portals')
+local randomModule = require('Module:Random')
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+function normaliseCssMeasurement(input)
+	local suffix = string.reverse(string.sub(string.reverse(input), 1, 2))
+	if ( suffix == 'px' ) or ( suffix == 'em' ) or ( string.sub(suffix, 2, 2) == '%' ) then
+		return input
+	else
+		return input .. 'px'
+	end
+end
+
+function isDeclined(val)
+	if not val then return false end
+	local declinedWords = " decline declined exclude excluded false none not no n off omit omitted remove removed "
+	return string.find(declinedWords , ' '..val..' ', 1, true ) and true or false
+end
+
+function makeOutput(galleryLines, maxWidth, containerClassName, nonRandom)
+	local randomiseArgs = {	['t'] = galleryLines }
+	local sortedLines = nonRandom and galleryLines or randomModule.main('array', randomiseArgs)
+	for i = 1, #sortedLines do
+		-- insert a switcher-label span just after the first pipe, which should ideally be the caption
+		sortedLines[i] = sortedLines[i]:gsub(
+			"|",
+			'|&lt;span class="switcher-label" style="display:none"&gt;&lt;span class="randomSlideshow-sr-only"&gt;Image ' .. tostring(i) .. '&lt;/span&gt;&lt;/span&gt;',
+			1)
+	end
+	local galleryContent = table.concat(sortedLines, '\n')
+	local output = '&lt;div class="' .. containerClassName .. '" style="max-width:' .. normaliseCssMeasurement(maxWidth) .. '; margin:-4em auto;"&gt;&lt;div class="nomobile"&gt;&lt;!--intentionally empty on desktop, and is not present on mobile website (outside template namesapce)--&gt;&lt;/div&gt;'
+		.. mw.getCurrentFrame():extensionTag({name="gallery",content=galleryContent,args={mode="slideshow",class="switcher-container"}}) .. '&lt;/div&gt;'
+	return output
+end
+
+function makeGalleryLine(file, caption, credit)
+	local title = mw.title.new(file, "File" )
+	if not title
+	then
+		return "File:Blank.png|{{Error|File [[:File:" .. file .. "]] does not exist.}}"
+	end
+	local creditLine = ( credit and '&lt;p&gt;&lt;span style="font-size:88%"&gt;' .. credit .. '&lt;/span&gt;&lt;/p&gt;' or '' )
+	return title.prefixedText .. '|' .. ( caption or '' ) .. creditLine
+end
+
+function makeGalleryLinesTable(args)
+	local galleryLinesTable = {}
+	local i = 1
+	while args[i] do
+		table.insert(galleryLinesTable, makeGalleryLine(args[i], args[i+1], args['credit' .. (i+1)/2]))
+		i = i + 2
+	end
+	return galleryLinesTable 
+end
+
+function hasCaption(line)
+	local caption = mw.ustring.match(line, ".-|(.*)")
+	-- require caption to exist with more than 5 characters (avoids sizes etc being mistaken for captions)
+	return caption and #caption&gt;5 and true or false
+end
+
+function extractGalleryFiles(wikitext)
+	local gallery = mw.ustring.match(wikitext, '&lt;gallery.-&gt;%s*(.-)%s*&lt;/gallery&gt;')
+	if not gallery then
+		return false
+	end
+	return mw.text.split(gallery, '%c')
+end
+
+function extractRegularFiles(wikitext)
+	local files = {}
+	local frame = mw.getCurrentFrame()
+	local expand = function(template)
+		return frame:preprocess(template)
+	end
+	for file in mw.ustring.gmatch(wikitext, '%b[]' ) do
+		-- remove keywords that don't work in galleries
+		file = mw.ustring.gsub(file, '|%s*thumb%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*thumbnail%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*border%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*left%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*right%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*center%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*centre%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*none%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*baseline%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*sub%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*super%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*top%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*text%-top%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*bottom%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*text%-bottom%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*framed?%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*frameless%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*upright%s*[0-9%.]*%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*upright%s*=.-([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*link%s*=.-([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*lang%s*=.-([|%]])', '%1')
+		-- remove spaces prior to captions (which cause pre-formatted text)
+		file = mw.ustring.gsub(file, '|%s*', '|')
+		-- remove sizes, which sometimes get mistaken for captions
+		file = mw.ustring.gsub(file, '|%s*%d*x?%d+%s*px%s*([|%]])', '%1')
+		-- remove linebreaks
+		file = mw.ustring.gsub(file, '\n\n', '&lt;br&gt;')
+		file = mw.ustring.gsub(file, '\n', '')
+		-- remove surrounding square brackets
+		file = mw.ustring.gsub(file, '^%[%[', '')
+		file = mw.ustring.gsub(file, '%]%]$', '')
+		table.insert(files, file)
+	end
+	return files
+end
+
+--Central function for fixing issues that could occur in both gallery-fetched and file-fetched files
+local function doubleCheck(file)
+	-- disable pipes in wikilinks
+	file = file:gsub(
+		"%[%[([^%]]-)|(.-)]]",
+		"[[%1__PIPE__%2]]")
+	-- move any alt parameter to the end to avoid putting the switcher in too early and causing a linter error
+	file = file:gsub(
+		"^(.+)(|alt=[^|]*)(.*)$",
+		"%1%3%2")
+	-- bring back pipes in wikilinks
+	file = file:gsub(
+		"%[%[(.-)__PIPE__(.-)]]",
+		"[[%1|%2]]")
+	return file
+end
+
+function makeTranscludedGalleryLinesTables(args)
+	local namespaceNumber = function(pagetitle)
+		local titleObject = mw.title.new(pagetitle)
+		return titleObject and titleObject.namespace
+	end
+	local lines = {}
+	local i = 1
+	while args[i] do
+		if namespaceNumber(args[i]) == 6 then -- file namespace
+			-- args[i] is either just the filename, or uses syntax File:Name.jpg##Caption##Credit
+			local parts = mw.text.split(args[i], '##%s*')
+			local filename = parts[1]
+			local caption = args['caption'..i] or parts[2] or false
+			local credit = args['credit'..i] or parts[3] or false
+			local line = makeGalleryLine(filename, caption, credit)
+			table.insert(lines, line)
+		else
+			local content, pagename = excerptModule.getContent(args[i])
+			if not pagename then
+				return error('Cannot read a valid page for "' .. args[i] .. '"', 0)
+			elseif not content then
+				return error('No content found on page "' .. args[i] .. '"', 0)
+			end
+			if args['section'..i] then
+				content = excerptModule.getSection(content, args['section'..i]) or ''
+			end
+			content = excerptModule.cleanupText(content, {keepSubsections=true, ignoreOnlyincludes=true}) -- true means keep subsections
+	
+			local galleryFiles = extractGalleryFiles(content)
+			if galleryFiles then
+				for _, f in pairs(galleryFiles) do
+					if hasCaption(f) then
+						local filename = string.gsub(f, '|.*', '')
+						local isOkay = excerptModule.checkImage(filename)
+						if isOkay then
+							table.insert(lines, doubleCheck(f.." (from '''[["..pagename.."]]''')"))
+						end
+					end
+				end
+			end
+	
+			local otherFiles = excerptModule.parse(content, {fileflags="1-100", filesOnly=true})
+			if otherFiles then
+				for _, f in pairs(extractRegularFiles(otherFiles)) do
+					if f and f ~= '' and mw.ustring.sub(f, 1, 5) == 'File:' and hasCaption(f) then
+						table.insert(lines, doubleCheck(f.." (from '''[["..pagename.."]]''')"))
+					end
+				end
+			end
+		
+		end
+		i = i + 1
+	end
+	return ( #lines &gt; 0 ) and lines or error('No images found')
+end
+
+p._main = function(args, transclude, extraClassName)
+	if not args[1] then
+		return error(linked and 'No page specified' or 'No page specified', 0)
+	end
+	local lines = transclude and makeTranscludedGalleryLinesTables(args) or makeGalleryLinesTable(args)
+	local classNames = 'randomSlideshow-container'
+	if extraClassName then classNames = classNames .. ' ' .. extraClassName end
+	return makeOutput(lines, args.width or '100%', classNames, isDeclined(args.random))
+end
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+	local output = p._main(args, false)
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } 
+		.. frame:preprocess(output)
+end
+
+p.transclude = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+	local output = p._main(args, true)
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } 
+		.. frame:preprocess(output)
+end
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]
+[[Category:Pages and Categories from Wikipedia]][[en:{{subst:PAGENAME}}]][[Category:kk]]
+[[Category:qq]][[Category:subst:PAGENAME}}]][[Category:qq]]</text>
+      <sha1>6kujg3io4vg1kutcwvup1pthpht2ynk</sha1>
+    </revision>
+    <revision>
+      <id>787917</id>
+      <parentid>787916</parentid>
+      <timestamp>2025-04-25T23:00:01Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "{subst:PAGENAME}" to "{{subst:PAGENAME}}"</comment>
+      <origin>787917</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="9021" sha1="rtei10eqnoqy9mxji2qn5m2u7ege57v" xml:space="preserve">-- Creates a slideshow gallery where the order is randomised. Intended for use on portal pages.
+local p = {}
+local excerptModule =  require('Module:Excerpt/portals')
+local randomModule = require('Module:Random')
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+function normaliseCssMeasurement(input)
+	local suffix = string.reverse(string.sub(string.reverse(input), 1, 2))
+	if ( suffix == 'px' ) or ( suffix == 'em' ) or ( string.sub(suffix, 2, 2) == '%' ) then
+		return input
+	else
+		return input .. 'px'
+	end
+end
+
+function isDeclined(val)
+	if not val then return false end
+	local declinedWords = " decline declined exclude excluded false none not no n off omit omitted remove removed "
+	return string.find(declinedWords , ' '..val..' ', 1, true ) and true or false
+end
+
+function makeOutput(galleryLines, maxWidth, containerClassName, nonRandom)
+	local randomiseArgs = {	['t'] = galleryLines }
+	local sortedLines = nonRandom and galleryLines or randomModule.main('array', randomiseArgs)
+	for i = 1, #sortedLines do
+		-- insert a switcher-label span just after the first pipe, which should ideally be the caption
+		sortedLines[i] = sortedLines[i]:gsub(
+			"|",
+			'|&lt;span class="switcher-label" style="display:none"&gt;&lt;span class="randomSlideshow-sr-only"&gt;Image ' .. tostring(i) .. '&lt;/span&gt;&lt;/span&gt;',
+			1)
+	end
+	local galleryContent = table.concat(sortedLines, '\n')
+	local output = '&lt;div class="' .. containerClassName .. '" style="max-width:' .. normaliseCssMeasurement(maxWidth) .. '; margin:-4em auto;"&gt;&lt;div class="nomobile"&gt;&lt;!--intentionally empty on desktop, and is not present on mobile website (outside template namesapce)--&gt;&lt;/div&gt;'
+		.. mw.getCurrentFrame():extensionTag({name="gallery",content=galleryContent,args={mode="slideshow",class="switcher-container"}}) .. '&lt;/div&gt;'
+	return output
+end
+
+function makeGalleryLine(file, caption, credit)
+	local title = mw.title.new(file, "File" )
+	if not title
+	then
+		return "File:Blank.png|{{Error|File [[:File:" .. file .. "]] does not exist.}}"
+	end
+	local creditLine = ( credit and '&lt;p&gt;&lt;span style="font-size:88%"&gt;' .. credit .. '&lt;/span&gt;&lt;/p&gt;' or '' )
+	return title.prefixedText .. '|' .. ( caption or '' ) .. creditLine
+end
+
+function makeGalleryLinesTable(args)
+	local galleryLinesTable = {}
+	local i = 1
+	while args[i] do
+		table.insert(galleryLinesTable, makeGalleryLine(args[i], args[i+1], args['credit' .. (i+1)/2]))
+		i = i + 2
+	end
+	return galleryLinesTable 
+end
+
+function hasCaption(line)
+	local caption = mw.ustring.match(line, ".-|(.*)")
+	-- require caption to exist with more than 5 characters (avoids sizes etc being mistaken for captions)
+	return caption and #caption&gt;5 and true or false
+end
+
+function extractGalleryFiles(wikitext)
+	local gallery = mw.ustring.match(wikitext, '&lt;gallery.-&gt;%s*(.-)%s*&lt;/gallery&gt;')
+	if not gallery then
+		return false
+	end
+	return mw.text.split(gallery, '%c')
+end
+
+function extractRegularFiles(wikitext)
+	local files = {}
+	local frame = mw.getCurrentFrame()
+	local expand = function(template)
+		return frame:preprocess(template)
+	end
+	for file in mw.ustring.gmatch(wikitext, '%b[]' ) do
+		-- remove keywords that don't work in galleries
+		file = mw.ustring.gsub(file, '|%s*thumb%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*thumbnail%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*border%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*left%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*right%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*center%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*centre%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*none%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*baseline%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*sub%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*super%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*top%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*text%-top%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*bottom%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*text%-bottom%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*framed?%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*frameless%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*upright%s*[0-9%.]*%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*upright%s*=.-([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*link%s*=.-([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*lang%s*=.-([|%]])', '%1')
+		-- remove spaces prior to captions (which cause pre-formatted text)
+		file = mw.ustring.gsub(file, '|%s*', '|')
+		-- remove sizes, which sometimes get mistaken for captions
+		file = mw.ustring.gsub(file, '|%s*%d*x?%d+%s*px%s*([|%]])', '%1')
+		-- remove linebreaks
+		file = mw.ustring.gsub(file, '\n\n', '&lt;br&gt;')
+		file = mw.ustring.gsub(file, '\n', '')
+		-- remove surrounding square brackets
+		file = mw.ustring.gsub(file, '^%[%[', '')
+		file = mw.ustring.gsub(file, '%]%]$', '')
+		table.insert(files, file)
+	end
+	return files
+end
+
+--Central function for fixing issues that could occur in both gallery-fetched and file-fetched files
+local function doubleCheck(file)
+	-- disable pipes in wikilinks
+	file = file:gsub(
+		"%[%[([^%]]-)|(.-)]]",
+		"[[%1__PIPE__%2]]")
+	-- move any alt parameter to the end to avoid putting the switcher in too early and causing a linter error
+	file = file:gsub(
+		"^(.+)(|alt=[^|]*)(.*)$",
+		"%1%3%2")
+	-- bring back pipes in wikilinks
+	file = file:gsub(
+		"%[%[(.-)__PIPE__(.-)]]",
+		"[[%1|%2]]")
+	return file
+end
+
+function makeTranscludedGalleryLinesTables(args)
+	local namespaceNumber = function(pagetitle)
+		local titleObject = mw.title.new(pagetitle)
+		return titleObject and titleObject.namespace
+	end
+	local lines = {}
+	local i = 1
+	while args[i] do
+		if namespaceNumber(args[i]) == 6 then -- file namespace
+			-- args[i] is either just the filename, or uses syntax File:Name.jpg##Caption##Credit
+			local parts = mw.text.split(args[i], '##%s*')
+			local filename = parts[1]
+			local caption = args['caption'..i] or parts[2] or false
+			local credit = args['credit'..i] or parts[3] or false
+			local line = makeGalleryLine(filename, caption, credit)
+			table.insert(lines, line)
+		else
+			local content, pagename = excerptModule.getContent(args[i])
+			if not pagename then
+				return error('Cannot read a valid page for "' .. args[i] .. '"', 0)
+			elseif not content then
+				return error('No content found on page "' .. args[i] .. '"', 0)
+			end
+			if args['section'..i] then
+				content = excerptModule.getSection(content, args['section'..i]) or ''
+			end
+			content = excerptModule.cleanupText(content, {keepSubsections=true, ignoreOnlyincludes=true}) -- true means keep subsections
+	
+			local galleryFiles = extractGalleryFiles(content)
+			if galleryFiles then
+				for _, f in pairs(galleryFiles) do
+					if hasCaption(f) then
+						local filename = string.gsub(f, '|.*', '')
+						local isOkay = excerptModule.checkImage(filename)
+						if isOkay then
+							table.insert(lines, doubleCheck(f.." (from '''[["..pagename.."]]''')"))
+						end
+					end
+				end
+			end
+	
+			local otherFiles = excerptModule.parse(content, {fileflags="1-100", filesOnly=true})
+			if otherFiles then
+				for _, f in pairs(extractRegularFiles(otherFiles)) do
+					if f and f ~= '' and mw.ustring.sub(f, 1, 5) == 'File:' and hasCaption(f) then
+						table.insert(lines, doubleCheck(f.." (from '''[["..pagename.."]]''')"))
+					end
+				end
+			end
+		
+		end
+		i = i + 1
+	end
+	return ( #lines &gt; 0 ) and lines or error('No images found')
+end
+
+p._main = function(args, transclude, extraClassName)
+	if not args[1] then
+		return error(linked and 'No page specified' or 'No page specified', 0)
+	end
+	local lines = transclude and makeTranscludedGalleryLinesTables(args) or makeGalleryLinesTable(args)
+	local classNames = 'randomSlideshow-container'
+	if extraClassName then classNames = classNames .. ' ' .. extraClassName end
+	return makeOutput(lines, args.width or '100%', classNames, isDeclined(args.random))
+end
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+	local output = p._main(args, false)
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } 
+		.. frame:preprocess(output)
+end
+
+p.transclude = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+	local output = p._main(args, true)
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } 
+		.. frame:preprocess(output)
+end
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]
+[[Category:Pages and Categories from Wikipedia]][[en:{{{subst:PAGENAME}}}]][[Category:kk]]
+[[Category:qq]][[Category:subst:PAGENAME}}]][[Category:qq]]</text>
+      <sha1>rtei10eqnoqy9mxji2qn5m2u7ege57v</sha1>
+    </revision>
+    <revision>
+      <id>787918</id>
+      <parentid>787917</parentid>
+      <timestamp>2025-04-29T10:47:13Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "[[Category:qq]]" to ""</comment>
+      <origin>787918</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="8991" sha1="jdtnjw9o9yd8lr8a30nb96hre9axlqx" xml:space="preserve">-- Creates a slideshow gallery where the order is randomised. Intended for use on portal pages.
+local p = {}
+local excerptModule =  require('Module:Excerpt/portals')
+local randomModule = require('Module:Random')
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+function normaliseCssMeasurement(input)
+	local suffix = string.reverse(string.sub(string.reverse(input), 1, 2))
+	if ( suffix == 'px' ) or ( suffix == 'em' ) or ( string.sub(suffix, 2, 2) == '%' ) then
+		return input
+	else
+		return input .. 'px'
+	end
+end
+
+function isDeclined(val)
+	if not val then return false end
+	local declinedWords = " decline declined exclude excluded false none not no n off omit omitted remove removed "
+	return string.find(declinedWords , ' '..val..' ', 1, true ) and true or false
+end
+
+function makeOutput(galleryLines, maxWidth, containerClassName, nonRandom)
+	local randomiseArgs = {	['t'] = galleryLines }
+	local sortedLines = nonRandom and galleryLines or randomModule.main('array', randomiseArgs)
+	for i = 1, #sortedLines do
+		-- insert a switcher-label span just after the first pipe, which should ideally be the caption
+		sortedLines[i] = sortedLines[i]:gsub(
+			"|",
+			'|&lt;span class="switcher-label" style="display:none"&gt;&lt;span class="randomSlideshow-sr-only"&gt;Image ' .. tostring(i) .. '&lt;/span&gt;&lt;/span&gt;',
+			1)
+	end
+	local galleryContent = table.concat(sortedLines, '\n')
+	local output = '&lt;div class="' .. containerClassName .. '" style="max-width:' .. normaliseCssMeasurement(maxWidth) .. '; margin:-4em auto;"&gt;&lt;div class="nomobile"&gt;&lt;!--intentionally empty on desktop, and is not present on mobile website (outside template namesapce)--&gt;&lt;/div&gt;'
+		.. mw.getCurrentFrame():extensionTag({name="gallery",content=galleryContent,args={mode="slideshow",class="switcher-container"}}) .. '&lt;/div&gt;'
+	return output
+end
+
+function makeGalleryLine(file, caption, credit)
+	local title = mw.title.new(file, "File" )
+	if not title
+	then
+		return "File:Blank.png|{{Error|File [[:File:" .. file .. "]] does not exist.}}"
+	end
+	local creditLine = ( credit and '&lt;p&gt;&lt;span style="font-size:88%"&gt;' .. credit .. '&lt;/span&gt;&lt;/p&gt;' or '' )
+	return title.prefixedText .. '|' .. ( caption or '' ) .. creditLine
+end
+
+function makeGalleryLinesTable(args)
+	local galleryLinesTable = {}
+	local i = 1
+	while args[i] do
+		table.insert(galleryLinesTable, makeGalleryLine(args[i], args[i+1], args['credit' .. (i+1)/2]))
+		i = i + 2
+	end
+	return galleryLinesTable 
+end
+
+function hasCaption(line)
+	local caption = mw.ustring.match(line, ".-|(.*)")
+	-- require caption to exist with more than 5 characters (avoids sizes etc being mistaken for captions)
+	return caption and #caption&gt;5 and true or false
+end
+
+function extractGalleryFiles(wikitext)
+	local gallery = mw.ustring.match(wikitext, '&lt;gallery.-&gt;%s*(.-)%s*&lt;/gallery&gt;')
+	if not gallery then
+		return false
+	end
+	return mw.text.split(gallery, '%c')
+end
+
+function extractRegularFiles(wikitext)
+	local files = {}
+	local frame = mw.getCurrentFrame()
+	local expand = function(template)
+		return frame:preprocess(template)
+	end
+	for file in mw.ustring.gmatch(wikitext, '%b[]' ) do
+		-- remove keywords that don't work in galleries
+		file = mw.ustring.gsub(file, '|%s*thumb%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*thumbnail%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*border%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*left%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*right%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*center%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*centre%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*none%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*baseline%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*sub%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*super%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*top%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*text%-top%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*bottom%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*text%-bottom%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*framed?%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*frameless%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*upright%s*[0-9%.]*%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*upright%s*=.-([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*link%s*=.-([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*lang%s*=.-([|%]])', '%1')
+		-- remove spaces prior to captions (which cause pre-formatted text)
+		file = mw.ustring.gsub(file, '|%s*', '|')
+		-- remove sizes, which sometimes get mistaken for captions
+		file = mw.ustring.gsub(file, '|%s*%d*x?%d+%s*px%s*([|%]])', '%1')
+		-- remove linebreaks
+		file = mw.ustring.gsub(file, '\n\n', '&lt;br&gt;')
+		file = mw.ustring.gsub(file, '\n', '')
+		-- remove surrounding square brackets
+		file = mw.ustring.gsub(file, '^%[%[', '')
+		file = mw.ustring.gsub(file, '%]%]$', '')
+		table.insert(files, file)
+	end
+	return files
+end
+
+--Central function for fixing issues that could occur in both gallery-fetched and file-fetched files
+local function doubleCheck(file)
+	-- disable pipes in wikilinks
+	file = file:gsub(
+		"%[%[([^%]]-)|(.-)]]",
+		"[[%1__PIPE__%2]]")
+	-- move any alt parameter to the end to avoid putting the switcher in too early and causing a linter error
+	file = file:gsub(
+		"^(.+)(|alt=[^|]*)(.*)$",
+		"%1%3%2")
+	-- bring back pipes in wikilinks
+	file = file:gsub(
+		"%[%[(.-)__PIPE__(.-)]]",
+		"[[%1|%2]]")
+	return file
+end
+
+function makeTranscludedGalleryLinesTables(args)
+	local namespaceNumber = function(pagetitle)
+		local titleObject = mw.title.new(pagetitle)
+		return titleObject and titleObject.namespace
+	end
+	local lines = {}
+	local i = 1
+	while args[i] do
+		if namespaceNumber(args[i]) == 6 then -- file namespace
+			-- args[i] is either just the filename, or uses syntax File:Name.jpg##Caption##Credit
+			local parts = mw.text.split(args[i], '##%s*')
+			local filename = parts[1]
+			local caption = args['caption'..i] or parts[2] or false
+			local credit = args['credit'..i] or parts[3] or false
+			local line = makeGalleryLine(filename, caption, credit)
+			table.insert(lines, line)
+		else
+			local content, pagename = excerptModule.getContent(args[i])
+			if not pagename then
+				return error('Cannot read a valid page for "' .. args[i] .. '"', 0)
+			elseif not content then
+				return error('No content found on page "' .. args[i] .. '"', 0)
+			end
+			if args['section'..i] then
+				content = excerptModule.getSection(content, args['section'..i]) or ''
+			end
+			content = excerptModule.cleanupText(content, {keepSubsections=true, ignoreOnlyincludes=true}) -- true means keep subsections
+	
+			local galleryFiles = extractGalleryFiles(content)
+			if galleryFiles then
+				for _, f in pairs(galleryFiles) do
+					if hasCaption(f) then
+						local filename = string.gsub(f, '|.*', '')
+						local isOkay = excerptModule.checkImage(filename)
+						if isOkay then
+							table.insert(lines, doubleCheck(f.." (from '''[["..pagename.."]]''')"))
+						end
+					end
+				end
+			end
+	
+			local otherFiles = excerptModule.parse(content, {fileflags="1-100", filesOnly=true})
+			if otherFiles then
+				for _, f in pairs(extractRegularFiles(otherFiles)) do
+					if f and f ~= '' and mw.ustring.sub(f, 1, 5) == 'File:' and hasCaption(f) then
+						table.insert(lines, doubleCheck(f.." (from '''[["..pagename.."]]''')"))
+					end
+				end
+			end
+		
+		end
+		i = i + 1
+	end
+	return ( #lines &gt; 0 ) and lines or error('No images found')
+end
+
+p._main = function(args, transclude, extraClassName)
+	if not args[1] then
+		return error(linked and 'No page specified' or 'No page specified', 0)
+	end
+	local lines = transclude and makeTranscludedGalleryLinesTables(args) or makeGalleryLinesTable(args)
+	local classNames = 'randomSlideshow-container'
+	if extraClassName then classNames = classNames .. ' ' .. extraClassName end
+	return makeOutput(lines, args.width or '100%', classNames, isDeclined(args.random))
+end
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+	local output = p._main(args, false)
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } 
+		.. frame:preprocess(output)
+end
+
+p.transclude = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+	local output = p._main(args, true)
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } 
+		.. frame:preprocess(output)
+end
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]
+[[Category:Pages and Categories from Wikipedia]][[en:{{{subst:PAGENAME}}}]][[Category:kk]]
+[[Category:subst:PAGENAME}}]]</text>
+      <sha1>jdtnjw9o9yd8lr8a30nb96hre9axlqx</sha1>
+    </revision>
+    <revision>
+      <id>5014</id>
+      <timestamp>2025-05-03T01:10:53Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Text replacement - "{{{subst:PAGENAME}}}" to "{{subst:PAGENAME}}"</comment>
+      <origin>5014</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="8989" sha1="sk7mlmelzrtyikt167opf7650g7m90g" xml:space="preserve">-- Creates a slideshow gallery where the order is randomised. Intended for use on portal pages.
+local p = {}
+local excerptModule =  require('Module:Excerpt/portals')
+local randomModule = require('Module:Random')
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+function normaliseCssMeasurement(input)
+	local suffix = string.reverse(string.sub(string.reverse(input), 1, 2))
+	if ( suffix == 'px' ) or ( suffix == 'em' ) or ( string.sub(suffix, 2, 2) == '%' ) then
+		return input
+	else
+		return input .. 'px'
+	end
+end
+
+function isDeclined(val)
+	if not val then return false end
+	local declinedWords = " decline declined exclude excluded false none not no n off omit omitted remove removed "
+	return string.find(declinedWords , ' '..val..' ', 1, true ) and true or false
+end
+
+function makeOutput(galleryLines, maxWidth, containerClassName, nonRandom)
+	local randomiseArgs = {	['t'] = galleryLines }
+	local sortedLines = nonRandom and galleryLines or randomModule.main('array', randomiseArgs)
+	for i = 1, #sortedLines do
+		-- insert a switcher-label span just after the first pipe, which should ideally be the caption
+		sortedLines[i] = sortedLines[i]:gsub(
+			"|",
+			'|&lt;span class="switcher-label" style="display:none"&gt;&lt;span class="randomSlideshow-sr-only"&gt;Image ' .. tostring(i) .. '&lt;/span&gt;&lt;/span&gt;',
+			1)
+	end
+	local galleryContent = table.concat(sortedLines, '\n')
+	local output = '&lt;div class="' .. containerClassName .. '" style="max-width:' .. normaliseCssMeasurement(maxWidth) .. '; margin:-4em auto;"&gt;&lt;div class="nomobile"&gt;&lt;!--intentionally empty on desktop, and is not present on mobile website (outside template namesapce)--&gt;&lt;/div&gt;'
+		.. mw.getCurrentFrame():extensionTag({name="gallery",content=galleryContent,args={mode="slideshow",class="switcher-container"}}) .. '&lt;/div&gt;'
+	return output
+end
+
+function makeGalleryLine(file, caption, credit)
+	local title = mw.title.new(file, "File" )
+	if not title
+	then
+		return "File:Blank.png|{{Error|File [[:File:" .. file .. "]] does not exist.}}"
+	end
+	local creditLine = ( credit and '&lt;p&gt;&lt;span style="font-size:88%"&gt;' .. credit .. '&lt;/span&gt;&lt;/p&gt;' or '' )
+	return title.prefixedText .. '|' .. ( caption or '' ) .. creditLine
+end
+
+function makeGalleryLinesTable(args)
+	local galleryLinesTable = {}
+	local i = 1
+	while args[i] do
+		table.insert(galleryLinesTable, makeGalleryLine(args[i], args[i+1], args['credit' .. (i+1)/2]))
+		i = i + 2
+	end
+	return galleryLinesTable 
+end
+
+function hasCaption(line)
+	local caption = mw.ustring.match(line, ".-|(.*)")
+	-- require caption to exist with more than 5 characters (avoids sizes etc being mistaken for captions)
+	return caption and #caption&gt;5 and true or false
+end
+
+function extractGalleryFiles(wikitext)
+	local gallery = mw.ustring.match(wikitext, '&lt;gallery.-&gt;%s*(.-)%s*&lt;/gallery&gt;')
+	if not gallery then
+		return false
+	end
+	return mw.text.split(gallery, '%c')
+end
+
+function extractRegularFiles(wikitext)
+	local files = {}
+	local frame = mw.getCurrentFrame()
+	local expand = function(template)
+		return frame:preprocess(template)
+	end
+	for file in mw.ustring.gmatch(wikitext, '%b[]' ) do
+		-- remove keywords that don't work in galleries
+		file = mw.ustring.gsub(file, '|%s*thumb%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*thumbnail%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*border%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*left%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*right%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*center%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*centre%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*none%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*baseline%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*sub%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*super%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*top%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*text%-top%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*bottom%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*text%-bottom%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*framed?%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*frameless%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*upright%s*[0-9%.]*%s*([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*upright%s*=.-([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*link%s*=.-([|%]])', '%1')
+		file = mw.ustring.gsub(file, '|%s*lang%s*=.-([|%]])', '%1')
+		-- remove spaces prior to captions (which cause pre-formatted text)
+		file = mw.ustring.gsub(file, '|%s*', '|')
+		-- remove sizes, which sometimes get mistaken for captions
+		file = mw.ustring.gsub(file, '|%s*%d*x?%d+%s*px%s*([|%]])', '%1')
+		-- remove linebreaks
+		file = mw.ustring.gsub(file, '\n\n', '&lt;br&gt;')
+		file = mw.ustring.gsub(file, '\n', '')
+		-- remove surrounding square brackets
+		file = mw.ustring.gsub(file, '^%[%[', '')
+		file = mw.ustring.gsub(file, '%]%]$', '')
+		table.insert(files, file)
+	end
+	return files
+end
+
+--Central function for fixing issues that could occur in both gallery-fetched and file-fetched files
+local function doubleCheck(file)
+	-- disable pipes in wikilinks
+	file = file:gsub(
+		"%[%[([^%]]-)|(.-)]]",
+		"[[%1__PIPE__%2]]")
+	-- move any alt parameter to the end to avoid putting the switcher in too early and causing a linter error
+	file = file:gsub(
+		"^(.+)(|alt=[^|]*)(.*)$",
+		"%1%3%2")
+	-- bring back pipes in wikilinks
+	file = file:gsub(
+		"%[%[(.-)__PIPE__(.-)]]",
+		"[[%1|%2]]")
+	return file
+end
+
+function makeTranscludedGalleryLinesTables(args)
+	local namespaceNumber = function(pagetitle)
+		local titleObject = mw.title.new(pagetitle)
+		return titleObject and titleObject.namespace
+	end
+	local lines = {}
+	local i = 1
+	while args[i] do
+		if namespaceNumber(args[i]) == 6 then -- file namespace
+			-- args[i] is either just the filename, or uses syntax File:Name.jpg##Caption##Credit
+			local parts = mw.text.split(args[i], '##%s*')
+			local filename = parts[1]
+			local caption = args['caption'..i] or parts[2] or false
+			local credit = args['credit'..i] or parts[3] or false
+			local line = makeGalleryLine(filename, caption, credit)
+			table.insert(lines, line)
+		else
+			local content, pagename = excerptModule.getContent(args[i])
+			if not pagename then
+				return error('Cannot read a valid page for "' .. args[i] .. '"', 0)
+			elseif not content then
+				return error('No content found on page "' .. args[i] .. '"', 0)
+			end
+			if args['section'..i] then
+				content = excerptModule.getSection(content, args['section'..i]) or ''
+			end
+			content = excerptModule.cleanupText(content, {keepSubsections=true, ignoreOnlyincludes=true}) -- true means keep subsections
+	
+			local galleryFiles = extractGalleryFiles(content)
+			if galleryFiles then
+				for _, f in pairs(galleryFiles) do
+					if hasCaption(f) then
+						local filename = string.gsub(f, '|.*', '')
+						local isOkay = excerptModule.checkImage(filename)
+						if isOkay then
+							table.insert(lines, doubleCheck(f.." (from '''[["..pagename.."]]''')"))
+						end
+					end
+				end
+			end
+	
+			local otherFiles = excerptModule.parse(content, {fileflags="1-100", filesOnly=true})
+			if otherFiles then
+				for _, f in pairs(extractRegularFiles(otherFiles)) do
+					if f and f ~= '' and mw.ustring.sub(f, 1, 5) == 'File:' and hasCaption(f) then
+						table.insert(lines, doubleCheck(f.." (from '''[["..pagename.."]]''')"))
+					end
+				end
+			end
+		
+		end
+		i = i + 1
+	end
+	return ( #lines &gt; 0 ) and lines or error('No images found')
+end
+
+p._main = function(args, transclude, extraClassName)
+	if not args[1] then
+		return error(linked and 'No page specified' or 'No page specified', 0)
+	end
+	local lines = transclude and makeTranscludedGalleryLinesTables(args) or makeGalleryLinesTable(args)
+	local classNames = 'randomSlideshow-container'
+	if extraClassName then classNames = classNames .. ' ' .. extraClassName end
+	return makeOutput(lines, args.width or '100%', classNames, isDeclined(args.random))
+end
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+	local output = p._main(args, false)
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } 
+		.. frame:preprocess(output)
+end
+
+p.transclude = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+	local output = p._main(args, true)
+	return frame:extensionTag{ name='templatestyles', args = { src='Module:Random slideshow/styles.css'} } 
+		.. frame:preprocess(output)
+end
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]
+[[Category:Pages and Categories from Wikipedia]][[en:{{subst:PAGENAME}}]][[Category:kk]]
+[[Category:subst:PAGENAME}}]]</text>
+      <sha1>sk7mlmelzrtyikt167opf7650g7m90g</sha1>
+    </revision>
+  </page>
+</mediawiki>

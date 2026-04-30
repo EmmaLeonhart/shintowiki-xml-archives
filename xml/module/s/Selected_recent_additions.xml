@@ -1,0 +1,2509 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Selected recent additions</title>
+    <ns>828</ns>
+    <id>5014</id>
+    <revision>
+      <id>787919</id>
+      <timestamp>2019-03-09T07:31:27Z</timestamp>
+      <contributor>
+        <username>en&gt;Evad37</username>
+        <id>0</id>
+      </contributor>
+      <comment>allow wikitext to be shown alongside items, for when the template is just used to generate suggestions</comment>
+      <origin>787919</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5330" sha1="kk3v4j50dyhczfu15cdxxjfig86x1ma" xml:space="preserve">local randomModule = require('Module:Random')
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+function isAffirmed(val)
+	if not(val) then return false end
+	local affirmedWords = ' add added affirm affirmed include included on true yes y '
+	return string.find(affirmedWords, ' '..string.lower(val)..' ', 1, true ) and true or false
+end
+
+function makeOutput(allItems, maxItems, more, notRandom)
+	local output
+	if notRandom then
+		output = ''
+		local itemIndex = 1
+		local maxCount = math.min(#allItems, maxItems)
+		while itemIndex &lt;= maxCount do
+			output = output .. allItems[itemIndex] .. '\n'
+			itemIndex = itemIndex + 1
+		end
+	else
+		local randomiseArgs = {
+			['t'] = allItems,
+			['limit'] = maxItems
+		}
+		local randomisedItems = randomModule.main('array', randomiseArgs )
+		output = table.concat(randomisedItems, '\n')
+	end
+	if more then
+		output = output .. more
+	end
+	return mw.text.trim(output)
+end
+
+function cleanForPatternMatching(wikitext)
+	-- remove wikilink brackets
+	local cleaned = mw.ustring.gsub(wikitext, "%[%[(.-)%]%]","%1")
+	-- remove pipes that would have been in piped links
+	cleaned = mw.ustring.gsub(cleaned, "%|"," ")
+	-- remove external links
+	cleaned = mw.ustring.gsub(cleaned, "%[.-%]"," ")
+	return cleaned
+end
+
+function makeCollapsed(outerText, innerText)
+	return "{{Hidden begin | titlestyle = font-weight:normal | title = " .. outerText .. "}}" .. innerText .. "{{Hidden end}}"
+end
+
+
+-- Get current events for a "YYYY Month D" date. Returns a table of list items.
+function getRecentAdditions(subpage, keepPatterns, skipPatterns, showWikitext)
+	local title = mw.title.new('Wikipedia:Recent additions' .. subpage)
+	local raw = title:getContent()
+	local itemPattern = '%*%s?%.%.%.[%S ]*'
+	local items = {}
+	for item in mw.ustring.gmatch(raw, itemPattern) do
+		local keep = false
+		local skip = false
+		local isListItem = ( string.sub(item, 0, 1) == '*' )
+		if isListItem then
+			local text = cleanForPatternMatching(item)
+			for ii, keepPatt in pairs(keepPatterns) do
+				if not keep and mw.ustring.find(text, keepPatt) then
+					keep = true
+				end
+			end
+			if #skipPatterns &gt; 0 then
+				for iii, skipPatt in pairs(skipPatterns) do
+					if not skip and mw.ustring.find(text, skipPatt) then
+						skip = true			
+					end
+				end
+			end
+		end
+		if keep and not skip then
+			-- remove (pictured) inline note
+			local cleanItem = mw.ustring.gsub(item, "%s*''%(.-pictured.-%)''", "")
+			-- remove (illustrated) inline note
+			cleanItem = mw.ustring.gsub(cleanItem, "%s*''%(.-illustrated.-%)''", "")
+			if showWikitext then
+				-- remove html comments
+				cleanItem = mw.ustring.gsub(cleanItem, "%&lt;%!%-%-(.-)%-%-%&gt;", "")
+				local itemWikitext = "&lt;pre&gt;" .. mw.text.nowiki( cleanItem ) .. "&lt;/pre&gt;"
+				cleanItem = makeCollapsed(cleanItem, itemWikitext)
+			end
+			table.insert(items, cleanItem)
+		end
+	end
+	return items
+end
+
+function getItems(maxMonths, patterns, skipPatterns, showWikitext)
+	local allItems = {}
+	local lang = mw.language.new('en')
+	local currentYear  = tonumber(lang:formatDate('Y', 'now'))
+	local currentMonth = tonumber(lang:formatDate('n', 'now'))
+	local monthsAgo = 0
+	while monthsAgo &lt; maxMonths do
+		local subpage
+		if monthsAgo == 0 then
+			subpage = ''
+		else
+			local year = currentYear - math.modf( (monthsAgo+12-currentMonth)/12 ) 
+			local month = math.fmod(12 + currentMonth - math.fmod(monthsAgo, 12), 12)
+			month = ( month ~= 0 ) and month or 12
+			subpage = lang:formatDate('/Y/F', year .. '-' .. month)
+		end
+		local monthlyItems = getRecentAdditions(subpage, patterns, skipPatterns, showWikitext)
+		for i, item in ipairs(monthlyItems) do
+			table.insert(allItems, item)
+		end
+		monthsAgo = monthsAgo + 1
+	end
+	return allItems
+end
+
+function getPatterns(args, prefix)
+	local patterns = {}
+	local ii = 1
+	while args[prefix and prefix..ii or ii] do
+		patterns[ii] = args[prefix and prefix..ii or ii]
+		ii = ii + 1
+	end
+	return patterns
+end
+
+local p = {}
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+
+	if args['not'] and not args['not1'] then
+		args['not1'] = args['not']
+	end
+	
+	local patterns = getPatterns(args)
+	if #patterns &lt; 1 then
+		return error("Search pattern not set")
+	end
+
+	local skipPatterns = getPatterns(args, 'not')
+
+	local months = tonumber(args.months) or 30
+	
+	local showWikitext = isAffirmed(args.wikitext)
+
+	local allItems = getItems(months, patterns, skipPatterns, showWikitext)
+	if #allItems &lt; 1 then
+		return args.header and '' or args.none or 'No recent additions'
+	end
+
+	local maxItems = tonumber(args.max) or 6
+
+	local more = args.more
+	if isAffirmed(args.more) then
+		more = "'''[[Wikipedia:Recent additions|More recent additions...]]'''"
+	end
+
+	local nonRandom = isAffirmed(args.latest)
+
+	local output = makeOutput(allItems, maxItems, more, nonRandom)
+	if args.header then
+		output = args.header .. '\n' .. output .. '\n' .. (args.footer or '{{Box-footer}}')
+	end
+	local needsExpansion = mw.ustring.find(output, '{{', 0, true)	
+	if needsExpansion then
+		return frame:preprocess(output)
+	else 
+		return output
+	end
+end
+
+return p</text>
+      <sha1>kk3v4j50dyhczfu15cdxxjfig86x1ma</sha1>
+    </revision>
+    <revision>
+      <id>787920</id>
+      <parentid>787919</parentid>
+      <timestamp>2024-12-20T23:55:38Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: importing wikipedia</comment>
+      <origin>787919</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5330" sha1="kk3v4j50dyhczfu15cdxxjfig86x1ma" xml:space="preserve">local randomModule = require('Module:Random')
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+function isAffirmed(val)
+	if not(val) then return false end
+	local affirmedWords = ' add added affirm affirmed include included on true yes y '
+	return string.find(affirmedWords, ' '..string.lower(val)..' ', 1, true ) and true or false
+end
+
+function makeOutput(allItems, maxItems, more, notRandom)
+	local output
+	if notRandom then
+		output = ''
+		local itemIndex = 1
+		local maxCount = math.min(#allItems, maxItems)
+		while itemIndex &lt;= maxCount do
+			output = output .. allItems[itemIndex] .. '\n'
+			itemIndex = itemIndex + 1
+		end
+	else
+		local randomiseArgs = {
+			['t'] = allItems,
+			['limit'] = maxItems
+		}
+		local randomisedItems = randomModule.main('array', randomiseArgs )
+		output = table.concat(randomisedItems, '\n')
+	end
+	if more then
+		output = output .. more
+	end
+	return mw.text.trim(output)
+end
+
+function cleanForPatternMatching(wikitext)
+	-- remove wikilink brackets
+	local cleaned = mw.ustring.gsub(wikitext, "%[%[(.-)%]%]","%1")
+	-- remove pipes that would have been in piped links
+	cleaned = mw.ustring.gsub(cleaned, "%|"," ")
+	-- remove external links
+	cleaned = mw.ustring.gsub(cleaned, "%[.-%]"," ")
+	return cleaned
+end
+
+function makeCollapsed(outerText, innerText)
+	return "{{Hidden begin | titlestyle = font-weight:normal | title = " .. outerText .. "}}" .. innerText .. "{{Hidden end}}"
+end
+
+
+-- Get current events for a "YYYY Month D" date. Returns a table of list items.
+function getRecentAdditions(subpage, keepPatterns, skipPatterns, showWikitext)
+	local title = mw.title.new('Wikipedia:Recent additions' .. subpage)
+	local raw = title:getContent()
+	local itemPattern = '%*%s?%.%.%.[%S ]*'
+	local items = {}
+	for item in mw.ustring.gmatch(raw, itemPattern) do
+		local keep = false
+		local skip = false
+		local isListItem = ( string.sub(item, 0, 1) == '*' )
+		if isListItem then
+			local text = cleanForPatternMatching(item)
+			for ii, keepPatt in pairs(keepPatterns) do
+				if not keep and mw.ustring.find(text, keepPatt) then
+					keep = true
+				end
+			end
+			if #skipPatterns &gt; 0 then
+				for iii, skipPatt in pairs(skipPatterns) do
+					if not skip and mw.ustring.find(text, skipPatt) then
+						skip = true			
+					end
+				end
+			end
+		end
+		if keep and not skip then
+			-- remove (pictured) inline note
+			local cleanItem = mw.ustring.gsub(item, "%s*''%(.-pictured.-%)''", "")
+			-- remove (illustrated) inline note
+			cleanItem = mw.ustring.gsub(cleanItem, "%s*''%(.-illustrated.-%)''", "")
+			if showWikitext then
+				-- remove html comments
+				cleanItem = mw.ustring.gsub(cleanItem, "%&lt;%!%-%-(.-)%-%-%&gt;", "")
+				local itemWikitext = "&lt;pre&gt;" .. mw.text.nowiki( cleanItem ) .. "&lt;/pre&gt;"
+				cleanItem = makeCollapsed(cleanItem, itemWikitext)
+			end
+			table.insert(items, cleanItem)
+		end
+	end
+	return items
+end
+
+function getItems(maxMonths, patterns, skipPatterns, showWikitext)
+	local allItems = {}
+	local lang = mw.language.new('en')
+	local currentYear  = tonumber(lang:formatDate('Y', 'now'))
+	local currentMonth = tonumber(lang:formatDate('n', 'now'))
+	local monthsAgo = 0
+	while monthsAgo &lt; maxMonths do
+		local subpage
+		if monthsAgo == 0 then
+			subpage = ''
+		else
+			local year = currentYear - math.modf( (monthsAgo+12-currentMonth)/12 ) 
+			local month = math.fmod(12 + currentMonth - math.fmod(monthsAgo, 12), 12)
+			month = ( month ~= 0 ) and month or 12
+			subpage = lang:formatDate('/Y/F', year .. '-' .. month)
+		end
+		local monthlyItems = getRecentAdditions(subpage, patterns, skipPatterns, showWikitext)
+		for i, item in ipairs(monthlyItems) do
+			table.insert(allItems, item)
+		end
+		monthsAgo = monthsAgo + 1
+	end
+	return allItems
+end
+
+function getPatterns(args, prefix)
+	local patterns = {}
+	local ii = 1
+	while args[prefix and prefix..ii or ii] do
+		patterns[ii] = args[prefix and prefix..ii or ii]
+		ii = ii + 1
+	end
+	return patterns
+end
+
+local p = {}
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+
+	if args['not'] and not args['not1'] then
+		args['not1'] = args['not']
+	end
+	
+	local patterns = getPatterns(args)
+	if #patterns &lt; 1 then
+		return error("Search pattern not set")
+	end
+
+	local skipPatterns = getPatterns(args, 'not')
+
+	local months = tonumber(args.months) or 30
+	
+	local showWikitext = isAffirmed(args.wikitext)
+
+	local allItems = getItems(months, patterns, skipPatterns, showWikitext)
+	if #allItems &lt; 1 then
+		return args.header and '' or args.none or 'No recent additions'
+	end
+
+	local maxItems = tonumber(args.max) or 6
+
+	local more = args.more
+	if isAffirmed(args.more) then
+		more = "'''[[Wikipedia:Recent additions|More recent additions...]]'''"
+	end
+
+	local nonRandom = isAffirmed(args.latest)
+
+	local output = makeOutput(allItems, maxItems, more, nonRandom)
+	if args.header then
+		output = args.header .. '\n' .. output .. '\n' .. (args.footer or '{{Box-footer}}')
+	end
+	local needsExpansion = mw.ustring.find(output, '{{', 0, true)	
+	if needsExpansion then
+		return frame:preprocess(output)
+	else 
+		return output
+	end
+end
+
+return p</text>
+      <sha1>kk3v4j50dyhczfu15cdxxjfig86x1ma</sha1>
+    </revision>
+    <revision>
+      <id>787921</id>
+      <parentid>787920</parentid>
+      <timestamp>2024-12-21T00:40:14Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Adding [[Category:Pages and Categories from wikipedia0]] using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>787921</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5381" sha1="32v6vys1lo939byii3uutt1cxff6hx4" xml:space="preserve">local randomModule = require('Module:Random')
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+function isAffirmed(val)
+	if not(val) then return false end
+	local affirmedWords = ' add added affirm affirmed include included on true yes y '
+	return string.find(affirmedWords, ' '..string.lower(val)..' ', 1, true ) and true or false
+end
+
+function makeOutput(allItems, maxItems, more, notRandom)
+	local output
+	if notRandom then
+		output = ''
+		local itemIndex = 1
+		local maxCount = math.min(#allItems, maxItems)
+		while itemIndex &lt;= maxCount do
+			output = output .. allItems[itemIndex] .. '\n'
+			itemIndex = itemIndex + 1
+		end
+	else
+		local randomiseArgs = {
+			['t'] = allItems,
+			['limit'] = maxItems
+		}
+		local randomisedItems = randomModule.main('array', randomiseArgs )
+		output = table.concat(randomisedItems, '\n')
+	end
+	if more then
+		output = output .. more
+	end
+	return mw.text.trim(output)
+end
+
+function cleanForPatternMatching(wikitext)
+	-- remove wikilink brackets
+	local cleaned = mw.ustring.gsub(wikitext, "%[%[(.-)%]%]","%1")
+	-- remove pipes that would have been in piped links
+	cleaned = mw.ustring.gsub(cleaned, "%|"," ")
+	-- remove external links
+	cleaned = mw.ustring.gsub(cleaned, "%[.-%]"," ")
+	return cleaned
+end
+
+function makeCollapsed(outerText, innerText)
+	return "{{Hidden begin | titlestyle = font-weight:normal | title = " .. outerText .. "}}" .. innerText .. "{{Hidden end}}"
+end
+
+
+-- Get current events for a "YYYY Month D" date. Returns a table of list items.
+function getRecentAdditions(subpage, keepPatterns, skipPatterns, showWikitext)
+	local title = mw.title.new('Wikipedia:Recent additions' .. subpage)
+	local raw = title:getContent()
+	local itemPattern = '%*%s?%.%.%.[%S ]*'
+	local items = {}
+	for item in mw.ustring.gmatch(raw, itemPattern) do
+		local keep = false
+		local skip = false
+		local isListItem = ( string.sub(item, 0, 1) == '*' )
+		if isListItem then
+			local text = cleanForPatternMatching(item)
+			for ii, keepPatt in pairs(keepPatterns) do
+				if not keep and mw.ustring.find(text, keepPatt) then
+					keep = true
+				end
+			end
+			if #skipPatterns &gt; 0 then
+				for iii, skipPatt in pairs(skipPatterns) do
+					if not skip and mw.ustring.find(text, skipPatt) then
+						skip = true			
+					end
+				end
+			end
+		end
+		if keep and not skip then
+			-- remove (pictured) inline note
+			local cleanItem = mw.ustring.gsub(item, "%s*''%(.-pictured.-%)''", "")
+			-- remove (illustrated) inline note
+			cleanItem = mw.ustring.gsub(cleanItem, "%s*''%(.-illustrated.-%)''", "")
+			if showWikitext then
+				-- remove html comments
+				cleanItem = mw.ustring.gsub(cleanItem, "%&lt;%!%-%-(.-)%-%-%&gt;", "")
+				local itemWikitext = "&lt;pre&gt;" .. mw.text.nowiki( cleanItem ) .. "&lt;/pre&gt;"
+				cleanItem = makeCollapsed(cleanItem, itemWikitext)
+			end
+			table.insert(items, cleanItem)
+		end
+	end
+	return items
+end
+
+function getItems(maxMonths, patterns, skipPatterns, showWikitext)
+	local allItems = {}
+	local lang = mw.language.new('en')
+	local currentYear  = tonumber(lang:formatDate('Y', 'now'))
+	local currentMonth = tonumber(lang:formatDate('n', 'now'))
+	local monthsAgo = 0
+	while monthsAgo &lt; maxMonths do
+		local subpage
+		if monthsAgo == 0 then
+			subpage = ''
+		else
+			local year = currentYear - math.modf( (monthsAgo+12-currentMonth)/12 ) 
+			local month = math.fmod(12 + currentMonth - math.fmod(monthsAgo, 12), 12)
+			month = ( month ~= 0 ) and month or 12
+			subpage = lang:formatDate('/Y/F', year .. '-' .. month)
+		end
+		local monthlyItems = getRecentAdditions(subpage, patterns, skipPatterns, showWikitext)
+		for i, item in ipairs(monthlyItems) do
+			table.insert(allItems, item)
+		end
+		monthsAgo = monthsAgo + 1
+	end
+	return allItems
+end
+
+function getPatterns(args, prefix)
+	local patterns = {}
+	local ii = 1
+	while args[prefix and prefix..ii or ii] do
+		patterns[ii] = args[prefix and prefix..ii or ii]
+		ii = ii + 1
+	end
+	return patterns
+end
+
+local p = {}
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+
+	if args['not'] and not args['not1'] then
+		args['not1'] = args['not']
+	end
+	
+	local patterns = getPatterns(args)
+	if #patterns &lt; 1 then
+		return error("Search pattern not set")
+	end
+
+	local skipPatterns = getPatterns(args, 'not')
+
+	local months = tonumber(args.months) or 30
+	
+	local showWikitext = isAffirmed(args.wikitext)
+
+	local allItems = getItems(months, patterns, skipPatterns, showWikitext)
+	if #allItems &lt; 1 then
+		return args.header and '' or args.none or 'No recent additions'
+	end
+
+	local maxItems = tonumber(args.max) or 6
+
+	local more = args.more
+	if isAffirmed(args.more) then
+		more = "'''[[Wikipedia:Recent additions|More recent additions...]]'''"
+	end
+
+	local nonRandom = isAffirmed(args.latest)
+
+	local output = makeOutput(allItems, maxItems, more, nonRandom)
+	if args.header then
+		output = args.header .. '\n' .. output .. '\n' .. (args.footer or '{{Box-footer}}')
+	end
+	local needsExpansion = mw.ustring.find(output, '{{', 0, true)	
+	if needsExpansion then
+		return frame:preprocess(output)
+	else 
+		return output
+	end
+end
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]</text>
+      <sha1>32v6vys1lo939byii3uutt1cxff6hx4</sha1>
+    </revision>
+    <revision>
+      <id>787922</id>
+      <parentid>787921</parentid>
+      <timestamp>2025-01-26T23:07:32Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Adding [[Category:Pages and Categories from Wikipedia]][[en:{{subst:PAGENAME}}]][[Category:kk]] on using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>787922</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5470" sha1="csqfl9ehz0eeh6j0ytmpxr4hywarts1" xml:space="preserve">local randomModule = require('Module:Random')
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+function isAffirmed(val)
+	if not(val) then return false end
+	local affirmedWords = ' add added affirm affirmed include included on true yes y '
+	return string.find(affirmedWords, ' '..string.lower(val)..' ', 1, true ) and true or false
+end
+
+function makeOutput(allItems, maxItems, more, notRandom)
+	local output
+	if notRandom then
+		output = ''
+		local itemIndex = 1
+		local maxCount = math.min(#allItems, maxItems)
+		while itemIndex &lt;= maxCount do
+			output = output .. allItems[itemIndex] .. '\n'
+			itemIndex = itemIndex + 1
+		end
+	else
+		local randomiseArgs = {
+			['t'] = allItems,
+			['limit'] = maxItems
+		}
+		local randomisedItems = randomModule.main('array', randomiseArgs )
+		output = table.concat(randomisedItems, '\n')
+	end
+	if more then
+		output = output .. more
+	end
+	return mw.text.trim(output)
+end
+
+function cleanForPatternMatching(wikitext)
+	-- remove wikilink brackets
+	local cleaned = mw.ustring.gsub(wikitext, "%[%[(.-)%]%]","%1")
+	-- remove pipes that would have been in piped links
+	cleaned = mw.ustring.gsub(cleaned, "%|"," ")
+	-- remove external links
+	cleaned = mw.ustring.gsub(cleaned, "%[.-%]"," ")
+	return cleaned
+end
+
+function makeCollapsed(outerText, innerText)
+	return "{{Hidden begin | titlestyle = font-weight:normal | title = " .. outerText .. "}}" .. innerText .. "{{Hidden end}}"
+end
+
+
+-- Get current events for a "YYYY Month D" date. Returns a table of list items.
+function getRecentAdditions(subpage, keepPatterns, skipPatterns, showWikitext)
+	local title = mw.title.new('Wikipedia:Recent additions' .. subpage)
+	local raw = title:getContent()
+	local itemPattern = '%*%s?%.%.%.[%S ]*'
+	local items = {}
+	for item in mw.ustring.gmatch(raw, itemPattern) do
+		local keep = false
+		local skip = false
+		local isListItem = ( string.sub(item, 0, 1) == '*' )
+		if isListItem then
+			local text = cleanForPatternMatching(item)
+			for ii, keepPatt in pairs(keepPatterns) do
+				if not keep and mw.ustring.find(text, keepPatt) then
+					keep = true
+				end
+			end
+			if #skipPatterns &gt; 0 then
+				for iii, skipPatt in pairs(skipPatterns) do
+					if not skip and mw.ustring.find(text, skipPatt) then
+						skip = true			
+					end
+				end
+			end
+		end
+		if keep and not skip then
+			-- remove (pictured) inline note
+			local cleanItem = mw.ustring.gsub(item, "%s*''%(.-pictured.-%)''", "")
+			-- remove (illustrated) inline note
+			cleanItem = mw.ustring.gsub(cleanItem, "%s*''%(.-illustrated.-%)''", "")
+			if showWikitext then
+				-- remove html comments
+				cleanItem = mw.ustring.gsub(cleanItem, "%&lt;%!%-%-(.-)%-%-%&gt;", "")
+				local itemWikitext = "&lt;pre&gt;" .. mw.text.nowiki( cleanItem ) .. "&lt;/pre&gt;"
+				cleanItem = makeCollapsed(cleanItem, itemWikitext)
+			end
+			table.insert(items, cleanItem)
+		end
+	end
+	return items
+end
+
+function getItems(maxMonths, patterns, skipPatterns, showWikitext)
+	local allItems = {}
+	local lang = mw.language.new('en')
+	local currentYear  = tonumber(lang:formatDate('Y', 'now'))
+	local currentMonth = tonumber(lang:formatDate('n', 'now'))
+	local monthsAgo = 0
+	while monthsAgo &lt; maxMonths do
+		local subpage
+		if monthsAgo == 0 then
+			subpage = ''
+		else
+			local year = currentYear - math.modf( (monthsAgo+12-currentMonth)/12 ) 
+			local month = math.fmod(12 + currentMonth - math.fmod(monthsAgo, 12), 12)
+			month = ( month ~= 0 ) and month or 12
+			subpage = lang:formatDate('/Y/F', year .. '-' .. month)
+		end
+		local monthlyItems = getRecentAdditions(subpage, patterns, skipPatterns, showWikitext)
+		for i, item in ipairs(monthlyItems) do
+			table.insert(allItems, item)
+		end
+		monthsAgo = monthsAgo + 1
+	end
+	return allItems
+end
+
+function getPatterns(args, prefix)
+	local patterns = {}
+	local ii = 1
+	while args[prefix and prefix..ii or ii] do
+		patterns[ii] = args[prefix and prefix..ii or ii]
+		ii = ii + 1
+	end
+	return patterns
+end
+
+local p = {}
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+
+	if args['not'] and not args['not1'] then
+		args['not1'] = args['not']
+	end
+	
+	local patterns = getPatterns(args)
+	if #patterns &lt; 1 then
+		return error("Search pattern not set")
+	end
+
+	local skipPatterns = getPatterns(args, 'not')
+
+	local months = tonumber(args.months) or 30
+	
+	local showWikitext = isAffirmed(args.wikitext)
+
+	local allItems = getItems(months, patterns, skipPatterns, showWikitext)
+	if #allItems &lt; 1 then
+		return args.header and '' or args.none or 'No recent additions'
+	end
+
+	local maxItems = tonumber(args.max) or 6
+
+	local more = args.more
+	if isAffirmed(args.more) then
+		more = "'''[[Wikipedia:Recent additions|More recent additions...]]'''"
+	end
+
+	local nonRandom = isAffirmed(args.latest)
+
+	local output = makeOutput(allItems, maxItems, more, nonRandom)
+	if args.header then
+		output = args.header .. '\n' .. output .. '\n' .. (args.footer or '{{Box-footer}}')
+	end
+	local needsExpansion = mw.ustring.find(output, '{{', 0, true)	
+	if needsExpansion then
+		return frame:preprocess(output)
+	else 
+		return output
+	end
+end
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]
+[[Category:Pages and Categories from Wikipedia]][[en:{{subst:PAGENAME}}]][[Category:kk]]</text>
+      <sha1>csqfl9ehz0eeh6j0ytmpxr4hywarts1</sha1>
+    </revision>
+    <revision>
+      <id>787923</id>
+      <parentid>787922</parentid>
+      <timestamp>2025-01-28T02:10:04Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Adding [[Category:second attempt at refreshing on January 27 2024]][[Category:{{subst:PAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]] on using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>787923</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5622" sha1="jl8ijg3xvs75h9mgj5yt7mb8mkxkytf" xml:space="preserve">local randomModule = require('Module:Random')
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+function isAffirmed(val)
+	if not(val) then return false end
+	local affirmedWords = ' add added affirm affirmed include included on true yes y '
+	return string.find(affirmedWords, ' '..string.lower(val)..' ', 1, true ) and true or false
+end
+
+function makeOutput(allItems, maxItems, more, notRandom)
+	local output
+	if notRandom then
+		output = ''
+		local itemIndex = 1
+		local maxCount = math.min(#allItems, maxItems)
+		while itemIndex &lt;= maxCount do
+			output = output .. allItems[itemIndex] .. '\n'
+			itemIndex = itemIndex + 1
+		end
+	else
+		local randomiseArgs = {
+			['t'] = allItems,
+			['limit'] = maxItems
+		}
+		local randomisedItems = randomModule.main('array', randomiseArgs )
+		output = table.concat(randomisedItems, '\n')
+	end
+	if more then
+		output = output .. more
+	end
+	return mw.text.trim(output)
+end
+
+function cleanForPatternMatching(wikitext)
+	-- remove wikilink brackets
+	local cleaned = mw.ustring.gsub(wikitext, "%[%[(.-)%]%]","%1")
+	-- remove pipes that would have been in piped links
+	cleaned = mw.ustring.gsub(cleaned, "%|"," ")
+	-- remove external links
+	cleaned = mw.ustring.gsub(cleaned, "%[.-%]"," ")
+	return cleaned
+end
+
+function makeCollapsed(outerText, innerText)
+	return "{{Hidden begin | titlestyle = font-weight:normal | title = " .. outerText .. "}}" .. innerText .. "{{Hidden end}}"
+end
+
+
+-- Get current events for a "YYYY Month D" date. Returns a table of list items.
+function getRecentAdditions(subpage, keepPatterns, skipPatterns, showWikitext)
+	local title = mw.title.new('Wikipedia:Recent additions' .. subpage)
+	local raw = title:getContent()
+	local itemPattern = '%*%s?%.%.%.[%S ]*'
+	local items = {}
+	for item in mw.ustring.gmatch(raw, itemPattern) do
+		local keep = false
+		local skip = false
+		local isListItem = ( string.sub(item, 0, 1) == '*' )
+		if isListItem then
+			local text = cleanForPatternMatching(item)
+			for ii, keepPatt in pairs(keepPatterns) do
+				if not keep and mw.ustring.find(text, keepPatt) then
+					keep = true
+				end
+			end
+			if #skipPatterns &gt; 0 then
+				for iii, skipPatt in pairs(skipPatterns) do
+					if not skip and mw.ustring.find(text, skipPatt) then
+						skip = true			
+					end
+				end
+			end
+		end
+		if keep and not skip then
+			-- remove (pictured) inline note
+			local cleanItem = mw.ustring.gsub(item, "%s*''%(.-pictured.-%)''", "")
+			-- remove (illustrated) inline note
+			cleanItem = mw.ustring.gsub(cleanItem, "%s*''%(.-illustrated.-%)''", "")
+			if showWikitext then
+				-- remove html comments
+				cleanItem = mw.ustring.gsub(cleanItem, "%&lt;%!%-%-(.-)%-%-%&gt;", "")
+				local itemWikitext = "&lt;pre&gt;" .. mw.text.nowiki( cleanItem ) .. "&lt;/pre&gt;"
+				cleanItem = makeCollapsed(cleanItem, itemWikitext)
+			end
+			table.insert(items, cleanItem)
+		end
+	end
+	return items
+end
+
+function getItems(maxMonths, patterns, skipPatterns, showWikitext)
+	local allItems = {}
+	local lang = mw.language.new('en')
+	local currentYear  = tonumber(lang:formatDate('Y', 'now'))
+	local currentMonth = tonumber(lang:formatDate('n', 'now'))
+	local monthsAgo = 0
+	while monthsAgo &lt; maxMonths do
+		local subpage
+		if monthsAgo == 0 then
+			subpage = ''
+		else
+			local year = currentYear - math.modf( (monthsAgo+12-currentMonth)/12 ) 
+			local month = math.fmod(12 + currentMonth - math.fmod(monthsAgo, 12), 12)
+			month = ( month ~= 0 ) and month or 12
+			subpage = lang:formatDate('/Y/F', year .. '-' .. month)
+		end
+		local monthlyItems = getRecentAdditions(subpage, patterns, skipPatterns, showWikitext)
+		for i, item in ipairs(monthlyItems) do
+			table.insert(allItems, item)
+		end
+		monthsAgo = monthsAgo + 1
+	end
+	return allItems
+end
+
+function getPatterns(args, prefix)
+	local patterns = {}
+	local ii = 1
+	while args[prefix and prefix..ii or ii] do
+		patterns[ii] = args[prefix and prefix..ii or ii]
+		ii = ii + 1
+	end
+	return patterns
+end
+
+local p = {}
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+
+	if args['not'] and not args['not1'] then
+		args['not1'] = args['not']
+	end
+	
+	local patterns = getPatterns(args)
+	if #patterns &lt; 1 then
+		return error("Search pattern not set")
+	end
+
+	local skipPatterns = getPatterns(args, 'not')
+
+	local months = tonumber(args.months) or 30
+	
+	local showWikitext = isAffirmed(args.wikitext)
+
+	local allItems = getItems(months, patterns, skipPatterns, showWikitext)
+	if #allItems &lt; 1 then
+		return args.header and '' or args.none or 'No recent additions'
+	end
+
+	local maxItems = tonumber(args.max) or 6
+
+	local more = args.more
+	if isAffirmed(args.more) then
+		more = "'''[[Wikipedia:Recent additions|More recent additions...]]'''"
+	end
+
+	local nonRandom = isAffirmed(args.latest)
+
+	local output = makeOutput(allItems, maxItems, more, nonRandom)
+	if args.header then
+		output = args.header .. '\n' .. output .. '\n' .. (args.footer or '{{Box-footer}}')
+	end
+	local needsExpansion = mw.ustring.find(output, '{{', 0, true)	
+	if needsExpansion then
+		return frame:preprocess(output)
+	else 
+		return output
+	end
+end
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]
+[[Category:Pages and Categories from Wikipedia]][[en:{{subst:PAGENAME}}]][[Category:kk]]
+[[Category:second attempt at refreshing on January 27 2024]][[Category:{{subst:PAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]]</text>
+      <sha1>jl8ijg3xvs75h9mgj5yt7mb8mkxkytf</sha1>
+    </revision>
+    <revision>
+      <id>787924</id>
+      <parentid>787923</parentid>
+      <timestamp>2025-03-13T21:23:19Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "Category:{" to "Category:"</comment>
+      <origin>787924</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5621" sha1="jphfyokqfkbvsafc55egfc1vu04o0kz" xml:space="preserve">local randomModule = require('Module:Random')
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+function isAffirmed(val)
+	if not(val) then return false end
+	local affirmedWords = ' add added affirm affirmed include included on true yes y '
+	return string.find(affirmedWords, ' '..string.lower(val)..' ', 1, true ) and true or false
+end
+
+function makeOutput(allItems, maxItems, more, notRandom)
+	local output
+	if notRandom then
+		output = ''
+		local itemIndex = 1
+		local maxCount = math.min(#allItems, maxItems)
+		while itemIndex &lt;= maxCount do
+			output = output .. allItems[itemIndex] .. '\n'
+			itemIndex = itemIndex + 1
+		end
+	else
+		local randomiseArgs = {
+			['t'] = allItems,
+			['limit'] = maxItems
+		}
+		local randomisedItems = randomModule.main('array', randomiseArgs )
+		output = table.concat(randomisedItems, '\n')
+	end
+	if more then
+		output = output .. more
+	end
+	return mw.text.trim(output)
+end
+
+function cleanForPatternMatching(wikitext)
+	-- remove wikilink brackets
+	local cleaned = mw.ustring.gsub(wikitext, "%[%[(.-)%]%]","%1")
+	-- remove pipes that would have been in piped links
+	cleaned = mw.ustring.gsub(cleaned, "%|"," ")
+	-- remove external links
+	cleaned = mw.ustring.gsub(cleaned, "%[.-%]"," ")
+	return cleaned
+end
+
+function makeCollapsed(outerText, innerText)
+	return "{{Hidden begin | titlestyle = font-weight:normal | title = " .. outerText .. "}}" .. innerText .. "{{Hidden end}}"
+end
+
+
+-- Get current events for a "YYYY Month D" date. Returns a table of list items.
+function getRecentAdditions(subpage, keepPatterns, skipPatterns, showWikitext)
+	local title = mw.title.new('Wikipedia:Recent additions' .. subpage)
+	local raw = title:getContent()
+	local itemPattern = '%*%s?%.%.%.[%S ]*'
+	local items = {}
+	for item in mw.ustring.gmatch(raw, itemPattern) do
+		local keep = false
+		local skip = false
+		local isListItem = ( string.sub(item, 0, 1) == '*' )
+		if isListItem then
+			local text = cleanForPatternMatching(item)
+			for ii, keepPatt in pairs(keepPatterns) do
+				if not keep and mw.ustring.find(text, keepPatt) then
+					keep = true
+				end
+			end
+			if #skipPatterns &gt; 0 then
+				for iii, skipPatt in pairs(skipPatterns) do
+					if not skip and mw.ustring.find(text, skipPatt) then
+						skip = true			
+					end
+				end
+			end
+		end
+		if keep and not skip then
+			-- remove (pictured) inline note
+			local cleanItem = mw.ustring.gsub(item, "%s*''%(.-pictured.-%)''", "")
+			-- remove (illustrated) inline note
+			cleanItem = mw.ustring.gsub(cleanItem, "%s*''%(.-illustrated.-%)''", "")
+			if showWikitext then
+				-- remove html comments
+				cleanItem = mw.ustring.gsub(cleanItem, "%&lt;%!%-%-(.-)%-%-%&gt;", "")
+				local itemWikitext = "&lt;pre&gt;" .. mw.text.nowiki( cleanItem ) .. "&lt;/pre&gt;"
+				cleanItem = makeCollapsed(cleanItem, itemWikitext)
+			end
+			table.insert(items, cleanItem)
+		end
+	end
+	return items
+end
+
+function getItems(maxMonths, patterns, skipPatterns, showWikitext)
+	local allItems = {}
+	local lang = mw.language.new('en')
+	local currentYear  = tonumber(lang:formatDate('Y', 'now'))
+	local currentMonth = tonumber(lang:formatDate('n', 'now'))
+	local monthsAgo = 0
+	while monthsAgo &lt; maxMonths do
+		local subpage
+		if monthsAgo == 0 then
+			subpage = ''
+		else
+			local year = currentYear - math.modf( (monthsAgo+12-currentMonth)/12 ) 
+			local month = math.fmod(12 + currentMonth - math.fmod(monthsAgo, 12), 12)
+			month = ( month ~= 0 ) and month or 12
+			subpage = lang:formatDate('/Y/F', year .. '-' .. month)
+		end
+		local monthlyItems = getRecentAdditions(subpage, patterns, skipPatterns, showWikitext)
+		for i, item in ipairs(monthlyItems) do
+			table.insert(allItems, item)
+		end
+		monthsAgo = monthsAgo + 1
+	end
+	return allItems
+end
+
+function getPatterns(args, prefix)
+	local patterns = {}
+	local ii = 1
+	while args[prefix and prefix..ii or ii] do
+		patterns[ii] = args[prefix and prefix..ii or ii]
+		ii = ii + 1
+	end
+	return patterns
+end
+
+local p = {}
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+
+	if args['not'] and not args['not1'] then
+		args['not1'] = args['not']
+	end
+	
+	local patterns = getPatterns(args)
+	if #patterns &lt; 1 then
+		return error("Search pattern not set")
+	end
+
+	local skipPatterns = getPatterns(args, 'not')
+
+	local months = tonumber(args.months) or 30
+	
+	local showWikitext = isAffirmed(args.wikitext)
+
+	local allItems = getItems(months, patterns, skipPatterns, showWikitext)
+	if #allItems &lt; 1 then
+		return args.header and '' or args.none or 'No recent additions'
+	end
+
+	local maxItems = tonumber(args.max) or 6
+
+	local more = args.more
+	if isAffirmed(args.more) then
+		more = "'''[[Wikipedia:Recent additions|More recent additions...]]'''"
+	end
+
+	local nonRandom = isAffirmed(args.latest)
+
+	local output = makeOutput(allItems, maxItems, more, nonRandom)
+	if args.header then
+		output = args.header .. '\n' .. output .. '\n' .. (args.footer or '{{Box-footer}}')
+	end
+	local needsExpansion = mw.ustring.find(output, '{{', 0, true)	
+	if needsExpansion then
+		return frame:preprocess(output)
+	else 
+		return output
+	end
+end
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]
+[[Category:Pages and Categories from Wikipedia]][[en:{{subst:PAGENAME}}]][[Category:kk]]
+[[Category:second attempt at refreshing on January 27 2024]][[Category:{subst:PAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]]</text>
+      <sha1>jphfyokqfkbvsafc55egfc1vu04o0kz</sha1>
+    </revision>
+    <revision>
+      <id>787925</id>
+      <parentid>787924</parentid>
+      <timestamp>2025-03-13T21:23:49Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "Category:{" to "Category:"</comment>
+      <origin>787925</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5620" sha1="qzjz4vqko50jtpwrn5t4mde65m16c99" xml:space="preserve">local randomModule = require('Module:Random')
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+function isAffirmed(val)
+	if not(val) then return false end
+	local affirmedWords = ' add added affirm affirmed include included on true yes y '
+	return string.find(affirmedWords, ' '..string.lower(val)..' ', 1, true ) and true or false
+end
+
+function makeOutput(allItems, maxItems, more, notRandom)
+	local output
+	if notRandom then
+		output = ''
+		local itemIndex = 1
+		local maxCount = math.min(#allItems, maxItems)
+		while itemIndex &lt;= maxCount do
+			output = output .. allItems[itemIndex] .. '\n'
+			itemIndex = itemIndex + 1
+		end
+	else
+		local randomiseArgs = {
+			['t'] = allItems,
+			['limit'] = maxItems
+		}
+		local randomisedItems = randomModule.main('array', randomiseArgs )
+		output = table.concat(randomisedItems, '\n')
+	end
+	if more then
+		output = output .. more
+	end
+	return mw.text.trim(output)
+end
+
+function cleanForPatternMatching(wikitext)
+	-- remove wikilink brackets
+	local cleaned = mw.ustring.gsub(wikitext, "%[%[(.-)%]%]","%1")
+	-- remove pipes that would have been in piped links
+	cleaned = mw.ustring.gsub(cleaned, "%|"," ")
+	-- remove external links
+	cleaned = mw.ustring.gsub(cleaned, "%[.-%]"," ")
+	return cleaned
+end
+
+function makeCollapsed(outerText, innerText)
+	return "{{Hidden begin | titlestyle = font-weight:normal | title = " .. outerText .. "}}" .. innerText .. "{{Hidden end}}"
+end
+
+
+-- Get current events for a "YYYY Month D" date. Returns a table of list items.
+function getRecentAdditions(subpage, keepPatterns, skipPatterns, showWikitext)
+	local title = mw.title.new('Wikipedia:Recent additions' .. subpage)
+	local raw = title:getContent()
+	local itemPattern = '%*%s?%.%.%.[%S ]*'
+	local items = {}
+	for item in mw.ustring.gmatch(raw, itemPattern) do
+		local keep = false
+		local skip = false
+		local isListItem = ( string.sub(item, 0, 1) == '*' )
+		if isListItem then
+			local text = cleanForPatternMatching(item)
+			for ii, keepPatt in pairs(keepPatterns) do
+				if not keep and mw.ustring.find(text, keepPatt) then
+					keep = true
+				end
+			end
+			if #skipPatterns &gt; 0 then
+				for iii, skipPatt in pairs(skipPatterns) do
+					if not skip and mw.ustring.find(text, skipPatt) then
+						skip = true			
+					end
+				end
+			end
+		end
+		if keep and not skip then
+			-- remove (pictured) inline note
+			local cleanItem = mw.ustring.gsub(item, "%s*''%(.-pictured.-%)''", "")
+			-- remove (illustrated) inline note
+			cleanItem = mw.ustring.gsub(cleanItem, "%s*''%(.-illustrated.-%)''", "")
+			if showWikitext then
+				-- remove html comments
+				cleanItem = mw.ustring.gsub(cleanItem, "%&lt;%!%-%-(.-)%-%-%&gt;", "")
+				local itemWikitext = "&lt;pre&gt;" .. mw.text.nowiki( cleanItem ) .. "&lt;/pre&gt;"
+				cleanItem = makeCollapsed(cleanItem, itemWikitext)
+			end
+			table.insert(items, cleanItem)
+		end
+	end
+	return items
+end
+
+function getItems(maxMonths, patterns, skipPatterns, showWikitext)
+	local allItems = {}
+	local lang = mw.language.new('en')
+	local currentYear  = tonumber(lang:formatDate('Y', 'now'))
+	local currentMonth = tonumber(lang:formatDate('n', 'now'))
+	local monthsAgo = 0
+	while monthsAgo &lt; maxMonths do
+		local subpage
+		if monthsAgo == 0 then
+			subpage = ''
+		else
+			local year = currentYear - math.modf( (monthsAgo+12-currentMonth)/12 ) 
+			local month = math.fmod(12 + currentMonth - math.fmod(monthsAgo, 12), 12)
+			month = ( month ~= 0 ) and month or 12
+			subpage = lang:formatDate('/Y/F', year .. '-' .. month)
+		end
+		local monthlyItems = getRecentAdditions(subpage, patterns, skipPatterns, showWikitext)
+		for i, item in ipairs(monthlyItems) do
+			table.insert(allItems, item)
+		end
+		monthsAgo = monthsAgo + 1
+	end
+	return allItems
+end
+
+function getPatterns(args, prefix)
+	local patterns = {}
+	local ii = 1
+	while args[prefix and prefix..ii or ii] do
+		patterns[ii] = args[prefix and prefix..ii or ii]
+		ii = ii + 1
+	end
+	return patterns
+end
+
+local p = {}
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+
+	if args['not'] and not args['not1'] then
+		args['not1'] = args['not']
+	end
+	
+	local patterns = getPatterns(args)
+	if #patterns &lt; 1 then
+		return error("Search pattern not set")
+	end
+
+	local skipPatterns = getPatterns(args, 'not')
+
+	local months = tonumber(args.months) or 30
+	
+	local showWikitext = isAffirmed(args.wikitext)
+
+	local allItems = getItems(months, patterns, skipPatterns, showWikitext)
+	if #allItems &lt; 1 then
+		return args.header and '' or args.none or 'No recent additions'
+	end
+
+	local maxItems = tonumber(args.max) or 6
+
+	local more = args.more
+	if isAffirmed(args.more) then
+		more = "'''[[Wikipedia:Recent additions|More recent additions...]]'''"
+	end
+
+	local nonRandom = isAffirmed(args.latest)
+
+	local output = makeOutput(allItems, maxItems, more, nonRandom)
+	if args.header then
+		output = args.header .. '\n' .. output .. '\n' .. (args.footer or '{{Box-footer}}')
+	end
+	local needsExpansion = mw.ustring.find(output, '{{', 0, true)	
+	if needsExpansion then
+		return frame:preprocess(output)
+	else 
+		return output
+	end
+end
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]
+[[Category:Pages and Categories from Wikipedia]][[en:{{subst:PAGENAME}}]][[Category:kk]]
+[[Category:second attempt at refreshing on January 27 2024]][[Category:subst:PAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]]</text>
+      <sha1>qzjz4vqko50jtpwrn5t4mde65m16c99</sha1>
+    </revision>
+    <revision>
+      <id>787926</id>
+      <parentid>787925</parentid>
+      <timestamp>2025-04-24T05:35:44Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "second attempt at refreshing on January 27 2024" to "qq"</comment>
+      <origin>787926</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5530" sha1="pc98gm6ynoyw5ww22puxr38tttwtljx" xml:space="preserve">local randomModule = require('Module:Random')
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+function isAffirmed(val)
+	if not(val) then return false end
+	local affirmedWords = ' add added affirm affirmed include included on true yes y '
+	return string.find(affirmedWords, ' '..string.lower(val)..' ', 1, true ) and true or false
+end
+
+function makeOutput(allItems, maxItems, more, notRandom)
+	local output
+	if notRandom then
+		output = ''
+		local itemIndex = 1
+		local maxCount = math.min(#allItems, maxItems)
+		while itemIndex &lt;= maxCount do
+			output = output .. allItems[itemIndex] .. '\n'
+			itemIndex = itemIndex + 1
+		end
+	else
+		local randomiseArgs = {
+			['t'] = allItems,
+			['limit'] = maxItems
+		}
+		local randomisedItems = randomModule.main('array', randomiseArgs )
+		output = table.concat(randomisedItems, '\n')
+	end
+	if more then
+		output = output .. more
+	end
+	return mw.text.trim(output)
+end
+
+function cleanForPatternMatching(wikitext)
+	-- remove wikilink brackets
+	local cleaned = mw.ustring.gsub(wikitext, "%[%[(.-)%]%]","%1")
+	-- remove pipes that would have been in piped links
+	cleaned = mw.ustring.gsub(cleaned, "%|"," ")
+	-- remove external links
+	cleaned = mw.ustring.gsub(cleaned, "%[.-%]"," ")
+	return cleaned
+end
+
+function makeCollapsed(outerText, innerText)
+	return "{{Hidden begin | titlestyle = font-weight:normal | title = " .. outerText .. "}}" .. innerText .. "{{Hidden end}}"
+end
+
+
+-- Get current events for a "YYYY Month D" date. Returns a table of list items.
+function getRecentAdditions(subpage, keepPatterns, skipPatterns, showWikitext)
+	local title = mw.title.new('Wikipedia:Recent additions' .. subpage)
+	local raw = title:getContent()
+	local itemPattern = '%*%s?%.%.%.[%S ]*'
+	local items = {}
+	for item in mw.ustring.gmatch(raw, itemPattern) do
+		local keep = false
+		local skip = false
+		local isListItem = ( string.sub(item, 0, 1) == '*' )
+		if isListItem then
+			local text = cleanForPatternMatching(item)
+			for ii, keepPatt in pairs(keepPatterns) do
+				if not keep and mw.ustring.find(text, keepPatt) then
+					keep = true
+				end
+			end
+			if #skipPatterns &gt; 0 then
+				for iii, skipPatt in pairs(skipPatterns) do
+					if not skip and mw.ustring.find(text, skipPatt) then
+						skip = true			
+					end
+				end
+			end
+		end
+		if keep and not skip then
+			-- remove (pictured) inline note
+			local cleanItem = mw.ustring.gsub(item, "%s*''%(.-pictured.-%)''", "")
+			-- remove (illustrated) inline note
+			cleanItem = mw.ustring.gsub(cleanItem, "%s*''%(.-illustrated.-%)''", "")
+			if showWikitext then
+				-- remove html comments
+				cleanItem = mw.ustring.gsub(cleanItem, "%&lt;%!%-%-(.-)%-%-%&gt;", "")
+				local itemWikitext = "&lt;pre&gt;" .. mw.text.nowiki( cleanItem ) .. "&lt;/pre&gt;"
+				cleanItem = makeCollapsed(cleanItem, itemWikitext)
+			end
+			table.insert(items, cleanItem)
+		end
+	end
+	return items
+end
+
+function getItems(maxMonths, patterns, skipPatterns, showWikitext)
+	local allItems = {}
+	local lang = mw.language.new('en')
+	local currentYear  = tonumber(lang:formatDate('Y', 'now'))
+	local currentMonth = tonumber(lang:formatDate('n', 'now'))
+	local monthsAgo = 0
+	while monthsAgo &lt; maxMonths do
+		local subpage
+		if monthsAgo == 0 then
+			subpage = ''
+		else
+			local year = currentYear - math.modf( (monthsAgo+12-currentMonth)/12 ) 
+			local month = math.fmod(12 + currentMonth - math.fmod(monthsAgo, 12), 12)
+			month = ( month ~= 0 ) and month or 12
+			subpage = lang:formatDate('/Y/F', year .. '-' .. month)
+		end
+		local monthlyItems = getRecentAdditions(subpage, patterns, skipPatterns, showWikitext)
+		for i, item in ipairs(monthlyItems) do
+			table.insert(allItems, item)
+		end
+		monthsAgo = monthsAgo + 1
+	end
+	return allItems
+end
+
+function getPatterns(args, prefix)
+	local patterns = {}
+	local ii = 1
+	while args[prefix and prefix..ii or ii] do
+		patterns[ii] = args[prefix and prefix..ii or ii]
+		ii = ii + 1
+	end
+	return patterns
+end
+
+local p = {}
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+
+	if args['not'] and not args['not1'] then
+		args['not1'] = args['not']
+	end
+	
+	local patterns = getPatterns(args)
+	if #patterns &lt; 1 then
+		return error("Search pattern not set")
+	end
+
+	local skipPatterns = getPatterns(args, 'not')
+
+	local months = tonumber(args.months) or 30
+	
+	local showWikitext = isAffirmed(args.wikitext)
+
+	local allItems = getItems(months, patterns, skipPatterns, showWikitext)
+	if #allItems &lt; 1 then
+		return args.header and '' or args.none or 'No recent additions'
+	end
+
+	local maxItems = tonumber(args.max) or 6
+
+	local more = args.more
+	if isAffirmed(args.more) then
+		more = "'''[[Wikipedia:Recent additions|More recent additions...]]'''"
+	end
+
+	local nonRandom = isAffirmed(args.latest)
+
+	local output = makeOutput(allItems, maxItems, more, nonRandom)
+	if args.header then
+		output = args.header .. '\n' .. output .. '\n' .. (args.footer or '{{Box-footer}}')
+	end
+	local needsExpansion = mw.ustring.find(output, '{{', 0, true)	
+	if needsExpansion then
+		return frame:preprocess(output)
+	else 
+		return output
+	end
+end
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]
+[[Category:Pages and Categories from Wikipedia]][[en:{{subst:PAGENAME}}]][[Category:kk]]
+[[Category:qq]][[Category:subst:PAGENAME}}]][[Category:qq]]</text>
+      <sha1>pc98gm6ynoyw5ww22puxr38tttwtljx</sha1>
+    </revision>
+    <revision>
+      <id>787927</id>
+      <parentid>787926</parentid>
+      <timestamp>2025-04-25T22:59:59Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "{subst:PAGENAME}" to "{{subst:PAGENAME}}"</comment>
+      <origin>787927</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5532" sha1="9bzo0oevccfeuc3q8eaoh5ocgdk2glt" xml:space="preserve">local randomModule = require('Module:Random')
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+function isAffirmed(val)
+	if not(val) then return false end
+	local affirmedWords = ' add added affirm affirmed include included on true yes y '
+	return string.find(affirmedWords, ' '..string.lower(val)..' ', 1, true ) and true or false
+end
+
+function makeOutput(allItems, maxItems, more, notRandom)
+	local output
+	if notRandom then
+		output = ''
+		local itemIndex = 1
+		local maxCount = math.min(#allItems, maxItems)
+		while itemIndex &lt;= maxCount do
+			output = output .. allItems[itemIndex] .. '\n'
+			itemIndex = itemIndex + 1
+		end
+	else
+		local randomiseArgs = {
+			['t'] = allItems,
+			['limit'] = maxItems
+		}
+		local randomisedItems = randomModule.main('array', randomiseArgs )
+		output = table.concat(randomisedItems, '\n')
+	end
+	if more then
+		output = output .. more
+	end
+	return mw.text.trim(output)
+end
+
+function cleanForPatternMatching(wikitext)
+	-- remove wikilink brackets
+	local cleaned = mw.ustring.gsub(wikitext, "%[%[(.-)%]%]","%1")
+	-- remove pipes that would have been in piped links
+	cleaned = mw.ustring.gsub(cleaned, "%|"," ")
+	-- remove external links
+	cleaned = mw.ustring.gsub(cleaned, "%[.-%]"," ")
+	return cleaned
+end
+
+function makeCollapsed(outerText, innerText)
+	return "{{Hidden begin | titlestyle = font-weight:normal | title = " .. outerText .. "}}" .. innerText .. "{{Hidden end}}"
+end
+
+
+-- Get current events for a "YYYY Month D" date. Returns a table of list items.
+function getRecentAdditions(subpage, keepPatterns, skipPatterns, showWikitext)
+	local title = mw.title.new('Wikipedia:Recent additions' .. subpage)
+	local raw = title:getContent()
+	local itemPattern = '%*%s?%.%.%.[%S ]*'
+	local items = {}
+	for item in mw.ustring.gmatch(raw, itemPattern) do
+		local keep = false
+		local skip = false
+		local isListItem = ( string.sub(item, 0, 1) == '*' )
+		if isListItem then
+			local text = cleanForPatternMatching(item)
+			for ii, keepPatt in pairs(keepPatterns) do
+				if not keep and mw.ustring.find(text, keepPatt) then
+					keep = true
+				end
+			end
+			if #skipPatterns &gt; 0 then
+				for iii, skipPatt in pairs(skipPatterns) do
+					if not skip and mw.ustring.find(text, skipPatt) then
+						skip = true			
+					end
+				end
+			end
+		end
+		if keep and not skip then
+			-- remove (pictured) inline note
+			local cleanItem = mw.ustring.gsub(item, "%s*''%(.-pictured.-%)''", "")
+			-- remove (illustrated) inline note
+			cleanItem = mw.ustring.gsub(cleanItem, "%s*''%(.-illustrated.-%)''", "")
+			if showWikitext then
+				-- remove html comments
+				cleanItem = mw.ustring.gsub(cleanItem, "%&lt;%!%-%-(.-)%-%-%&gt;", "")
+				local itemWikitext = "&lt;pre&gt;" .. mw.text.nowiki( cleanItem ) .. "&lt;/pre&gt;"
+				cleanItem = makeCollapsed(cleanItem, itemWikitext)
+			end
+			table.insert(items, cleanItem)
+		end
+	end
+	return items
+end
+
+function getItems(maxMonths, patterns, skipPatterns, showWikitext)
+	local allItems = {}
+	local lang = mw.language.new('en')
+	local currentYear  = tonumber(lang:formatDate('Y', 'now'))
+	local currentMonth = tonumber(lang:formatDate('n', 'now'))
+	local monthsAgo = 0
+	while monthsAgo &lt; maxMonths do
+		local subpage
+		if monthsAgo == 0 then
+			subpage = ''
+		else
+			local year = currentYear - math.modf( (monthsAgo+12-currentMonth)/12 ) 
+			local month = math.fmod(12 + currentMonth - math.fmod(monthsAgo, 12), 12)
+			month = ( month ~= 0 ) and month or 12
+			subpage = lang:formatDate('/Y/F', year .. '-' .. month)
+		end
+		local monthlyItems = getRecentAdditions(subpage, patterns, skipPatterns, showWikitext)
+		for i, item in ipairs(monthlyItems) do
+			table.insert(allItems, item)
+		end
+		monthsAgo = monthsAgo + 1
+	end
+	return allItems
+end
+
+function getPatterns(args, prefix)
+	local patterns = {}
+	local ii = 1
+	while args[prefix and prefix..ii or ii] do
+		patterns[ii] = args[prefix and prefix..ii or ii]
+		ii = ii + 1
+	end
+	return patterns
+end
+
+local p = {}
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+
+	if args['not'] and not args['not1'] then
+		args['not1'] = args['not']
+	end
+	
+	local patterns = getPatterns(args)
+	if #patterns &lt; 1 then
+		return error("Search pattern not set")
+	end
+
+	local skipPatterns = getPatterns(args, 'not')
+
+	local months = tonumber(args.months) or 30
+	
+	local showWikitext = isAffirmed(args.wikitext)
+
+	local allItems = getItems(months, patterns, skipPatterns, showWikitext)
+	if #allItems &lt; 1 then
+		return args.header and '' or args.none or 'No recent additions'
+	end
+
+	local maxItems = tonumber(args.max) or 6
+
+	local more = args.more
+	if isAffirmed(args.more) then
+		more = "'''[[Wikipedia:Recent additions|More recent additions...]]'''"
+	end
+
+	local nonRandom = isAffirmed(args.latest)
+
+	local output = makeOutput(allItems, maxItems, more, nonRandom)
+	if args.header then
+		output = args.header .. '\n' .. output .. '\n' .. (args.footer or '{{Box-footer}}')
+	end
+	local needsExpansion = mw.ustring.find(output, '{{', 0, true)	
+	if needsExpansion then
+		return frame:preprocess(output)
+	else 
+		return output
+	end
+end
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]
+[[Category:Pages and Categories from Wikipedia]][[en:{{{subst:PAGENAME}}}]][[Category:kk]]
+[[Category:qq]][[Category:subst:PAGENAME}}]][[Category:qq]]</text>
+      <sha1>9bzo0oevccfeuc3q8eaoh5ocgdk2glt</sha1>
+    </revision>
+    <revision>
+      <id>787928</id>
+      <parentid>787927</parentid>
+      <timestamp>2025-04-29T10:47:13Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "[[Category:qq]]" to ""</comment>
+      <origin>787928</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5502" sha1="pynm2ibke6sx1fyrm1nxyqi6foe4pl1" xml:space="preserve">local randomModule = require('Module:Random')
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+function isAffirmed(val)
+	if not(val) then return false end
+	local affirmedWords = ' add added affirm affirmed include included on true yes y '
+	return string.find(affirmedWords, ' '..string.lower(val)..' ', 1, true ) and true or false
+end
+
+function makeOutput(allItems, maxItems, more, notRandom)
+	local output
+	if notRandom then
+		output = ''
+		local itemIndex = 1
+		local maxCount = math.min(#allItems, maxItems)
+		while itemIndex &lt;= maxCount do
+			output = output .. allItems[itemIndex] .. '\n'
+			itemIndex = itemIndex + 1
+		end
+	else
+		local randomiseArgs = {
+			['t'] = allItems,
+			['limit'] = maxItems
+		}
+		local randomisedItems = randomModule.main('array', randomiseArgs )
+		output = table.concat(randomisedItems, '\n')
+	end
+	if more then
+		output = output .. more
+	end
+	return mw.text.trim(output)
+end
+
+function cleanForPatternMatching(wikitext)
+	-- remove wikilink brackets
+	local cleaned = mw.ustring.gsub(wikitext, "%[%[(.-)%]%]","%1")
+	-- remove pipes that would have been in piped links
+	cleaned = mw.ustring.gsub(cleaned, "%|"," ")
+	-- remove external links
+	cleaned = mw.ustring.gsub(cleaned, "%[.-%]"," ")
+	return cleaned
+end
+
+function makeCollapsed(outerText, innerText)
+	return "{{Hidden begin | titlestyle = font-weight:normal | title = " .. outerText .. "}}" .. innerText .. "{{Hidden end}}"
+end
+
+
+-- Get current events for a "YYYY Month D" date. Returns a table of list items.
+function getRecentAdditions(subpage, keepPatterns, skipPatterns, showWikitext)
+	local title = mw.title.new('Wikipedia:Recent additions' .. subpage)
+	local raw = title:getContent()
+	local itemPattern = '%*%s?%.%.%.[%S ]*'
+	local items = {}
+	for item in mw.ustring.gmatch(raw, itemPattern) do
+		local keep = false
+		local skip = false
+		local isListItem = ( string.sub(item, 0, 1) == '*' )
+		if isListItem then
+			local text = cleanForPatternMatching(item)
+			for ii, keepPatt in pairs(keepPatterns) do
+				if not keep and mw.ustring.find(text, keepPatt) then
+					keep = true
+				end
+			end
+			if #skipPatterns &gt; 0 then
+				for iii, skipPatt in pairs(skipPatterns) do
+					if not skip and mw.ustring.find(text, skipPatt) then
+						skip = true			
+					end
+				end
+			end
+		end
+		if keep and not skip then
+			-- remove (pictured) inline note
+			local cleanItem = mw.ustring.gsub(item, "%s*''%(.-pictured.-%)''", "")
+			-- remove (illustrated) inline note
+			cleanItem = mw.ustring.gsub(cleanItem, "%s*''%(.-illustrated.-%)''", "")
+			if showWikitext then
+				-- remove html comments
+				cleanItem = mw.ustring.gsub(cleanItem, "%&lt;%!%-%-(.-)%-%-%&gt;", "")
+				local itemWikitext = "&lt;pre&gt;" .. mw.text.nowiki( cleanItem ) .. "&lt;/pre&gt;"
+				cleanItem = makeCollapsed(cleanItem, itemWikitext)
+			end
+			table.insert(items, cleanItem)
+		end
+	end
+	return items
+end
+
+function getItems(maxMonths, patterns, skipPatterns, showWikitext)
+	local allItems = {}
+	local lang = mw.language.new('en')
+	local currentYear  = tonumber(lang:formatDate('Y', 'now'))
+	local currentMonth = tonumber(lang:formatDate('n', 'now'))
+	local monthsAgo = 0
+	while monthsAgo &lt; maxMonths do
+		local subpage
+		if monthsAgo == 0 then
+			subpage = ''
+		else
+			local year = currentYear - math.modf( (monthsAgo+12-currentMonth)/12 ) 
+			local month = math.fmod(12 + currentMonth - math.fmod(monthsAgo, 12), 12)
+			month = ( month ~= 0 ) and month or 12
+			subpage = lang:formatDate('/Y/F', year .. '-' .. month)
+		end
+		local monthlyItems = getRecentAdditions(subpage, patterns, skipPatterns, showWikitext)
+		for i, item in ipairs(monthlyItems) do
+			table.insert(allItems, item)
+		end
+		monthsAgo = monthsAgo + 1
+	end
+	return allItems
+end
+
+function getPatterns(args, prefix)
+	local patterns = {}
+	local ii = 1
+	while args[prefix and prefix..ii or ii] do
+		patterns[ii] = args[prefix and prefix..ii or ii]
+		ii = ii + 1
+	end
+	return patterns
+end
+
+local p = {}
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+
+	if args['not'] and not args['not1'] then
+		args['not1'] = args['not']
+	end
+	
+	local patterns = getPatterns(args)
+	if #patterns &lt; 1 then
+		return error("Search pattern not set")
+	end
+
+	local skipPatterns = getPatterns(args, 'not')
+
+	local months = tonumber(args.months) or 30
+	
+	local showWikitext = isAffirmed(args.wikitext)
+
+	local allItems = getItems(months, patterns, skipPatterns, showWikitext)
+	if #allItems &lt; 1 then
+		return args.header and '' or args.none or 'No recent additions'
+	end
+
+	local maxItems = tonumber(args.max) or 6
+
+	local more = args.more
+	if isAffirmed(args.more) then
+		more = "'''[[Wikipedia:Recent additions|More recent additions...]]'''"
+	end
+
+	local nonRandom = isAffirmed(args.latest)
+
+	local output = makeOutput(allItems, maxItems, more, nonRandom)
+	if args.header then
+		output = args.header .. '\n' .. output .. '\n' .. (args.footer or '{{Box-footer}}')
+	end
+	local needsExpansion = mw.ustring.find(output, '{{', 0, true)	
+	if needsExpansion then
+		return frame:preprocess(output)
+	else 
+		return output
+	end
+end
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]
+[[Category:Pages and Categories from Wikipedia]][[en:{{{subst:PAGENAME}}}]][[Category:kk]]
+[[Category:subst:PAGENAME}}]]</text>
+      <sha1>pynm2ibke6sx1fyrm1nxyqi6foe4pl1</sha1>
+    </revision>
+    <revision>
+      <id>787929</id>
+      <parentid>787928</parentid>
+      <timestamp>2025-05-03T01:10:53Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "{{{subst:PAGENAME}}}" to "{{subst:PAGENAME}}"</comment>
+      <origin>787929</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5500" sha1="cy2vty8rlkizrmck8szgpwnxwwdadc7" xml:space="preserve">local randomModule = require('Module:Random')
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+function isAffirmed(val)
+	if not(val) then return false end
+	local affirmedWords = ' add added affirm affirmed include included on true yes y '
+	return string.find(affirmedWords, ' '..string.lower(val)..' ', 1, true ) and true or false
+end
+
+function makeOutput(allItems, maxItems, more, notRandom)
+	local output
+	if notRandom then
+		output = ''
+		local itemIndex = 1
+		local maxCount = math.min(#allItems, maxItems)
+		while itemIndex &lt;= maxCount do
+			output = output .. allItems[itemIndex] .. '\n'
+			itemIndex = itemIndex + 1
+		end
+	else
+		local randomiseArgs = {
+			['t'] = allItems,
+			['limit'] = maxItems
+		}
+		local randomisedItems = randomModule.main('array', randomiseArgs )
+		output = table.concat(randomisedItems, '\n')
+	end
+	if more then
+		output = output .. more
+	end
+	return mw.text.trim(output)
+end
+
+function cleanForPatternMatching(wikitext)
+	-- remove wikilink brackets
+	local cleaned = mw.ustring.gsub(wikitext, "%[%[(.-)%]%]","%1")
+	-- remove pipes that would have been in piped links
+	cleaned = mw.ustring.gsub(cleaned, "%|"," ")
+	-- remove external links
+	cleaned = mw.ustring.gsub(cleaned, "%[.-%]"," ")
+	return cleaned
+end
+
+function makeCollapsed(outerText, innerText)
+	return "{{Hidden begin | titlestyle = font-weight:normal | title = " .. outerText .. "}}" .. innerText .. "{{Hidden end}}"
+end
+
+
+-- Get current events for a "YYYY Month D" date. Returns a table of list items.
+function getRecentAdditions(subpage, keepPatterns, skipPatterns, showWikitext)
+	local title = mw.title.new('Wikipedia:Recent additions' .. subpage)
+	local raw = title:getContent()
+	local itemPattern = '%*%s?%.%.%.[%S ]*'
+	local items = {}
+	for item in mw.ustring.gmatch(raw, itemPattern) do
+		local keep = false
+		local skip = false
+		local isListItem = ( string.sub(item, 0, 1) == '*' )
+		if isListItem then
+			local text = cleanForPatternMatching(item)
+			for ii, keepPatt in pairs(keepPatterns) do
+				if not keep and mw.ustring.find(text, keepPatt) then
+					keep = true
+				end
+			end
+			if #skipPatterns &gt; 0 then
+				for iii, skipPatt in pairs(skipPatterns) do
+					if not skip and mw.ustring.find(text, skipPatt) then
+						skip = true			
+					end
+				end
+			end
+		end
+		if keep and not skip then
+			-- remove (pictured) inline note
+			local cleanItem = mw.ustring.gsub(item, "%s*''%(.-pictured.-%)''", "")
+			-- remove (illustrated) inline note
+			cleanItem = mw.ustring.gsub(cleanItem, "%s*''%(.-illustrated.-%)''", "")
+			if showWikitext then
+				-- remove html comments
+				cleanItem = mw.ustring.gsub(cleanItem, "%&lt;%!%-%-(.-)%-%-%&gt;", "")
+				local itemWikitext = "&lt;pre&gt;" .. mw.text.nowiki( cleanItem ) .. "&lt;/pre&gt;"
+				cleanItem = makeCollapsed(cleanItem, itemWikitext)
+			end
+			table.insert(items, cleanItem)
+		end
+	end
+	return items
+end
+
+function getItems(maxMonths, patterns, skipPatterns, showWikitext)
+	local allItems = {}
+	local lang = mw.language.new('en')
+	local currentYear  = tonumber(lang:formatDate('Y', 'now'))
+	local currentMonth = tonumber(lang:formatDate('n', 'now'))
+	local monthsAgo = 0
+	while monthsAgo &lt; maxMonths do
+		local subpage
+		if monthsAgo == 0 then
+			subpage = ''
+		else
+			local year = currentYear - math.modf( (monthsAgo+12-currentMonth)/12 ) 
+			local month = math.fmod(12 + currentMonth - math.fmod(monthsAgo, 12), 12)
+			month = ( month ~= 0 ) and month or 12
+			subpage = lang:formatDate('/Y/F', year .. '-' .. month)
+		end
+		local monthlyItems = getRecentAdditions(subpage, patterns, skipPatterns, showWikitext)
+		for i, item in ipairs(monthlyItems) do
+			table.insert(allItems, item)
+		end
+		monthsAgo = monthsAgo + 1
+	end
+	return allItems
+end
+
+function getPatterns(args, prefix)
+	local patterns = {}
+	local ii = 1
+	while args[prefix and prefix..ii or ii] do
+		patterns[ii] = args[prefix and prefix..ii or ii]
+		ii = ii + 1
+	end
+	return patterns
+end
+
+local p = {}
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+
+	if args['not'] and not args['not1'] then
+		args['not1'] = args['not']
+	end
+	
+	local patterns = getPatterns(args)
+	if #patterns &lt; 1 then
+		return error("Search pattern not set")
+	end
+
+	local skipPatterns = getPatterns(args, 'not')
+
+	local months = tonumber(args.months) or 30
+	
+	local showWikitext = isAffirmed(args.wikitext)
+
+	local allItems = getItems(months, patterns, skipPatterns, showWikitext)
+	if #allItems &lt; 1 then
+		return args.header and '' or args.none or 'No recent additions'
+	end
+
+	local maxItems = tonumber(args.max) or 6
+
+	local more = args.more
+	if isAffirmed(args.more) then
+		more = "'''[[Wikipedia:Recent additions|More recent additions...]]'''"
+	end
+
+	local nonRandom = isAffirmed(args.latest)
+
+	local output = makeOutput(allItems, maxItems, more, nonRandom)
+	if args.header then
+		output = args.header .. '\n' .. output .. '\n' .. (args.footer or '{{Box-footer}}')
+	end
+	local needsExpansion = mw.ustring.find(output, '{{', 0, true)	
+	if needsExpansion then
+		return frame:preprocess(output)
+	else 
+		return output
+	end
+end
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]
+[[Category:Pages and Categories from Wikipedia]][[en:{{subst:PAGENAME}}]][[Category:kk]]
+[[Category:subst:PAGENAME}}]]</text>
+      <sha1>cy2vty8rlkizrmck8szgpwnxwwdadc7</sha1>
+    </revision>
+    <revision>
+      <id>5015</id>
+      <timestamp>2025-11-22T14:38:07Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Text replacement - "↵↵↵" to "
+"</comment>
+      <origin>5015</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="5498" sha1="0i9ibc0bpk4wyx77vfurfo8q2af1bw3" xml:space="preserve">local randomModule = require('Module:Random')
+
+function cleanupArgs(argsTable)
+	local cleanArgs = {}
+	for key, val in pairs(argsTable) do
+		if type(val) == 'string' then
+			val = val:match('^%s*(.-)%s*$')
+			if val ~= '' then
+				cleanArgs[key] = val
+			end
+		else
+			cleanArgs[key] = val
+		end
+	end
+	return cleanArgs
+end
+
+function isAffirmed(val)
+	if not(val) then return false end
+	local affirmedWords = ' add added affirm affirmed include included on true yes y '
+	return string.find(affirmedWords, ' '..string.lower(val)..' ', 1, true ) and true or false
+end
+
+function makeOutput(allItems, maxItems, more, notRandom)
+	local output
+	if notRandom then
+		output = ''
+		local itemIndex = 1
+		local maxCount = math.min(#allItems, maxItems)
+		while itemIndex &lt;= maxCount do
+			output = output .. allItems[itemIndex] .. '\n'
+			itemIndex = itemIndex + 1
+		end
+	else
+		local randomiseArgs = {
+			['t'] = allItems,
+			['limit'] = maxItems
+		}
+		local randomisedItems = randomModule.main('array', randomiseArgs )
+		output = table.concat(randomisedItems, '\n')
+	end
+	if more then
+		output = output .. more
+	end
+	return mw.text.trim(output)
+end
+
+function cleanForPatternMatching(wikitext)
+	-- remove wikilink brackets
+	local cleaned = mw.ustring.gsub(wikitext, "%[%[(.-)%]%]","%1")
+	-- remove pipes that would have been in piped links
+	cleaned = mw.ustring.gsub(cleaned, "%|"," ")
+	-- remove external links
+	cleaned = mw.ustring.gsub(cleaned, "%[.-%]"," ")
+	return cleaned
+end
+
+function makeCollapsed(outerText, innerText)
+	return "{{Hidden begin | titlestyle = font-weight:normal | title = " .. outerText .. "}}" .. innerText .. "{{Hidden end}}"
+end
+-- Get current events for a "YYYY Month D" date. Returns a table of list items.
+function getRecentAdditions(subpage, keepPatterns, skipPatterns, showWikitext)
+	local title = mw.title.new('Wikipedia:Recent additions' .. subpage)
+	local raw = title:getContent()
+	local itemPattern = '%*%s?%.%.%.[%S ]*'
+	local items = {}
+	for item in mw.ustring.gmatch(raw, itemPattern) do
+		local keep = false
+		local skip = false
+		local isListItem = ( string.sub(item, 0, 1) == '*' )
+		if isListItem then
+			local text = cleanForPatternMatching(item)
+			for ii, keepPatt in pairs(keepPatterns) do
+				if not keep and mw.ustring.find(text, keepPatt) then
+					keep = true
+				end
+			end
+			if #skipPatterns &gt; 0 then
+				for iii, skipPatt in pairs(skipPatterns) do
+					if not skip and mw.ustring.find(text, skipPatt) then
+						skip = true			
+					end
+				end
+			end
+		end
+		if keep and not skip then
+			-- remove (pictured) inline note
+			local cleanItem = mw.ustring.gsub(item, "%s*''%(.-pictured.-%)''", "")
+			-- remove (illustrated) inline note
+			cleanItem = mw.ustring.gsub(cleanItem, "%s*''%(.-illustrated.-%)''", "")
+			if showWikitext then
+				-- remove html comments
+				cleanItem = mw.ustring.gsub(cleanItem, "%&lt;%!%-%-(.-)%-%-%&gt;", "")
+				local itemWikitext = "&lt;pre&gt;" .. mw.text.nowiki( cleanItem ) .. "&lt;/pre&gt;"
+				cleanItem = makeCollapsed(cleanItem, itemWikitext)
+			end
+			table.insert(items, cleanItem)
+		end
+	end
+	return items
+end
+
+function getItems(maxMonths, patterns, skipPatterns, showWikitext)
+	local allItems = {}
+	local lang = mw.language.new('en')
+	local currentYear  = tonumber(lang:formatDate('Y', 'now'))
+	local currentMonth = tonumber(lang:formatDate('n', 'now'))
+	local monthsAgo = 0
+	while monthsAgo &lt; maxMonths do
+		local subpage
+		if monthsAgo == 0 then
+			subpage = ''
+		else
+			local year = currentYear - math.modf( (monthsAgo+12-currentMonth)/12 ) 
+			local month = math.fmod(12 + currentMonth - math.fmod(monthsAgo, 12), 12)
+			month = ( month ~= 0 ) and month or 12
+			subpage = lang:formatDate('/Y/F', year .. '-' .. month)
+		end
+		local monthlyItems = getRecentAdditions(subpage, patterns, skipPatterns, showWikitext)
+		for i, item in ipairs(monthlyItems) do
+			table.insert(allItems, item)
+		end
+		monthsAgo = monthsAgo + 1
+	end
+	return allItems
+end
+
+function getPatterns(args, prefix)
+	local patterns = {}
+	local ii = 1
+	while args[prefix and prefix..ii or ii] do
+		patterns[ii] = args[prefix and prefix..ii or ii]
+		ii = ii + 1
+	end
+	return patterns
+end
+
+local p = {}
+
+p.main = function(frame)
+	local parent = frame.getParent(frame)
+	local parentArgs = parent.args
+	local args = cleanupArgs(parentArgs)
+
+	if args['not'] and not args['not1'] then
+		args['not1'] = args['not']
+	end
+	
+	local patterns = getPatterns(args)
+	if #patterns &lt; 1 then
+		return error("Search pattern not set")
+	end
+
+	local skipPatterns = getPatterns(args, 'not')
+
+	local months = tonumber(args.months) or 30
+	
+	local showWikitext = isAffirmed(args.wikitext)
+
+	local allItems = getItems(months, patterns, skipPatterns, showWikitext)
+	if #allItems &lt; 1 then
+		return args.header and '' or args.none or 'No recent additions'
+	end
+
+	local maxItems = tonumber(args.max) or 6
+
+	local more = args.more
+	if isAffirmed(args.more) then
+		more = "'''[[Wikipedia:Recent additions|More recent additions...]]'''"
+	end
+
+	local nonRandom = isAffirmed(args.latest)
+
+	local output = makeOutput(allItems, maxItems, more, nonRandom)
+	if args.header then
+		output = args.header .. '\n' .. output .. '\n' .. (args.footer or '{{Box-footer}}')
+	end
+	local needsExpansion = mw.ustring.find(output, '{{', 0, true)	
+	if needsExpansion then
+		return frame:preprocess(output)
+	else 
+		return output
+	end
+end
+
+return p
+
+[[Category:Pages and Categories from wikipedia0]]
+[[Category:Pages and Categories from Wikipedia]][[en:{{subst:PAGENAME}}]][[Category:kk]]
+[[Category:subst:PAGENAME}}]]</text>
+      <sha1>0i9ibc0bpk4wyx77vfurfo8q2af1bw3</sha1>
+    </revision>
+  </page>
+</mediawiki>

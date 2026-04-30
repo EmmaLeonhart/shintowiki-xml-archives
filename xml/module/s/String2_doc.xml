@@ -1,0 +1,2281 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:String2/doc</title>
+    <ns>828</ns>
+    <id>8257</id>
+    <revision>
+      <id>916536</id>
+      <timestamp>2024-12-02T05:54:37Z</timestamp>
+      <contributor>
+        <username>Ahecht</username>
+        <id>54</id>
+      </contributor>
+      <comment>use {{markup}} again</comment>
+      <origin>916536</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="21156" sha1="4ig3qrleec42gxj2v0rnwj1fzb8slja" xml:space="preserve">{{high-use}}
+{{module rating|release}}
+{{Lua|Module:GetParameters}}
+{{Lmd|String2}}
+
+The module '''String2''' contains a number of string manipulation functions that are much less commonly used than those in [[Module:String]]. Because Module:String is cascade-protected (some of its functions are used on the Main Page), it cannot be edited or maintained by template editors, only by admins. While it is true that string-handling functions rarely need maintenance, it is useful to allow that by template editors where possible, so this module may be used by template editors to develop novel functionality.
+
+The module contains three case-related calls that convert strings to first letter uppercase, sentence case or title case and two calls that are useful for working with substrings. There are other utility calls that strip leading zeros from padded numbers and transform text so that it is not interpreted as wikitext, and several other calls that solve specific problems for template developers such as finding the position of a piece of text on a given page.
+
+The functions are designed with the possibility of working with text returned from Wikidata in mind. However, a call to Wikidata may return empty, so the functions should generally fail gracefully if supplied with a missing or blank input parameter, rather than throwing an error.
+
+== Functions ==
+=== trim ===
+The trim function simply trims whitespace characters from the start and end of the string.
+
+=== title ===
+The title function capitalises the first letter of each word in the text, apart from a number of short words listed in [[s:U.S. Government Printing Office Style Manual/Capitalization Rules#3.49|The U.S. Government Printing Office Style Manual §3.49 "Center and side heads"]]: {{xt|a, an, the, at, by, for, in, of, on, to, up, and, as, but, or, and nor}}.
+
+This is a very simplistic algorithm; see [[:Template:Title case/doc]] for some of its limitations.
+
+=== sentence ===
+The sentence function finds the first letter and capitalises it, then renders the rest of the text in lower case. It works properly with text containing wiki markup. Compare &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|sentence|[[action game]]}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:String2|sentence|[[action game]]}} with &lt;code&gt;&lt;nowiki&gt;{{ucfirst:{{lc:[[action game]]}}}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{ucfirst:{{lc:[[action game]]}}}}. Piped wiki-links are handled as well:
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|sentence|[[trimix (breathing gas)|trimix]]}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:String2|sentence|[[trimix (breathing gas)|trimix]]}}
+So are lists:
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |sentence |{{hlist ||[[apples]] |[[pears]] |[[oranges]]}}}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |sentence |{{hlist |[[apples]] |[[pears]] |[[oranges]]}}}}
+
+=== ucfirst ===
+The ucfirst function is similar to sentence; it renders the first alphabetical character in upper case, but leaves the capitalisation of the rest of the text unaltered. This is useful if the text contains proper nouns, but it will not regularise sentences that are ALLCAPS, for example. It also works with text containing piped wiki-links and with html lists.
+
+=== findlast ===
+* Function findlast finds the last item in a list.
+* The first unnamed parameter is the list. The list is trimmed of leading and trailing whitespace
+* The second, optional unnamed parameter is the list separator (default = comma space). The separator is ''not'' trimmed of leading and trailing whitespace (so that leading or trailing spaces can be used).
+* It returns the whole list if the separator is not found.
+
+One potential issue is that using Lua special pattern characters (&lt;code&gt;^$()%.[]*+-?&lt;/code&gt;) as the separator will probably cause problems.
+
+{| class="wikitable"
+|+ Examples
+|-
+! scope="col" | Case
+! scope="col" | Wikitext
+! scope="col" | Output
+|-
+| Normal usage || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast | 5, 932, 992,532, 6,074,702, 6,145,291}}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast | 5, 932, 992,532, 6,074,702, 6,145,291}}
+|-
+| Space as separator || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast | 5 932 992,532 6,074,702 6,145,291 }}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast | 5 932 992,532 6,074,702 6,145,291 }}
+|-
+| One item list || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast | 6,074,702 }}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast | 6,074,702 }}
+|-
+| Separator not found || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast | 5, 932, 992,532, 6,074,702, 6,145,291 |;}}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast | 5, 932, 992,532, 6,074,702, 6,145,291 |;}}
+|-
+| List missing || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast |}}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast |}}
+|}
+
+=== split ===
+The ''split'' function splits text at boundaries specified by separator and returns the chunk for the index idx (starting at 1). It can use positional parameters or named parameters (but these should not be mixed):
+
+; Usage
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |split |text |separator |index |true/false}}&lt;/nowiki&gt;&lt;/code&gt;
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |split |txt=text |sep=separator |idx=index |plain=true/false}}&lt;/nowiki&gt;&lt;/code&gt;
+
+Any double quotes (") in the separator parameter are stripped out, which allows spaces and wikitext like &lt;code&gt;&lt;nowiki&gt;["[&lt;/nowiki&gt;&lt;/code&gt; to be passed. Use &lt;code&gt;{{tl|!}}&lt;/code&gt; for the pipe character &lt;code&gt;|&lt;/code&gt;.
+
+If the optional plain parameter is set to &lt;code&gt;false / no / 0&lt;/code&gt; then separator is treated as a Lua pattern. The default is plain=true, i.e. normal text matching.
+
+The index parameter is optional; it defaults to the first chunk of text.
+
+The {{tl|string split}} is a convenience wrapper for the split function.
+
+=== stripZeros ===
+The stripZeros functions finds the first number in a string of text and strips leading zeros, but retains a zero which is followed by a decimal point. For example: "0940" &amp;rarr; "940"; "Year: 0023" &amp;rarr; "Year: 23"; "00.12" &amp;rarr; "0.12"
+
+=== nowiki ===
+The nowiki function ensures that a string of text is treated by the MediaWiki software as just a string, not code. It trims leading and trailing whitespace.
+
+=== val2percent ===
+The val2percent functions scans through a string, passed as either the first unnamed parameter or |txt=, and converts each number it finds into a percentage, then returns the resulting string.
+
+=== one2a ===
+The one2a function scans through a string, passed as either the first unnamed parameter or |txt=, and converts each occurrence of 'one ' into either 'a ' or 'an ', then returns the resultant string.
+
+The [[Template:One2a]] is a convenience wrapper for the one2a function.
+
+=== findpagetext ===
+The findpagetext function returns the position of a piece of text in the wikitext source of a page. It takes up to four parameters:
+* First positional parameter or |text is the text to be searched for.
+* Optional parameter |title is the page title, defaults to the current page.
+* Optional parameter |plain is either true for a plain search (default), or false for a [[mw:Extension:Scribunto/Lua reference manual #Patterns|Lua pattern]] search.
+* Optional parameter |nomatch is the value returned when no match is found; default is nothing.
+
+; Examples
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=Youghiogheny}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=Youghiogheny}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=Youghiogheny |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=Youghiogheny |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=Youghiogheny |title=Boston Bridge |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=Youghiogheny |title=Boston Bridge |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=river |title=Boston Bridge |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=river |title=Boston Bridge |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=[Rr]iver |title=Boston Bridge |plain=false |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=[Rr]iver |title=Boston Bridge |plain=false |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=%[%[ |title=Boston Bridge |plain=f |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=%[%[ |title=Boston Bridge |plain=f |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=%{%{[Cc]oord |title=Boston Bridge |plain=f |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=%{%{coord |title=Boston Bridge |plain=f |nomatch=not found}}
+The search is case-sensitive, so Lua pattern matching is needed to find &lt;code&gt;river&lt;/code&gt; or &lt;code&gt;River&lt;/code&gt;. The last example finds &lt;code&gt;&lt;nowiki&gt;{{coord&lt;/nowiki&gt;&lt;/code&gt; and &lt;code&gt;&lt;nowiki&gt;{{Coord&lt;/nowiki&gt;&lt;/code&gt;. The penultimate example finds a wiki-link.
+
+The [[Template:Findpagetext]] is a convenience wrapper for this function.
+
+=== strip ===
+
+The strip function strips the first positional parameter of the characters or pattern supplied in the second positional parameter.
+
+; Usage
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|&lt;/nowiki&gt;&lt;var&gt;source_string&lt;/var&gt;|&lt;var&gt;characters_to_strip&lt;/var&gt;|&lt;var&gt;plain_flag&lt;/var&gt;}}&lt;/code&gt;
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|&lt;/nowiki&gt;source=|chars=|plain=}}&lt;/code&gt;
+
+; Examples
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|abc123def|123}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2|strip|abc123def|123}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|abc123def|%d+|false}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2|strip|abc123def|%d+|false}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|source=abc123def|chars=123}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2|strip|source=abc123def|chars=123}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|source=abc123def|chars=%d+|plain=false}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2|strip|source=abc123def|chars=%d+|plain=false}}
+
+=== matchAny ===
+{{for|a function to replace multiple patterns|Module:MultiReplace}}
+
+The matchAny function returns the index of the first positional parameter to match the ''source'' parameter. If the ''plain'' parameter is set to false (default true) then the search strings are Lua patterns. This can usefully be put in a switch statement to pick a switch case based on which pattern a string matches. Returns the empty string if nothing matches, for use in {{pf|if}}.
+
+&lt;code&gt;{{((}}#invoke:String2|matchAny|123|abc|source=abc 124}}&lt;/code&gt; returns 2.
+
+=== hyphen2dash ===
+Extracted hyphen_to_dash() function from [[Special:Permalink/1017669505|Module:Citation/CS1]].
+
+Converts a hyphen to a dash under certain conditions.  The hyphen must separate like items; unlike items are returned unmodified.  These forms are modified:
+* 	letter - letter (A - B)
+* 	digit - digit (4-5)
+* 	digit separator digit - digit separator digit (4.1-4.5 or 4-1-4-5)
+* 	letterdigit - letterdigit (A1-A5) (an optional separator between letter and digit is supported – a.1-a.5 or a-1-a-5)
+* 	digitletter - digitletter (5a - 5d) (an optional separator between letter and digit is supported – 5.a-5.d or 5-a-5-d)
+
+Any other forms are returned unmodified.
+
+The input string may be a comma- or semicolon-separated list. Semicolons are converted to commas.
+
+&lt;code&gt;&lt;nowiki&gt;{{&lt;/nowiki&gt;#invoke:String2|hyphen2dash|1=1-2&lt;nowiki&gt;}}&lt;/nowiki&gt;&lt;/code&gt; returns {{#invoke:String2|hyphen2dash|1=1-2}}.
+
+&lt;code&gt;&lt;nowiki&gt;{{&lt;/nowiki&gt;#invoke:String2|hyphen2dash|1=1-2; 4–10&lt;nowiki&gt;}}&lt;/nowiki&gt;&lt;/code&gt; returns {{#invoke:String2|hyphen2dash|1=1-2; 4–10}}.
+
+[[Help:Citation Style 1#Accept-this-as-written markup|Accept-this-as-written markup]] is supported, e.g. &lt;code&gt;&lt;nowiki&gt;{{&lt;/nowiki&gt;#invoke:String2|hyphen2dash|1=((1-2)); 4–10&lt;nowiki&gt;}}&lt;/nowiki&gt;&lt;/code&gt; returns {{#invoke:String2|hyphen2dash|1=((1-2)); 4–10}}.
+
+By default, a normal space is inserted after the separating comma in lists. An optional second parameter allows to change this to a different character (i.e. a thin space or hair space).
+
+===startswith===
+A startswith function similar to {{ml|string|endswith}}. Both parameters are required, although they can be blank. Leading and trailing whitespace ''is'' counted, use named parameters to avoid this if required. Outputs "yes" for true and blank for false so may be passed directly to #if.
+
+{{markup|padding=1px 5px|
+&lt;nowiki&gt;{{#invoke:string2|startswith|search|se}}&lt;/nowiki&gt;|{{#invoke:string2|startswith|search|se}}|
+&lt;nowiki&gt;{{#invoke:string2|startswith|search|ch}}&lt;/nowiki&gt;|{{#invoke:string2|startswith|search|ch}}}}&lt;!-- Template:Mra --&gt;
+
+===isnumeric===
+Implements {{tl|isnumeric}}, which tests whether a value is numeric (or at least, that it can be treated as such by the [[:mw:Extension:Scribunto/Lua_reference_manual#Language_library|Scribunto language library]]). By default, it will pass through the parameter if it's numeric and be blank if it's not. If the parameter &lt;code&gt;boolean=true&lt;/code&gt; is given, then it will output &lt;code&gt;1&lt;/code&gt; if numeric and &lt;code&gt;0&lt;/code&gt; if not numeric.
+
+{{markup|padding=1px 5px|
+&lt;nowiki&gt;{{#invoke:string2|isnumeric|1,327.50}}&lt;/nowiki&gt;|{{#invoke:string2|isnumeric|1,327.50}}|
+&lt;nowiki&gt;{{#invoke:string2|isnumeric|9,999 (1950)}}&lt;/nowiki&gt;|{{#invoke:string2|isnumeric|9,999 (1950)}}|
+&lt;nowiki&gt;{{#invoke:string2|isnumeric|1,327.50|boolean=true}}&lt;/nowiki&gt;|{{#invoke:string2|isnumeric|1,327.50|boolean=true}}|
+&lt;nowiki&gt;{{#invoke:string2|isnumeric|9,999 (1950)|boolean=true}}&lt;/nowiki&gt;|{{#invoke:string2|isnumeric|9,999 (1950)|boolean=true}}}}
+
+== Usage ==
+
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | sentence |…}}&lt;/nowiki&gt;&lt;/code&gt; - Capitalizes the first character and shifts the rest to lowercase
+** Although similar to [[Help:Magic_words#Formatting|magic words]]' &lt;code&gt;&lt;nowiki&gt;{{ucfirst:}}&lt;/nowiki&gt;&lt;/code&gt; function, this call works even with piped wiki-links because it searches beyond leading brackets and other non-alphanumeric characters.
+** It now also recognises when it has an html list passed to it and capitalises the first alphabetic letter beyond the list item markup ({{tag|li|o}}) and any piped links that may be there.
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | ucfirst |…}}&lt;/nowiki&gt;&lt;/code&gt; - Capitalizes the first alphabetic character and leaves the rest unaltered
+** Works with piped wiki-links and html lists
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | title |…}}&lt;/nowiki&gt;&lt;/code&gt; - Capitalizes all words, except for &lt;code&gt;a&lt;/code&gt;, &lt;code&gt;an&lt;/code&gt;, &lt;code&gt;the&lt;/code&gt;, &lt;code&gt;at&lt;/code&gt;, &lt;code&gt;by&lt;/code&gt;, &lt;code&gt;for&lt;/code&gt;, &lt;code&gt;in&lt;/code&gt;, &lt;code&gt;of&lt;/code&gt;, &lt;code&gt;on&lt;/code&gt;, &lt;code&gt;to&lt;/code&gt;, &lt;code&gt;up&lt;/code&gt;, &lt;code&gt;and&lt;/code&gt;, &lt;code&gt;as&lt;/code&gt;, &lt;code&gt;but&lt;/code&gt;, &lt;code&gt;or&lt;/code&gt;, and &lt;code&gt;nor&lt;/code&gt;.
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | stripZeros |…}}&lt;/nowiki&gt;&lt;/code&gt; - Removes leading padding zeros from the first number it finds in the string
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | title |…}}&lt;/nowiki&gt;&lt;/code&gt; - Renders the string as plain text without wikicode
+
+=== Parameters ===
+These functions take one unnamed parameter comprising (or invoking as a string) the text to be manipulated:
+* title
+* sentence
+* ucfirst
+
+== Examples ==
+
+{| class="wikitable"
+! scope="col" | Input
+! scope="col" | Output
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | abcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | abcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | abCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | abCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | ABcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | ABcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | ABCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | ABCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | 123abcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | 123abcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | human X chromosome }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | human X chromosome}}
+|-
+| &lt;nowiki&gt;{{#invoke:String2 | ucfirst | {{#invoke:WikidataIB |getValue&lt;/nowiki&gt;&lt;br /&gt;&lt;nowiki&gt;| P136 |fetchwikidata=ALL |onlysourced=no |qid=Q1396889}} }}&lt;/nowiki&gt;
+| {{#invoke:String2 | ucfirst | {{#invoke:WikidataIB |getValue |P136 |fetchwikidata=ALL |onlysourced=no |qid=Q1396889}} }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2 | ucfirst | {{#invoke:WikidataIB |getValue&lt;/nowiki&gt;&lt;br /&gt;&lt;nowiki&gt;| P106 |fetchwikidata=ALL |list=hlist |qid=Q453196}} }}&lt;/nowiki&gt;
+| {{#invoke:String2 | ucfirst | {{#invoke:WikidataIB |getValue |P106 |fetchwikidata=ALL |list=hlist |qid=Q453196}} }}
+|-
+| &amp;nbsp;
+| 
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | abcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | abcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | abCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | abCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | ABcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | ABcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | ABCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | ABCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | [[action game]] }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | [[action game]] }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | [[trimix (breathing gas)|trimix]] }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | [[trimix (breathing gas)|trimix]] }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | }}
+|-
+| &amp;nbsp;
+| 
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | abcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | abcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | abCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | abCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | ABcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | ABcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | ABCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | ABCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | the vitamins are in my fresh california raisins}}&lt;/nowiki&gt;
+| {{#invoke:String2| title | the vitamins are in my fresh california raisins}}
+|-
+|}
+
+=== String split ===
+[[Template:String split]] is a convenience wrapper for the split function.
+* &lt;code&gt;&lt;nowiki&gt;{{String split |This is a piece of text to be split |" "}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |This is a piece of text to be split |" "}}
+* &lt;code&gt;&lt;nowiki&gt;{{String split |This is a piece of text to be split |" "| 4}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |This is a piece of text to be split |" "| 4}}
+* &lt;code&gt;&lt;nowiki&gt;{{String split |This is a piece of text to be split |x| 2}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |This is a piece of text to be split |x| 2}}
+Modules may return strings with | as separators like this: &lt;code&gt;&lt;nowiki&gt;{{#invoke:carousel | main | name = WPDogs | switchsecs = 5 }}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:carousel | main | name = WPDogs | switchsecs = 5 }}
+* &lt;code&gt;&lt;nowiki&gt;{{String split |{{#invoke:carousel | main | name = WPDogs | switchsecs = 5 }}|{{!}}| 2}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |{{#invoke:carousel | main | name = WPDogs | switchsecs = 5 }}|{{!}}| 2}}
+Lua patterns can allow splitting at classes of characters such as punctuation:
+* &lt;code&gt;&lt;nowiki&gt;{{String split |Apples, pears, oranges; Cats, dogs|"%p"| 2 |false}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |Apples, pears, oranges; Cats, dogs|"%p"| 2 |false}}
+* &lt;code&gt;&lt;nowiki&gt;{{String split |Apples, pears, oranges; Cats, dogs|"%p"| 4 |false}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |Apples, pears, oranges; Cats, dogs|"%p"| 4 |false}}
+Or split on anything that isn't a letter (no is treated as false):
+* &lt;code&gt;&lt;nowiki&gt;{{String split |Apples pears oranges;  Cats  dogs|"%A+"| 4 |no}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |Apples pears oranges;  Cats  dogs|"%A+"| 4 |no}}
+Named parameters force the trimming of leading and trailing spaces in the parameters and are generally clearer when used:
+* &lt;code&gt;&lt;nowiki&gt;{{String split | txt=Apples pears oranges;  Cats  dogs | sep="%A+" | idx=3 | plain=false }}&lt;/nowiki&gt;&lt;/code&gt; → {{String split | txt=Apples pears oranges;  Cats  dogs | sep="%A+" | idx=3 | plain=false }}
+
+=== One2a ===
+[[Template:One2a]] is a convenience wrapper for the one2a function. 
+
+Capitalisation is kept. Aimed for usage with {{tl|Convert}}.
+* &lt;code&gt;&lt;nowiki&gt;{{one2a |One foot. One mile. One kilometer. One inch.One amp. one foot. one mile. one inch. Alone at last. Onely the lonely. ONE ounce. One monkey.}}&lt;/nowiki&gt;&lt;/code&gt; →
+:{{one2a |One foot. One mile. One kilometer. One inch.One amp. one foot. one mile. one inch. Alone at last. Onely the lonely. ONE ounce. One monkey.}}
+* &lt;code&gt;&lt;nowiki&gt;{{convert|1|ft|spell=on}}&lt;/nowiki&gt;&lt;/code&gt; → {{convert|1|ft|spell=on}}
+* &lt;code&gt;&lt;nowiki&gt;{{one2a|{{convert|1|ft|spell=on}}}}&lt;/nowiki&gt;&lt;/code&gt; → {{one2a|{{convert|1|ft|spell=on}}}}
+* &lt;code&gt;&lt;nowiki&gt;{{convert|2.54|cm|0|disp=out|spell=on}}&lt;/nowiki&gt;&lt;/code&gt; → {{convert|2.54|cm|0|disp=out|spell=on}}
+* &lt;code&gt;&lt;nowiki&gt;{{one2a|{{convert|2.54|cm|0|disp=out|spell=on}}}}&lt;/nowiki&gt;&lt;/code&gt; → {{one2a|{{convert|2.54|cm|0|disp=out|spell=on}}}}
+
+== See also ==
+[[Module:String]] for the following functions:
+* len
+* sub
+* sublength
+* match
+* pos
+* str_find
+* find
+* replace
+* rep
+
+Templates and modules related to capitalization
+{{Case templates see also}}
+
+Templates that implement {{tag|nowiki|o}}
+* {{tl|nowiki}}
+* {{tl|nowiki2}}
+&lt;includeonly&gt;{{Sandbox other||
+[[Category:Modules that manipulate strings|*]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>4ig3qrleec42gxj2v0rnwj1fzb8slja</sha1>
+    </revision>
+    <revision>
+      <id>916537</id>
+      <parentid>916536</parentid>
+      <timestamp>2025-01-10T09:34:34Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: IMPORTING ALL WANTED MODULES</comment>
+      <origin>916536</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="21156" sha1="4ig3qrleec42gxj2v0rnwj1fzb8slja" xml:space="preserve">{{high-use}}
+{{module rating|release}}
+{{Lua|Module:GetParameters}}
+{{Lmd|String2}}
+
+The module '''String2''' contains a number of string manipulation functions that are much less commonly used than those in [[Module:String]]. Because Module:String is cascade-protected (some of its functions are used on the Main Page), it cannot be edited or maintained by template editors, only by admins. While it is true that string-handling functions rarely need maintenance, it is useful to allow that by template editors where possible, so this module may be used by template editors to develop novel functionality.
+
+The module contains three case-related calls that convert strings to first letter uppercase, sentence case or title case and two calls that are useful for working with substrings. There are other utility calls that strip leading zeros from padded numbers and transform text so that it is not interpreted as wikitext, and several other calls that solve specific problems for template developers such as finding the position of a piece of text on a given page.
+
+The functions are designed with the possibility of working with text returned from Wikidata in mind. However, a call to Wikidata may return empty, so the functions should generally fail gracefully if supplied with a missing or blank input parameter, rather than throwing an error.
+
+== Functions ==
+=== trim ===
+The trim function simply trims whitespace characters from the start and end of the string.
+
+=== title ===
+The title function capitalises the first letter of each word in the text, apart from a number of short words listed in [[s:U.S. Government Printing Office Style Manual/Capitalization Rules#3.49|The U.S. Government Printing Office Style Manual §3.49 "Center and side heads"]]: {{xt|a, an, the, at, by, for, in, of, on, to, up, and, as, but, or, and nor}}.
+
+This is a very simplistic algorithm; see [[:Template:Title case/doc]] for some of its limitations.
+
+=== sentence ===
+The sentence function finds the first letter and capitalises it, then renders the rest of the text in lower case. It works properly with text containing wiki markup. Compare &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|sentence|[[action game]]}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:String2|sentence|[[action game]]}} with &lt;code&gt;&lt;nowiki&gt;{{ucfirst:{{lc:[[action game]]}}}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{ucfirst:{{lc:[[action game]]}}}}. Piped wiki-links are handled as well:
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|sentence|[[trimix (breathing gas)|trimix]]}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:String2|sentence|[[trimix (breathing gas)|trimix]]}}
+So are lists:
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |sentence |{{hlist ||[[apples]] |[[pears]] |[[oranges]]}}}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |sentence |{{hlist |[[apples]] |[[pears]] |[[oranges]]}}}}
+
+=== ucfirst ===
+The ucfirst function is similar to sentence; it renders the first alphabetical character in upper case, but leaves the capitalisation of the rest of the text unaltered. This is useful if the text contains proper nouns, but it will not regularise sentences that are ALLCAPS, for example. It also works with text containing piped wiki-links and with html lists.
+
+=== findlast ===
+* Function findlast finds the last item in a list.
+* The first unnamed parameter is the list. The list is trimmed of leading and trailing whitespace
+* The second, optional unnamed parameter is the list separator (default = comma space). The separator is ''not'' trimmed of leading and trailing whitespace (so that leading or trailing spaces can be used).
+* It returns the whole list if the separator is not found.
+
+One potential issue is that using Lua special pattern characters (&lt;code&gt;^$()%.[]*+-?&lt;/code&gt;) as the separator will probably cause problems.
+
+{| class="wikitable"
+|+ Examples
+|-
+! scope="col" | Case
+! scope="col" | Wikitext
+! scope="col" | Output
+|-
+| Normal usage || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast | 5, 932, 992,532, 6,074,702, 6,145,291}}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast | 5, 932, 992,532, 6,074,702, 6,145,291}}
+|-
+| Space as separator || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast | 5 932 992,532 6,074,702 6,145,291 }}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast | 5 932 992,532 6,074,702 6,145,291 }}
+|-
+| One item list || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast | 6,074,702 }}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast | 6,074,702 }}
+|-
+| Separator not found || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast | 5, 932, 992,532, 6,074,702, 6,145,291 |;}}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast | 5, 932, 992,532, 6,074,702, 6,145,291 |;}}
+|-
+| List missing || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast |}}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast |}}
+|}
+
+=== split ===
+The ''split'' function splits text at boundaries specified by separator and returns the chunk for the index idx (starting at 1). It can use positional parameters or named parameters (but these should not be mixed):
+
+; Usage
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |split |text |separator |index |true/false}}&lt;/nowiki&gt;&lt;/code&gt;
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |split |txt=text |sep=separator |idx=index |plain=true/false}}&lt;/nowiki&gt;&lt;/code&gt;
+
+Any double quotes (") in the separator parameter are stripped out, which allows spaces and wikitext like &lt;code&gt;&lt;nowiki&gt;["[&lt;/nowiki&gt;&lt;/code&gt; to be passed. Use &lt;code&gt;{{tl|!}}&lt;/code&gt; for the pipe character &lt;code&gt;|&lt;/code&gt;.
+
+If the optional plain parameter is set to &lt;code&gt;false / no / 0&lt;/code&gt; then separator is treated as a Lua pattern. The default is plain=true, i.e. normal text matching.
+
+The index parameter is optional; it defaults to the first chunk of text.
+
+The {{tl|string split}} is a convenience wrapper for the split function.
+
+=== stripZeros ===
+The stripZeros functions finds the first number in a string of text and strips leading zeros, but retains a zero which is followed by a decimal point. For example: "0940" &amp;rarr; "940"; "Year: 0023" &amp;rarr; "Year: 23"; "00.12" &amp;rarr; "0.12"
+
+=== nowiki ===
+The nowiki function ensures that a string of text is treated by the MediaWiki software as just a string, not code. It trims leading and trailing whitespace.
+
+=== val2percent ===
+The val2percent functions scans through a string, passed as either the first unnamed parameter or |txt=, and converts each number it finds into a percentage, then returns the resulting string.
+
+=== one2a ===
+The one2a function scans through a string, passed as either the first unnamed parameter or |txt=, and converts each occurrence of 'one ' into either 'a ' or 'an ', then returns the resultant string.
+
+The [[Template:One2a]] is a convenience wrapper for the one2a function.
+
+=== findpagetext ===
+The findpagetext function returns the position of a piece of text in the wikitext source of a page. It takes up to four parameters:
+* First positional parameter or |text is the text to be searched for.
+* Optional parameter |title is the page title, defaults to the current page.
+* Optional parameter |plain is either true for a plain search (default), or false for a [[mw:Extension:Scribunto/Lua reference manual #Patterns|Lua pattern]] search.
+* Optional parameter |nomatch is the value returned when no match is found; default is nothing.
+
+; Examples
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=Youghiogheny}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=Youghiogheny}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=Youghiogheny |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=Youghiogheny |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=Youghiogheny |title=Boston Bridge |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=Youghiogheny |title=Boston Bridge |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=river |title=Boston Bridge |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=river |title=Boston Bridge |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=[Rr]iver |title=Boston Bridge |plain=false |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=[Rr]iver |title=Boston Bridge |plain=false |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=%[%[ |title=Boston Bridge |plain=f |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=%[%[ |title=Boston Bridge |plain=f |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=%{%{[Cc]oord |title=Boston Bridge |plain=f |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=%{%{coord |title=Boston Bridge |plain=f |nomatch=not found}}
+The search is case-sensitive, so Lua pattern matching is needed to find &lt;code&gt;river&lt;/code&gt; or &lt;code&gt;River&lt;/code&gt;. The last example finds &lt;code&gt;&lt;nowiki&gt;{{coord&lt;/nowiki&gt;&lt;/code&gt; and &lt;code&gt;&lt;nowiki&gt;{{Coord&lt;/nowiki&gt;&lt;/code&gt;. The penultimate example finds a wiki-link.
+
+The [[Template:Findpagetext]] is a convenience wrapper for this function.
+
+=== strip ===
+
+The strip function strips the first positional parameter of the characters or pattern supplied in the second positional parameter.
+
+; Usage
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|&lt;/nowiki&gt;&lt;var&gt;source_string&lt;/var&gt;|&lt;var&gt;characters_to_strip&lt;/var&gt;|&lt;var&gt;plain_flag&lt;/var&gt;}}&lt;/code&gt;
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|&lt;/nowiki&gt;source=|chars=|plain=}}&lt;/code&gt;
+
+; Examples
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|abc123def|123}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2|strip|abc123def|123}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|abc123def|%d+|false}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2|strip|abc123def|%d+|false}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|source=abc123def|chars=123}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2|strip|source=abc123def|chars=123}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|source=abc123def|chars=%d+|plain=false}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2|strip|source=abc123def|chars=%d+|plain=false}}
+
+=== matchAny ===
+{{for|a function to replace multiple patterns|Module:MultiReplace}}
+
+The matchAny function returns the index of the first positional parameter to match the ''source'' parameter. If the ''plain'' parameter is set to false (default true) then the search strings are Lua patterns. This can usefully be put in a switch statement to pick a switch case based on which pattern a string matches. Returns the empty string if nothing matches, for use in {{pf|if}}.
+
+&lt;code&gt;{{((}}#invoke:String2|matchAny|123|abc|source=abc 124}}&lt;/code&gt; returns 2.
+
+=== hyphen2dash ===
+Extracted hyphen_to_dash() function from [[Special:Permalink/1017669505|Module:Citation/CS1]].
+
+Converts a hyphen to a dash under certain conditions.  The hyphen must separate like items; unlike items are returned unmodified.  These forms are modified:
+* 	letter - letter (A - B)
+* 	digit - digit (4-5)
+* 	digit separator digit - digit separator digit (4.1-4.5 or 4-1-4-5)
+* 	letterdigit - letterdigit (A1-A5) (an optional separator between letter and digit is supported – a.1-a.5 or a-1-a-5)
+* 	digitletter - digitletter (5a - 5d) (an optional separator between letter and digit is supported – 5.a-5.d or 5-a-5-d)
+
+Any other forms are returned unmodified.
+
+The input string may be a comma- or semicolon-separated list. Semicolons are converted to commas.
+
+&lt;code&gt;&lt;nowiki&gt;{{&lt;/nowiki&gt;#invoke:String2|hyphen2dash|1=1-2&lt;nowiki&gt;}}&lt;/nowiki&gt;&lt;/code&gt; returns {{#invoke:String2|hyphen2dash|1=1-2}}.
+
+&lt;code&gt;&lt;nowiki&gt;{{&lt;/nowiki&gt;#invoke:String2|hyphen2dash|1=1-2; 4–10&lt;nowiki&gt;}}&lt;/nowiki&gt;&lt;/code&gt; returns {{#invoke:String2|hyphen2dash|1=1-2; 4–10}}.
+
+[[Help:Citation Style 1#Accept-this-as-written markup|Accept-this-as-written markup]] is supported, e.g. &lt;code&gt;&lt;nowiki&gt;{{&lt;/nowiki&gt;#invoke:String2|hyphen2dash|1=((1-2)); 4–10&lt;nowiki&gt;}}&lt;/nowiki&gt;&lt;/code&gt; returns {{#invoke:String2|hyphen2dash|1=((1-2)); 4–10}}.
+
+By default, a normal space is inserted after the separating comma in lists. An optional second parameter allows to change this to a different character (i.e. a thin space or hair space).
+
+===startswith===
+A startswith function similar to {{ml|string|endswith}}. Both parameters are required, although they can be blank. Leading and trailing whitespace ''is'' counted, use named parameters to avoid this if required. Outputs "yes" for true and blank for false so may be passed directly to #if.
+
+{{markup|padding=1px 5px|
+&lt;nowiki&gt;{{#invoke:string2|startswith|search|se}}&lt;/nowiki&gt;|{{#invoke:string2|startswith|search|se}}|
+&lt;nowiki&gt;{{#invoke:string2|startswith|search|ch}}&lt;/nowiki&gt;|{{#invoke:string2|startswith|search|ch}}}}&lt;!-- Template:Mra --&gt;
+
+===isnumeric===
+Implements {{tl|isnumeric}}, which tests whether a value is numeric (or at least, that it can be treated as such by the [[:mw:Extension:Scribunto/Lua_reference_manual#Language_library|Scribunto language library]]). By default, it will pass through the parameter if it's numeric and be blank if it's not. If the parameter &lt;code&gt;boolean=true&lt;/code&gt; is given, then it will output &lt;code&gt;1&lt;/code&gt; if numeric and &lt;code&gt;0&lt;/code&gt; if not numeric.
+
+{{markup|padding=1px 5px|
+&lt;nowiki&gt;{{#invoke:string2|isnumeric|1,327.50}}&lt;/nowiki&gt;|{{#invoke:string2|isnumeric|1,327.50}}|
+&lt;nowiki&gt;{{#invoke:string2|isnumeric|9,999 (1950)}}&lt;/nowiki&gt;|{{#invoke:string2|isnumeric|9,999 (1950)}}|
+&lt;nowiki&gt;{{#invoke:string2|isnumeric|1,327.50|boolean=true}}&lt;/nowiki&gt;|{{#invoke:string2|isnumeric|1,327.50|boolean=true}}|
+&lt;nowiki&gt;{{#invoke:string2|isnumeric|9,999 (1950)|boolean=true}}&lt;/nowiki&gt;|{{#invoke:string2|isnumeric|9,999 (1950)|boolean=true}}}}
+
+== Usage ==
+
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | sentence |…}}&lt;/nowiki&gt;&lt;/code&gt; - Capitalizes the first character and shifts the rest to lowercase
+** Although similar to [[Help:Magic_words#Formatting|magic words]]' &lt;code&gt;&lt;nowiki&gt;{{ucfirst:}}&lt;/nowiki&gt;&lt;/code&gt; function, this call works even with piped wiki-links because it searches beyond leading brackets and other non-alphanumeric characters.
+** It now also recognises when it has an html list passed to it and capitalises the first alphabetic letter beyond the list item markup ({{tag|li|o}}) and any piped links that may be there.
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | ucfirst |…}}&lt;/nowiki&gt;&lt;/code&gt; - Capitalizes the first alphabetic character and leaves the rest unaltered
+** Works with piped wiki-links and html lists
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | title |…}}&lt;/nowiki&gt;&lt;/code&gt; - Capitalizes all words, except for &lt;code&gt;a&lt;/code&gt;, &lt;code&gt;an&lt;/code&gt;, &lt;code&gt;the&lt;/code&gt;, &lt;code&gt;at&lt;/code&gt;, &lt;code&gt;by&lt;/code&gt;, &lt;code&gt;for&lt;/code&gt;, &lt;code&gt;in&lt;/code&gt;, &lt;code&gt;of&lt;/code&gt;, &lt;code&gt;on&lt;/code&gt;, &lt;code&gt;to&lt;/code&gt;, &lt;code&gt;up&lt;/code&gt;, &lt;code&gt;and&lt;/code&gt;, &lt;code&gt;as&lt;/code&gt;, &lt;code&gt;but&lt;/code&gt;, &lt;code&gt;or&lt;/code&gt;, and &lt;code&gt;nor&lt;/code&gt;.
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | stripZeros |…}}&lt;/nowiki&gt;&lt;/code&gt; - Removes leading padding zeros from the first number it finds in the string
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | title |…}}&lt;/nowiki&gt;&lt;/code&gt; - Renders the string as plain text without wikicode
+
+=== Parameters ===
+These functions take one unnamed parameter comprising (or invoking as a string) the text to be manipulated:
+* title
+* sentence
+* ucfirst
+
+== Examples ==
+
+{| class="wikitable"
+! scope="col" | Input
+! scope="col" | Output
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | abcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | abcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | abCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | abCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | ABcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | ABcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | ABCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | ABCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | 123abcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | 123abcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | human X chromosome }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | human X chromosome}}
+|-
+| &lt;nowiki&gt;{{#invoke:String2 | ucfirst | {{#invoke:WikidataIB |getValue&lt;/nowiki&gt;&lt;br /&gt;&lt;nowiki&gt;| P136 |fetchwikidata=ALL |onlysourced=no |qid=Q1396889}} }}&lt;/nowiki&gt;
+| {{#invoke:String2 | ucfirst | {{#invoke:WikidataIB |getValue |P136 |fetchwikidata=ALL |onlysourced=no |qid=Q1396889}} }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2 | ucfirst | {{#invoke:WikidataIB |getValue&lt;/nowiki&gt;&lt;br /&gt;&lt;nowiki&gt;| P106 |fetchwikidata=ALL |list=hlist |qid=Q453196}} }}&lt;/nowiki&gt;
+| {{#invoke:String2 | ucfirst | {{#invoke:WikidataIB |getValue |P106 |fetchwikidata=ALL |list=hlist |qid=Q453196}} }}
+|-
+| &amp;nbsp;
+| 
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | abcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | abcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | abCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | abCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | ABcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | ABcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | ABCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | ABCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | [[action game]] }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | [[action game]] }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | [[trimix (breathing gas)|trimix]] }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | [[trimix (breathing gas)|trimix]] }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | }}
+|-
+| &amp;nbsp;
+| 
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | abcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | abcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | abCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | abCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | ABcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | ABcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | ABCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | ABCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | the vitamins are in my fresh california raisins}}&lt;/nowiki&gt;
+| {{#invoke:String2| title | the vitamins are in my fresh california raisins}}
+|-
+|}
+
+=== String split ===
+[[Template:String split]] is a convenience wrapper for the split function.
+* &lt;code&gt;&lt;nowiki&gt;{{String split |This is a piece of text to be split |" "}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |This is a piece of text to be split |" "}}
+* &lt;code&gt;&lt;nowiki&gt;{{String split |This is a piece of text to be split |" "| 4}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |This is a piece of text to be split |" "| 4}}
+* &lt;code&gt;&lt;nowiki&gt;{{String split |This is a piece of text to be split |x| 2}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |This is a piece of text to be split |x| 2}}
+Modules may return strings with | as separators like this: &lt;code&gt;&lt;nowiki&gt;{{#invoke:carousel | main | name = WPDogs | switchsecs = 5 }}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:carousel | main | name = WPDogs | switchsecs = 5 }}
+* &lt;code&gt;&lt;nowiki&gt;{{String split |{{#invoke:carousel | main | name = WPDogs | switchsecs = 5 }}|{{!}}| 2}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |{{#invoke:carousel | main | name = WPDogs | switchsecs = 5 }}|{{!}}| 2}}
+Lua patterns can allow splitting at classes of characters such as punctuation:
+* &lt;code&gt;&lt;nowiki&gt;{{String split |Apples, pears, oranges; Cats, dogs|"%p"| 2 |false}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |Apples, pears, oranges; Cats, dogs|"%p"| 2 |false}}
+* &lt;code&gt;&lt;nowiki&gt;{{String split |Apples, pears, oranges; Cats, dogs|"%p"| 4 |false}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |Apples, pears, oranges; Cats, dogs|"%p"| 4 |false}}
+Or split on anything that isn't a letter (no is treated as false):
+* &lt;code&gt;&lt;nowiki&gt;{{String split |Apples pears oranges;  Cats  dogs|"%A+"| 4 |no}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |Apples pears oranges;  Cats  dogs|"%A+"| 4 |no}}
+Named parameters force the trimming of leading and trailing spaces in the parameters and are generally clearer when used:
+* &lt;code&gt;&lt;nowiki&gt;{{String split | txt=Apples pears oranges;  Cats  dogs | sep="%A+" | idx=3 | plain=false }}&lt;/nowiki&gt;&lt;/code&gt; → {{String split | txt=Apples pears oranges;  Cats  dogs | sep="%A+" | idx=3 | plain=false }}
+
+=== One2a ===
+[[Template:One2a]] is a convenience wrapper for the one2a function. 
+
+Capitalisation is kept. Aimed for usage with {{tl|Convert}}.
+* &lt;code&gt;&lt;nowiki&gt;{{one2a |One foot. One mile. One kilometer. One inch.One amp. one foot. one mile. one inch. Alone at last. Onely the lonely. ONE ounce. One monkey.}}&lt;/nowiki&gt;&lt;/code&gt; →
+:{{one2a |One foot. One mile. One kilometer. One inch.One amp. one foot. one mile. one inch. Alone at last. Onely the lonely. ONE ounce. One monkey.}}
+* &lt;code&gt;&lt;nowiki&gt;{{convert|1|ft|spell=on}}&lt;/nowiki&gt;&lt;/code&gt; → {{convert|1|ft|spell=on}}
+* &lt;code&gt;&lt;nowiki&gt;{{one2a|{{convert|1|ft|spell=on}}}}&lt;/nowiki&gt;&lt;/code&gt; → {{one2a|{{convert|1|ft|spell=on}}}}
+* &lt;code&gt;&lt;nowiki&gt;{{convert|2.54|cm|0|disp=out|spell=on}}&lt;/nowiki&gt;&lt;/code&gt; → {{convert|2.54|cm|0|disp=out|spell=on}}
+* &lt;code&gt;&lt;nowiki&gt;{{one2a|{{convert|2.54|cm|0|disp=out|spell=on}}}}&lt;/nowiki&gt;&lt;/code&gt; → {{one2a|{{convert|2.54|cm|0|disp=out|spell=on}}}}
+
+== See also ==
+[[Module:String]] for the following functions:
+* len
+* sub
+* sublength
+* match
+* pos
+* str_find
+* find
+* replace
+* rep
+
+Templates and modules related to capitalization
+{{Case templates see also}}
+
+Templates that implement {{tag|nowiki|o}}
+* {{tl|nowiki}}
+* {{tl|nowiki2}}
+&lt;includeonly&gt;{{Sandbox other||
+[[Category:Modules that manipulate strings|*]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>4ig3qrleec42gxj2v0rnwj1fzb8slja</sha1>
+    </revision>
+    <revision>
+      <id>916538</id>
+      <parentid>916537</parentid>
+      <timestamp>2025-05-19T04:45:09Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>916538</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="21252" sha1="6xxdt6fnzpas2mocdrrq1egn1uly5hv" xml:space="preserve">{{high-use}}
+{{module rating|release}}
+{{Lua|Module:GetParameters}}
+{{Lmd|String2}}
+
+The module '''String2''' contains a number of string manipulation functions that are much less commonly used than those in [[Module:String]]. Because Module:String is cascade-protected (some of its functions are used on the Main Page), it cannot be edited or maintained by template editors, only by admins. While it is true that string-handling functions rarely need maintenance, it is useful to allow that by template editors where possible, so this module may be used by template editors to develop novel functionality.
+
+The module contains three case-related calls that convert strings to first letter uppercase, sentence case or title case and two calls that are useful for working with substrings. There are other utility calls that strip leading zeros from padded numbers and transform text so that it is not interpreted as wikitext, and several other calls that solve specific problems for template developers such as finding the position of a piece of text on a given page.
+
+The functions are designed with the possibility of working with text returned from Wikidata in mind. However, a call to Wikidata may return empty, so the functions should generally fail gracefully if supplied with a missing or blank input parameter, rather than throwing an error.
+
+== Functions ==
+=== trim ===
+The trim function simply trims whitespace characters from the start and end of the string.
+
+=== title ===
+The title function capitalises the first letter of each word in the text, apart from a number of short words listed in [[s:U.S. Government Printing Office Style Manual/Capitalization Rules#3.49|The U.S. Government Printing Office Style Manual §3.49 "Center and side heads"]]: {{xt|a, an, the, at, by, for, in, of, on, to, up, and, as, but, or, and nor}}.
+
+This is a very simplistic algorithm; see [[:Template:Title case/doc]] for some of its limitations.
+
+=== sentence ===
+The sentence function finds the first letter and capitalises it, then renders the rest of the text in lower case. It works properly with text containing wiki markup. Compare &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|sentence|[[:en:Action game|Action game]]}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:String2|sentence|[[:en:Action game|Action game]]}} with &lt;code&gt;&lt;nowiki&gt;{{ucfirst:{{lc:[[:en:Action game|Action game]]}}}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{ucfirst:{{lc:[[:en:Action game|Action game]]}}}}. Piped wiki-links are handled as well:
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|sentence|[[trimix (breathing gas)|trimix]]}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:String2|sentence|[[trimix (breathing gas)|trimix]]}}
+So are lists:
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |sentence |{{hlist ||[[apples]] |[[pears]] |[[oranges]]}}}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |sentence |{{hlist |[[apples]] |[[pears]] |[[oranges]]}}}}
+
+=== ucfirst ===
+The ucfirst function is similar to sentence; it renders the first alphabetical character in upper case, but leaves the capitalisation of the rest of the text unaltered. This is useful if the text contains proper nouns, but it will not regularise sentences that are ALLCAPS, for example. It also works with text containing piped wiki-links and with html lists.
+
+=== findlast ===
+* Function findlast finds the last item in a list.
+* The first unnamed parameter is the list. The list is trimmed of leading and trailing whitespace
+* The second, optional unnamed parameter is the list separator (default = comma space). The separator is ''not'' trimmed of leading and trailing whitespace (so that leading or trailing spaces can be used).
+* It returns the whole list if the separator is not found.
+
+One potential issue is that using Lua special pattern characters (&lt;code&gt;^$()%.[]*+-?&lt;/code&gt;) as the separator will probably cause problems.
+
+{| class="wikitable"
+|+ Examples
+|-
+! scope="col" | Case
+! scope="col" | Wikitext
+! scope="col" | Output
+|-
+| Normal usage || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast | 5, 932, 992,532, 6,074,702, 6,145,291}}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast | 5, 932, 992,532, 6,074,702, 6,145,291}}
+|-
+| Space as separator || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast | 5 932 992,532 6,074,702 6,145,291 }}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast | 5 932 992,532 6,074,702 6,145,291 }}
+|-
+| One item list || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast | 6,074,702 }}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast | 6,074,702 }}
+|-
+| Separator not found || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast | 5, 932, 992,532, 6,074,702, 6,145,291 |;}}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast | 5, 932, 992,532, 6,074,702, 6,145,291 |;}}
+|-
+| List missing || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast |}}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast |}}
+|}
+
+=== split ===
+The ''split'' function splits text at boundaries specified by separator and returns the chunk for the index idx (starting at 1). It can use positional parameters or named parameters (but these should not be mixed):
+
+; Usage
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |split |text |separator |index |true/false}}&lt;/nowiki&gt;&lt;/code&gt;
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |split |txt=text |sep=separator |idx=index |plain=true/false}}&lt;/nowiki&gt;&lt;/code&gt;
+
+Any double quotes (") in the separator parameter are stripped out, which allows spaces and wikitext like &lt;code&gt;&lt;nowiki&gt;["[&lt;/nowiki&gt;&lt;/code&gt; to be passed. Use &lt;code&gt;{{tl|!}}&lt;/code&gt; for the pipe character &lt;code&gt;|&lt;/code&gt;.
+
+If the optional plain parameter is set to &lt;code&gt;false / no / 0&lt;/code&gt; then separator is treated as a Lua pattern. The default is plain=true, i.e. normal text matching.
+
+The index parameter is optional; it defaults to the first chunk of text.
+
+The {{tl|string split}} is a convenience wrapper for the split function.
+
+=== stripZeros ===
+The stripZeros functions finds the first number in a string of text and strips leading zeros, but retains a zero which is followed by a decimal point. For example: "0940" &amp;rarr; "940"; "Year: 0023" &amp;rarr; "Year: 23"; "00.12" &amp;rarr; "0.12"
+
+=== nowiki ===
+The nowiki function ensures that a string of text is treated by the MediaWiki software as just a string, not code. It trims leading and trailing whitespace.
+
+=== val2percent ===
+The val2percent functions scans through a string, passed as either the first unnamed parameter or |txt=, and converts each number it finds into a percentage, then returns the resulting string.
+
+=== one2a ===
+The one2a function scans through a string, passed as either the first unnamed parameter or |txt=, and converts each occurrence of 'one ' into either 'a ' or 'an ', then returns the resultant string.
+
+The [[Template:One2a]] is a convenience wrapper for the one2a function.
+
+=== findpagetext ===
+The findpagetext function returns the position of a piece of text in the wikitext source of a page. It takes up to four parameters:
+* First positional parameter or |text is the text to be searched for.
+* Optional parameter |title is the page title, defaults to the current page.
+* Optional parameter |plain is either true for a plain search (default), or false for a [[mw:Extension:Scribunto/Lua reference manual #Patterns|Lua pattern]] search.
+* Optional parameter |nomatch is the value returned when no match is found; default is nothing.
+
+; Examples
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=Youghiogheny}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=Youghiogheny}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=Youghiogheny |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=Youghiogheny |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=Youghiogheny |title=Boston Bridge |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=Youghiogheny |title=Boston Bridge |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=river |title=Boston Bridge |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=river |title=Boston Bridge |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=[Rr]iver |title=Boston Bridge |plain=false |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=[Rr]iver |title=Boston Bridge |plain=false |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=%[%[ |title=Boston Bridge |plain=f |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=%[%[ |title=Boston Bridge |plain=f |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=%{%{[Cc]oord |title=Boston Bridge |plain=f |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=%{%{coord |title=Boston Bridge |plain=f |nomatch=not found}}
+The search is case-sensitive, so Lua pattern matching is needed to find &lt;code&gt;river&lt;/code&gt; or &lt;code&gt;River&lt;/code&gt;. The last example finds &lt;code&gt;&lt;nowiki&gt;{{coord&lt;/nowiki&gt;&lt;/code&gt; and &lt;code&gt;&lt;nowiki&gt;{{Coord&lt;/nowiki&gt;&lt;/code&gt;. The penultimate example finds a wiki-link.
+
+The [[Template:Findpagetext]] is a convenience wrapper for this function.
+
+=== strip ===
+
+The strip function strips the first positional parameter of the characters or pattern supplied in the second positional parameter.
+
+; Usage
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|&lt;/nowiki&gt;&lt;var&gt;source_string&lt;/var&gt;|&lt;var&gt;characters_to_strip&lt;/var&gt;|&lt;var&gt;plain_flag&lt;/var&gt;}}&lt;/code&gt;
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|&lt;/nowiki&gt;source=|chars=|plain=}}&lt;/code&gt;
+
+; Examples
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|abc123def|123}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2|strip|abc123def|123}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|abc123def|%d+|false}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2|strip|abc123def|%d+|false}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|source=abc123def|chars=123}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2|strip|source=abc123def|chars=123}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|source=abc123def|chars=%d+|plain=false}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2|strip|source=abc123def|chars=%d+|plain=false}}
+
+=== matchAny ===
+{{for|a function to replace multiple patterns|Module:MultiReplace}}
+
+The matchAny function returns the index of the first positional parameter to match the ''source'' parameter. If the ''plain'' parameter is set to false (default true) then the search strings are Lua patterns. This can usefully be put in a switch statement to pick a switch case based on which pattern a string matches. Returns the empty string if nothing matches, for use in {{pf|if}}.
+
+&lt;code&gt;{{((}}#invoke:String2|matchAny|123|abc|source=abc 124}}&lt;/code&gt; returns 2.
+
+=== hyphen2dash ===
+Extracted hyphen_to_dash() function from [[Special:Permalink/1017669505|Module:Citation/CS1]].
+
+Converts a hyphen to a dash under certain conditions.  The hyphen must separate like items; unlike items are returned unmodified.  These forms are modified:
+* 	letter - letter (A - B)
+* 	digit - digit (4-5)
+* 	digit separator digit - digit separator digit (4.1-4.5 or 4-1-4-5)
+* 	letterdigit - letterdigit (A1-A5) (an optional separator between letter and digit is supported – a.1-a.5 or a-1-a-5)
+* 	digitletter - digitletter (5a - 5d) (an optional separator between letter and digit is supported – 5.a-5.d or 5-a-5-d)
+
+Any other forms are returned unmodified.
+
+The input string may be a comma- or semicolon-separated list. Semicolons are converted to commas.
+
+&lt;code&gt;&lt;nowiki&gt;{{&lt;/nowiki&gt;#invoke:String2|hyphen2dash|1=1-2&lt;nowiki&gt;}}&lt;/nowiki&gt;&lt;/code&gt; returns {{#invoke:String2|hyphen2dash|1=1-2}}.
+
+&lt;code&gt;&lt;nowiki&gt;{{&lt;/nowiki&gt;#invoke:String2|hyphen2dash|1=1-2; 4–10&lt;nowiki&gt;}}&lt;/nowiki&gt;&lt;/code&gt; returns {{#invoke:String2|hyphen2dash|1=1-2; 4–10}}.
+
+[[Help:Citation Style 1#Accept-this-as-written markup|Accept-this-as-written markup]] is supported, e.g. &lt;code&gt;&lt;nowiki&gt;{{&lt;/nowiki&gt;#invoke:String2|hyphen2dash|1=((1-2)); 4–10&lt;nowiki&gt;}}&lt;/nowiki&gt;&lt;/code&gt; returns {{#invoke:String2|hyphen2dash|1=((1-2)); 4–10}}.
+
+By default, a normal space is inserted after the separating comma in lists. An optional second parameter allows to change this to a different character (i.e. a thin space or hair space).
+
+===startswith===
+A startswith function similar to {{ml|string|endswith}}. Both parameters are required, although they can be blank. Leading and trailing whitespace ''is'' counted, use named parameters to avoid this if required. Outputs "yes" for true and blank for false so may be passed directly to #if.
+
+{{markup|padding=1px 5px|
+&lt;nowiki&gt;{{#invoke:string2|startswith|search|se}}&lt;/nowiki&gt;|{{#invoke:string2|startswith|search|se}}|
+&lt;nowiki&gt;{{#invoke:string2|startswith|search|ch}}&lt;/nowiki&gt;|{{#invoke:string2|startswith|search|ch}}}}&lt;!-- Template:Mra --&gt;
+
+===isnumeric===
+Implements {{tl|isnumeric}}, which tests whether a value is numeric (or at least, that it can be treated as such by the [[:mw:Extension:Scribunto/Lua_reference_manual#Language_library|Scribunto language library]]). By default, it will pass through the parameter if it's numeric and be blank if it's not. If the parameter &lt;code&gt;boolean=true&lt;/code&gt; is given, then it will output &lt;code&gt;1&lt;/code&gt; if numeric and &lt;code&gt;0&lt;/code&gt; if not numeric.
+
+{{markup|padding=1px 5px|
+&lt;nowiki&gt;{{#invoke:string2|isnumeric|1,327.50}}&lt;/nowiki&gt;|{{#invoke:string2|isnumeric|1,327.50}}|
+&lt;nowiki&gt;{{#invoke:string2|isnumeric|9,999 (1950)}}&lt;/nowiki&gt;|{{#invoke:string2|isnumeric|9,999 (1950)}}|
+&lt;nowiki&gt;{{#invoke:string2|isnumeric|1,327.50|boolean=true}}&lt;/nowiki&gt;|{{#invoke:string2|isnumeric|1,327.50|boolean=true}}|
+&lt;nowiki&gt;{{#invoke:string2|isnumeric|9,999 (1950)|boolean=true}}&lt;/nowiki&gt;|{{#invoke:string2|isnumeric|9,999 (1950)|boolean=true}}}}
+
+== Usage ==
+
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | sentence |…}}&lt;/nowiki&gt;&lt;/code&gt; - Capitalizes the first character and shifts the rest to lowercase
+** Although similar to [[Help:Magic_words#Formatting|magic words]]' &lt;code&gt;&lt;nowiki&gt;{{ucfirst:}}&lt;/nowiki&gt;&lt;/code&gt; function, this call works even with piped wiki-links because it searches beyond leading brackets and other non-alphanumeric characters.
+** It now also recognises when it has an html list passed to it and capitalises the first alphabetic letter beyond the list item markup ({{tag|li|o}}) and any piped links that may be there.
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | ucfirst |…}}&lt;/nowiki&gt;&lt;/code&gt; - Capitalizes the first alphabetic character and leaves the rest unaltered
+** Works with piped wiki-links and html lists
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | title |…}}&lt;/nowiki&gt;&lt;/code&gt; - Capitalizes all words, except for &lt;code&gt;a&lt;/code&gt;, &lt;code&gt;an&lt;/code&gt;, &lt;code&gt;the&lt;/code&gt;, &lt;code&gt;at&lt;/code&gt;, &lt;code&gt;by&lt;/code&gt;, &lt;code&gt;for&lt;/code&gt;, &lt;code&gt;in&lt;/code&gt;, &lt;code&gt;of&lt;/code&gt;, &lt;code&gt;on&lt;/code&gt;, &lt;code&gt;to&lt;/code&gt;, &lt;code&gt;up&lt;/code&gt;, &lt;code&gt;and&lt;/code&gt;, &lt;code&gt;as&lt;/code&gt;, &lt;code&gt;but&lt;/code&gt;, &lt;code&gt;or&lt;/code&gt;, and &lt;code&gt;nor&lt;/code&gt;.
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | stripZeros |…}}&lt;/nowiki&gt;&lt;/code&gt; - Removes leading padding zeros from the first number it finds in the string
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | title |…}}&lt;/nowiki&gt;&lt;/code&gt; - Renders the string as plain text without wikicode
+
+=== Parameters ===
+These functions take one unnamed parameter comprising (or invoking as a string) the text to be manipulated:
+* title
+* sentence
+* ucfirst
+
+== Examples ==
+
+{| class="wikitable"
+! scope="col" | Input
+! scope="col" | Output
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | abcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | abcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | abCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | abCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | ABcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | ABcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | ABCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | ABCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | 123abcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | 123abcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | human X chromosome }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | human X chromosome}}
+|-
+| &lt;nowiki&gt;{{#invoke:String2 | ucfirst | {{#invoke:WikidataIB |getValue&lt;/nowiki&gt;&lt;br /&gt;&lt;nowiki&gt;| P136 |fetchwikidata=ALL |onlysourced=no |qid=Q1396889}} }}&lt;/nowiki&gt;
+| {{#invoke:String2 | ucfirst | {{#invoke:WikidataIB |getValue |P136 |fetchwikidata=ALL |onlysourced=no |qid=Q1396889}} }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2 | ucfirst | {{#invoke:WikidataIB |getValue&lt;/nowiki&gt;&lt;br /&gt;&lt;nowiki&gt;| P106 |fetchwikidata=ALL |list=hlist |qid=Q453196}} }}&lt;/nowiki&gt;
+| {{#invoke:String2 | ucfirst | {{#invoke:WikidataIB |getValue |P106 |fetchwikidata=ALL |list=hlist |qid=Q453196}} }}
+|-
+| &amp;nbsp;
+| 
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | abcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | abcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | abCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | abCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | ABcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | ABcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | ABCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | ABCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | [[:en:Action game|Action game]] }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | [[:en:Action game|Action game]] }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | [[trimix (breathing gas)|trimix]] }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | [[trimix (breathing gas)|trimix]] }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | }}
+|-
+| &amp;nbsp;
+| 
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | abcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | abcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | abCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | abCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | ABcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | ABcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | ABCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | ABCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | the vitamins are in my fresh california raisins}}&lt;/nowiki&gt;
+| {{#invoke:String2| title | the vitamins are in my fresh california raisins}}
+|-
+|}
+
+=== String split ===
+[[Template:String split]] is a convenience wrapper for the split function.
+* &lt;code&gt;&lt;nowiki&gt;{{String split |This is a piece of text to be split |" "}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |This is a piece of text to be split |" "}}
+* &lt;code&gt;&lt;nowiki&gt;{{String split |This is a piece of text to be split |" "| 4}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |This is a piece of text to be split |" "| 4}}
+* &lt;code&gt;&lt;nowiki&gt;{{String split |This is a piece of text to be split |x| 2}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |This is a piece of text to be split |x| 2}}
+Modules may return strings with | as separators like this: &lt;code&gt;&lt;nowiki&gt;{{#invoke:carousel | main | name = WPDogs | switchsecs = 5 }}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:carousel | main | name = WPDogs | switchsecs = 5 }}
+* &lt;code&gt;&lt;nowiki&gt;{{String split |{{#invoke:carousel | main | name = WPDogs | switchsecs = 5 }}|{{!}}| 2}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |{{#invoke:carousel | main | name = WPDogs | switchsecs = 5 }}|{{!}}| 2}}
+Lua patterns can allow splitting at classes of characters such as punctuation:
+* &lt;code&gt;&lt;nowiki&gt;{{String split |Apples, pears, oranges; Cats, dogs|"%p"| 2 |false}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |Apples, pears, oranges; Cats, dogs|"%p"| 2 |false}}
+* &lt;code&gt;&lt;nowiki&gt;{{String split |Apples, pears, oranges; Cats, dogs|"%p"| 4 |false}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |Apples, pears, oranges; Cats, dogs|"%p"| 4 |false}}
+Or split on anything that isn't a letter (no is treated as false):
+* &lt;code&gt;&lt;nowiki&gt;{{String split |Apples pears oranges;  Cats  dogs|"%A+"| 4 |no}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |Apples pears oranges;  Cats  dogs|"%A+"| 4 |no}}
+Named parameters force the trimming of leading and trailing spaces in the parameters and are generally clearer when used:
+* &lt;code&gt;&lt;nowiki&gt;{{String split | txt=Apples pears oranges;  Cats  dogs | sep="%A+" | idx=3 | plain=false }}&lt;/nowiki&gt;&lt;/code&gt; → {{String split | txt=Apples pears oranges;  Cats  dogs | sep="%A+" | idx=3 | plain=false }}
+
+=== One2a ===
+[[Template:One2a]] is a convenience wrapper for the one2a function. 
+
+Capitalisation is kept. Aimed for usage with {{tl|Convert}}.
+* &lt;code&gt;&lt;nowiki&gt;{{one2a |One foot. One mile. One kilometer. One inch.One amp. one foot. one mile. one inch. Alone at last. Onely the lonely. ONE ounce. One monkey.}}&lt;/nowiki&gt;&lt;/code&gt; →
+:{{one2a |One foot. One mile. One kilometer. One inch.One amp. one foot. one mile. one inch. Alone at last. Onely the lonely. ONE ounce. One monkey.}}
+* &lt;code&gt;&lt;nowiki&gt;{{convert|1|ft|spell=on}}&lt;/nowiki&gt;&lt;/code&gt; → {{convert|1|ft|spell=on}}
+* &lt;code&gt;&lt;nowiki&gt;{{one2a|{{convert|1|ft|spell=on}}}}&lt;/nowiki&gt;&lt;/code&gt; → {{one2a|{{convert|1|ft|spell=on}}}}
+* &lt;code&gt;&lt;nowiki&gt;{{convert|2.54|cm|0|disp=out|spell=on}}&lt;/nowiki&gt;&lt;/code&gt; → {{convert|2.54|cm|0|disp=out|spell=on}}
+* &lt;code&gt;&lt;nowiki&gt;{{one2a|{{convert|2.54|cm|0|disp=out|spell=on}}}}&lt;/nowiki&gt;&lt;/code&gt; → {{one2a|{{convert|2.54|cm|0|disp=out|spell=on}}}}
+
+== See also ==
+[[Module:String]] for the following functions:
+* len
+* sub
+* sublength
+* match
+* pos
+* str_find
+* find
+* replace
+* rep
+
+Templates and modules related to capitalization
+{{Case templates see also}}
+
+Templates that implement {{tag|nowiki|o}}
+* {{tl|nowiki}}
+* {{tl|nowiki2}}
+&lt;includeonly&gt;{{Sandbox other||
+[[Category:Modules that manipulate strings|*]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>6xxdt6fnzpas2mocdrrq1egn1uly5hv</sha1>
+    </revision>
+    <revision>
+      <id>916539</id>
+      <parentid>916538</parentid>
+      <timestamp>2025-05-19T10:30:38Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>916539</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="21274" sha1="rnbs9tbduz8aavblhmvwpktvv7hzfr0" xml:space="preserve">{{high-use}}
+{{module rating|release}}
+{{Lua|Module:GetParameters}}
+{{Lmd|String2}}
+
+The module '''String2''' contains a number of string manipulation functions that are much less commonly used than those in [[Module:String]]. Because Module:String is cascade-protected (some of its functions are used on the Main Page), it cannot be edited or maintained by template editors, only by admins. While it is true that string-handling functions rarely need maintenance, it is useful to allow that by template editors where possible, so this module may be used by template editors to develop novel functionality.
+
+The module contains three case-related calls that convert strings to first letter uppercase, sentence case or title case and two calls that are useful for working with substrings. There are other utility calls that strip leading zeros from padded numbers and transform text so that it is not interpreted as wikitext, and several other calls that solve specific problems for template developers such as finding the position of a piece of text on a given page.
+
+The functions are designed with the possibility of working with text returned from Wikidata in mind. However, a call to Wikidata may return empty, so the functions should generally fail gracefully if supplied with a missing or blank input parameter, rather than throwing an error.
+
+== Functions ==
+=== trim ===
+The trim function simply trims whitespace characters from the start and end of the string.
+
+=== title ===
+The title function capitalises the first letter of each word in the text, apart from a number of short words listed in [[s:U.S. Government Printing Office Style Manual/Capitalization Rules#3.49|The U.S. Government Printing Office Style Manual §3.49 "Center and side heads"]]: {{xt|a, an, the, at, by, for, in, of, on, to, up, and, as, but, or, and nor}}.
+
+This is a very simplistic algorithm; see [[:Template:Title case/doc]] for some of its limitations.
+
+=== sentence ===
+The sentence function finds the first letter and capitalises it, then renders the rest of the text in lower case. It works properly with text containing wiki markup. Compare &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|sentence|[[:en:Action game|Action game]]}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:String2|sentence|[[:en:Action game|Action game]]}} with &lt;code&gt;&lt;nowiki&gt;{{ucfirst:{{lc:[[:en:Action game|Action game]]}}}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{ucfirst:{{lc:[[:en:Action game|Action game]]}}}}. Piped wiki-links are handled as well:
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|sentence|[[trimix (breathing gas)|trimix]]}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:String2|sentence|[[trimix (breathing gas)|trimix]]}}
+So are lists:
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |sentence |{{hlist ||[[:en:Apples|Apples]] |[[pears]] |[[oranges]]}}}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |sentence |{{hlist |[[:en:Apples|Apples]] |[[pears]] |[[oranges]]}}}}
+
+=== ucfirst ===
+The ucfirst function is similar to sentence; it renders the first alphabetical character in upper case, but leaves the capitalisation of the rest of the text unaltered. This is useful if the text contains proper nouns, but it will not regularise sentences that are ALLCAPS, for example. It also works with text containing piped wiki-links and with html lists.
+
+=== findlast ===
+* Function findlast finds the last item in a list.
+* The first unnamed parameter is the list. The list is trimmed of leading and trailing whitespace
+* The second, optional unnamed parameter is the list separator (default = comma space). The separator is ''not'' trimmed of leading and trailing whitespace (so that leading or trailing spaces can be used).
+* It returns the whole list if the separator is not found.
+
+One potential issue is that using Lua special pattern characters (&lt;code&gt;^$()%.[]*+-?&lt;/code&gt;) as the separator will probably cause problems.
+
+{| class="wikitable"
+|+ Examples
+|-
+! scope="col" | Case
+! scope="col" | Wikitext
+! scope="col" | Output
+|-
+| Normal usage || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast | 5, 932, 992,532, 6,074,702, 6,145,291}}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast | 5, 932, 992,532, 6,074,702, 6,145,291}}
+|-
+| Space as separator || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast | 5 932 992,532 6,074,702 6,145,291 }}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast | 5 932 992,532 6,074,702 6,145,291 }}
+|-
+| One item list || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast | 6,074,702 }}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast | 6,074,702 }}
+|-
+| Separator not found || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast | 5, 932, 992,532, 6,074,702, 6,145,291 |;}}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast | 5, 932, 992,532, 6,074,702, 6,145,291 |;}}
+|-
+| List missing || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast |}}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast |}}
+|}
+
+=== split ===
+The ''split'' function splits text at boundaries specified by separator and returns the chunk for the index idx (starting at 1). It can use positional parameters or named parameters (but these should not be mixed):
+
+; Usage
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |split |text |separator |index |true/false}}&lt;/nowiki&gt;&lt;/code&gt;
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |split |txt=text |sep=separator |idx=index |plain=true/false}}&lt;/nowiki&gt;&lt;/code&gt;
+
+Any double quotes (") in the separator parameter are stripped out, which allows spaces and wikitext like &lt;code&gt;&lt;nowiki&gt;["[&lt;/nowiki&gt;&lt;/code&gt; to be passed. Use &lt;code&gt;{{tl|!}}&lt;/code&gt; for the pipe character &lt;code&gt;|&lt;/code&gt;.
+
+If the optional plain parameter is set to &lt;code&gt;false / no / 0&lt;/code&gt; then separator is treated as a Lua pattern. The default is plain=true, i.e. normal text matching.
+
+The index parameter is optional; it defaults to the first chunk of text.
+
+The {{tl|string split}} is a convenience wrapper for the split function.
+
+=== stripZeros ===
+The stripZeros functions finds the first number in a string of text and strips leading zeros, but retains a zero which is followed by a decimal point. For example: "0940" &amp;rarr; "940"; "Year: 0023" &amp;rarr; "Year: 23"; "00.12" &amp;rarr; "0.12"
+
+=== nowiki ===
+The nowiki function ensures that a string of text is treated by the MediaWiki software as just a string, not code. It trims leading and trailing whitespace.
+
+=== val2percent ===
+The val2percent functions scans through a string, passed as either the first unnamed parameter or |txt=, and converts each number it finds into a percentage, then returns the resulting string.
+
+=== one2a ===
+The one2a function scans through a string, passed as either the first unnamed parameter or |txt=, and converts each occurrence of 'one ' into either 'a ' or 'an ', then returns the resultant string.
+
+The [[Template:One2a]] is a convenience wrapper for the one2a function.
+
+=== findpagetext ===
+The findpagetext function returns the position of a piece of text in the wikitext source of a page. It takes up to four parameters:
+* First positional parameter or |text is the text to be searched for.
+* Optional parameter |title is the page title, defaults to the current page.
+* Optional parameter |plain is either true for a plain search (default), or false for a [[mw:Extension:Scribunto/Lua reference manual #Patterns|Lua pattern]] search.
+* Optional parameter |nomatch is the value returned when no match is found; default is nothing.
+
+; Examples
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=Youghiogheny}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=Youghiogheny}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=Youghiogheny |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=Youghiogheny |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=Youghiogheny |title=Boston Bridge |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=Youghiogheny |title=Boston Bridge |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=river |title=Boston Bridge |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=river |title=Boston Bridge |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=[Rr]iver |title=Boston Bridge |plain=false |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=[Rr]iver |title=Boston Bridge |plain=false |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=%[%[ |title=Boston Bridge |plain=f |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=%[%[ |title=Boston Bridge |plain=f |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=%{%{[Cc]oord |title=Boston Bridge |plain=f |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=%{%{coord |title=Boston Bridge |plain=f |nomatch=not found}}
+The search is case-sensitive, so Lua pattern matching is needed to find &lt;code&gt;river&lt;/code&gt; or &lt;code&gt;River&lt;/code&gt;. The last example finds &lt;code&gt;&lt;nowiki&gt;{{coord&lt;/nowiki&gt;&lt;/code&gt; and &lt;code&gt;&lt;nowiki&gt;{{Coord&lt;/nowiki&gt;&lt;/code&gt;. The penultimate example finds a wiki-link.
+
+The [[Template:Findpagetext]] is a convenience wrapper for this function.
+
+=== strip ===
+
+The strip function strips the first positional parameter of the characters or pattern supplied in the second positional parameter.
+
+; Usage
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|&lt;/nowiki&gt;&lt;var&gt;source_string&lt;/var&gt;|&lt;var&gt;characters_to_strip&lt;/var&gt;|&lt;var&gt;plain_flag&lt;/var&gt;}}&lt;/code&gt;
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|&lt;/nowiki&gt;source=|chars=|plain=}}&lt;/code&gt;
+
+; Examples
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|abc123def|123}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2|strip|abc123def|123}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|abc123def|%d+|false}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2|strip|abc123def|%d+|false}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|source=abc123def|chars=123}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2|strip|source=abc123def|chars=123}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|source=abc123def|chars=%d+|plain=false}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2|strip|source=abc123def|chars=%d+|plain=false}}
+
+=== matchAny ===
+{{for|a function to replace multiple patterns|Module:MultiReplace}}
+
+The matchAny function returns the index of the first positional parameter to match the ''source'' parameter. If the ''plain'' parameter is set to false (default true) then the search strings are Lua patterns. This can usefully be put in a switch statement to pick a switch case based on which pattern a string matches. Returns the empty string if nothing matches, for use in {{pf|if}}.
+
+&lt;code&gt;{{((}}#invoke:String2|matchAny|123|abc|source=abc 124}}&lt;/code&gt; returns 2.
+
+=== hyphen2dash ===
+Extracted hyphen_to_dash() function from [[Special:Permalink/1017669505|Module:Citation/CS1]].
+
+Converts a hyphen to a dash under certain conditions.  The hyphen must separate like items; unlike items are returned unmodified.  These forms are modified:
+* 	letter - letter (A - B)
+* 	digit - digit (4-5)
+* 	digit separator digit - digit separator digit (4.1-4.5 or 4-1-4-5)
+* 	letterdigit - letterdigit (A1-A5) (an optional separator between letter and digit is supported – a.1-a.5 or a-1-a-5)
+* 	digitletter - digitletter (5a - 5d) (an optional separator between letter and digit is supported – 5.a-5.d or 5-a-5-d)
+
+Any other forms are returned unmodified.
+
+The input string may be a comma- or semicolon-separated list. Semicolons are converted to commas.
+
+&lt;code&gt;&lt;nowiki&gt;{{&lt;/nowiki&gt;#invoke:String2|hyphen2dash|1=1-2&lt;nowiki&gt;}}&lt;/nowiki&gt;&lt;/code&gt; returns {{#invoke:String2|hyphen2dash|1=1-2}}.
+
+&lt;code&gt;&lt;nowiki&gt;{{&lt;/nowiki&gt;#invoke:String2|hyphen2dash|1=1-2; 4–10&lt;nowiki&gt;}}&lt;/nowiki&gt;&lt;/code&gt; returns {{#invoke:String2|hyphen2dash|1=1-2; 4–10}}.
+
+[[Help:Citation Style 1#Accept-this-as-written markup|Accept-this-as-written markup]] is supported, e.g. &lt;code&gt;&lt;nowiki&gt;{{&lt;/nowiki&gt;#invoke:String2|hyphen2dash|1=((1-2)); 4–10&lt;nowiki&gt;}}&lt;/nowiki&gt;&lt;/code&gt; returns {{#invoke:String2|hyphen2dash|1=((1-2)); 4–10}}.
+
+By default, a normal space is inserted after the separating comma in lists. An optional second parameter allows to change this to a different character (i.e. a thin space or hair space).
+
+===startswith===
+A startswith function similar to {{ml|string|endswith}}. Both parameters are required, although they can be blank. Leading and trailing whitespace ''is'' counted, use named parameters to avoid this if required. Outputs "yes" for true and blank for false so may be passed directly to #if.
+
+{{markup|padding=1px 5px|
+&lt;nowiki&gt;{{#invoke:string2|startswith|search|se}}&lt;/nowiki&gt;|{{#invoke:string2|startswith|search|se}}|
+&lt;nowiki&gt;{{#invoke:string2|startswith|search|ch}}&lt;/nowiki&gt;|{{#invoke:string2|startswith|search|ch}}}}&lt;!-- Template:Mra --&gt;
+
+===isnumeric===
+Implements {{tl|isnumeric}}, which tests whether a value is numeric (or at least, that it can be treated as such by the [[:mw:Extension:Scribunto/Lua_reference_manual#Language_library|Scribunto language library]]). By default, it will pass through the parameter if it's numeric and be blank if it's not. If the parameter &lt;code&gt;boolean=true&lt;/code&gt; is given, then it will output &lt;code&gt;1&lt;/code&gt; if numeric and &lt;code&gt;0&lt;/code&gt; if not numeric.
+
+{{markup|padding=1px 5px|
+&lt;nowiki&gt;{{#invoke:string2|isnumeric|1,327.50}}&lt;/nowiki&gt;|{{#invoke:string2|isnumeric|1,327.50}}|
+&lt;nowiki&gt;{{#invoke:string2|isnumeric|9,999 (1950)}}&lt;/nowiki&gt;|{{#invoke:string2|isnumeric|9,999 (1950)}}|
+&lt;nowiki&gt;{{#invoke:string2|isnumeric|1,327.50|boolean=true}}&lt;/nowiki&gt;|{{#invoke:string2|isnumeric|1,327.50|boolean=true}}|
+&lt;nowiki&gt;{{#invoke:string2|isnumeric|9,999 (1950)|boolean=true}}&lt;/nowiki&gt;|{{#invoke:string2|isnumeric|9,999 (1950)|boolean=true}}}}
+
+== Usage ==
+
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | sentence |…}}&lt;/nowiki&gt;&lt;/code&gt; - Capitalizes the first character and shifts the rest to lowercase
+** Although similar to [[Help:Magic_words#Formatting|magic words]]' &lt;code&gt;&lt;nowiki&gt;{{ucfirst:}}&lt;/nowiki&gt;&lt;/code&gt; function, this call works even with piped wiki-links because it searches beyond leading brackets and other non-alphanumeric characters.
+** It now also recognises when it has an html list passed to it and capitalises the first alphabetic letter beyond the list item markup ({{tag|li|o}}) and any piped links that may be there.
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | ucfirst |…}}&lt;/nowiki&gt;&lt;/code&gt; - Capitalizes the first alphabetic character and leaves the rest unaltered
+** Works with piped wiki-links and html lists
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | title |…}}&lt;/nowiki&gt;&lt;/code&gt; - Capitalizes all words, except for &lt;code&gt;a&lt;/code&gt;, &lt;code&gt;an&lt;/code&gt;, &lt;code&gt;the&lt;/code&gt;, &lt;code&gt;at&lt;/code&gt;, &lt;code&gt;by&lt;/code&gt;, &lt;code&gt;for&lt;/code&gt;, &lt;code&gt;in&lt;/code&gt;, &lt;code&gt;of&lt;/code&gt;, &lt;code&gt;on&lt;/code&gt;, &lt;code&gt;to&lt;/code&gt;, &lt;code&gt;up&lt;/code&gt;, &lt;code&gt;and&lt;/code&gt;, &lt;code&gt;as&lt;/code&gt;, &lt;code&gt;but&lt;/code&gt;, &lt;code&gt;or&lt;/code&gt;, and &lt;code&gt;nor&lt;/code&gt;.
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | stripZeros |…}}&lt;/nowiki&gt;&lt;/code&gt; - Removes leading padding zeros from the first number it finds in the string
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | title |…}}&lt;/nowiki&gt;&lt;/code&gt; - Renders the string as plain text without wikicode
+
+=== Parameters ===
+These functions take one unnamed parameter comprising (or invoking as a string) the text to be manipulated:
+* title
+* sentence
+* ucfirst
+
+== Examples ==
+
+{| class="wikitable"
+! scope="col" | Input
+! scope="col" | Output
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | abcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | abcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | abCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | abCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | ABcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | ABcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | ABCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | ABCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | 123abcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | 123abcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | human X chromosome }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | human X chromosome}}
+|-
+| &lt;nowiki&gt;{{#invoke:String2 | ucfirst | {{#invoke:WikidataIB |getValue&lt;/nowiki&gt;&lt;br /&gt;&lt;nowiki&gt;| P136 |fetchwikidata=ALL |onlysourced=no |qid=Q1396889}} }}&lt;/nowiki&gt;
+| {{#invoke:String2 | ucfirst | {{#invoke:WikidataIB |getValue |P136 |fetchwikidata=ALL |onlysourced=no |qid=Q1396889}} }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2 | ucfirst | {{#invoke:WikidataIB |getValue&lt;/nowiki&gt;&lt;br /&gt;&lt;nowiki&gt;| P106 |fetchwikidata=ALL |list=hlist |qid=Q453196}} }}&lt;/nowiki&gt;
+| {{#invoke:String2 | ucfirst | {{#invoke:WikidataIB |getValue |P106 |fetchwikidata=ALL |list=hlist |qid=Q453196}} }}
+|-
+| &amp;nbsp;
+| 
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | abcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | abcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | abCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | abCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | ABcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | ABcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | ABCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | ABCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | [[:en:Action game|Action game]] }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | [[:en:Action game|Action game]] }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | [[trimix (breathing gas)|trimix]] }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | [[trimix (breathing gas)|trimix]] }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | }}
+|-
+| &amp;nbsp;
+| 
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | abcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | abcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | abCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | abCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | ABcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | ABcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | ABCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | ABCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | the vitamins are in my fresh california raisins}}&lt;/nowiki&gt;
+| {{#invoke:String2| title | the vitamins are in my fresh california raisins}}
+|-
+|}
+
+=== String split ===
+[[Template:String split]] is a convenience wrapper for the split function.
+* &lt;code&gt;&lt;nowiki&gt;{{String split |This is a piece of text to be split |" "}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |This is a piece of text to be split |" "}}
+* &lt;code&gt;&lt;nowiki&gt;{{String split |This is a piece of text to be split |" "| 4}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |This is a piece of text to be split |" "| 4}}
+* &lt;code&gt;&lt;nowiki&gt;{{String split |This is a piece of text to be split |x| 2}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |This is a piece of text to be split |x| 2}}
+Modules may return strings with | as separators like this: &lt;code&gt;&lt;nowiki&gt;{{#invoke:carousel | main | name = WPDogs | switchsecs = 5 }}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:carousel | main | name = WPDogs | switchsecs = 5 }}
+* &lt;code&gt;&lt;nowiki&gt;{{String split |{{#invoke:carousel | main | name = WPDogs | switchsecs = 5 }}|{{!}}| 2}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |{{#invoke:carousel | main | name = WPDogs | switchsecs = 5 }}|{{!}}| 2}}
+Lua patterns can allow splitting at classes of characters such as punctuation:
+* &lt;code&gt;&lt;nowiki&gt;{{String split |Apples, pears, oranges; Cats, dogs|"%p"| 2 |false}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |Apples, pears, oranges; Cats, dogs|"%p"| 2 |false}}
+* &lt;code&gt;&lt;nowiki&gt;{{String split |Apples, pears, oranges; Cats, dogs|"%p"| 4 |false}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |Apples, pears, oranges; Cats, dogs|"%p"| 4 |false}}
+Or split on anything that isn't a letter (no is treated as false):
+* &lt;code&gt;&lt;nowiki&gt;{{String split |Apples pears oranges;  Cats  dogs|"%A+"| 4 |no}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |Apples pears oranges;  Cats  dogs|"%A+"| 4 |no}}
+Named parameters force the trimming of leading and trailing spaces in the parameters and are generally clearer when used:
+* &lt;code&gt;&lt;nowiki&gt;{{String split | txt=Apples pears oranges;  Cats  dogs | sep="%A+" | idx=3 | plain=false }}&lt;/nowiki&gt;&lt;/code&gt; → {{String split | txt=Apples pears oranges;  Cats  dogs | sep="%A+" | idx=3 | plain=false }}
+
+=== One2a ===
+[[Template:One2a]] is a convenience wrapper for the one2a function. 
+
+Capitalisation is kept. Aimed for usage with {{tl|Convert}}.
+* &lt;code&gt;&lt;nowiki&gt;{{one2a |One foot. One mile. One kilometer. One inch.One amp. one foot. one mile. one inch. Alone at last. Onely the lonely. ONE ounce. One monkey.}}&lt;/nowiki&gt;&lt;/code&gt; →
+:{{one2a |One foot. One mile. One kilometer. One inch.One amp. one foot. one mile. one inch. Alone at last. Onely the lonely. ONE ounce. One monkey.}}
+* &lt;code&gt;&lt;nowiki&gt;{{convert|1|ft|spell=on}}&lt;/nowiki&gt;&lt;/code&gt; → {{convert|1|ft|spell=on}}
+* &lt;code&gt;&lt;nowiki&gt;{{one2a|{{convert|1|ft|spell=on}}}}&lt;/nowiki&gt;&lt;/code&gt; → {{one2a|{{convert|1|ft|spell=on}}}}
+* &lt;code&gt;&lt;nowiki&gt;{{convert|2.54|cm|0|disp=out|spell=on}}&lt;/nowiki&gt;&lt;/code&gt; → {{convert|2.54|cm|0|disp=out|spell=on}}
+* &lt;code&gt;&lt;nowiki&gt;{{one2a|{{convert|2.54|cm|0|disp=out|spell=on}}}}&lt;/nowiki&gt;&lt;/code&gt; → {{one2a|{{convert|2.54|cm|0|disp=out|spell=on}}}}
+
+== See also ==
+[[Module:String]] for the following functions:
+* len
+* sub
+* sublength
+* match
+* pos
+* str_find
+* find
+* replace
+* rep
+
+Templates and modules related to capitalization
+{{Case templates see also}}
+
+Templates that implement {{tag|nowiki|o}}
+* {{tl|nowiki}}
+* {{tl|nowiki2}}
+&lt;includeonly&gt;{{Sandbox other||
+[[Category:Modules that manipulate strings|*]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>rnbs9tbduz8aavblhmvwpktvv7hzfr0</sha1>
+    </revision>
+    <revision>
+      <id>916540</id>
+      <parentid>916539</parentid>
+      <timestamp>2025-05-24T08:23:18Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>916540</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="21298" sha1="e5ov6bxmpntdjohaq6x779sg6m5a5ru" xml:space="preserve">{{high-use}}
+{{module rating|release}}
+{{Lua|Module:GetParameters}}
+{{Lmd|String2}}
+
+The module '''String2''' contains a number of string manipulation functions that are much less commonly used than those in [[Module:String]]. Because Module:String is cascade-protected (some of its functions are used on the Main Page), it cannot be edited or maintained by template editors, only by admins. While it is true that string-handling functions rarely need maintenance, it is useful to allow that by template editors where possible, so this module may be used by template editors to develop novel functionality.
+
+The module contains three case-related calls that convert strings to first letter uppercase, sentence case or title case and two calls that are useful for working with substrings. There are other utility calls that strip leading zeros from padded numbers and transform text so that it is not interpreted as wikitext, and several other calls that solve specific problems for template developers such as finding the position of a piece of text on a given page.
+
+The functions are designed with the possibility of working with text returned from Wikidata in mind. However, a call to Wikidata may return empty, so the functions should generally fail gracefully if supplied with a missing or blank input parameter, rather than throwing an error.
+
+== Functions ==
+=== trim ===
+The trim function simply trims whitespace characters from the start and end of the string.
+
+=== title ===
+The title function capitalises the first letter of each word in the text, apart from a number of short words listed in [[s:U.S. Government Printing Office Style Manual/Capitalization Rules#3.49|The U.S. Government Printing Office Style Manual §3.49 "Center and side heads"]]: {{xt|a, an, the, at, by, for, in, of, on, to, up, and, as, but, or, and nor}}.
+
+This is a very simplistic algorithm; see [[:Template:Title case/doc]] for some of its limitations.
+
+=== sentence ===
+The sentence function finds the first letter and capitalises it, then renders the rest of the text in lower case. It works properly with text containing wiki markup. Compare &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|sentence|[[:en:Action game|Action game]]}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:String2|sentence|[[:en:Action game|Action game]]}} with &lt;code&gt;&lt;nowiki&gt;{{ucfirst:{{lc:[[:en:Action game|Action game]]}}}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{ucfirst:{{lc:[[:en:Action game|Action game]]}}}}. Piped wiki-links are handled as well:
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|sentence|[[trimix (breathing gas)|trimix]]}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:String2|sentence|[[trimix (breathing gas)|trimix]]}}
+So are lists:
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |sentence |{{hlist ||[[:en:Apples|Apples]] |[[pears]] |[[:en:Oranges|Oranges]]}}}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |sentence |{{hlist |[[:en:Apples|Apples]] |[[pears]] |[[:en:Oranges|Oranges]]}}}}
+
+=== ucfirst ===
+The ucfirst function is similar to sentence; it renders the first alphabetical character in upper case, but leaves the capitalisation of the rest of the text unaltered. This is useful if the text contains proper nouns, but it will not regularise sentences that are ALLCAPS, for example. It also works with text containing piped wiki-links and with html lists.
+
+=== findlast ===
+* Function findlast finds the last item in a list.
+* The first unnamed parameter is the list. The list is trimmed of leading and trailing whitespace
+* The second, optional unnamed parameter is the list separator (default = comma space). The separator is ''not'' trimmed of leading and trailing whitespace (so that leading or trailing spaces can be used).
+* It returns the whole list if the separator is not found.
+
+One potential issue is that using Lua special pattern characters (&lt;code&gt;^$()%.[]*+-?&lt;/code&gt;) as the separator will probably cause problems.
+
+{| class="wikitable"
+|+ Examples
+|-
+! scope="col" | Case
+! scope="col" | Wikitext
+! scope="col" | Output
+|-
+| Normal usage || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast | 5, 932, 992,532, 6,074,702, 6,145,291}}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast | 5, 932, 992,532, 6,074,702, 6,145,291}}
+|-
+| Space as separator || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast | 5 932 992,532 6,074,702 6,145,291 }}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast | 5 932 992,532 6,074,702 6,145,291 }}
+|-
+| One item list || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast | 6,074,702 }}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast | 6,074,702 }}
+|-
+| Separator not found || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast | 5, 932, 992,532, 6,074,702, 6,145,291 |;}}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast | 5, 932, 992,532, 6,074,702, 6,145,291 |;}}
+|-
+| List missing || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast |}}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast |}}
+|}
+
+=== split ===
+The ''split'' function splits text at boundaries specified by separator and returns the chunk for the index idx (starting at 1). It can use positional parameters or named parameters (but these should not be mixed):
+
+; Usage
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |split |text |separator |index |true/false}}&lt;/nowiki&gt;&lt;/code&gt;
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |split |txt=text |sep=separator |idx=index |plain=true/false}}&lt;/nowiki&gt;&lt;/code&gt;
+
+Any double quotes (") in the separator parameter are stripped out, which allows spaces and wikitext like &lt;code&gt;&lt;nowiki&gt;["[&lt;/nowiki&gt;&lt;/code&gt; to be passed. Use &lt;code&gt;{{tl|!}}&lt;/code&gt; for the pipe character &lt;code&gt;|&lt;/code&gt;.
+
+If the optional plain parameter is set to &lt;code&gt;false / no / 0&lt;/code&gt; then separator is treated as a Lua pattern. The default is plain=true, i.e. normal text matching.
+
+The index parameter is optional; it defaults to the first chunk of text.
+
+The {{tl|string split}} is a convenience wrapper for the split function.
+
+=== stripZeros ===
+The stripZeros functions finds the first number in a string of text and strips leading zeros, but retains a zero which is followed by a decimal point. For example: "0940" &amp;rarr; "940"; "Year: 0023" &amp;rarr; "Year: 23"; "00.12" &amp;rarr; "0.12"
+
+=== nowiki ===
+The nowiki function ensures that a string of text is treated by the MediaWiki software as just a string, not code. It trims leading and trailing whitespace.
+
+=== val2percent ===
+The val2percent functions scans through a string, passed as either the first unnamed parameter or |txt=, and converts each number it finds into a percentage, then returns the resulting string.
+
+=== one2a ===
+The one2a function scans through a string, passed as either the first unnamed parameter or |txt=, and converts each occurrence of 'one ' into either 'a ' or 'an ', then returns the resultant string.
+
+The [[Template:One2a]] is a convenience wrapper for the one2a function.
+
+=== findpagetext ===
+The findpagetext function returns the position of a piece of text in the wikitext source of a page. It takes up to four parameters:
+* First positional parameter or |text is the text to be searched for.
+* Optional parameter |title is the page title, defaults to the current page.
+* Optional parameter |plain is either true for a plain search (default), or false for a [[mw:Extension:Scribunto/Lua reference manual #Patterns|Lua pattern]] search.
+* Optional parameter |nomatch is the value returned when no match is found; default is nothing.
+
+; Examples
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=Youghiogheny}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=Youghiogheny}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=Youghiogheny |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=Youghiogheny |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=Youghiogheny |title=Boston Bridge |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=Youghiogheny |title=Boston Bridge |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=river |title=Boston Bridge |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=river |title=Boston Bridge |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=[Rr]iver |title=Boston Bridge |plain=false |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=[Rr]iver |title=Boston Bridge |plain=false |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=%[%[ |title=Boston Bridge |plain=f |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=%[%[ |title=Boston Bridge |plain=f |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=%{%{[Cc]oord |title=Boston Bridge |plain=f |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=%{%{coord |title=Boston Bridge |plain=f |nomatch=not found}}
+The search is case-sensitive, so Lua pattern matching is needed to find &lt;code&gt;river&lt;/code&gt; or &lt;code&gt;River&lt;/code&gt;. The last example finds &lt;code&gt;&lt;nowiki&gt;{{coord&lt;/nowiki&gt;&lt;/code&gt; and &lt;code&gt;&lt;nowiki&gt;{{Coord&lt;/nowiki&gt;&lt;/code&gt;. The penultimate example finds a wiki-link.
+
+The [[Template:Findpagetext]] is a convenience wrapper for this function.
+
+=== strip ===
+
+The strip function strips the first positional parameter of the characters or pattern supplied in the second positional parameter.
+
+; Usage
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|&lt;/nowiki&gt;&lt;var&gt;source_string&lt;/var&gt;|&lt;var&gt;characters_to_strip&lt;/var&gt;|&lt;var&gt;plain_flag&lt;/var&gt;}}&lt;/code&gt;
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|&lt;/nowiki&gt;source=|chars=|plain=}}&lt;/code&gt;
+
+; Examples
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|abc123def|123}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2|strip|abc123def|123}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|abc123def|%d+|false}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2|strip|abc123def|%d+|false}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|source=abc123def|chars=123}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2|strip|source=abc123def|chars=123}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|source=abc123def|chars=%d+|plain=false}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2|strip|source=abc123def|chars=%d+|plain=false}}
+
+=== matchAny ===
+{{for|a function to replace multiple patterns|Module:MultiReplace}}
+
+The matchAny function returns the index of the first positional parameter to match the ''source'' parameter. If the ''plain'' parameter is set to false (default true) then the search strings are Lua patterns. This can usefully be put in a switch statement to pick a switch case based on which pattern a string matches. Returns the empty string if nothing matches, for use in {{pf|if}}.
+
+&lt;code&gt;{{((}}#invoke:String2|matchAny|123|abc|source=abc 124}}&lt;/code&gt; returns 2.
+
+=== hyphen2dash ===
+Extracted hyphen_to_dash() function from [[Special:Permalink/1017669505|Module:Citation/CS1]].
+
+Converts a hyphen to a dash under certain conditions.  The hyphen must separate like items; unlike items are returned unmodified.  These forms are modified:
+* 	letter - letter (A - B)
+* 	digit - digit (4-5)
+* 	digit separator digit - digit separator digit (4.1-4.5 or 4-1-4-5)
+* 	letterdigit - letterdigit (A1-A5) (an optional separator between letter and digit is supported – a.1-a.5 or a-1-a-5)
+* 	digitletter - digitletter (5a - 5d) (an optional separator between letter and digit is supported – 5.a-5.d or 5-a-5-d)
+
+Any other forms are returned unmodified.
+
+The input string may be a comma- or semicolon-separated list. Semicolons are converted to commas.
+
+&lt;code&gt;&lt;nowiki&gt;{{&lt;/nowiki&gt;#invoke:String2|hyphen2dash|1=1-2&lt;nowiki&gt;}}&lt;/nowiki&gt;&lt;/code&gt; returns {{#invoke:String2|hyphen2dash|1=1-2}}.
+
+&lt;code&gt;&lt;nowiki&gt;{{&lt;/nowiki&gt;#invoke:String2|hyphen2dash|1=1-2; 4–10&lt;nowiki&gt;}}&lt;/nowiki&gt;&lt;/code&gt; returns {{#invoke:String2|hyphen2dash|1=1-2; 4–10}}.
+
+[[Help:Citation Style 1#Accept-this-as-written markup|Accept-this-as-written markup]] is supported, e.g. &lt;code&gt;&lt;nowiki&gt;{{&lt;/nowiki&gt;#invoke:String2|hyphen2dash|1=((1-2)); 4–10&lt;nowiki&gt;}}&lt;/nowiki&gt;&lt;/code&gt; returns {{#invoke:String2|hyphen2dash|1=((1-2)); 4–10}}.
+
+By default, a normal space is inserted after the separating comma in lists. An optional second parameter allows to change this to a different character (i.e. a thin space or hair space).
+
+===startswith===
+A startswith function similar to {{ml|string|endswith}}. Both parameters are required, although they can be blank. Leading and trailing whitespace ''is'' counted, use named parameters to avoid this if required. Outputs "yes" for true and blank for false so may be passed directly to #if.
+
+{{markup|padding=1px 5px|
+&lt;nowiki&gt;{{#invoke:string2|startswith|search|se}}&lt;/nowiki&gt;|{{#invoke:string2|startswith|search|se}}|
+&lt;nowiki&gt;{{#invoke:string2|startswith|search|ch}}&lt;/nowiki&gt;|{{#invoke:string2|startswith|search|ch}}}}&lt;!-- Template:Mra --&gt;
+
+===isnumeric===
+Implements {{tl|isnumeric}}, which tests whether a value is numeric (or at least, that it can be treated as such by the [[:mw:Extension:Scribunto/Lua_reference_manual#Language_library|Scribunto language library]]). By default, it will pass through the parameter if it's numeric and be blank if it's not. If the parameter &lt;code&gt;boolean=true&lt;/code&gt; is given, then it will output &lt;code&gt;1&lt;/code&gt; if numeric and &lt;code&gt;0&lt;/code&gt; if not numeric.
+
+{{markup|padding=1px 5px|
+&lt;nowiki&gt;{{#invoke:string2|isnumeric|1,327.50}}&lt;/nowiki&gt;|{{#invoke:string2|isnumeric|1,327.50}}|
+&lt;nowiki&gt;{{#invoke:string2|isnumeric|9,999 (1950)}}&lt;/nowiki&gt;|{{#invoke:string2|isnumeric|9,999 (1950)}}|
+&lt;nowiki&gt;{{#invoke:string2|isnumeric|1,327.50|boolean=true}}&lt;/nowiki&gt;|{{#invoke:string2|isnumeric|1,327.50|boolean=true}}|
+&lt;nowiki&gt;{{#invoke:string2|isnumeric|9,999 (1950)|boolean=true}}&lt;/nowiki&gt;|{{#invoke:string2|isnumeric|9,999 (1950)|boolean=true}}}}
+
+== Usage ==
+
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | sentence |…}}&lt;/nowiki&gt;&lt;/code&gt; - Capitalizes the first character and shifts the rest to lowercase
+** Although similar to [[Help:Magic_words#Formatting|magic words]]' &lt;code&gt;&lt;nowiki&gt;{{ucfirst:}}&lt;/nowiki&gt;&lt;/code&gt; function, this call works even with piped wiki-links because it searches beyond leading brackets and other non-alphanumeric characters.
+** It now also recognises when it has an html list passed to it and capitalises the first alphabetic letter beyond the list item markup ({{tag|li|o}}) and any piped links that may be there.
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | ucfirst |…}}&lt;/nowiki&gt;&lt;/code&gt; - Capitalizes the first alphabetic character and leaves the rest unaltered
+** Works with piped wiki-links and html lists
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | title |…}}&lt;/nowiki&gt;&lt;/code&gt; - Capitalizes all words, except for &lt;code&gt;a&lt;/code&gt;, &lt;code&gt;an&lt;/code&gt;, &lt;code&gt;the&lt;/code&gt;, &lt;code&gt;at&lt;/code&gt;, &lt;code&gt;by&lt;/code&gt;, &lt;code&gt;for&lt;/code&gt;, &lt;code&gt;in&lt;/code&gt;, &lt;code&gt;of&lt;/code&gt;, &lt;code&gt;on&lt;/code&gt;, &lt;code&gt;to&lt;/code&gt;, &lt;code&gt;up&lt;/code&gt;, &lt;code&gt;and&lt;/code&gt;, &lt;code&gt;as&lt;/code&gt;, &lt;code&gt;but&lt;/code&gt;, &lt;code&gt;or&lt;/code&gt;, and &lt;code&gt;nor&lt;/code&gt;.
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | stripZeros |…}}&lt;/nowiki&gt;&lt;/code&gt; - Removes leading padding zeros from the first number it finds in the string
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | title |…}}&lt;/nowiki&gt;&lt;/code&gt; - Renders the string as plain text without wikicode
+
+=== Parameters ===
+These functions take one unnamed parameter comprising (or invoking as a string) the text to be manipulated:
+* title
+* sentence
+* ucfirst
+
+== Examples ==
+
+{| class="wikitable"
+! scope="col" | Input
+! scope="col" | Output
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | abcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | abcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | abCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | abCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | ABcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | ABcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | ABCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | ABCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | 123abcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | 123abcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | human X chromosome }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | human X chromosome}}
+|-
+| &lt;nowiki&gt;{{#invoke:String2 | ucfirst | {{#invoke:WikidataIB |getValue&lt;/nowiki&gt;&lt;br /&gt;&lt;nowiki&gt;| P136 |fetchwikidata=ALL |onlysourced=no |qid=Q1396889}} }}&lt;/nowiki&gt;
+| {{#invoke:String2 | ucfirst | {{#invoke:WikidataIB |getValue |P136 |fetchwikidata=ALL |onlysourced=no |qid=Q1396889}} }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2 | ucfirst | {{#invoke:WikidataIB |getValue&lt;/nowiki&gt;&lt;br /&gt;&lt;nowiki&gt;| P106 |fetchwikidata=ALL |list=hlist |qid=Q453196}} }}&lt;/nowiki&gt;
+| {{#invoke:String2 | ucfirst | {{#invoke:WikidataIB |getValue |P106 |fetchwikidata=ALL |list=hlist |qid=Q453196}} }}
+|-
+| &amp;nbsp;
+| 
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | abcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | abcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | abCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | abCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | ABcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | ABcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | ABCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | ABCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | [[:en:Action game|Action game]] }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | [[:en:Action game|Action game]] }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | [[trimix (breathing gas)|trimix]] }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | [[trimix (breathing gas)|trimix]] }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | }}
+|-
+| &amp;nbsp;
+| 
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | abcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | abcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | abCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | abCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | ABcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | ABcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | ABCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | ABCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | the vitamins are in my fresh california raisins}}&lt;/nowiki&gt;
+| {{#invoke:String2| title | the vitamins are in my fresh california raisins}}
+|-
+|}
+
+=== String split ===
+[[Template:String split]] is a convenience wrapper for the split function.
+* &lt;code&gt;&lt;nowiki&gt;{{String split |This is a piece of text to be split |" "}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |This is a piece of text to be split |" "}}
+* &lt;code&gt;&lt;nowiki&gt;{{String split |This is a piece of text to be split |" "| 4}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |This is a piece of text to be split |" "| 4}}
+* &lt;code&gt;&lt;nowiki&gt;{{String split |This is a piece of text to be split |x| 2}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |This is a piece of text to be split |x| 2}}
+Modules may return strings with | as separators like this: &lt;code&gt;&lt;nowiki&gt;{{#invoke:carousel | main | name = WPDogs | switchsecs = 5 }}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:carousel | main | name = WPDogs | switchsecs = 5 }}
+* &lt;code&gt;&lt;nowiki&gt;{{String split |{{#invoke:carousel | main | name = WPDogs | switchsecs = 5 }}|{{!}}| 2}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |{{#invoke:carousel | main | name = WPDogs | switchsecs = 5 }}|{{!}}| 2}}
+Lua patterns can allow splitting at classes of characters such as punctuation:
+* &lt;code&gt;&lt;nowiki&gt;{{String split |Apples, pears, oranges; Cats, dogs|"%p"| 2 |false}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |Apples, pears, oranges; Cats, dogs|"%p"| 2 |false}}
+* &lt;code&gt;&lt;nowiki&gt;{{String split |Apples, pears, oranges; Cats, dogs|"%p"| 4 |false}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |Apples, pears, oranges; Cats, dogs|"%p"| 4 |false}}
+Or split on anything that isn't a letter (no is treated as false):
+* &lt;code&gt;&lt;nowiki&gt;{{String split |Apples pears oranges;  Cats  dogs|"%A+"| 4 |no}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |Apples pears oranges;  Cats  dogs|"%A+"| 4 |no}}
+Named parameters force the trimming of leading and trailing spaces in the parameters and are generally clearer when used:
+* &lt;code&gt;&lt;nowiki&gt;{{String split | txt=Apples pears oranges;  Cats  dogs | sep="%A+" | idx=3 | plain=false }}&lt;/nowiki&gt;&lt;/code&gt; → {{String split | txt=Apples pears oranges;  Cats  dogs | sep="%A+" | idx=3 | plain=false }}
+
+=== One2a ===
+[[Template:One2a]] is a convenience wrapper for the one2a function. 
+
+Capitalisation is kept. Aimed for usage with {{tl|Convert}}.
+* &lt;code&gt;&lt;nowiki&gt;{{one2a |One foot. One mile. One kilometer. One inch.One amp. one foot. one mile. one inch. Alone at last. Onely the lonely. ONE ounce. One monkey.}}&lt;/nowiki&gt;&lt;/code&gt; →
+:{{one2a |One foot. One mile. One kilometer. One inch.One amp. one foot. one mile. one inch. Alone at last. Onely the lonely. ONE ounce. One monkey.}}
+* &lt;code&gt;&lt;nowiki&gt;{{convert|1|ft|spell=on}}&lt;/nowiki&gt;&lt;/code&gt; → {{convert|1|ft|spell=on}}
+* &lt;code&gt;&lt;nowiki&gt;{{one2a|{{convert|1|ft|spell=on}}}}&lt;/nowiki&gt;&lt;/code&gt; → {{one2a|{{convert|1|ft|spell=on}}}}
+* &lt;code&gt;&lt;nowiki&gt;{{convert|2.54|cm|0|disp=out|spell=on}}&lt;/nowiki&gt;&lt;/code&gt; → {{convert|2.54|cm|0|disp=out|spell=on}}
+* &lt;code&gt;&lt;nowiki&gt;{{one2a|{{convert|2.54|cm|0|disp=out|spell=on}}}}&lt;/nowiki&gt;&lt;/code&gt; → {{one2a|{{convert|2.54|cm|0|disp=out|spell=on}}}}
+
+== See also ==
+[[Module:String]] for the following functions:
+* len
+* sub
+* sublength
+* match
+* pos
+* str_find
+* find
+* replace
+* rep
+
+Templates and modules related to capitalization
+{{Case templates see also}}
+
+Templates that implement {{tag|nowiki|o}}
+* {{tl|nowiki}}
+* {{tl|nowiki2}}
+&lt;includeonly&gt;{{Sandbox other||
+[[Category:Modules that manipulate strings|*]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>e5ov6bxmpntdjohaq6x779sg6m5a5ru</sha1>
+    </revision>
+    <revision>
+      <id>916541</id>
+      <parentid>916540</parentid>
+      <timestamp>2025-05-24T11:52:51Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>916541</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="21318" sha1="l3japi4jecw7j49eobz5hwbvaryxab0" xml:space="preserve">{{high-use}}
+{{module rating|release}}
+{{Lua|Module:GetParameters}}
+{{Lmd|String2}}
+
+The module '''String2''' contains a number of string manipulation functions that are much less commonly used than those in [[Module:String]]. Because Module:String is cascade-protected (some of its functions are used on the Main Page), it cannot be edited or maintained by template editors, only by admins. While it is true that string-handling functions rarely need maintenance, it is useful to allow that by template editors where possible, so this module may be used by template editors to develop novel functionality.
+
+The module contains three case-related calls that convert strings to first letter uppercase, sentence case or title case and two calls that are useful for working with substrings. There are other utility calls that strip leading zeros from padded numbers and transform text so that it is not interpreted as wikitext, and several other calls that solve specific problems for template developers such as finding the position of a piece of text on a given page.
+
+The functions are designed with the possibility of working with text returned from Wikidata in mind. However, a call to Wikidata may return empty, so the functions should generally fail gracefully if supplied with a missing or blank input parameter, rather than throwing an error.
+
+== Functions ==
+=== trim ===
+The trim function simply trims whitespace characters from the start and end of the string.
+
+=== title ===
+The title function capitalises the first letter of each word in the text, apart from a number of short words listed in [[s:U.S. Government Printing Office Style Manual/Capitalization Rules#3.49|The U.S. Government Printing Office Style Manual §3.49 "Center and side heads"]]: {{xt|a, an, the, at, by, for, in, of, on, to, up, and, as, but, or, and nor}}.
+
+This is a very simplistic algorithm; see [[:Template:Title case/doc]] for some of its limitations.
+
+=== sentence ===
+The sentence function finds the first letter and capitalises it, then renders the rest of the text in lower case. It works properly with text containing wiki markup. Compare &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|sentence|[[:en:Action game|Action game]]}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:String2|sentence|[[:en:Action game|Action game]]}} with &lt;code&gt;&lt;nowiki&gt;{{ucfirst:{{lc:[[:en:Action game|Action game]]}}}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{ucfirst:{{lc:[[:en:Action game|Action game]]}}}}. Piped wiki-links are handled as well:
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|sentence|[[trimix (breathing gas)|trimix]]}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:String2|sentence|[[trimix (breathing gas)|trimix]]}}
+So are lists:
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |sentence |{{hlist ||[[:en:Apples|Apples]] |[[:en:Pears|Pears]] |[[:en:Oranges|Oranges]]}}}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |sentence |{{hlist |[[:en:Apples|Apples]] |[[:en:Pears|Pears]] |[[:en:Oranges|Oranges]]}}}}
+
+=== ucfirst ===
+The ucfirst function is similar to sentence; it renders the first alphabetical character in upper case, but leaves the capitalisation of the rest of the text unaltered. This is useful if the text contains proper nouns, but it will not regularise sentences that are ALLCAPS, for example. It also works with text containing piped wiki-links and with html lists.
+
+=== findlast ===
+* Function findlast finds the last item in a list.
+* The first unnamed parameter is the list. The list is trimmed of leading and trailing whitespace
+* The second, optional unnamed parameter is the list separator (default = comma space). The separator is ''not'' trimmed of leading and trailing whitespace (so that leading or trailing spaces can be used).
+* It returns the whole list if the separator is not found.
+
+One potential issue is that using Lua special pattern characters (&lt;code&gt;^$()%.[]*+-?&lt;/code&gt;) as the separator will probably cause problems.
+
+{| class="wikitable"
+|+ Examples
+|-
+! scope="col" | Case
+! scope="col" | Wikitext
+! scope="col" | Output
+|-
+| Normal usage || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast | 5, 932, 992,532, 6,074,702, 6,145,291}}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast | 5, 932, 992,532, 6,074,702, 6,145,291}}
+|-
+| Space as separator || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast | 5 932 992,532 6,074,702 6,145,291 }}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast | 5 932 992,532 6,074,702 6,145,291 }}
+|-
+| One item list || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast | 6,074,702 }}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast | 6,074,702 }}
+|-
+| Separator not found || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast | 5, 932, 992,532, 6,074,702, 6,145,291 |;}}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast | 5, 932, 992,532, 6,074,702, 6,145,291 |;}}
+|-
+| List missing || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast |}}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast |}}
+|}
+
+=== split ===
+The ''split'' function splits text at boundaries specified by separator and returns the chunk for the index idx (starting at 1). It can use positional parameters or named parameters (but these should not be mixed):
+
+; Usage
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |split |text |separator |index |true/false}}&lt;/nowiki&gt;&lt;/code&gt;
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |split |txt=text |sep=separator |idx=index |plain=true/false}}&lt;/nowiki&gt;&lt;/code&gt;
+
+Any double quotes (") in the separator parameter are stripped out, which allows spaces and wikitext like &lt;code&gt;&lt;nowiki&gt;["[&lt;/nowiki&gt;&lt;/code&gt; to be passed. Use &lt;code&gt;{{tl|!}}&lt;/code&gt; for the pipe character &lt;code&gt;|&lt;/code&gt;.
+
+If the optional plain parameter is set to &lt;code&gt;false / no / 0&lt;/code&gt; then separator is treated as a Lua pattern. The default is plain=true, i.e. normal text matching.
+
+The index parameter is optional; it defaults to the first chunk of text.
+
+The {{tl|string split}} is a convenience wrapper for the split function.
+
+=== stripZeros ===
+The stripZeros functions finds the first number in a string of text and strips leading zeros, but retains a zero which is followed by a decimal point. For example: "0940" &amp;rarr; "940"; "Year: 0023" &amp;rarr; "Year: 23"; "00.12" &amp;rarr; "0.12"
+
+=== nowiki ===
+The nowiki function ensures that a string of text is treated by the MediaWiki software as just a string, not code. It trims leading and trailing whitespace.
+
+=== val2percent ===
+The val2percent functions scans through a string, passed as either the first unnamed parameter or |txt=, and converts each number it finds into a percentage, then returns the resulting string.
+
+=== one2a ===
+The one2a function scans through a string, passed as either the first unnamed parameter or |txt=, and converts each occurrence of 'one ' into either 'a ' or 'an ', then returns the resultant string.
+
+The [[Template:One2a]] is a convenience wrapper for the one2a function.
+
+=== findpagetext ===
+The findpagetext function returns the position of a piece of text in the wikitext source of a page. It takes up to four parameters:
+* First positional parameter or |text is the text to be searched for.
+* Optional parameter |title is the page title, defaults to the current page.
+* Optional parameter |plain is either true for a plain search (default), or false for a [[mw:Extension:Scribunto/Lua reference manual #Patterns|Lua pattern]] search.
+* Optional parameter |nomatch is the value returned when no match is found; default is nothing.
+
+; Examples
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=Youghiogheny}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=Youghiogheny}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=Youghiogheny |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=Youghiogheny |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=Youghiogheny |title=Boston Bridge |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=Youghiogheny |title=Boston Bridge |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=river |title=Boston Bridge |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=river |title=Boston Bridge |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=[Rr]iver |title=Boston Bridge |plain=false |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=[Rr]iver |title=Boston Bridge |plain=false |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=%[%[ |title=Boston Bridge |plain=f |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=%[%[ |title=Boston Bridge |plain=f |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=%{%{[Cc]oord |title=Boston Bridge |plain=f |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=%{%{coord |title=Boston Bridge |plain=f |nomatch=not found}}
+The search is case-sensitive, so Lua pattern matching is needed to find &lt;code&gt;river&lt;/code&gt; or &lt;code&gt;River&lt;/code&gt;. The last example finds &lt;code&gt;&lt;nowiki&gt;{{coord&lt;/nowiki&gt;&lt;/code&gt; and &lt;code&gt;&lt;nowiki&gt;{{Coord&lt;/nowiki&gt;&lt;/code&gt;. The penultimate example finds a wiki-link.
+
+The [[Template:Findpagetext]] is a convenience wrapper for this function.
+
+=== strip ===
+
+The strip function strips the first positional parameter of the characters or pattern supplied in the second positional parameter.
+
+; Usage
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|&lt;/nowiki&gt;&lt;var&gt;source_string&lt;/var&gt;|&lt;var&gt;characters_to_strip&lt;/var&gt;|&lt;var&gt;plain_flag&lt;/var&gt;}}&lt;/code&gt;
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|&lt;/nowiki&gt;source=|chars=|plain=}}&lt;/code&gt;
+
+; Examples
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|abc123def|123}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2|strip|abc123def|123}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|abc123def|%d+|false}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2|strip|abc123def|%d+|false}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|source=abc123def|chars=123}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2|strip|source=abc123def|chars=123}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|source=abc123def|chars=%d+|plain=false}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2|strip|source=abc123def|chars=%d+|plain=false}}
+
+=== matchAny ===
+{{for|a function to replace multiple patterns|Module:MultiReplace}}
+
+The matchAny function returns the index of the first positional parameter to match the ''source'' parameter. If the ''plain'' parameter is set to false (default true) then the search strings are Lua patterns. This can usefully be put in a switch statement to pick a switch case based on which pattern a string matches. Returns the empty string if nothing matches, for use in {{pf|if}}.
+
+&lt;code&gt;{{((}}#invoke:String2|matchAny|123|abc|source=abc 124}}&lt;/code&gt; returns 2.
+
+=== hyphen2dash ===
+Extracted hyphen_to_dash() function from [[Special:Permalink/1017669505|Module:Citation/CS1]].
+
+Converts a hyphen to a dash under certain conditions.  The hyphen must separate like items; unlike items are returned unmodified.  These forms are modified:
+* 	letter - letter (A - B)
+* 	digit - digit (4-5)
+* 	digit separator digit - digit separator digit (4.1-4.5 or 4-1-4-5)
+* 	letterdigit - letterdigit (A1-A5) (an optional separator between letter and digit is supported – a.1-a.5 or a-1-a-5)
+* 	digitletter - digitletter (5a - 5d) (an optional separator between letter and digit is supported – 5.a-5.d or 5-a-5-d)
+
+Any other forms are returned unmodified.
+
+The input string may be a comma- or semicolon-separated list. Semicolons are converted to commas.
+
+&lt;code&gt;&lt;nowiki&gt;{{&lt;/nowiki&gt;#invoke:String2|hyphen2dash|1=1-2&lt;nowiki&gt;}}&lt;/nowiki&gt;&lt;/code&gt; returns {{#invoke:String2|hyphen2dash|1=1-2}}.
+
+&lt;code&gt;&lt;nowiki&gt;{{&lt;/nowiki&gt;#invoke:String2|hyphen2dash|1=1-2; 4–10&lt;nowiki&gt;}}&lt;/nowiki&gt;&lt;/code&gt; returns {{#invoke:String2|hyphen2dash|1=1-2; 4–10}}.
+
+[[Help:Citation Style 1#Accept-this-as-written markup|Accept-this-as-written markup]] is supported, e.g. &lt;code&gt;&lt;nowiki&gt;{{&lt;/nowiki&gt;#invoke:String2|hyphen2dash|1=((1-2)); 4–10&lt;nowiki&gt;}}&lt;/nowiki&gt;&lt;/code&gt; returns {{#invoke:String2|hyphen2dash|1=((1-2)); 4–10}}.
+
+By default, a normal space is inserted after the separating comma in lists. An optional second parameter allows to change this to a different character (i.e. a thin space or hair space).
+
+===startswith===
+A startswith function similar to {{ml|string|endswith}}. Both parameters are required, although they can be blank. Leading and trailing whitespace ''is'' counted, use named parameters to avoid this if required. Outputs "yes" for true and blank for false so may be passed directly to #if.
+
+{{markup|padding=1px 5px|
+&lt;nowiki&gt;{{#invoke:string2|startswith|search|se}}&lt;/nowiki&gt;|{{#invoke:string2|startswith|search|se}}|
+&lt;nowiki&gt;{{#invoke:string2|startswith|search|ch}}&lt;/nowiki&gt;|{{#invoke:string2|startswith|search|ch}}}}&lt;!-- Template:Mra --&gt;
+
+===isnumeric===
+Implements {{tl|isnumeric}}, which tests whether a value is numeric (or at least, that it can be treated as such by the [[:mw:Extension:Scribunto/Lua_reference_manual#Language_library|Scribunto language library]]). By default, it will pass through the parameter if it's numeric and be blank if it's not. If the parameter &lt;code&gt;boolean=true&lt;/code&gt; is given, then it will output &lt;code&gt;1&lt;/code&gt; if numeric and &lt;code&gt;0&lt;/code&gt; if not numeric.
+
+{{markup|padding=1px 5px|
+&lt;nowiki&gt;{{#invoke:string2|isnumeric|1,327.50}}&lt;/nowiki&gt;|{{#invoke:string2|isnumeric|1,327.50}}|
+&lt;nowiki&gt;{{#invoke:string2|isnumeric|9,999 (1950)}}&lt;/nowiki&gt;|{{#invoke:string2|isnumeric|9,999 (1950)}}|
+&lt;nowiki&gt;{{#invoke:string2|isnumeric|1,327.50|boolean=true}}&lt;/nowiki&gt;|{{#invoke:string2|isnumeric|1,327.50|boolean=true}}|
+&lt;nowiki&gt;{{#invoke:string2|isnumeric|9,999 (1950)|boolean=true}}&lt;/nowiki&gt;|{{#invoke:string2|isnumeric|9,999 (1950)|boolean=true}}}}
+
+== Usage ==
+
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | sentence |…}}&lt;/nowiki&gt;&lt;/code&gt; - Capitalizes the first character and shifts the rest to lowercase
+** Although similar to [[Help:Magic_words#Formatting|magic words]]' &lt;code&gt;&lt;nowiki&gt;{{ucfirst:}}&lt;/nowiki&gt;&lt;/code&gt; function, this call works even with piped wiki-links because it searches beyond leading brackets and other non-alphanumeric characters.
+** It now also recognises when it has an html list passed to it and capitalises the first alphabetic letter beyond the list item markup ({{tag|li|o}}) and any piped links that may be there.
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | ucfirst |…}}&lt;/nowiki&gt;&lt;/code&gt; - Capitalizes the first alphabetic character and leaves the rest unaltered
+** Works with piped wiki-links and html lists
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | title |…}}&lt;/nowiki&gt;&lt;/code&gt; - Capitalizes all words, except for &lt;code&gt;a&lt;/code&gt;, &lt;code&gt;an&lt;/code&gt;, &lt;code&gt;the&lt;/code&gt;, &lt;code&gt;at&lt;/code&gt;, &lt;code&gt;by&lt;/code&gt;, &lt;code&gt;for&lt;/code&gt;, &lt;code&gt;in&lt;/code&gt;, &lt;code&gt;of&lt;/code&gt;, &lt;code&gt;on&lt;/code&gt;, &lt;code&gt;to&lt;/code&gt;, &lt;code&gt;up&lt;/code&gt;, &lt;code&gt;and&lt;/code&gt;, &lt;code&gt;as&lt;/code&gt;, &lt;code&gt;but&lt;/code&gt;, &lt;code&gt;or&lt;/code&gt;, and &lt;code&gt;nor&lt;/code&gt;.
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | stripZeros |…}}&lt;/nowiki&gt;&lt;/code&gt; - Removes leading padding zeros from the first number it finds in the string
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | title |…}}&lt;/nowiki&gt;&lt;/code&gt; - Renders the string as plain text without wikicode
+
+=== Parameters ===
+These functions take one unnamed parameter comprising (or invoking as a string) the text to be manipulated:
+* title
+* sentence
+* ucfirst
+
+== Examples ==
+
+{| class="wikitable"
+! scope="col" | Input
+! scope="col" | Output
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | abcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | abcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | abCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | abCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | ABcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | ABcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | ABCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | ABCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | 123abcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | 123abcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | human X chromosome }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | human X chromosome}}
+|-
+| &lt;nowiki&gt;{{#invoke:String2 | ucfirst | {{#invoke:WikidataIB |getValue&lt;/nowiki&gt;&lt;br /&gt;&lt;nowiki&gt;| P136 |fetchwikidata=ALL |onlysourced=no |qid=Q1396889}} }}&lt;/nowiki&gt;
+| {{#invoke:String2 | ucfirst | {{#invoke:WikidataIB |getValue |P136 |fetchwikidata=ALL |onlysourced=no |qid=Q1396889}} }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2 | ucfirst | {{#invoke:WikidataIB |getValue&lt;/nowiki&gt;&lt;br /&gt;&lt;nowiki&gt;| P106 |fetchwikidata=ALL |list=hlist |qid=Q453196}} }}&lt;/nowiki&gt;
+| {{#invoke:String2 | ucfirst | {{#invoke:WikidataIB |getValue |P106 |fetchwikidata=ALL |list=hlist |qid=Q453196}} }}
+|-
+| &amp;nbsp;
+| 
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | abcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | abcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | abCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | abCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | ABcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | ABcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | ABCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | ABCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | [[:en:Action game|Action game]] }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | [[:en:Action game|Action game]] }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | [[trimix (breathing gas)|trimix]] }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | [[trimix (breathing gas)|trimix]] }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | }}
+|-
+| &amp;nbsp;
+| 
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | abcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | abcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | abCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | abCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | ABcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | ABcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | ABCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | ABCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | the vitamins are in my fresh california raisins}}&lt;/nowiki&gt;
+| {{#invoke:String2| title | the vitamins are in my fresh california raisins}}
+|-
+|}
+
+=== String split ===
+[[Template:String split]] is a convenience wrapper for the split function.
+* &lt;code&gt;&lt;nowiki&gt;{{String split |This is a piece of text to be split |" "}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |This is a piece of text to be split |" "}}
+* &lt;code&gt;&lt;nowiki&gt;{{String split |This is a piece of text to be split |" "| 4}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |This is a piece of text to be split |" "| 4}}
+* &lt;code&gt;&lt;nowiki&gt;{{String split |This is a piece of text to be split |x| 2}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |This is a piece of text to be split |x| 2}}
+Modules may return strings with | as separators like this: &lt;code&gt;&lt;nowiki&gt;{{#invoke:carousel | main | name = WPDogs | switchsecs = 5 }}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:carousel | main | name = WPDogs | switchsecs = 5 }}
+* &lt;code&gt;&lt;nowiki&gt;{{String split |{{#invoke:carousel | main | name = WPDogs | switchsecs = 5 }}|{{!}}| 2}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |{{#invoke:carousel | main | name = WPDogs | switchsecs = 5 }}|{{!}}| 2}}
+Lua patterns can allow splitting at classes of characters such as punctuation:
+* &lt;code&gt;&lt;nowiki&gt;{{String split |Apples, pears, oranges; Cats, dogs|"%p"| 2 |false}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |Apples, pears, oranges; Cats, dogs|"%p"| 2 |false}}
+* &lt;code&gt;&lt;nowiki&gt;{{String split |Apples, pears, oranges; Cats, dogs|"%p"| 4 |false}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |Apples, pears, oranges; Cats, dogs|"%p"| 4 |false}}
+Or split on anything that isn't a letter (no is treated as false):
+* &lt;code&gt;&lt;nowiki&gt;{{String split |Apples pears oranges;  Cats  dogs|"%A+"| 4 |no}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |Apples pears oranges;  Cats  dogs|"%A+"| 4 |no}}
+Named parameters force the trimming of leading and trailing spaces in the parameters and are generally clearer when used:
+* &lt;code&gt;&lt;nowiki&gt;{{String split | txt=Apples pears oranges;  Cats  dogs | sep="%A+" | idx=3 | plain=false }}&lt;/nowiki&gt;&lt;/code&gt; → {{String split | txt=Apples pears oranges;  Cats  dogs | sep="%A+" | idx=3 | plain=false }}
+
+=== One2a ===
+[[Template:One2a]] is a convenience wrapper for the one2a function. 
+
+Capitalisation is kept. Aimed for usage with {{tl|Convert}}.
+* &lt;code&gt;&lt;nowiki&gt;{{one2a |One foot. One mile. One kilometer. One inch.One amp. one foot. one mile. one inch. Alone at last. Onely the lonely. ONE ounce. One monkey.}}&lt;/nowiki&gt;&lt;/code&gt; →
+:{{one2a |One foot. One mile. One kilometer. One inch.One amp. one foot. one mile. one inch. Alone at last. Onely the lonely. ONE ounce. One monkey.}}
+* &lt;code&gt;&lt;nowiki&gt;{{convert|1|ft|spell=on}}&lt;/nowiki&gt;&lt;/code&gt; → {{convert|1|ft|spell=on}}
+* &lt;code&gt;&lt;nowiki&gt;{{one2a|{{convert|1|ft|spell=on}}}}&lt;/nowiki&gt;&lt;/code&gt; → {{one2a|{{convert|1|ft|spell=on}}}}
+* &lt;code&gt;&lt;nowiki&gt;{{convert|2.54|cm|0|disp=out|spell=on}}&lt;/nowiki&gt;&lt;/code&gt; → {{convert|2.54|cm|0|disp=out|spell=on}}
+* &lt;code&gt;&lt;nowiki&gt;{{one2a|{{convert|2.54|cm|0|disp=out|spell=on}}}}&lt;/nowiki&gt;&lt;/code&gt; → {{one2a|{{convert|2.54|cm|0|disp=out|spell=on}}}}
+
+== See also ==
+[[Module:String]] for the following functions:
+* len
+* sub
+* sublength
+* match
+* pos
+* str_find
+* find
+* replace
+* rep
+
+Templates and modules related to capitalization
+{{Case templates see also}}
+
+Templates that implement {{tag|nowiki|o}}
+* {{tl|nowiki}}
+* {{tl|nowiki2}}
+&lt;includeonly&gt;{{Sandbox other||
+[[Category:Modules that manipulate strings|*]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>l3japi4jecw7j49eobz5hwbvaryxab0</sha1>
+    </revision>
+    <revision>
+      <id>8258</id>
+      <timestamp>2025-05-25T13:53:39Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Bot: convert local link → enwiki interwiki</comment>
+      <origin>8258</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="21334" sha1="pkasy1tvqm62fga0cw1v14dhq802470" xml:space="preserve">{{high-use}}
+{{module rating|release}}
+{{Lua|Module:GetParameters}}
+{{Lmd|String2}}
+
+The module '''String2''' contains a number of string manipulation functions that are much less commonly used than those in [[Module:String]]. Because Module:String is cascade-protected (some of its functions are used on the Main Page), it cannot be edited or maintained by template editors, only by admins. While it is true that string-handling functions rarely need maintenance, it is useful to allow that by template editors where possible, so this module may be used by template editors to develop novel functionality.
+
+The module contains three case-related calls that convert strings to first letter uppercase, sentence case or title case and two calls that are useful for working with substrings. There are other utility calls that strip leading zeros from padded numbers and transform text so that it is not interpreted as wikitext, and several other calls that solve specific problems for template developers such as finding the position of a piece of text on a given page.
+
+The functions are designed with the possibility of working with text returned from Wikidata in mind. However, a call to Wikidata may return empty, so the functions should generally fail gracefully if supplied with a missing or blank input parameter, rather than throwing an error.
+
+== Functions ==
+=== trim ===
+The trim function simply trims whitespace characters from the start and end of the string.
+
+=== title ===
+The title function capitalises the first letter of each word in the text, apart from a number of short words listed in [[s:U.S. Government Printing Office Style Manual/Capitalization Rules#3.49|The U.S. Government Printing Office Style Manual §3.49 "Center and side heads"]]: {{xt|a, an, the, at, by, for, in, of, on, to, up, and, as, but, or, and nor}}.
+
+This is a very simplistic algorithm; see [[:Template:Title case/doc]] for some of its limitations.
+
+=== sentence ===
+The sentence function finds the first letter and capitalises it, then renders the rest of the text in lower case. It works properly with text containing wiki markup. Compare &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|sentence|[[:en:Action game|Action game]]}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:String2|sentence|[[:en:Action game|Action game]]}} with &lt;code&gt;&lt;nowiki&gt;{{ucfirst:{{lc:[[:en:Action game|Action game]]}}}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{ucfirst:{{lc:[[:en:Action game|Action game]]}}}}. Piped wiki-links are handled as well:
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|sentence|[[:en:Trimix (breathing gas)|trimix]]}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:String2|sentence|[[:en:Trimix (breathing gas)|trimix]]}}
+So are lists:
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |sentence |{{hlist ||[[:en:Apples|Apples]] |[[:en:Pears|Pears]] |[[:en:Oranges|Oranges]]}}}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |sentence |{{hlist |[[:en:Apples|Apples]] |[[:en:Pears|Pears]] |[[:en:Oranges|Oranges]]}}}}
+
+=== ucfirst ===
+The ucfirst function is similar to sentence; it renders the first alphabetical character in upper case, but leaves the capitalisation of the rest of the text unaltered. This is useful if the text contains proper nouns, but it will not regularise sentences that are ALLCAPS, for example. It also works with text containing piped wiki-links and with html lists.
+
+=== findlast ===
+* Function findlast finds the last item in a list.
+* The first unnamed parameter is the list. The list is trimmed of leading and trailing whitespace
+* The second, optional unnamed parameter is the list separator (default = comma space). The separator is ''not'' trimmed of leading and trailing whitespace (so that leading or trailing spaces can be used).
+* It returns the whole list if the separator is not found.
+
+One potential issue is that using Lua special pattern characters (&lt;code&gt;^$()%.[]*+-?&lt;/code&gt;) as the separator will probably cause problems.
+
+{| class="wikitable"
+|+ Examples
+|-
+! scope="col" | Case
+! scope="col" | Wikitext
+! scope="col" | Output
+|-
+| Normal usage || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast | 5, 932, 992,532, 6,074,702, 6,145,291}}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast | 5, 932, 992,532, 6,074,702, 6,145,291}}
+|-
+| Space as separator || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast | 5 932 992,532 6,074,702 6,145,291 }}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast | 5 932 992,532 6,074,702 6,145,291 }}
+|-
+| One item list || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast | 6,074,702 }}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast | 6,074,702 }}
+|-
+| Separator not found || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast | 5, 932, 992,532, 6,074,702, 6,145,291 |;}}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast | 5, 932, 992,532, 6,074,702, 6,145,291 |;}}
+|-
+| List missing || &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findlast |}}&lt;/nowiki&gt;&lt;/code&gt; || {{#invoke:String2 |findlast |}}
+|}
+
+=== split ===
+The ''split'' function splits text at boundaries specified by separator and returns the chunk for the index idx (starting at 1). It can use positional parameters or named parameters (but these should not be mixed):
+
+; Usage
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |split |text |separator |index |true/false}}&lt;/nowiki&gt;&lt;/code&gt;
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |split |txt=text |sep=separator |idx=index |plain=true/false}}&lt;/nowiki&gt;&lt;/code&gt;
+
+Any double quotes (") in the separator parameter are stripped out, which allows spaces and wikitext like &lt;code&gt;&lt;nowiki&gt;["[&lt;/nowiki&gt;&lt;/code&gt; to be passed. Use &lt;code&gt;{{tl|!}}&lt;/code&gt; for the pipe character &lt;code&gt;|&lt;/code&gt;.
+
+If the optional plain parameter is set to &lt;code&gt;false / no / 0&lt;/code&gt; then separator is treated as a Lua pattern. The default is plain=true, i.e. normal text matching.
+
+The index parameter is optional; it defaults to the first chunk of text.
+
+The {{tl|string split}} is a convenience wrapper for the split function.
+
+=== stripZeros ===
+The stripZeros functions finds the first number in a string of text and strips leading zeros, but retains a zero which is followed by a decimal point. For example: "0940" &amp;rarr; "940"; "Year: 0023" &amp;rarr; "Year: 23"; "00.12" &amp;rarr; "0.12"
+
+=== nowiki ===
+The nowiki function ensures that a string of text is treated by the MediaWiki software as just a string, not code. It trims leading and trailing whitespace.
+
+=== val2percent ===
+The val2percent functions scans through a string, passed as either the first unnamed parameter or |txt=, and converts each number it finds into a percentage, then returns the resulting string.
+
+=== one2a ===
+The one2a function scans through a string, passed as either the first unnamed parameter or |txt=, and converts each occurrence of 'one ' into either 'a ' or 'an ', then returns the resultant string.
+
+The [[Template:One2a]] is a convenience wrapper for the one2a function.
+
+=== findpagetext ===
+The findpagetext function returns the position of a piece of text in the wikitext source of a page. It takes up to four parameters:
+* First positional parameter or |text is the text to be searched for.
+* Optional parameter |title is the page title, defaults to the current page.
+* Optional parameter |plain is either true for a plain search (default), or false for a [[mw:Extension:Scribunto/Lua reference manual #Patterns|Lua pattern]] search.
+* Optional parameter |nomatch is the value returned when no match is found; default is nothing.
+
+; Examples
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=Youghiogheny}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=Youghiogheny}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=Youghiogheny |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=Youghiogheny |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=Youghiogheny |title=Boston Bridge |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=Youghiogheny |title=Boston Bridge |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=river |title=Boston Bridge |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=river |title=Boston Bridge |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=[Rr]iver |title=Boston Bridge |plain=false |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=[Rr]iver |title=Boston Bridge |plain=false |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=%[%[ |title=Boston Bridge |plain=f |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=%[%[ |title=Boston Bridge |plain=f |nomatch=not found}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 |findpagetext |text=%{%{[Cc]oord |title=Boston Bridge |plain=f |nomatch=not found}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2 |findpagetext |text=%{%{coord |title=Boston Bridge |plain=f |nomatch=not found}}
+The search is case-sensitive, so Lua pattern matching is needed to find &lt;code&gt;river&lt;/code&gt; or &lt;code&gt;River&lt;/code&gt;. The last example finds &lt;code&gt;&lt;nowiki&gt;{{coord&lt;/nowiki&gt;&lt;/code&gt; and &lt;code&gt;&lt;nowiki&gt;{{Coord&lt;/nowiki&gt;&lt;/code&gt;. The penultimate example finds a wiki-link.
+
+The [[Template:Findpagetext]] is a convenience wrapper for this function.
+
+=== strip ===
+
+The strip function strips the first positional parameter of the characters or pattern supplied in the second positional parameter.
+
+; Usage
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|&lt;/nowiki&gt;&lt;var&gt;source_string&lt;/var&gt;|&lt;var&gt;characters_to_strip&lt;/var&gt;|&lt;var&gt;plain_flag&lt;/var&gt;}}&lt;/code&gt;
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|&lt;/nowiki&gt;source=|chars=|plain=}}&lt;/code&gt;
+
+; Examples
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|abc123def|123}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2|strip|abc123def|123}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|abc123def|%d+|false}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2|strip|abc123def|%d+|false}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|source=abc123def|chars=123}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2|strip|source=abc123def|chars=123}}
+: &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2|strip|source=abc123def|chars=%d+|plain=false}}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:String2|strip|source=abc123def|chars=%d+|plain=false}}
+
+=== matchAny ===
+{{for|a function to replace multiple patterns|Module:MultiReplace}}
+
+The matchAny function returns the index of the first positional parameter to match the ''source'' parameter. If the ''plain'' parameter is set to false (default true) then the search strings are Lua patterns. This can usefully be put in a switch statement to pick a switch case based on which pattern a string matches. Returns the empty string if nothing matches, for use in {{pf|if}}.
+
+&lt;code&gt;{{((}}#invoke:String2|matchAny|123|abc|source=abc 124}}&lt;/code&gt; returns 2.
+
+=== hyphen2dash ===
+Extracted hyphen_to_dash() function from [[Special:Permalink/1017669505|Module:Citation/CS1]].
+
+Converts a hyphen to a dash under certain conditions.  The hyphen must separate like items; unlike items are returned unmodified.  These forms are modified:
+* 	letter - letter (A - B)
+* 	digit - digit (4-5)
+* 	digit separator digit - digit separator digit (4.1-4.5 or 4-1-4-5)
+* 	letterdigit - letterdigit (A1-A5) (an optional separator between letter and digit is supported – a.1-a.5 or a-1-a-5)
+* 	digitletter - digitletter (5a - 5d) (an optional separator between letter and digit is supported – 5.a-5.d or 5-a-5-d)
+
+Any other forms are returned unmodified.
+
+The input string may be a comma- or semicolon-separated list. Semicolons are converted to commas.
+
+&lt;code&gt;&lt;nowiki&gt;{{&lt;/nowiki&gt;#invoke:String2|hyphen2dash|1=1-2&lt;nowiki&gt;}}&lt;/nowiki&gt;&lt;/code&gt; returns {{#invoke:String2|hyphen2dash|1=1-2}}.
+
+&lt;code&gt;&lt;nowiki&gt;{{&lt;/nowiki&gt;#invoke:String2|hyphen2dash|1=1-2; 4–10&lt;nowiki&gt;}}&lt;/nowiki&gt;&lt;/code&gt; returns {{#invoke:String2|hyphen2dash|1=1-2; 4–10}}.
+
+[[Help:Citation Style 1#Accept-this-as-written markup|Accept-this-as-written markup]] is supported, e.g. &lt;code&gt;&lt;nowiki&gt;{{&lt;/nowiki&gt;#invoke:String2|hyphen2dash|1=((1-2)); 4–10&lt;nowiki&gt;}}&lt;/nowiki&gt;&lt;/code&gt; returns {{#invoke:String2|hyphen2dash|1=((1-2)); 4–10}}.
+
+By default, a normal space is inserted after the separating comma in lists. An optional second parameter allows to change this to a different character (i.e. a thin space or hair space).
+
+===startswith===
+A startswith function similar to {{ml|string|endswith}}. Both parameters are required, although they can be blank. Leading and trailing whitespace ''is'' counted, use named parameters to avoid this if required. Outputs "yes" for true and blank for false so may be passed directly to #if.
+
+{{markup|padding=1px 5px|
+&lt;nowiki&gt;{{#invoke:string2|startswith|search|se}}&lt;/nowiki&gt;|{{#invoke:string2|startswith|search|se}}|
+&lt;nowiki&gt;{{#invoke:string2|startswith|search|ch}}&lt;/nowiki&gt;|{{#invoke:string2|startswith|search|ch}}}}&lt;!-- Template:Mra --&gt;
+
+===isnumeric===
+Implements {{tl|isnumeric}}, which tests whether a value is numeric (or at least, that it can be treated as such by the [[:mw:Extension:Scribunto/Lua_reference_manual#Language_library|Scribunto language library]]). By default, it will pass through the parameter if it's numeric and be blank if it's not. If the parameter &lt;code&gt;boolean=true&lt;/code&gt; is given, then it will output &lt;code&gt;1&lt;/code&gt; if numeric and &lt;code&gt;0&lt;/code&gt; if not numeric.
+
+{{markup|padding=1px 5px|
+&lt;nowiki&gt;{{#invoke:string2|isnumeric|1,327.50}}&lt;/nowiki&gt;|{{#invoke:string2|isnumeric|1,327.50}}|
+&lt;nowiki&gt;{{#invoke:string2|isnumeric|9,999 (1950)}}&lt;/nowiki&gt;|{{#invoke:string2|isnumeric|9,999 (1950)}}|
+&lt;nowiki&gt;{{#invoke:string2|isnumeric|1,327.50|boolean=true}}&lt;/nowiki&gt;|{{#invoke:string2|isnumeric|1,327.50|boolean=true}}|
+&lt;nowiki&gt;{{#invoke:string2|isnumeric|9,999 (1950)|boolean=true}}&lt;/nowiki&gt;|{{#invoke:string2|isnumeric|9,999 (1950)|boolean=true}}}}
+
+== Usage ==
+
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | sentence |…}}&lt;/nowiki&gt;&lt;/code&gt; - Capitalizes the first character and shifts the rest to lowercase
+** Although similar to [[Help:Magic_words#Formatting|magic words]]' &lt;code&gt;&lt;nowiki&gt;{{ucfirst:}}&lt;/nowiki&gt;&lt;/code&gt; function, this call works even with piped wiki-links because it searches beyond leading brackets and other non-alphanumeric characters.
+** It now also recognises when it has an html list passed to it and capitalises the first alphabetic letter beyond the list item markup ({{tag|li|o}}) and any piped links that may be there.
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | ucfirst |…}}&lt;/nowiki&gt;&lt;/code&gt; - Capitalizes the first alphabetic character and leaves the rest unaltered
+** Works with piped wiki-links and html lists
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | title |…}}&lt;/nowiki&gt;&lt;/code&gt; - Capitalizes all words, except for &lt;code&gt;a&lt;/code&gt;, &lt;code&gt;an&lt;/code&gt;, &lt;code&gt;the&lt;/code&gt;, &lt;code&gt;at&lt;/code&gt;, &lt;code&gt;by&lt;/code&gt;, &lt;code&gt;for&lt;/code&gt;, &lt;code&gt;in&lt;/code&gt;, &lt;code&gt;of&lt;/code&gt;, &lt;code&gt;on&lt;/code&gt;, &lt;code&gt;to&lt;/code&gt;, &lt;code&gt;up&lt;/code&gt;, &lt;code&gt;and&lt;/code&gt;, &lt;code&gt;as&lt;/code&gt;, &lt;code&gt;but&lt;/code&gt;, &lt;code&gt;or&lt;/code&gt;, and &lt;code&gt;nor&lt;/code&gt;.
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | stripZeros |…}}&lt;/nowiki&gt;&lt;/code&gt; - Removes leading padding zeros from the first number it finds in the string
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:String2 | title |…}}&lt;/nowiki&gt;&lt;/code&gt; - Renders the string as plain text without wikicode
+
+=== Parameters ===
+These functions take one unnamed parameter comprising (or invoking as a string) the text to be manipulated:
+* title
+* sentence
+* ucfirst
+
+== Examples ==
+
+{| class="wikitable"
+! scope="col" | Input
+! scope="col" | Output
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | abcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | abcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | abCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | abCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | ABcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | ABcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | ABCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | ABCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | 123abcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | 123abcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| ucfirst | human X chromosome }}&lt;/nowiki&gt;
+| {{#invoke:String2| ucfirst | human X chromosome}}
+|-
+| &lt;nowiki&gt;{{#invoke:String2 | ucfirst | {{#invoke:WikidataIB |getValue&lt;/nowiki&gt;&lt;br /&gt;&lt;nowiki&gt;| P136 |fetchwikidata=ALL |onlysourced=no |qid=Q1396889}} }}&lt;/nowiki&gt;
+| {{#invoke:String2 | ucfirst | {{#invoke:WikidataIB |getValue |P136 |fetchwikidata=ALL |onlysourced=no |qid=Q1396889}} }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2 | ucfirst | {{#invoke:WikidataIB |getValue&lt;/nowiki&gt;&lt;br /&gt;&lt;nowiki&gt;| P106 |fetchwikidata=ALL |list=hlist |qid=Q453196}} }}&lt;/nowiki&gt;
+| {{#invoke:String2 | ucfirst | {{#invoke:WikidataIB |getValue |P106 |fetchwikidata=ALL |list=hlist |qid=Q453196}} }}
+|-
+| &amp;nbsp;
+| 
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | abcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | abcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | abCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | abCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | ABcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | ABcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | ABCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | ABCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | [[:en:Action game|Action game]] }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | [[:en:Action game|Action game]] }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | [[:en:Trimix (breathing gas)|trimix]] }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | [[:en:Trimix (breathing gas)|trimix]] }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| sentence | }}&lt;/nowiki&gt;
+| {{#invoke:String2| sentence | }}
+|-
+| &amp;nbsp;
+| 
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | abcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | abcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | abCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | abCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | ABcd }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | ABcd }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | ABCD }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | ABCD }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | }}&lt;/nowiki&gt;
+| {{#invoke:String2| title | }}
+|-
+| &lt;nowiki&gt;{{#invoke:String2| title | the vitamins are in my fresh california raisins}}&lt;/nowiki&gt;
+| {{#invoke:String2| title | the vitamins are in my fresh california raisins}}
+|-
+|}
+
+=== String split ===
+[[Template:String split]] is a convenience wrapper for the split function.
+* &lt;code&gt;&lt;nowiki&gt;{{String split |This is a piece of text to be split |" "}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |This is a piece of text to be split |" "}}
+* &lt;code&gt;&lt;nowiki&gt;{{String split |This is a piece of text to be split |" "| 4}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |This is a piece of text to be split |" "| 4}}
+* &lt;code&gt;&lt;nowiki&gt;{{String split |This is a piece of text to be split |x| 2}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |This is a piece of text to be split |x| 2}}
+Modules may return strings with | as separators like this: &lt;code&gt;&lt;nowiki&gt;{{#invoke:carousel | main | name = WPDogs | switchsecs = 5 }}&lt;/nowiki&gt;&lt;/code&gt; → {{#invoke:carousel | main | name = WPDogs | switchsecs = 5 }}
+* &lt;code&gt;&lt;nowiki&gt;{{String split |{{#invoke:carousel | main | name = WPDogs | switchsecs = 5 }}|{{!}}| 2}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |{{#invoke:carousel | main | name = WPDogs | switchsecs = 5 }}|{{!}}| 2}}
+Lua patterns can allow splitting at classes of characters such as punctuation:
+* &lt;code&gt;&lt;nowiki&gt;{{String split |Apples, pears, oranges; Cats, dogs|"%p"| 2 |false}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |Apples, pears, oranges; Cats, dogs|"%p"| 2 |false}}
+* &lt;code&gt;&lt;nowiki&gt;{{String split |Apples, pears, oranges; Cats, dogs|"%p"| 4 |false}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |Apples, pears, oranges; Cats, dogs|"%p"| 4 |false}}
+Or split on anything that isn't a letter (no is treated as false):
+* &lt;code&gt;&lt;nowiki&gt;{{String split |Apples pears oranges;  Cats  dogs|"%A+"| 4 |no}}&lt;/nowiki&gt;&lt;/code&gt; → {{String split |Apples pears oranges;  Cats  dogs|"%A+"| 4 |no}}
+Named parameters force the trimming of leading and trailing spaces in the parameters and are generally clearer when used:
+* &lt;code&gt;&lt;nowiki&gt;{{String split | txt=Apples pears oranges;  Cats  dogs | sep="%A+" | idx=3 | plain=false }}&lt;/nowiki&gt;&lt;/code&gt; → {{String split | txt=Apples pears oranges;  Cats  dogs | sep="%A+" | idx=3 | plain=false }}
+
+=== One2a ===
+[[Template:One2a]] is a convenience wrapper for the one2a function. 
+
+Capitalisation is kept. Aimed for usage with {{tl|Convert}}.
+* &lt;code&gt;&lt;nowiki&gt;{{one2a |One foot. One mile. One kilometer. One inch.One amp. one foot. one mile. one inch. Alone at last. Onely the lonely. ONE ounce. One monkey.}}&lt;/nowiki&gt;&lt;/code&gt; →
+:{{one2a |One foot. One mile. One kilometer. One inch.One amp. one foot. one mile. one inch. Alone at last. Onely the lonely. ONE ounce. One monkey.}}
+* &lt;code&gt;&lt;nowiki&gt;{{convert|1|ft|spell=on}}&lt;/nowiki&gt;&lt;/code&gt; → {{convert|1|ft|spell=on}}
+* &lt;code&gt;&lt;nowiki&gt;{{one2a|{{convert|1|ft|spell=on}}}}&lt;/nowiki&gt;&lt;/code&gt; → {{one2a|{{convert|1|ft|spell=on}}}}
+* &lt;code&gt;&lt;nowiki&gt;{{convert|2.54|cm|0|disp=out|spell=on}}&lt;/nowiki&gt;&lt;/code&gt; → {{convert|2.54|cm|0|disp=out|spell=on}}
+* &lt;code&gt;&lt;nowiki&gt;{{one2a|{{convert|2.54|cm|0|disp=out|spell=on}}}}&lt;/nowiki&gt;&lt;/code&gt; → {{one2a|{{convert|2.54|cm|0|disp=out|spell=on}}}}
+
+== See also ==
+[[Module:String]] for the following functions:
+* len
+* sub
+* sublength
+* match
+* pos
+* str_find
+* find
+* replace
+* rep
+
+Templates and modules related to capitalization
+{{Case templates see also}}
+
+Templates that implement {{tag|nowiki|o}}
+* {{tl|nowiki}}
+* {{tl|nowiki2}}
+&lt;includeonly&gt;{{Sandbox other||
+[[Category:Modules that manipulate strings|*]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>pkasy1tvqm62fga0cw1v14dhq802470</sha1>
+    </revision>
+  </page>
+</mediawiki>

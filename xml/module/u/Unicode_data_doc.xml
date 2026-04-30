@@ -1,0 +1,4525 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Unicode data/doc</title>
+    <ns>828</ns>
+    <id>8271</id>
+    <revision>
+      <id>916584</id>
+      <timestamp>2024-10-19T03:15:29Z</timestamp>
+      <contributor>
+        <username>en&gt;64.114 etc</username>
+        <id>0</id>
+      </contributor>
+      <origin>916584</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="13405" sha1="bbbdcdymyq8199lgvqhpzbt2aakzqh4" xml:space="preserve">&lt;!-- Please place categories where indicated at the bottom of this page and interwikis at Wikidata (see [[Wikipedia:Wikidata]]) --&gt;
+{{#ifeq: {{SUBPAGENAME}} | sandbox
+  | {{#invoke: Unicode_data/testcases | run_tests}}
+  | {{high risk}}{{cascade-protected template|page=module}}
+  }}
+
+== Usage ==
+This module provides functions that access information on Unicode code points. The information is retrieved from data modules generated from the [https://www.unicode.org/Public/UNIDATA/ Unicode Character Database], or derived by rules given in the [https://www.unicode.org/versions/Unicode11.0.0/UnicodeStandard-11.0.pdf Unicode Specification]. It and its submodules were copied from English Wiktionary and then modified; see [[wikt:Module:Unicode data|there]] for more information.
+
+==Parameters and functions==
+===code point===
+The code point is to be entered as '''hexadecimal value'''. For example, {{unichar|A9|COPYRIGHT SIGN}}:
+:{{mono|1={{!}}A9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0xA9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0x00A9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0x00a9&lt;sub&gt;hex&lt;/sub&gt;}}
+:&lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|0x00A9}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|name|0x00A9}}
+
+Incorrect or unintended results:
+:{{mono|1=169&lt;sub&gt;dec&lt;/sub&gt;}}: &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|169}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|name|169}} {{nay}} &amp;mdash;"U+00A9" {{code|1=&amp;copy;}} expected; but is read as {{mono|1=00A9&lt;sub&gt;hex&lt;/sub&gt;}}&amp;nbsp;(that is,&amp;nbsp;{{mono|1={{hex2dec|169}}&lt;sub&gt;dec&lt;/sub&gt;}}
+:{{mono|1=U+00A9}} &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|U+00A9}}&lt;/nowiki&gt;&lt;/code&gt; {{nay}} &amp;mdash;do not use "U+" prefix
+:{{mono|1=غ}} &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|غ}}&lt;/nowiki&gt;&lt;/code&gt; {{nay}} &amp;mdash;cannot enter a character as codepoint
+
+==="{{mono|lookup}}" and "{{mono|1=is}}" functions===
+; {{code|lang=lua|lookup, is}}: Template-invokable functions that allow access to the functions starting with &lt;code&gt;lookup&lt;/code&gt; and &lt;code&gt;is&lt;/code&gt;.For most of the functions, add the code point in hexadecimal base as the next parameter. For &lt;code&gt;is{{!}}Latin&lt;/code&gt;, &lt;code&gt;is{{!}}rtl&lt;/code&gt;, and &lt;code&gt;is{{!}}valid_pagename&lt;/code&gt;, add character string. [[HTML character references]] in the text are decoded by the module into code points.
+:For example, {{tnull|&amp;#35;invoke:Unicode data|is|Latin|àzàhàr̃iyyā̀}} &amp;rarr; {{#invoke:Unicode data|is|Latin|àzàhàr̃iyyā̀}}.
+
+:Internally, in modules, these functions are named using underscore: {{code|lang=lua|lookup_name{{!}}code point}} &amp;larr; {{code|lang=lua|lookup_name}}
+:For &lt;code&gt;&amp;amp;A9;&lt;/code&gt; &lt;big&gt;&amp;#xA9;&lt;/big&gt;: {{tnull|&amp;#35;invoke:Unicode data|lookup|name|A9}}&amp;nbsp;&amp;rarr; {{#invoke:Unicode data|lookup|name|A9}}
+
+==Functions overview==
+* Code points: enter hexadecimal value, for example {{mxt|1={{!}}0x0061}} or {{mxt|1={{!}}61}}; not {{!mxt|1={{!}}U+0061}}.
+{| class="wikitable sortable" style="font-size:90%; vertical-align:top;"
+
+|-
+! Topic
+! Function
+! style="border-right:2px solid grey" | Parameter type&lt;br/&gt;&lt;small&gt;(string=by character(s); c.p. by {{mono|0xHex}} value)&lt;/small&gt;
+! Example
+! Returns
+! Character
+&lt;!--
+ LOOKUP - lookup{{!}} functions ----- ----- ----- ----- ----- ----- ----- ----- --&gt;
+|-
+| Unicode character name
+| {{code|1={{!}}lookup{{!}}name}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|name|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|name|0x0007}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|name|0xA9}}
+|2={{#invoke:Unicode data |lookup|name|0x0007}}
+}}
+
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x0007;}} 
+
+|-
+| [[Script (Unicode)|Scripts]]
+| {{code|1={{!}}lookup{{!}}script}}
+| code point
+| {{tnull|&amp;#35;invoke:Unicode data |lookup|script|A061}}
+| {{#invoke:Unicode data |lookup|script|A061}}
+| {{ubl
+|1=&amp;#xA061;
+|2=}}
+
+|-
+| [[Block (Unicode)|Blocks]]
+| {{code|1={{!}}lookup{{!}}block}}
+| code point
+| {{tnull|&amp;#35;invoke:Unicode data |lookup|block|A061}}
+| {{#invoke:Unicode data |lookup|block|A061}}
+| {{ubl
+|1=&amp;#xA061;
+|2=}}
+
+|-
+| [[Plane (Unicode)|Planes]]
+| {{code|1={{!}}lookup{{!}}plane}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|plane|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|plane|0x1F608}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|plane|0xA9}}
+|2={{#invoke:Unicode data |lookup|plane|0x1F608}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x1F608;}} 
+
+
+|-
+| [[Unicode_character_property#General_Category|General Category]]
+| {{code|1={{!}}lookup{{!}}category}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|category|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|category|0x002B}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|category|0xA9}}
+|2={{#invoke:Unicode data |lookup|category|0x002B}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x002B;}} 
+
+|- style="border-bottom:2px solid grey;"
+| Controls
+| {{code|1={{!}}is{{!}}control}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|control|A9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|control|FFFF}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|control|A9}}
+|2={{#invoke:Unicode data |lookup|control|FFFF}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#xFFFF;}}
+&lt;!--
+ ID - is{{!}} functions ----- ----- ----- ----- ----- ----- ----- ----- --&gt;
+|- 
+| [[Latin script]]
+|{{code|1={{!}}is{{!}}Latin}}
+| string
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|Latin|abcŁíā̀}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|Latin|abc文xyz}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|Latin|abc}}
+|2={{#invoke:Unicode data |is|Latin|abc文xyz}}
+}}
+| 
+
+|-
+| [[Wikipedia:Article titles|WP:Article title]] &lt;small&gt;([[WP:NCTR]])&lt;/small&gt;
+| {{code|1={{!}}is{{!}}valid_pagename}}
+| string
+| {{ubli
+|1={{tnull|&amp;#35;invoke:Unicode data |is|valid_pagename|Main_page}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|valid_pagename|#&amp;nbsp;(disambiguation)}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|valid_pagename|Main_page}}
+|2={{#invoke:Unicode data |is|valid_pagename|# (disambiguation)}}
+}}
+|
+
+|-
+| [[Bidirectional text|Bidirectionality]], right-to-left&amp;nbsp;scripts
+| {{code|1={{!}}is{{!}}rtl}}
+| string
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|rtl|ش}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|rtl|34}}
+}}
+| {{ubli
+|1={{#invoke:Unicode data |is|rtl|ش}}
+|2={{#invoke:Unicode data |is|rtl|&amp;#x34;}}
+}}
+| {{ubl
+|1=&amp;#x0634;
+|2=&amp;#x34;}} 
+
+|-
+| [[Combining character]]
+| {{code|1={{!}}is{{!}}combining}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|combining|0300}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|combining|64}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|combining|0300}}
+|2={{#invoke:Unicode data |is|combining|64}}
+}}
+| {{ubl
+|1=&amp;#x0300;
+|2=&amp;#x64;}} 
+
+|-
+| Character assignation
+| {{code|1={{!}}is{{!}}assigned}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|assigned|A061}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|assigned|FFEF}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|assigned|A061}}
+|2={{#invoke:Unicode data |is|assigned|FFEF}}
+}}
+| {{ubl
+|1=&amp;#xA061;
+|2=;}} 
+
+|-
+| Printable&lt;!-- control: assigned or space-separator --&gt;
+| {{code|1={{!}}is{{!}}printable}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|printable|0061}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|printable|0007}}
+|3={{tnull|&amp;#35;invoke:Unicode data |is|printable|FFFF}}
+}}
+| {{ubl
+|1=&gt;{{#invoke:Unicode data |is|printable|0061}}&lt;
+|2=&gt;{{#invoke:Unicode data |is|printable|0007}}&lt;
+|3=&gt;{{#invoke:Unicode data |is|printable|FFFF}}&lt;
+}}
+| {{ubl
+|1=&gt;&amp;#x0061;&lt;
+|2=&gt;&amp;#x0007;&lt;
+|3=&gt;&amp;#xFFFF;&lt;
+}}
+
+|-
+| {{slink|Whitespace_character|Unicode}}
+| {{code|1={{!}}is{{!}}whitespace}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0x20}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0xA0}}
+|3={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0x64}}
+}}
+| {{ubl
+|1=&amp;gt;{{#invoke:Unicode data |is|whitespace|0x20}}&lt;
+|2=&amp;gt;{{#invoke:Unicode data |is|whitespace|0xA0}}&lt; NBSP
+|3=&amp;gt;{{#invoke:Unicode data |is|whitespace|0x64}}&lt;
+}}
+| {{ubl
+|1=&amp;gt;&amp;#x20;&lt;
+|2=&amp;gt;&amp;#xA0;&lt;
+|3=&amp;gt;&amp;#x64;&lt;}}&lt;!--
+
+ UNKNOWN -- function application as yet unknown --&gt;
+&lt;!-- Hangul submodule used by &lt;code&gt;|lookup|name&lt;/code&gt; to generate names of characters in the [[Hangul Syllables]] block --&gt;
+
+|-
+| [[Unicode alias names and abbreviations|Alias names]]
+| {{code|1={{!}}aliases}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=&amp;#x;
+|2=&amp;#x;}}
+
+|-
+| Combining class
+| {{code|1={{!}}}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=&amp;#x;
+|2=&amp;#x;}}
+
+|-
+| Age
+| {{code|1={{!}}}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=
+|2=}}
+
+|-
+| get_best_script
+| {{code|1={{!}}get_best_script}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=
+|2=}}
+
+|}
+
+==Data modules==
+The data used by functions in this module is found in [[Special:PrefixIndex/Module:Unicode data/|submodules]]. Some are generated by [[AWK]] scripts shown at [[wikt:User:Kephir/Unicode|User:Kephir/Unicode]] on English Wiktionary, others by Lua scripts on the &lt;code&gt;/make&lt;/code&gt; subpages of the submodules.
+* [[Module:Unicode data/age]]: 'Age' of a character, that is: version introduction number.
+* [[Module:Unicode data/aliases]]: the formal name aliases for characters (from [https://www.unicode.org/Public/UNIDATA/NameAliases.txt NameAliases.txt])
+* [[Module:Unicode data/blocks]]: the list of Unicode blocks (from [https://www.unicode.org/Public/UNIDATA/Blocks.txt Blocks.txt])
+* [[Module:Unicode data/category]]: data mapping characters to their General Category (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedGeneralCategory.txt DerivedGeneralCategory.txt])
+* [[Module:Unicode data/combining]]: data mapping characters to their Combining Classes (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedCombiningClass.txt DerivedCombiningClass.txt])
+* [[Module:Unicode data/control]]: data for identifying characters that belong to the General Categories of Separator and Other (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedGeneralCategory.txt DerivedGeneralCategory.txt])
+* [[Module:Unicode data/derived core properties]]:
+* [[Module:Unicode data/Hangul]]: data used to generate the names of [[Hangul]] syllables (from [https://www.unicode.org/Public/UNIDATA/Jamo.txt Jamo.txt])
+* [[Special:PrefixIndex/Module:Unicode data/names|Module:Unicode data/names/&lt;nowiki&gt;*&lt;/nowiki&gt;]] ({{mono|000hh, .., 0E0hh}}; eg [[:Module:Unicode data/names/000|../names/000]]): names
+* [[Module:Unicode data/scripts]]: data mapping characters to their Unicode script properties (from [https://www.unicode.org/Public/UNIDATA/Scripts.txt Scripts.txt]).
+
+The name data modules ([[Special:PrefixIndex/Module:Unicode data/names/|Module:Unicode data/names/&lt;var&gt;xxx&lt;/var&gt;]]) were compiled from [https://www.unicode.org/Public/UNIDATA/UnicodeData.txt UnicodeData.txt]. Each one contains, at maximum, code points U+xxx000 to U+xxxFFF.
+{{#invoke:Unicode data/documentation functions|show_modules}}
+
+==Copyright==
+The Unicode database is released by Unicode Inc. under the following terms:
+
+&lt;blockquote&gt;
+Copyright © 1991-2018 Unicode, Inc. All rights reserved. Distributed under the Terms of Use in https://www.unicode.org/copyright.html.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of the Unicode data files and any associated documentation (the "Data Files") or Unicode software and any associated documentation (the "Software") to deal in the Data Files or Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, and/or sell copies of the Data Files or Software, and to permit persons to whom the Data Files or Software are furnished to do so, provided that either (a) this copyright and permission notice appear with all copies of the Data Files or Software, or (b) this copyright and permission notice appear in associated Documentation.
+
+THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THE DATA FILES OR SOFTWARE.
+
+Except as contained in this notice, the name of a copyright holder shall not be used in advertising or otherwise to promote the sale, use or other dealings in these Data Files or Software without prior written authorization of the copyright holder.
+&lt;/blockquote&gt;
+
+==Known issues==
+* Reading data like &lt;code&gt;[[:Module:Unicode data/aliases]]&lt;/code&gt; not provided nor documented
+* Test fail: &lt;code&gt;lookup_category&lt;/code&gt; {{mono|U+FFFF}} (&amp;lt;noncharacter-FFFF&gt;) expected: Cn.
+::&lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|category|0xFFFF}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|category|0xFFFF}} [Nil]
+
+==See also==
+* '''Named entities''': for example, {{unichar|22C1|N-ARY LOGICAL OR}}: &lt;code&gt;&lt;nowiki&gt;{{#&lt;/nowiki&gt;invoke:[[:Module:LoadData|LoadData]]|[[:Module:Numcr2namecr|Numcr2namecr]]|0x22C1}}&lt;/code&gt; &amp;rarr; {{#invoke:LoadData|Numcr2namecr|0x22C1}}
+&lt;includeonly&gt;{{sandbox other| |
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:Unicode character modules|Data]]
+[[Category:Lua metamodules]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>bbbdcdymyq8199lgvqhpzbt2aakzqh4</sha1>
+    </revision>
+    <revision>
+      <id>916585</id>
+      <parentid>916584</parentid>
+      <timestamp>2025-01-10T09:34:44Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: IMPORTING ALL WANTED MODULES</comment>
+      <origin>916584</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="13405" sha1="bbbdcdymyq8199lgvqhpzbt2aakzqh4" xml:space="preserve">&lt;!-- Please place categories where indicated at the bottom of this page and interwikis at Wikidata (see [[Wikipedia:Wikidata]]) --&gt;
+{{#ifeq: {{SUBPAGENAME}} | sandbox
+  | {{#invoke: Unicode_data/testcases | run_tests}}
+  | {{high risk}}{{cascade-protected template|page=module}}
+  }}
+
+== Usage ==
+This module provides functions that access information on Unicode code points. The information is retrieved from data modules generated from the [https://www.unicode.org/Public/UNIDATA/ Unicode Character Database], or derived by rules given in the [https://www.unicode.org/versions/Unicode11.0.0/UnicodeStandard-11.0.pdf Unicode Specification]. It and its submodules were copied from English Wiktionary and then modified; see [[wikt:Module:Unicode data|there]] for more information.
+
+==Parameters and functions==
+===code point===
+The code point is to be entered as '''hexadecimal value'''. For example, {{unichar|A9|COPYRIGHT SIGN}}:
+:{{mono|1={{!}}A9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0xA9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0x00A9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0x00a9&lt;sub&gt;hex&lt;/sub&gt;}}
+:&lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|0x00A9}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|name|0x00A9}}
+
+Incorrect or unintended results:
+:{{mono|1=169&lt;sub&gt;dec&lt;/sub&gt;}}: &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|169}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|name|169}} {{nay}} &amp;mdash;"U+00A9" {{code|1=&amp;copy;}} expected; but is read as {{mono|1=00A9&lt;sub&gt;hex&lt;/sub&gt;}}&amp;nbsp;(that is,&amp;nbsp;{{mono|1={{hex2dec|169}}&lt;sub&gt;dec&lt;/sub&gt;}}
+:{{mono|1=U+00A9}} &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|U+00A9}}&lt;/nowiki&gt;&lt;/code&gt; {{nay}} &amp;mdash;do not use "U+" prefix
+:{{mono|1=غ}} &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|غ}}&lt;/nowiki&gt;&lt;/code&gt; {{nay}} &amp;mdash;cannot enter a character as codepoint
+
+==="{{mono|lookup}}" and "{{mono|1=is}}" functions===
+; {{code|lang=lua|lookup, is}}: Template-invokable functions that allow access to the functions starting with &lt;code&gt;lookup&lt;/code&gt; and &lt;code&gt;is&lt;/code&gt;.For most of the functions, add the code point in hexadecimal base as the next parameter. For &lt;code&gt;is{{!}}Latin&lt;/code&gt;, &lt;code&gt;is{{!}}rtl&lt;/code&gt;, and &lt;code&gt;is{{!}}valid_pagename&lt;/code&gt;, add character string. [[HTML character references]] in the text are decoded by the module into code points.
+:For example, {{tnull|&amp;#35;invoke:Unicode data|is|Latin|àzàhàr̃iyyā̀}} &amp;rarr; {{#invoke:Unicode data|is|Latin|àzàhàr̃iyyā̀}}.
+
+:Internally, in modules, these functions are named using underscore: {{code|lang=lua|lookup_name{{!}}code point}} &amp;larr; {{code|lang=lua|lookup_name}}
+:For &lt;code&gt;&amp;amp;A9;&lt;/code&gt; &lt;big&gt;&amp;#xA9;&lt;/big&gt;: {{tnull|&amp;#35;invoke:Unicode data|lookup|name|A9}}&amp;nbsp;&amp;rarr; {{#invoke:Unicode data|lookup|name|A9}}
+
+==Functions overview==
+* Code points: enter hexadecimal value, for example {{mxt|1={{!}}0x0061}} or {{mxt|1={{!}}61}}; not {{!mxt|1={{!}}U+0061}}.
+{| class="wikitable sortable" style="font-size:90%; vertical-align:top;"
+
+|-
+! Topic
+! Function
+! style="border-right:2px solid grey" | Parameter type&lt;br/&gt;&lt;small&gt;(string=by character(s); c.p. by {{mono|0xHex}} value)&lt;/small&gt;
+! Example
+! Returns
+! Character
+&lt;!--
+ LOOKUP - lookup{{!}} functions ----- ----- ----- ----- ----- ----- ----- ----- --&gt;
+|-
+| Unicode character name
+| {{code|1={{!}}lookup{{!}}name}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|name|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|name|0x0007}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|name|0xA9}}
+|2={{#invoke:Unicode data |lookup|name|0x0007}}
+}}
+
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x0007;}} 
+
+|-
+| [[Script (Unicode)|Scripts]]
+| {{code|1={{!}}lookup{{!}}script}}
+| code point
+| {{tnull|&amp;#35;invoke:Unicode data |lookup|script|A061}}
+| {{#invoke:Unicode data |lookup|script|A061}}
+| {{ubl
+|1=&amp;#xA061;
+|2=}}
+
+|-
+| [[Block (Unicode)|Blocks]]
+| {{code|1={{!}}lookup{{!}}block}}
+| code point
+| {{tnull|&amp;#35;invoke:Unicode data |lookup|block|A061}}
+| {{#invoke:Unicode data |lookup|block|A061}}
+| {{ubl
+|1=&amp;#xA061;
+|2=}}
+
+|-
+| [[Plane (Unicode)|Planes]]
+| {{code|1={{!}}lookup{{!}}plane}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|plane|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|plane|0x1F608}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|plane|0xA9}}
+|2={{#invoke:Unicode data |lookup|plane|0x1F608}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x1F608;}} 
+
+
+|-
+| [[Unicode_character_property#General_Category|General Category]]
+| {{code|1={{!}}lookup{{!}}category}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|category|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|category|0x002B}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|category|0xA9}}
+|2={{#invoke:Unicode data |lookup|category|0x002B}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x002B;}} 
+
+|- style="border-bottom:2px solid grey;"
+| Controls
+| {{code|1={{!}}is{{!}}control}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|control|A9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|control|FFFF}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|control|A9}}
+|2={{#invoke:Unicode data |lookup|control|FFFF}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#xFFFF;}}
+&lt;!--
+ ID - is{{!}} functions ----- ----- ----- ----- ----- ----- ----- ----- --&gt;
+|- 
+| [[Latin script]]
+|{{code|1={{!}}is{{!}}Latin}}
+| string
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|Latin|abcŁíā̀}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|Latin|abc文xyz}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|Latin|abc}}
+|2={{#invoke:Unicode data |is|Latin|abc文xyz}}
+}}
+| 
+
+|-
+| [[Wikipedia:Article titles|WP:Article title]] &lt;small&gt;([[WP:NCTR]])&lt;/small&gt;
+| {{code|1={{!}}is{{!}}valid_pagename}}
+| string
+| {{ubli
+|1={{tnull|&amp;#35;invoke:Unicode data |is|valid_pagename|Main_page}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|valid_pagename|#&amp;nbsp;(disambiguation)}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|valid_pagename|Main_page}}
+|2={{#invoke:Unicode data |is|valid_pagename|# (disambiguation)}}
+}}
+|
+
+|-
+| [[Bidirectional text|Bidirectionality]], right-to-left&amp;nbsp;scripts
+| {{code|1={{!}}is{{!}}rtl}}
+| string
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|rtl|ش}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|rtl|34}}
+}}
+| {{ubli
+|1={{#invoke:Unicode data |is|rtl|ش}}
+|2={{#invoke:Unicode data |is|rtl|&amp;#x34;}}
+}}
+| {{ubl
+|1=&amp;#x0634;
+|2=&amp;#x34;}} 
+
+|-
+| [[Combining character]]
+| {{code|1={{!}}is{{!}}combining}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|combining|0300}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|combining|64}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|combining|0300}}
+|2={{#invoke:Unicode data |is|combining|64}}
+}}
+| {{ubl
+|1=&amp;#x0300;
+|2=&amp;#x64;}} 
+
+|-
+| Character assignation
+| {{code|1={{!}}is{{!}}assigned}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|assigned|A061}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|assigned|FFEF}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|assigned|A061}}
+|2={{#invoke:Unicode data |is|assigned|FFEF}}
+}}
+| {{ubl
+|1=&amp;#xA061;
+|2=;}} 
+
+|-
+| Printable&lt;!-- control: assigned or space-separator --&gt;
+| {{code|1={{!}}is{{!}}printable}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|printable|0061}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|printable|0007}}
+|3={{tnull|&amp;#35;invoke:Unicode data |is|printable|FFFF}}
+}}
+| {{ubl
+|1=&gt;{{#invoke:Unicode data |is|printable|0061}}&lt;
+|2=&gt;{{#invoke:Unicode data |is|printable|0007}}&lt;
+|3=&gt;{{#invoke:Unicode data |is|printable|FFFF}}&lt;
+}}
+| {{ubl
+|1=&gt;&amp;#x0061;&lt;
+|2=&gt;&amp;#x0007;&lt;
+|3=&gt;&amp;#xFFFF;&lt;
+}}
+
+|-
+| {{slink|Whitespace_character|Unicode}}
+| {{code|1={{!}}is{{!}}whitespace}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0x20}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0xA0}}
+|3={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0x64}}
+}}
+| {{ubl
+|1=&amp;gt;{{#invoke:Unicode data |is|whitespace|0x20}}&lt;
+|2=&amp;gt;{{#invoke:Unicode data |is|whitespace|0xA0}}&lt; NBSP
+|3=&amp;gt;{{#invoke:Unicode data |is|whitespace|0x64}}&lt;
+}}
+| {{ubl
+|1=&amp;gt;&amp;#x20;&lt;
+|2=&amp;gt;&amp;#xA0;&lt;
+|3=&amp;gt;&amp;#x64;&lt;}}&lt;!--
+
+ UNKNOWN -- function application as yet unknown --&gt;
+&lt;!-- Hangul submodule used by &lt;code&gt;|lookup|name&lt;/code&gt; to generate names of characters in the [[Hangul Syllables]] block --&gt;
+
+|-
+| [[Unicode alias names and abbreviations|Alias names]]
+| {{code|1={{!}}aliases}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=&amp;#x;
+|2=&amp;#x;}}
+
+|-
+| Combining class
+| {{code|1={{!}}}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=&amp;#x;
+|2=&amp;#x;}}
+
+|-
+| Age
+| {{code|1={{!}}}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=
+|2=}}
+
+|-
+| get_best_script
+| {{code|1={{!}}get_best_script}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=
+|2=}}
+
+|}
+
+==Data modules==
+The data used by functions in this module is found in [[Special:PrefixIndex/Module:Unicode data/|submodules]]. Some are generated by [[AWK]] scripts shown at [[wikt:User:Kephir/Unicode|User:Kephir/Unicode]] on English Wiktionary, others by Lua scripts on the &lt;code&gt;/make&lt;/code&gt; subpages of the submodules.
+* [[Module:Unicode data/age]]: 'Age' of a character, that is: version introduction number.
+* [[Module:Unicode data/aliases]]: the formal name aliases for characters (from [https://www.unicode.org/Public/UNIDATA/NameAliases.txt NameAliases.txt])
+* [[Module:Unicode data/blocks]]: the list of Unicode blocks (from [https://www.unicode.org/Public/UNIDATA/Blocks.txt Blocks.txt])
+* [[Module:Unicode data/category]]: data mapping characters to their General Category (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedGeneralCategory.txt DerivedGeneralCategory.txt])
+* [[Module:Unicode data/combining]]: data mapping characters to their Combining Classes (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedCombiningClass.txt DerivedCombiningClass.txt])
+* [[Module:Unicode data/control]]: data for identifying characters that belong to the General Categories of Separator and Other (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedGeneralCategory.txt DerivedGeneralCategory.txt])
+* [[Module:Unicode data/derived core properties]]:
+* [[Module:Unicode data/Hangul]]: data used to generate the names of [[Hangul]] syllables (from [https://www.unicode.org/Public/UNIDATA/Jamo.txt Jamo.txt])
+* [[Special:PrefixIndex/Module:Unicode data/names|Module:Unicode data/names/&lt;nowiki&gt;*&lt;/nowiki&gt;]] ({{mono|000hh, .., 0E0hh}}; eg [[:Module:Unicode data/names/000|../names/000]]): names
+* [[Module:Unicode data/scripts]]: data mapping characters to their Unicode script properties (from [https://www.unicode.org/Public/UNIDATA/Scripts.txt Scripts.txt]).
+
+The name data modules ([[Special:PrefixIndex/Module:Unicode data/names/|Module:Unicode data/names/&lt;var&gt;xxx&lt;/var&gt;]]) were compiled from [https://www.unicode.org/Public/UNIDATA/UnicodeData.txt UnicodeData.txt]. Each one contains, at maximum, code points U+xxx000 to U+xxxFFF.
+{{#invoke:Unicode data/documentation functions|show_modules}}
+
+==Copyright==
+The Unicode database is released by Unicode Inc. under the following terms:
+
+&lt;blockquote&gt;
+Copyright © 1991-2018 Unicode, Inc. All rights reserved. Distributed under the Terms of Use in https://www.unicode.org/copyright.html.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of the Unicode data files and any associated documentation (the "Data Files") or Unicode software and any associated documentation (the "Software") to deal in the Data Files or Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, and/or sell copies of the Data Files or Software, and to permit persons to whom the Data Files or Software are furnished to do so, provided that either (a) this copyright and permission notice appear with all copies of the Data Files or Software, or (b) this copyright and permission notice appear in associated Documentation.
+
+THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THE DATA FILES OR SOFTWARE.
+
+Except as contained in this notice, the name of a copyright holder shall not be used in advertising or otherwise to promote the sale, use or other dealings in these Data Files or Software without prior written authorization of the copyright holder.
+&lt;/blockquote&gt;
+
+==Known issues==
+* Reading data like &lt;code&gt;[[:Module:Unicode data/aliases]]&lt;/code&gt; not provided nor documented
+* Test fail: &lt;code&gt;lookup_category&lt;/code&gt; {{mono|U+FFFF}} (&amp;lt;noncharacter-FFFF&gt;) expected: Cn.
+::&lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|category|0xFFFF}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|category|0xFFFF}} [Nil]
+
+==See also==
+* '''Named entities''': for example, {{unichar|22C1|N-ARY LOGICAL OR}}: &lt;code&gt;&lt;nowiki&gt;{{#&lt;/nowiki&gt;invoke:[[:Module:LoadData|LoadData]]|[[:Module:Numcr2namecr|Numcr2namecr]]|0x22C1}}&lt;/code&gt; &amp;rarr; {{#invoke:LoadData|Numcr2namecr|0x22C1}}
+&lt;includeonly&gt;{{sandbox other| |
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:Unicode character modules|Data]]
+[[Category:Lua metamodules]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>bbbdcdymyq8199lgvqhpzbt2aakzqh4</sha1>
+    </revision>
+    <revision>
+      <id>916586</id>
+      <parentid>916585</parentid>
+      <timestamp>2025-05-19T04:00:37Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>916586</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="13413" sha1="jc2qc9v8atlmamis9t9mo8d07cjmwy7" xml:space="preserve">&lt;!-- Please place categories where indicated at the bottom of this page and interwikis at Wikidata (see [[Wikipedia:Wikidata]]) --&gt;
+{{#ifeq: {{SUBPAGENAME}} | sandbox
+  | {{#invoke: Unicode_data/testcases | run_tests}}
+  | {{high risk}}{{cascade-protected template|page=module}}
+  }}
+
+== Usage ==
+This module provides functions that access information on Unicode code points. The information is retrieved from data modules generated from the [https://www.unicode.org/Public/UNIDATA/ Unicode Character Database], or derived by rules given in the [https://www.unicode.org/versions/Unicode11.0.0/UnicodeStandard-11.0.pdf Unicode Specification]. It and its submodules were copied from English Wiktionary and then modified; see [[wikt:Module:Unicode data|there]] for more information.
+
+==Parameters and functions==
+===code point===
+The code point is to be entered as '''hexadecimal value'''. For example, {{unichar|A9|COPYRIGHT SIGN}}:
+:{{mono|1={{!}}A9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0xA9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0x00A9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0x00a9&lt;sub&gt;hex&lt;/sub&gt;}}
+:&lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|0x00A9}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|name|0x00A9}}
+
+Incorrect or unintended results:
+:{{mono|1=169&lt;sub&gt;dec&lt;/sub&gt;}}: &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|169}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|name|169}} {{nay}} &amp;mdash;"U+00A9" {{code|1=&amp;copy;}} expected; but is read as {{mono|1=00A9&lt;sub&gt;hex&lt;/sub&gt;}}&amp;nbsp;(that is,&amp;nbsp;{{mono|1={{hex2dec|169}}&lt;sub&gt;dec&lt;/sub&gt;}}
+:{{mono|1=U+00A9}} &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|U+00A9}}&lt;/nowiki&gt;&lt;/code&gt; {{nay}} &amp;mdash;do not use "U+" prefix
+:{{mono|1=غ}} &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|غ}}&lt;/nowiki&gt;&lt;/code&gt; {{nay}} &amp;mdash;cannot enter a character as codepoint
+
+==="{{mono|lookup}}" and "{{mono|1=is}}" functions===
+; {{code|lang=lua|lookup, is}}: Template-invokable functions that allow access to the functions starting with &lt;code&gt;lookup&lt;/code&gt; and &lt;code&gt;is&lt;/code&gt;.For most of the functions, add the code point in hexadecimal base as the next parameter. For &lt;code&gt;is{{!}}Latin&lt;/code&gt;, &lt;code&gt;is{{!}}rtl&lt;/code&gt;, and &lt;code&gt;is{{!}}valid_pagename&lt;/code&gt;, add character string. [[HTML character references]] in the text are decoded by the module into code points.
+:For example, {{tnull|&amp;#35;invoke:Unicode data|is|Latin|àzàhàr̃iyyā̀}} &amp;rarr; {{#invoke:Unicode data|is|Latin|àzàhàr̃iyyā̀}}.
+
+:Internally, in modules, these functions are named using underscore: {{code|lang=lua|lookup_name{{!}}code point}} &amp;larr; {{code|lang=lua|lookup_name}}
+:For &lt;code&gt;&amp;amp;A9;&lt;/code&gt; &lt;big&gt;&amp;#xA9;&lt;/big&gt;: {{tnull|&amp;#35;invoke:Unicode data|lookup|name|A9}}&amp;nbsp;&amp;rarr; {{#invoke:Unicode data|lookup|name|A9}}
+
+==Functions overview==
+* Code points: enter hexadecimal value, for example {{mxt|1={{!}}0x0061}} or {{mxt|1={{!}}61}}; not {{!mxt|1={{!}}U+0061}}.
+{| class="wikitable sortable" style="font-size:90%; vertical-align:top;"
+
+|-
+! Topic
+! Function
+! style="border-right:2px solid grey" | Parameter type&lt;br/&gt;&lt;small&gt;(string=by character(s); c.p. by {{mono|0xHex}} value)&lt;/small&gt;
+! Example
+! Returns
+! Character
+&lt;!--
+ LOOKUP - lookup{{!}} functions ----- ----- ----- ----- ----- ----- ----- ----- --&gt;
+|-
+| Unicode character name
+| {{code|1={{!}}lookup{{!}}name}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|name|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|name|0x0007}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|name|0xA9}}
+|2={{#invoke:Unicode data |lookup|name|0x0007}}
+}}
+
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x0007;}} 
+
+|-
+| [[Script (Unicode)|Scripts]]
+| {{code|1={{!}}lookup{{!}}script}}
+| code point
+| {{tnull|&amp;#35;invoke:Unicode data |lookup|script|A061}}
+| {{#invoke:Unicode data |lookup|script|A061}}
+| {{ubl
+|1=&amp;#xA061;
+|2=}}
+
+|-
+| [[Block (Unicode)|Blocks]]
+| {{code|1={{!}}lookup{{!}}block}}
+| code point
+| {{tnull|&amp;#35;invoke:Unicode data |lookup|block|A061}}
+| {{#invoke:Unicode data |lookup|block|A061}}
+| {{ubl
+|1=&amp;#xA061;
+|2=}}
+
+|-
+| [[Plane (Unicode)|Planes]]
+| {{code|1={{!}}lookup{{!}}plane}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|plane|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|plane|0x1F608}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|plane|0xA9}}
+|2={{#invoke:Unicode data |lookup|plane|0x1F608}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x1F608;}} 
+
+
+|-
+| [[Unicode_character_property#General_Category|General Category]]
+| {{code|1={{!}}lookup{{!}}category}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|category|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|category|0x002B}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|category|0xA9}}
+|2={{#invoke:Unicode data |lookup|category|0x002B}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x002B;}} 
+
+|- style="border-bottom:2px solid grey;"
+| Controls
+| {{code|1={{!}}is{{!}}control}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|control|A9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|control|FFFF}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|control|A9}}
+|2={{#invoke:Unicode data |lookup|control|FFFF}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#xFFFF;}}
+&lt;!--
+ ID - is{{!}} functions ----- ----- ----- ----- ----- ----- ----- ----- --&gt;
+|- 
+| [[Latin script]]
+|{{code|1={{!}}is{{!}}Latin}}
+| string
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|Latin|abcŁíā̀}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|Latin|abc文xyz}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|Latin|abc}}
+|2={{#invoke:Unicode data |is|Latin|abc文xyz}}
+}}
+| 
+
+|-
+| [[Wikipedia:Article titles|WP:Article title]] &lt;small&gt;([[WP:NCTR]])&lt;/small&gt;
+| {{code|1={{!}}is{{!}}valid_pagename}}
+| string
+| {{ubli
+|1={{tnull|&amp;#35;invoke:Unicode data |is|valid_pagename|Main_page}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|valid_pagename|#&amp;nbsp;(disambiguation)}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|valid_pagename|Main_page}}
+|2={{#invoke:Unicode data |is|valid_pagename|# (disambiguation)}}
+}}
+|
+
+|-
+| [[Bidirectional text|Bidirectionality]], right-to-left&amp;nbsp;scripts
+| {{code|1={{!}}is{{!}}rtl}}
+| string
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|rtl|ش}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|rtl|34}}
+}}
+| {{ubli
+|1={{#invoke:Unicode data |is|rtl|ش}}
+|2={{#invoke:Unicode data |is|rtl|&amp;#x34;}}
+}}
+| {{ubl
+|1=&amp;#x0634;
+|2=&amp;#x34;}} 
+
+|-
+| [[Combining character]]
+| {{code|1={{!}}is{{!}}combining}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|combining|0300}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|combining|64}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|combining|0300}}
+|2={{#invoke:Unicode data |is|combining|64}}
+}}
+| {{ubl
+|1=&amp;#x0300;
+|2=&amp;#x64;}} 
+
+|-
+| Character assignation
+| {{code|1={{!}}is{{!}}assigned}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|assigned|A061}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|assigned|FFEF}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|assigned|A061}}
+|2={{#invoke:Unicode data |is|assigned|FFEF}}
+}}
+| {{ubl
+|1=&amp;#xA061;
+|2=;}} 
+
+|-
+| Printable&lt;!-- control: assigned or space-separator --&gt;
+| {{code|1={{!}}is{{!}}printable}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|printable|0061}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|printable|0007}}
+|3={{tnull|&amp;#35;invoke:Unicode data |is|printable|FFFF}}
+}}
+| {{ubl
+|1=&gt;{{#invoke:Unicode data |is|printable|0061}}&lt;
+|2=&gt;{{#invoke:Unicode data |is|printable|0007}}&lt;
+|3=&gt;{{#invoke:Unicode data |is|printable|FFFF}}&lt;
+}}
+| {{ubl
+|1=&gt;&amp;#x0061;&lt;
+|2=&gt;&amp;#x0007;&lt;
+|3=&gt;&amp;#xFFFF;&lt;
+}}
+
+|-
+| {{slink|Whitespace_character|Unicode}}
+| {{code|1={{!}}is{{!}}whitespace}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0x20}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0xA0}}
+|3={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0x64}}
+}}
+| {{ubl
+|1=&amp;gt;{{#invoke:Unicode data |is|whitespace|0x20}}&lt;
+|2=&amp;gt;{{#invoke:Unicode data |is|whitespace|0xA0}}&lt; NBSP
+|3=&amp;gt;{{#invoke:Unicode data |is|whitespace|0x64}}&lt;
+}}
+| {{ubl
+|1=&amp;gt;&amp;#x20;&lt;
+|2=&amp;gt;&amp;#xA0;&lt;
+|3=&amp;gt;&amp;#x64;&lt;}}&lt;!--
+
+ UNKNOWN -- function application as yet unknown --&gt;
+&lt;!-- Hangul submodule used by &lt;code&gt;|lookup|name&lt;/code&gt; to generate names of characters in the [[Hangul Syllables]] block --&gt;
+
+|-
+| [[Unicode alias names and abbreviations|Alias names]]
+| {{code|1={{!}}aliases}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=&amp;#x;
+|2=&amp;#x;}}
+
+|-
+| Combining class
+| {{code|1={{!}}}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=&amp;#x;
+|2=&amp;#x;}}
+
+|-
+| Age
+| {{code|1={{!}}}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=
+|2=}}
+
+|-
+| get_best_script
+| {{code|1={{!}}get_best_script}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=
+|2=}}
+
+|}
+
+==Data modules==
+The data used by functions in this module is found in [[Special:PrefixIndex/Module:Unicode data/|submodules]]. Some are generated by [[:en:AWK|AWK]] scripts shown at [[wikt:User:Kephir/Unicode|User:Kephir/Unicode]] on English Wiktionary, others by Lua scripts on the &lt;code&gt;/make&lt;/code&gt; subpages of the submodules.
+* [[Module:Unicode data/age]]: 'Age' of a character, that is: version introduction number.
+* [[Module:Unicode data/aliases]]: the formal name aliases for characters (from [https://www.unicode.org/Public/UNIDATA/NameAliases.txt NameAliases.txt])
+* [[Module:Unicode data/blocks]]: the list of Unicode blocks (from [https://www.unicode.org/Public/UNIDATA/Blocks.txt Blocks.txt])
+* [[Module:Unicode data/category]]: data mapping characters to their General Category (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedGeneralCategory.txt DerivedGeneralCategory.txt])
+* [[Module:Unicode data/combining]]: data mapping characters to their Combining Classes (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedCombiningClass.txt DerivedCombiningClass.txt])
+* [[Module:Unicode data/control]]: data for identifying characters that belong to the General Categories of Separator and Other (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedGeneralCategory.txt DerivedGeneralCategory.txt])
+* [[Module:Unicode data/derived core properties]]:
+* [[Module:Unicode data/Hangul]]: data used to generate the names of [[Hangul]] syllables (from [https://www.unicode.org/Public/UNIDATA/Jamo.txt Jamo.txt])
+* [[Special:PrefixIndex/Module:Unicode data/names|Module:Unicode data/names/&lt;nowiki&gt;*&lt;/nowiki&gt;]] ({{mono|000hh, .., 0E0hh}}; eg [[:Module:Unicode data/names/000|../names/000]]): names
+* [[Module:Unicode data/scripts]]: data mapping characters to their Unicode script properties (from [https://www.unicode.org/Public/UNIDATA/Scripts.txt Scripts.txt]).
+
+The name data modules ([[Special:PrefixIndex/Module:Unicode data/names/|Module:Unicode data/names/&lt;var&gt;xxx&lt;/var&gt;]]) were compiled from [https://www.unicode.org/Public/UNIDATA/UnicodeData.txt UnicodeData.txt]. Each one contains, at maximum, code points U+xxx000 to U+xxxFFF.
+{{#invoke:Unicode data/documentation functions|show_modules}}
+
+==Copyright==
+The Unicode database is released by Unicode Inc. under the following terms:
+
+&lt;blockquote&gt;
+Copyright © 1991-2018 Unicode, Inc. All rights reserved. Distributed under the Terms of Use in https://www.unicode.org/copyright.html.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of the Unicode data files and any associated documentation (the "Data Files") or Unicode software and any associated documentation (the "Software") to deal in the Data Files or Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, and/or sell copies of the Data Files or Software, and to permit persons to whom the Data Files or Software are furnished to do so, provided that either (a) this copyright and permission notice appear with all copies of the Data Files or Software, or (b) this copyright and permission notice appear in associated Documentation.
+
+THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THE DATA FILES OR SOFTWARE.
+
+Except as contained in this notice, the name of a copyright holder shall not be used in advertising or otherwise to promote the sale, use or other dealings in these Data Files or Software without prior written authorization of the copyright holder.
+&lt;/blockquote&gt;
+
+==Known issues==
+* Reading data like &lt;code&gt;[[:Module:Unicode data/aliases]]&lt;/code&gt; not provided nor documented
+* Test fail: &lt;code&gt;lookup_category&lt;/code&gt; {{mono|U+FFFF}} (&amp;lt;noncharacter-FFFF&gt;) expected: Cn.
+::&lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|category|0xFFFF}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|category|0xFFFF}} [Nil]
+
+==See also==
+* '''Named entities''': for example, {{unichar|22C1|N-ARY LOGICAL OR}}: &lt;code&gt;&lt;nowiki&gt;{{#&lt;/nowiki&gt;invoke:[[:Module:LoadData|LoadData]]|[[:Module:Numcr2namecr|Numcr2namecr]]|0x22C1}}&lt;/code&gt; &amp;rarr; {{#invoke:LoadData|Numcr2namecr|0x22C1}}
+&lt;includeonly&gt;{{sandbox other| |
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:Unicode character modules|Data]]
+[[Category:Lua metamodules]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>jc2qc9v8atlmamis9t9mo8d07cjmwy7</sha1>
+    </revision>
+    <revision>
+      <id>916587</id>
+      <parentid>916586</parentid>
+      <timestamp>2025-05-19T20:12:56Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>916587</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="13417" sha1="9d5g8moy2f05c31j64xg2vgpgryphup" xml:space="preserve">&lt;!-- Please place categories where indicated at the bottom of this page and interwikis at Wikidata (see [[Wikipedia:Wikidata]]) --&gt;
+{{#ifeq: {{SUBPAGENAME}} | sandbox
+  | {{#invoke: Unicode_data/testcases | run_tests}}
+  | {{high risk}}{{cascade-protected template|page=module}}
+  }}
+
+== Usage ==
+This module provides functions that access information on Unicode code points. The information is retrieved from data modules generated from the [https://www.unicode.org/Public/UNIDATA/ Unicode Character Database], or derived by rules given in the [https://www.unicode.org/versions/Unicode11.0.0/UnicodeStandard-11.0.pdf Unicode Specification]. It and its submodules were copied from English Wiktionary and then modified; see [[wikt:Module:Unicode data|there]] for more information.
+
+==Parameters and functions==
+===code point===
+The code point is to be entered as '''hexadecimal value'''. For example, {{unichar|A9|COPYRIGHT SIGN}}:
+:{{mono|1={{!}}A9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0xA9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0x00A9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0x00a9&lt;sub&gt;hex&lt;/sub&gt;}}
+:&lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|0x00A9}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|name|0x00A9}}
+
+Incorrect or unintended results:
+:{{mono|1=169&lt;sub&gt;dec&lt;/sub&gt;}}: &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|169}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|name|169}} {{nay}} &amp;mdash;"U+00A9" {{code|1=&amp;copy;}} expected; but is read as {{mono|1=00A9&lt;sub&gt;hex&lt;/sub&gt;}}&amp;nbsp;(that is,&amp;nbsp;{{mono|1={{hex2dec|169}}&lt;sub&gt;dec&lt;/sub&gt;}}
+:{{mono|1=U+00A9}} &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|U+00A9}}&lt;/nowiki&gt;&lt;/code&gt; {{nay}} &amp;mdash;do not use "U+" prefix
+:{{mono|1=غ}} &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|غ}}&lt;/nowiki&gt;&lt;/code&gt; {{nay}} &amp;mdash;cannot enter a character as codepoint
+
+==="{{mono|lookup}}" and "{{mono|1=is}}" functions===
+; {{code|lang=lua|lookup, is}}: Template-invokable functions that allow access to the functions starting with &lt;code&gt;lookup&lt;/code&gt; and &lt;code&gt;is&lt;/code&gt;.For most of the functions, add the code point in hexadecimal base as the next parameter. For &lt;code&gt;is{{!}}Latin&lt;/code&gt;, &lt;code&gt;is{{!}}rtl&lt;/code&gt;, and &lt;code&gt;is{{!}}valid_pagename&lt;/code&gt;, add character string. [[HTML character references]] in the text are decoded by the module into code points.
+:For example, {{tnull|&amp;#35;invoke:Unicode data|is|Latin|àzàhàr̃iyyā̀}} &amp;rarr; {{#invoke:Unicode data|is|Latin|àzàhàr̃iyyā̀}}.
+
+:Internally, in modules, these functions are named using underscore: {{code|lang=lua|lookup_name{{!}}code point}} &amp;larr; {{code|lang=lua|lookup_name}}
+:For &lt;code&gt;&amp;amp;A9;&lt;/code&gt; &lt;big&gt;&amp;#xA9;&lt;/big&gt;: {{tnull|&amp;#35;invoke:Unicode data|lookup|name|A9}}&amp;nbsp;&amp;rarr; {{#invoke:Unicode data|lookup|name|A9}}
+
+==Functions overview==
+* Code points: enter hexadecimal value, for example {{mxt|1={{!}}0x0061}} or {{mxt|1={{!}}61}}; not {{!mxt|1={{!}}U+0061}}.
+{| class="wikitable sortable" style="font-size:90%; vertical-align:top;"
+
+|-
+! Topic
+! Function
+! style="border-right:2px solid grey" | Parameter type&lt;br/&gt;&lt;small&gt;(string=by character(s); c.p. by {{mono|0xHex}} value)&lt;/small&gt;
+! Example
+! Returns
+! Character
+&lt;!--
+ LOOKUP - lookup{{!}} functions ----- ----- ----- ----- ----- ----- ----- ----- --&gt;
+|-
+| Unicode character name
+| {{code|1={{!}}lookup{{!}}name}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|name|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|name|0x0007}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|name|0xA9}}
+|2={{#invoke:Unicode data |lookup|name|0x0007}}
+}}
+
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x0007;}} 
+
+|-
+| [[Script (Unicode)|Scripts]]
+| {{code|1={{!}}lookup{{!}}script}}
+| code point
+| {{tnull|&amp;#35;invoke:Unicode data |lookup|script|A061}}
+| {{#invoke:Unicode data |lookup|script|A061}}
+| {{ubl
+|1=&amp;#xA061;
+|2=}}
+
+|-
+| [[Block (Unicode)|Blocks]]
+| {{code|1={{!}}lookup{{!}}block}}
+| code point
+| {{tnull|&amp;#35;invoke:Unicode data |lookup|block|A061}}
+| {{#invoke:Unicode data |lookup|block|A061}}
+| {{ubl
+|1=&amp;#xA061;
+|2=}}
+
+|-
+| [[Plane (Unicode)|Planes]]
+| {{code|1={{!}}lookup{{!}}plane}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|plane|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|plane|0x1F608}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|plane|0xA9}}
+|2={{#invoke:Unicode data |lookup|plane|0x1F608}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x1F608;}} 
+
+
+|-
+| [[Unicode_character_property#General_Category|General Category]]
+| {{code|1={{!}}lookup{{!}}category}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|category|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|category|0x002B}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|category|0xA9}}
+|2={{#invoke:Unicode data |lookup|category|0x002B}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x002B;}} 
+
+|- style="border-bottom:2px solid grey;"
+| Controls
+| {{code|1={{!}}is{{!}}control}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|control|A9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|control|FFFF}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|control|A9}}
+|2={{#invoke:Unicode data |lookup|control|FFFF}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#xFFFF;}}
+&lt;!--
+ ID - is{{!}} functions ----- ----- ----- ----- ----- ----- ----- ----- --&gt;
+|- 
+| [[Latin script]]
+|{{code|1={{!}}is{{!}}Latin}}
+| string
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|Latin|abcŁíā̀}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|Latin|abc文xyz}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|Latin|abc}}
+|2={{#invoke:Unicode data |is|Latin|abc文xyz}}
+}}
+| 
+
+|-
+| [[Wikipedia:Article titles|WP:Article title]] &lt;small&gt;([[WP:NCTR]])&lt;/small&gt;
+| {{code|1={{!}}is{{!}}valid_pagename}}
+| string
+| {{ubli
+|1={{tnull|&amp;#35;invoke:Unicode data |is|valid_pagename|Main_page}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|valid_pagename|#&amp;nbsp;(disambiguation)}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|valid_pagename|Main_page}}
+|2={{#invoke:Unicode data |is|valid_pagename|# (disambiguation)}}
+}}
+|
+
+|-
+| [[:en:Bidirectional text|Bidirectionality]], right-to-left&amp;nbsp;scripts
+| {{code|1={{!}}is{{!}}rtl}}
+| string
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|rtl|ش}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|rtl|34}}
+}}
+| {{ubli
+|1={{#invoke:Unicode data |is|rtl|ش}}
+|2={{#invoke:Unicode data |is|rtl|&amp;#x34;}}
+}}
+| {{ubl
+|1=&amp;#x0634;
+|2=&amp;#x34;}} 
+
+|-
+| [[Combining character]]
+| {{code|1={{!}}is{{!}}combining}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|combining|0300}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|combining|64}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|combining|0300}}
+|2={{#invoke:Unicode data |is|combining|64}}
+}}
+| {{ubl
+|1=&amp;#x0300;
+|2=&amp;#x64;}} 
+
+|-
+| Character assignation
+| {{code|1={{!}}is{{!}}assigned}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|assigned|A061}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|assigned|FFEF}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|assigned|A061}}
+|2={{#invoke:Unicode data |is|assigned|FFEF}}
+}}
+| {{ubl
+|1=&amp;#xA061;
+|2=;}} 
+
+|-
+| Printable&lt;!-- control: assigned or space-separator --&gt;
+| {{code|1={{!}}is{{!}}printable}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|printable|0061}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|printable|0007}}
+|3={{tnull|&amp;#35;invoke:Unicode data |is|printable|FFFF}}
+}}
+| {{ubl
+|1=&gt;{{#invoke:Unicode data |is|printable|0061}}&lt;
+|2=&gt;{{#invoke:Unicode data |is|printable|0007}}&lt;
+|3=&gt;{{#invoke:Unicode data |is|printable|FFFF}}&lt;
+}}
+| {{ubl
+|1=&gt;&amp;#x0061;&lt;
+|2=&gt;&amp;#x0007;&lt;
+|3=&gt;&amp;#xFFFF;&lt;
+}}
+
+|-
+| {{slink|Whitespace_character|Unicode}}
+| {{code|1={{!}}is{{!}}whitespace}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0x20}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0xA0}}
+|3={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0x64}}
+}}
+| {{ubl
+|1=&amp;gt;{{#invoke:Unicode data |is|whitespace|0x20}}&lt;
+|2=&amp;gt;{{#invoke:Unicode data |is|whitespace|0xA0}}&lt; NBSP
+|3=&amp;gt;{{#invoke:Unicode data |is|whitespace|0x64}}&lt;
+}}
+| {{ubl
+|1=&amp;gt;&amp;#x20;&lt;
+|2=&amp;gt;&amp;#xA0;&lt;
+|3=&amp;gt;&amp;#x64;&lt;}}&lt;!--
+
+ UNKNOWN -- function application as yet unknown --&gt;
+&lt;!-- Hangul submodule used by &lt;code&gt;|lookup|name&lt;/code&gt; to generate names of characters in the [[Hangul Syllables]] block --&gt;
+
+|-
+| [[Unicode alias names and abbreviations|Alias names]]
+| {{code|1={{!}}aliases}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=&amp;#x;
+|2=&amp;#x;}}
+
+|-
+| Combining class
+| {{code|1={{!}}}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=&amp;#x;
+|2=&amp;#x;}}
+
+|-
+| Age
+| {{code|1={{!}}}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=
+|2=}}
+
+|-
+| get_best_script
+| {{code|1={{!}}get_best_script}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=
+|2=}}
+
+|}
+
+==Data modules==
+The data used by functions in this module is found in [[Special:PrefixIndex/Module:Unicode data/|submodules]]. Some are generated by [[:en:AWK|AWK]] scripts shown at [[wikt:User:Kephir/Unicode|User:Kephir/Unicode]] on English Wiktionary, others by Lua scripts on the &lt;code&gt;/make&lt;/code&gt; subpages of the submodules.
+* [[Module:Unicode data/age]]: 'Age' of a character, that is: version introduction number.
+* [[Module:Unicode data/aliases]]: the formal name aliases for characters (from [https://www.unicode.org/Public/UNIDATA/NameAliases.txt NameAliases.txt])
+* [[Module:Unicode data/blocks]]: the list of Unicode blocks (from [https://www.unicode.org/Public/UNIDATA/Blocks.txt Blocks.txt])
+* [[Module:Unicode data/category]]: data mapping characters to their General Category (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedGeneralCategory.txt DerivedGeneralCategory.txt])
+* [[Module:Unicode data/combining]]: data mapping characters to their Combining Classes (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedCombiningClass.txt DerivedCombiningClass.txt])
+* [[Module:Unicode data/control]]: data for identifying characters that belong to the General Categories of Separator and Other (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedGeneralCategory.txt DerivedGeneralCategory.txt])
+* [[Module:Unicode data/derived core properties]]:
+* [[Module:Unicode data/Hangul]]: data used to generate the names of [[Hangul]] syllables (from [https://www.unicode.org/Public/UNIDATA/Jamo.txt Jamo.txt])
+* [[Special:PrefixIndex/Module:Unicode data/names|Module:Unicode data/names/&lt;nowiki&gt;*&lt;/nowiki&gt;]] ({{mono|000hh, .., 0E0hh}}; eg [[:Module:Unicode data/names/000|../names/000]]): names
+* [[Module:Unicode data/scripts]]: data mapping characters to their Unicode script properties (from [https://www.unicode.org/Public/UNIDATA/Scripts.txt Scripts.txt]).
+
+The name data modules ([[Special:PrefixIndex/Module:Unicode data/names/|Module:Unicode data/names/&lt;var&gt;xxx&lt;/var&gt;]]) were compiled from [https://www.unicode.org/Public/UNIDATA/UnicodeData.txt UnicodeData.txt]. Each one contains, at maximum, code points U+xxx000 to U+xxxFFF.
+{{#invoke:Unicode data/documentation functions|show_modules}}
+
+==Copyright==
+The Unicode database is released by Unicode Inc. under the following terms:
+
+&lt;blockquote&gt;
+Copyright © 1991-2018 Unicode, Inc. All rights reserved. Distributed under the Terms of Use in https://www.unicode.org/copyright.html.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of the Unicode data files and any associated documentation (the "Data Files") or Unicode software and any associated documentation (the "Software") to deal in the Data Files or Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, and/or sell copies of the Data Files or Software, and to permit persons to whom the Data Files or Software are furnished to do so, provided that either (a) this copyright and permission notice appear with all copies of the Data Files or Software, or (b) this copyright and permission notice appear in associated Documentation.
+
+THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THE DATA FILES OR SOFTWARE.
+
+Except as contained in this notice, the name of a copyright holder shall not be used in advertising or otherwise to promote the sale, use or other dealings in these Data Files or Software without prior written authorization of the copyright holder.
+&lt;/blockquote&gt;
+
+==Known issues==
+* Reading data like &lt;code&gt;[[:Module:Unicode data/aliases]]&lt;/code&gt; not provided nor documented
+* Test fail: &lt;code&gt;lookup_category&lt;/code&gt; {{mono|U+FFFF}} (&amp;lt;noncharacter-FFFF&gt;) expected: Cn.
+::&lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|category|0xFFFF}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|category|0xFFFF}} [Nil]
+
+==See also==
+* '''Named entities''': for example, {{unichar|22C1|N-ARY LOGICAL OR}}: &lt;code&gt;&lt;nowiki&gt;{{#&lt;/nowiki&gt;invoke:[[:Module:LoadData|LoadData]]|[[:Module:Numcr2namecr|Numcr2namecr]]|0x22C1}}&lt;/code&gt; &amp;rarr; {{#invoke:LoadData|Numcr2namecr|0x22C1}}
+&lt;includeonly&gt;{{sandbox other| |
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:Unicode character modules|Data]]
+[[Category:Lua metamodules]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>9d5g8moy2f05c31j64xg2vgpgryphup</sha1>
+    </revision>
+    <revision>
+      <id>916588</id>
+      <parentid>916587</parentid>
+      <timestamp>2025-05-19T20:53:12Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>916588</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="13421" sha1="l71ah8zgrher9jmn18jhsdst0nhnpyq" xml:space="preserve">&lt;!-- Please place categories where indicated at the bottom of this page and interwikis at Wikidata (see [[Wikipedia:Wikidata]]) --&gt;
+{{#ifeq: {{SUBPAGENAME}} | sandbox
+  | {{#invoke: Unicode_data/testcases | run_tests}}
+  | {{high risk}}{{cascade-protected template|page=module}}
+  }}
+
+== Usage ==
+This module provides functions that access information on Unicode code points. The information is retrieved from data modules generated from the [https://www.unicode.org/Public/UNIDATA/ Unicode Character Database], or derived by rules given in the [https://www.unicode.org/versions/Unicode11.0.0/UnicodeStandard-11.0.pdf Unicode Specification]. It and its submodules were copied from English Wiktionary and then modified; see [[wikt:Module:Unicode data|there]] for more information.
+
+==Parameters and functions==
+===code point===
+The code point is to be entered as '''hexadecimal value'''. For example, {{unichar|A9|COPYRIGHT SIGN}}:
+:{{mono|1={{!}}A9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0xA9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0x00A9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0x00a9&lt;sub&gt;hex&lt;/sub&gt;}}
+:&lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|0x00A9}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|name|0x00A9}}
+
+Incorrect or unintended results:
+:{{mono|1=169&lt;sub&gt;dec&lt;/sub&gt;}}: &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|169}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|name|169}} {{nay}} &amp;mdash;"U+00A9" {{code|1=&amp;copy;}} expected; but is read as {{mono|1=00A9&lt;sub&gt;hex&lt;/sub&gt;}}&amp;nbsp;(that is,&amp;nbsp;{{mono|1={{hex2dec|169}}&lt;sub&gt;dec&lt;/sub&gt;}}
+:{{mono|1=U+00A9}} &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|U+00A9}}&lt;/nowiki&gt;&lt;/code&gt; {{nay}} &amp;mdash;do not use "U+" prefix
+:{{mono|1=غ}} &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|غ}}&lt;/nowiki&gt;&lt;/code&gt; {{nay}} &amp;mdash;cannot enter a character as codepoint
+
+==="{{mono|lookup}}" and "{{mono|1=is}}" functions===
+; {{code|lang=lua|lookup, is}}: Template-invokable functions that allow access to the functions starting with &lt;code&gt;lookup&lt;/code&gt; and &lt;code&gt;is&lt;/code&gt;.For most of the functions, add the code point in hexadecimal base as the next parameter. For &lt;code&gt;is{{!}}Latin&lt;/code&gt;, &lt;code&gt;is{{!}}rtl&lt;/code&gt;, and &lt;code&gt;is{{!}}valid_pagename&lt;/code&gt;, add character string. [[HTML character references]] in the text are decoded by the module into code points.
+:For example, {{tnull|&amp;#35;invoke:Unicode data|is|Latin|àzàhàr̃iyyā̀}} &amp;rarr; {{#invoke:Unicode data|is|Latin|àzàhàr̃iyyā̀}}.
+
+:Internally, in modules, these functions are named using underscore: {{code|lang=lua|lookup_name{{!}}code point}} &amp;larr; {{code|lang=lua|lookup_name}}
+:For &lt;code&gt;&amp;amp;A9;&lt;/code&gt; &lt;big&gt;&amp;#xA9;&lt;/big&gt;: {{tnull|&amp;#35;invoke:Unicode data|lookup|name|A9}}&amp;nbsp;&amp;rarr; {{#invoke:Unicode data|lookup|name|A9}}
+
+==Functions overview==
+* Code points: enter hexadecimal value, for example {{mxt|1={{!}}0x0061}} or {{mxt|1={{!}}61}}; not {{!mxt|1={{!}}U+0061}}.
+{| class="wikitable sortable" style="font-size:90%; vertical-align:top;"
+
+|-
+! Topic
+! Function
+! style="border-right:2px solid grey" | Parameter type&lt;br/&gt;&lt;small&gt;(string=by character(s); c.p. by {{mono|0xHex}} value)&lt;/small&gt;
+! Example
+! Returns
+! Character
+&lt;!--
+ LOOKUP - lookup{{!}} functions ----- ----- ----- ----- ----- ----- ----- ----- --&gt;
+|-
+| Unicode character name
+| {{code|1={{!}}lookup{{!}}name}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|name|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|name|0x0007}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|name|0xA9}}
+|2={{#invoke:Unicode data |lookup|name|0x0007}}
+}}
+
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x0007;}} 
+
+|-
+| [[Script (Unicode)|Scripts]]
+| {{code|1={{!}}lookup{{!}}script}}
+| code point
+| {{tnull|&amp;#35;invoke:Unicode data |lookup|script|A061}}
+| {{#invoke:Unicode data |lookup|script|A061}}
+| {{ubl
+|1=&amp;#xA061;
+|2=}}
+
+|-
+| [[:en:Block (Unicode)|Blocks]]
+| {{code|1={{!}}lookup{{!}}block}}
+| code point
+| {{tnull|&amp;#35;invoke:Unicode data |lookup|block|A061}}
+| {{#invoke:Unicode data |lookup|block|A061}}
+| {{ubl
+|1=&amp;#xA061;
+|2=}}
+
+|-
+| [[Plane (Unicode)|Planes]]
+| {{code|1={{!}}lookup{{!}}plane}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|plane|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|plane|0x1F608}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|plane|0xA9}}
+|2={{#invoke:Unicode data |lookup|plane|0x1F608}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x1F608;}} 
+
+
+|-
+| [[Unicode_character_property#General_Category|General Category]]
+| {{code|1={{!}}lookup{{!}}category}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|category|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|category|0x002B}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|category|0xA9}}
+|2={{#invoke:Unicode data |lookup|category|0x002B}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x002B;}} 
+
+|- style="border-bottom:2px solid grey;"
+| Controls
+| {{code|1={{!}}is{{!}}control}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|control|A9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|control|FFFF}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|control|A9}}
+|2={{#invoke:Unicode data |lookup|control|FFFF}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#xFFFF;}}
+&lt;!--
+ ID - is{{!}} functions ----- ----- ----- ----- ----- ----- ----- ----- --&gt;
+|- 
+| [[Latin script]]
+|{{code|1={{!}}is{{!}}Latin}}
+| string
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|Latin|abcŁíā̀}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|Latin|abc文xyz}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|Latin|abc}}
+|2={{#invoke:Unicode data |is|Latin|abc文xyz}}
+}}
+| 
+
+|-
+| [[Wikipedia:Article titles|WP:Article title]] &lt;small&gt;([[WP:NCTR]])&lt;/small&gt;
+| {{code|1={{!}}is{{!}}valid_pagename}}
+| string
+| {{ubli
+|1={{tnull|&amp;#35;invoke:Unicode data |is|valid_pagename|Main_page}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|valid_pagename|#&amp;nbsp;(disambiguation)}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|valid_pagename|Main_page}}
+|2={{#invoke:Unicode data |is|valid_pagename|# (disambiguation)}}
+}}
+|
+
+|-
+| [[:en:Bidirectional text|Bidirectionality]], right-to-left&amp;nbsp;scripts
+| {{code|1={{!}}is{{!}}rtl}}
+| string
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|rtl|ش}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|rtl|34}}
+}}
+| {{ubli
+|1={{#invoke:Unicode data |is|rtl|ش}}
+|2={{#invoke:Unicode data |is|rtl|&amp;#x34;}}
+}}
+| {{ubl
+|1=&amp;#x0634;
+|2=&amp;#x34;}} 
+
+|-
+| [[Combining character]]
+| {{code|1={{!}}is{{!}}combining}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|combining|0300}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|combining|64}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|combining|0300}}
+|2={{#invoke:Unicode data |is|combining|64}}
+}}
+| {{ubl
+|1=&amp;#x0300;
+|2=&amp;#x64;}} 
+
+|-
+| Character assignation
+| {{code|1={{!}}is{{!}}assigned}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|assigned|A061}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|assigned|FFEF}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|assigned|A061}}
+|2={{#invoke:Unicode data |is|assigned|FFEF}}
+}}
+| {{ubl
+|1=&amp;#xA061;
+|2=;}} 
+
+|-
+| Printable&lt;!-- control: assigned or space-separator --&gt;
+| {{code|1={{!}}is{{!}}printable}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|printable|0061}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|printable|0007}}
+|3={{tnull|&amp;#35;invoke:Unicode data |is|printable|FFFF}}
+}}
+| {{ubl
+|1=&gt;{{#invoke:Unicode data |is|printable|0061}}&lt;
+|2=&gt;{{#invoke:Unicode data |is|printable|0007}}&lt;
+|3=&gt;{{#invoke:Unicode data |is|printable|FFFF}}&lt;
+}}
+| {{ubl
+|1=&gt;&amp;#x0061;&lt;
+|2=&gt;&amp;#x0007;&lt;
+|3=&gt;&amp;#xFFFF;&lt;
+}}
+
+|-
+| {{slink|Whitespace_character|Unicode}}
+| {{code|1={{!}}is{{!}}whitespace}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0x20}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0xA0}}
+|3={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0x64}}
+}}
+| {{ubl
+|1=&amp;gt;{{#invoke:Unicode data |is|whitespace|0x20}}&lt;
+|2=&amp;gt;{{#invoke:Unicode data |is|whitespace|0xA0}}&lt; NBSP
+|3=&amp;gt;{{#invoke:Unicode data |is|whitespace|0x64}}&lt;
+}}
+| {{ubl
+|1=&amp;gt;&amp;#x20;&lt;
+|2=&amp;gt;&amp;#xA0;&lt;
+|3=&amp;gt;&amp;#x64;&lt;}}&lt;!--
+
+ UNKNOWN -- function application as yet unknown --&gt;
+&lt;!-- Hangul submodule used by &lt;code&gt;|lookup|name&lt;/code&gt; to generate names of characters in the [[Hangul Syllables]] block --&gt;
+
+|-
+| [[Unicode alias names and abbreviations|Alias names]]
+| {{code|1={{!}}aliases}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=&amp;#x;
+|2=&amp;#x;}}
+
+|-
+| Combining class
+| {{code|1={{!}}}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=&amp;#x;
+|2=&amp;#x;}}
+
+|-
+| Age
+| {{code|1={{!}}}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=
+|2=}}
+
+|-
+| get_best_script
+| {{code|1={{!}}get_best_script}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=
+|2=}}
+
+|}
+
+==Data modules==
+The data used by functions in this module is found in [[Special:PrefixIndex/Module:Unicode data/|submodules]]. Some are generated by [[:en:AWK|AWK]] scripts shown at [[wikt:User:Kephir/Unicode|User:Kephir/Unicode]] on English Wiktionary, others by Lua scripts on the &lt;code&gt;/make&lt;/code&gt; subpages of the submodules.
+* [[Module:Unicode data/age]]: 'Age' of a character, that is: version introduction number.
+* [[Module:Unicode data/aliases]]: the formal name aliases for characters (from [https://www.unicode.org/Public/UNIDATA/NameAliases.txt NameAliases.txt])
+* [[Module:Unicode data/blocks]]: the list of Unicode blocks (from [https://www.unicode.org/Public/UNIDATA/Blocks.txt Blocks.txt])
+* [[Module:Unicode data/category]]: data mapping characters to their General Category (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedGeneralCategory.txt DerivedGeneralCategory.txt])
+* [[Module:Unicode data/combining]]: data mapping characters to their Combining Classes (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedCombiningClass.txt DerivedCombiningClass.txt])
+* [[Module:Unicode data/control]]: data for identifying characters that belong to the General Categories of Separator and Other (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedGeneralCategory.txt DerivedGeneralCategory.txt])
+* [[Module:Unicode data/derived core properties]]:
+* [[Module:Unicode data/Hangul]]: data used to generate the names of [[Hangul]] syllables (from [https://www.unicode.org/Public/UNIDATA/Jamo.txt Jamo.txt])
+* [[Special:PrefixIndex/Module:Unicode data/names|Module:Unicode data/names/&lt;nowiki&gt;*&lt;/nowiki&gt;]] ({{mono|000hh, .., 0E0hh}}; eg [[:Module:Unicode data/names/000|../names/000]]): names
+* [[Module:Unicode data/scripts]]: data mapping characters to their Unicode script properties (from [https://www.unicode.org/Public/UNIDATA/Scripts.txt Scripts.txt]).
+
+The name data modules ([[Special:PrefixIndex/Module:Unicode data/names/|Module:Unicode data/names/&lt;var&gt;xxx&lt;/var&gt;]]) were compiled from [https://www.unicode.org/Public/UNIDATA/UnicodeData.txt UnicodeData.txt]. Each one contains, at maximum, code points U+xxx000 to U+xxxFFF.
+{{#invoke:Unicode data/documentation functions|show_modules}}
+
+==Copyright==
+The Unicode database is released by Unicode Inc. under the following terms:
+
+&lt;blockquote&gt;
+Copyright © 1991-2018 Unicode, Inc. All rights reserved. Distributed under the Terms of Use in https://www.unicode.org/copyright.html.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of the Unicode data files and any associated documentation (the "Data Files") or Unicode software and any associated documentation (the "Software") to deal in the Data Files or Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, and/or sell copies of the Data Files or Software, and to permit persons to whom the Data Files or Software are furnished to do so, provided that either (a) this copyright and permission notice appear with all copies of the Data Files or Software, or (b) this copyright and permission notice appear in associated Documentation.
+
+THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THE DATA FILES OR SOFTWARE.
+
+Except as contained in this notice, the name of a copyright holder shall not be used in advertising or otherwise to promote the sale, use or other dealings in these Data Files or Software without prior written authorization of the copyright holder.
+&lt;/blockquote&gt;
+
+==Known issues==
+* Reading data like &lt;code&gt;[[:Module:Unicode data/aliases]]&lt;/code&gt; not provided nor documented
+* Test fail: &lt;code&gt;lookup_category&lt;/code&gt; {{mono|U+FFFF}} (&amp;lt;noncharacter-FFFF&gt;) expected: Cn.
+::&lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|category|0xFFFF}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|category|0xFFFF}} [Nil]
+
+==See also==
+* '''Named entities''': for example, {{unichar|22C1|N-ARY LOGICAL OR}}: &lt;code&gt;&lt;nowiki&gt;{{#&lt;/nowiki&gt;invoke:[[:Module:LoadData|LoadData]]|[[:Module:Numcr2namecr|Numcr2namecr]]|0x22C1}}&lt;/code&gt; &amp;rarr; {{#invoke:LoadData|Numcr2namecr|0x22C1}}
+&lt;includeonly&gt;{{sandbox other| |
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:Unicode character modules|Data]]
+[[Category:Lua metamodules]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>l71ah8zgrher9jmn18jhsdst0nhnpyq</sha1>
+    </revision>
+    <revision>
+      <id>916589</id>
+      <parentid>916588</parentid>
+      <timestamp>2025-05-19T21:53:35Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>916589</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="13445" sha1="7hm7prsze82ft1bnc249vpn00ij8tsr" xml:space="preserve">&lt;!-- Please place categories where indicated at the bottom of this page and interwikis at Wikidata (see [[Wikipedia:Wikidata]]) --&gt;
+{{#ifeq: {{SUBPAGENAME}} | sandbox
+  | {{#invoke: Unicode_data/testcases | run_tests}}
+  | {{high risk}}{{cascade-protected template|page=module}}
+  }}
+
+== Usage ==
+This module provides functions that access information on Unicode code points. The information is retrieved from data modules generated from the [https://www.unicode.org/Public/UNIDATA/ Unicode Character Database], or derived by rules given in the [https://www.unicode.org/versions/Unicode11.0.0/UnicodeStandard-11.0.pdf Unicode Specification]. It and its submodules were copied from English Wiktionary and then modified; see [[wikt:Module:Unicode data|there]] for more information.
+
+==Parameters and functions==
+===code point===
+The code point is to be entered as '''hexadecimal value'''. For example, {{unichar|A9|COPYRIGHT SIGN}}:
+:{{mono|1={{!}}A9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0xA9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0x00A9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0x00a9&lt;sub&gt;hex&lt;/sub&gt;}}
+:&lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|0x00A9}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|name|0x00A9}}
+
+Incorrect or unintended results:
+:{{mono|1=169&lt;sub&gt;dec&lt;/sub&gt;}}: &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|169}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|name|169}} {{nay}} &amp;mdash;"U+00A9" {{code|1=&amp;copy;}} expected; but is read as {{mono|1=00A9&lt;sub&gt;hex&lt;/sub&gt;}}&amp;nbsp;(that is,&amp;nbsp;{{mono|1={{hex2dec|169}}&lt;sub&gt;dec&lt;/sub&gt;}}
+:{{mono|1=U+00A9}} &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|U+00A9}}&lt;/nowiki&gt;&lt;/code&gt; {{nay}} &amp;mdash;do not use "U+" prefix
+:{{mono|1=غ}} &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|غ}}&lt;/nowiki&gt;&lt;/code&gt; {{nay}} &amp;mdash;cannot enter a character as codepoint
+
+==="{{mono|lookup}}" and "{{mono|1=is}}" functions===
+; {{code|lang=lua|lookup, is}}: Template-invokable functions that allow access to the functions starting with &lt;code&gt;lookup&lt;/code&gt; and &lt;code&gt;is&lt;/code&gt;.For most of the functions, add the code point in hexadecimal base as the next parameter. For &lt;code&gt;is{{!}}Latin&lt;/code&gt;, &lt;code&gt;is{{!}}rtl&lt;/code&gt;, and &lt;code&gt;is{{!}}valid_pagename&lt;/code&gt;, add character string. [[HTML character references]] in the text are decoded by the module into code points.
+:For example, {{tnull|&amp;#35;invoke:Unicode data|is|Latin|àzàhàr̃iyyā̀}} &amp;rarr; {{#invoke:Unicode data|is|Latin|àzàhàr̃iyyā̀}}.
+
+:Internally, in modules, these functions are named using underscore: {{code|lang=lua|lookup_name{{!}}code point}} &amp;larr; {{code|lang=lua|lookup_name}}
+:For &lt;code&gt;&amp;amp;A9;&lt;/code&gt; &lt;big&gt;&amp;#xA9;&lt;/big&gt;: {{tnull|&amp;#35;invoke:Unicode data|lookup|name|A9}}&amp;nbsp;&amp;rarr; {{#invoke:Unicode data|lookup|name|A9}}
+
+==Functions overview==
+* Code points: enter hexadecimal value, for example {{mxt|1={{!}}0x0061}} or {{mxt|1={{!}}61}}; not {{!mxt|1={{!}}U+0061}}.
+{| class="wikitable sortable" style="font-size:90%; vertical-align:top;"
+
+|-
+! Topic
+! Function
+! style="border-right:2px solid grey" | Parameter type&lt;br/&gt;&lt;small&gt;(string=by character(s); c.p. by {{mono|0xHex}} value)&lt;/small&gt;
+! Example
+! Returns
+! Character
+&lt;!--
+ LOOKUP - lookup{{!}} functions ----- ----- ----- ----- ----- ----- ----- ----- --&gt;
+|-
+| Unicode character name
+| {{code|1={{!}}lookup{{!}}name}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|name|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|name|0x0007}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|name|0xA9}}
+|2={{#invoke:Unicode data |lookup|name|0x0007}}
+}}
+
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x0007;}} 
+
+|-
+| [[Script (Unicode)|Scripts]]
+| {{code|1={{!}}lookup{{!}}script}}
+| code point
+| {{tnull|&amp;#35;invoke:Unicode data |lookup|script|A061}}
+| {{#invoke:Unicode data |lookup|script|A061}}
+| {{ubl
+|1=&amp;#xA061;
+|2=}}
+
+|-
+| [[:en:Block (Unicode)|Blocks]]
+| {{code|1={{!}}lookup{{!}}block}}
+| code point
+| {{tnull|&amp;#35;invoke:Unicode data |lookup|block|A061}}
+| {{#invoke:Unicode data |lookup|block|A061}}
+| {{ubl
+|1=&amp;#xA061;
+|2=}}
+
+|-
+| [[Plane (Unicode)|Planes]]
+| {{code|1={{!}}lookup{{!}}plane}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|plane|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|plane|0x1F608}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|plane|0xA9}}
+|2={{#invoke:Unicode data |lookup|plane|0x1F608}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x1F608;}} 
+
+
+|-
+| [[Unicode_character_property#General_Category|General Category]]
+| {{code|1={{!}}lookup{{!}}category}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|category|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|category|0x002B}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|category|0xA9}}
+|2={{#invoke:Unicode data |lookup|category|0x002B}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x002B;}} 
+
+|- style="border-bottom:2px solid grey;"
+| Controls
+| {{code|1={{!}}is{{!}}control}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|control|A9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|control|FFFF}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|control|A9}}
+|2={{#invoke:Unicode data |lookup|control|FFFF}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#xFFFF;}}
+&lt;!--
+ ID - is{{!}} functions ----- ----- ----- ----- ----- ----- ----- ----- --&gt;
+|- 
+| [[Latin script]]
+|{{code|1={{!}}is{{!}}Latin}}
+| string
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|Latin|abcŁíā̀}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|Latin|abc文xyz}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|Latin|abc}}
+|2={{#invoke:Unicode data |is|Latin|abc文xyz}}
+}}
+| 
+
+|-
+| [[Wikipedia:Article titles|WP:Article title]] &lt;small&gt;([[WP:NCTR]])&lt;/small&gt;
+| {{code|1={{!}}is{{!}}valid_pagename}}
+| string
+| {{ubli
+|1={{tnull|&amp;#35;invoke:Unicode data |is|valid_pagename|Main_page}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|valid_pagename|#&amp;nbsp;(disambiguation)}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|valid_pagename|Main_page}}
+|2={{#invoke:Unicode data |is|valid_pagename|# (disambiguation)}}
+}}
+|
+
+|-
+| [[:en:Bidirectional text|Bidirectionality]], right-to-left&amp;nbsp;scripts
+| {{code|1={{!}}is{{!}}rtl}}
+| string
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|rtl|ش}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|rtl|34}}
+}}
+| {{ubli
+|1={{#invoke:Unicode data |is|rtl|ش}}
+|2={{#invoke:Unicode data |is|rtl|&amp;#x34;}}
+}}
+| {{ubl
+|1=&amp;#x0634;
+|2=&amp;#x34;}} 
+
+|-
+| [[:en:Combining character|Combining character]]
+| {{code|1={{!}}is{{!}}combining}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|combining|0300}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|combining|64}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|combining|0300}}
+|2={{#invoke:Unicode data |is|combining|64}}
+}}
+| {{ubl
+|1=&amp;#x0300;
+|2=&amp;#x64;}} 
+
+|-
+| Character assignation
+| {{code|1={{!}}is{{!}}assigned}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|assigned|A061}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|assigned|FFEF}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|assigned|A061}}
+|2={{#invoke:Unicode data |is|assigned|FFEF}}
+}}
+| {{ubl
+|1=&amp;#xA061;
+|2=;}} 
+
+|-
+| Printable&lt;!-- control: assigned or space-separator --&gt;
+| {{code|1={{!}}is{{!}}printable}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|printable|0061}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|printable|0007}}
+|3={{tnull|&amp;#35;invoke:Unicode data |is|printable|FFFF}}
+}}
+| {{ubl
+|1=&gt;{{#invoke:Unicode data |is|printable|0061}}&lt;
+|2=&gt;{{#invoke:Unicode data |is|printable|0007}}&lt;
+|3=&gt;{{#invoke:Unicode data |is|printable|FFFF}}&lt;
+}}
+| {{ubl
+|1=&gt;&amp;#x0061;&lt;
+|2=&gt;&amp;#x0007;&lt;
+|3=&gt;&amp;#xFFFF;&lt;
+}}
+
+|-
+| {{slink|Whitespace_character|Unicode}}
+| {{code|1={{!}}is{{!}}whitespace}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0x20}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0xA0}}
+|3={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0x64}}
+}}
+| {{ubl
+|1=&amp;gt;{{#invoke:Unicode data |is|whitespace|0x20}}&lt;
+|2=&amp;gt;{{#invoke:Unicode data |is|whitespace|0xA0}}&lt; NBSP
+|3=&amp;gt;{{#invoke:Unicode data |is|whitespace|0x64}}&lt;
+}}
+| {{ubl
+|1=&amp;gt;&amp;#x20;&lt;
+|2=&amp;gt;&amp;#xA0;&lt;
+|3=&amp;gt;&amp;#x64;&lt;}}&lt;!--
+
+ UNKNOWN -- function application as yet unknown --&gt;
+&lt;!-- Hangul submodule used by &lt;code&gt;|lookup|name&lt;/code&gt; to generate names of characters in the [[Hangul Syllables]] block --&gt;
+
+|-
+| [[Unicode alias names and abbreviations|Alias names]]
+| {{code|1={{!}}aliases}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=&amp;#x;
+|2=&amp;#x;}}
+
+|-
+| Combining class
+| {{code|1={{!}}}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=&amp;#x;
+|2=&amp;#x;}}
+
+|-
+| Age
+| {{code|1={{!}}}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=
+|2=}}
+
+|-
+| get_best_script
+| {{code|1={{!}}get_best_script}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=
+|2=}}
+
+|}
+
+==Data modules==
+The data used by functions in this module is found in [[Special:PrefixIndex/Module:Unicode data/|submodules]]. Some are generated by [[:en:AWK|AWK]] scripts shown at [[wikt:User:Kephir/Unicode|User:Kephir/Unicode]] on English Wiktionary, others by Lua scripts on the &lt;code&gt;/make&lt;/code&gt; subpages of the submodules.
+* [[Module:Unicode data/age]]: 'Age' of a character, that is: version introduction number.
+* [[Module:Unicode data/aliases]]: the formal name aliases for characters (from [https://www.unicode.org/Public/UNIDATA/NameAliases.txt NameAliases.txt])
+* [[Module:Unicode data/blocks]]: the list of Unicode blocks (from [https://www.unicode.org/Public/UNIDATA/Blocks.txt Blocks.txt])
+* [[Module:Unicode data/category]]: data mapping characters to their General Category (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedGeneralCategory.txt DerivedGeneralCategory.txt])
+* [[Module:Unicode data/combining]]: data mapping characters to their Combining Classes (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedCombiningClass.txt DerivedCombiningClass.txt])
+* [[Module:Unicode data/control]]: data for identifying characters that belong to the General Categories of Separator and Other (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedGeneralCategory.txt DerivedGeneralCategory.txt])
+* [[Module:Unicode data/derived core properties]]:
+* [[Module:Unicode data/Hangul]]: data used to generate the names of [[Hangul]] syllables (from [https://www.unicode.org/Public/UNIDATA/Jamo.txt Jamo.txt])
+* [[Special:PrefixIndex/Module:Unicode data/names|Module:Unicode data/names/&lt;nowiki&gt;*&lt;/nowiki&gt;]] ({{mono|000hh, .., 0E0hh}}; eg [[:Module:Unicode data/names/000|../names/000]]): names
+* [[Module:Unicode data/scripts]]: data mapping characters to their Unicode script properties (from [https://www.unicode.org/Public/UNIDATA/Scripts.txt Scripts.txt]).
+
+The name data modules ([[Special:PrefixIndex/Module:Unicode data/names/|Module:Unicode data/names/&lt;var&gt;xxx&lt;/var&gt;]]) were compiled from [https://www.unicode.org/Public/UNIDATA/UnicodeData.txt UnicodeData.txt]. Each one contains, at maximum, code points U+xxx000 to U+xxxFFF.
+{{#invoke:Unicode data/documentation functions|show_modules}}
+
+==Copyright==
+The Unicode database is released by Unicode Inc. under the following terms:
+
+&lt;blockquote&gt;
+Copyright © 1991-2018 Unicode, Inc. All rights reserved. Distributed under the Terms of Use in https://www.unicode.org/copyright.html.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of the Unicode data files and any associated documentation (the "Data Files") or Unicode software and any associated documentation (the "Software") to deal in the Data Files or Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, and/or sell copies of the Data Files or Software, and to permit persons to whom the Data Files or Software are furnished to do so, provided that either (a) this copyright and permission notice appear with all copies of the Data Files or Software, or (b) this copyright and permission notice appear in associated Documentation.
+
+THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THE DATA FILES OR SOFTWARE.
+
+Except as contained in this notice, the name of a copyright holder shall not be used in advertising or otherwise to promote the sale, use or other dealings in these Data Files or Software without prior written authorization of the copyright holder.
+&lt;/blockquote&gt;
+
+==Known issues==
+* Reading data like &lt;code&gt;[[:Module:Unicode data/aliases]]&lt;/code&gt; not provided nor documented
+* Test fail: &lt;code&gt;lookup_category&lt;/code&gt; {{mono|U+FFFF}} (&amp;lt;noncharacter-FFFF&gt;) expected: Cn.
+::&lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|category|0xFFFF}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|category|0xFFFF}} [Nil]
+
+==See also==
+* '''Named entities''': for example, {{unichar|22C1|N-ARY LOGICAL OR}}: &lt;code&gt;&lt;nowiki&gt;{{#&lt;/nowiki&gt;invoke:[[:Module:LoadData|LoadData]]|[[:Module:Numcr2namecr|Numcr2namecr]]|0x22C1}}&lt;/code&gt; &amp;rarr; {{#invoke:LoadData|Numcr2namecr|0x22C1}}
+&lt;includeonly&gt;{{sandbox other| |
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:Unicode character modules|Data]]
+[[Category:Lua metamodules]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>7hm7prsze82ft1bnc249vpn00ij8tsr</sha1>
+    </revision>
+    <revision>
+      <id>916590</id>
+      <parentid>916589</parentid>
+      <timestamp>2025-05-20T19:34:51Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>916590</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="13475" sha1="lruomwvhzc7rd0p47r7osevu5erooai" xml:space="preserve">&lt;!-- Please place categories where indicated at the bottom of this page and interwikis at Wikidata (see [[Wikipedia:Wikidata]]) --&gt;
+{{#ifeq: {{SUBPAGENAME}} | sandbox
+  | {{#invoke: Unicode_data/testcases | run_tests}}
+  | {{high risk}}{{cascade-protected template|page=module}}
+  }}
+
+== Usage ==
+This module provides functions that access information on Unicode code points. The information is retrieved from data modules generated from the [https://www.unicode.org/Public/UNIDATA/ Unicode Character Database], or derived by rules given in the [https://www.unicode.org/versions/Unicode11.0.0/UnicodeStandard-11.0.pdf Unicode Specification]. It and its submodules were copied from English Wiktionary and then modified; see [[wikt:Module:Unicode data|there]] for more information.
+
+==Parameters and functions==
+===code point===
+The code point is to be entered as '''hexadecimal value'''. For example, {{unichar|A9|COPYRIGHT SIGN}}:
+:{{mono|1={{!}}A9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0xA9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0x00A9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0x00a9&lt;sub&gt;hex&lt;/sub&gt;}}
+:&lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|0x00A9}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|name|0x00A9}}
+
+Incorrect or unintended results:
+:{{mono|1=169&lt;sub&gt;dec&lt;/sub&gt;}}: &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|169}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|name|169}} {{nay}} &amp;mdash;"U+00A9" {{code|1=&amp;copy;}} expected; but is read as {{mono|1=00A9&lt;sub&gt;hex&lt;/sub&gt;}}&amp;nbsp;(that is,&amp;nbsp;{{mono|1={{hex2dec|169}}&lt;sub&gt;dec&lt;/sub&gt;}}
+:{{mono|1=U+00A9}} &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|U+00A9}}&lt;/nowiki&gt;&lt;/code&gt; {{nay}} &amp;mdash;do not use "U+" prefix
+:{{mono|1=غ}} &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|غ}}&lt;/nowiki&gt;&lt;/code&gt; {{nay}} &amp;mdash;cannot enter a character as codepoint
+
+==="{{mono|lookup}}" and "{{mono|1=is}}" functions===
+; {{code|lang=lua|lookup, is}}: Template-invokable functions that allow access to the functions starting with &lt;code&gt;lookup&lt;/code&gt; and &lt;code&gt;is&lt;/code&gt;.For most of the functions, add the code point in hexadecimal base as the next parameter. For &lt;code&gt;is{{!}}Latin&lt;/code&gt;, &lt;code&gt;is{{!}}rtl&lt;/code&gt;, and &lt;code&gt;is{{!}}valid_pagename&lt;/code&gt;, add character string. [[:en:HTML character references|HTML character references]] in the text are decoded by the module into code points.
+:For example, {{tnull|&amp;#35;invoke:Unicode data|is|Latin|àzàhàr̃iyyā̀}} &amp;rarr; {{#invoke:Unicode data|is|Latin|àzàhàr̃iyyā̀}}.
+
+:Internally, in modules, these functions are named using underscore: {{code|lang=lua|lookup_name{{!}}code point}} &amp;larr; {{code|lang=lua|lookup_name}}
+:For &lt;code&gt;&amp;amp;A9;&lt;/code&gt; &lt;big&gt;&amp;#xA9;&lt;/big&gt;: {{tnull|&amp;#35;invoke:Unicode data|lookup|name|A9}}&amp;nbsp;&amp;rarr; {{#invoke:Unicode data|lookup|name|A9}}
+
+==Functions overview==
+* Code points: enter hexadecimal value, for example {{mxt|1={{!}}0x0061}} or {{mxt|1={{!}}61}}; not {{!mxt|1={{!}}U+0061}}.
+{| class="wikitable sortable" style="font-size:90%; vertical-align:top;"
+
+|-
+! Topic
+! Function
+! style="border-right:2px solid grey" | Parameter type&lt;br/&gt;&lt;small&gt;(string=by character(s); c.p. by {{mono|0xHex}} value)&lt;/small&gt;
+! Example
+! Returns
+! Character
+&lt;!--
+ LOOKUP - lookup{{!}} functions ----- ----- ----- ----- ----- ----- ----- ----- --&gt;
+|-
+| Unicode character name
+| {{code|1={{!}}lookup{{!}}name}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|name|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|name|0x0007}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|name|0xA9}}
+|2={{#invoke:Unicode data |lookup|name|0x0007}}
+}}
+
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x0007;}} 
+
+|-
+| [[Script (Unicode)|Scripts]]
+| {{code|1={{!}}lookup{{!}}script}}
+| code point
+| {{tnull|&amp;#35;invoke:Unicode data |lookup|script|A061}}
+| {{#invoke:Unicode data |lookup|script|A061}}
+| {{ubl
+|1=&amp;#xA061;
+|2=}}
+
+|-
+| [[:en:Block (Unicode)|Blocks]]
+| {{code|1={{!}}lookup{{!}}block}}
+| code point
+| {{tnull|&amp;#35;invoke:Unicode data |lookup|block|A061}}
+| {{#invoke:Unicode data |lookup|block|A061}}
+| {{ubl
+|1=&amp;#xA061;
+|2=}}
+
+|-
+| [[Plane (Unicode)|Planes]]
+| {{code|1={{!}}lookup{{!}}plane}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|plane|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|plane|0x1F608}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|plane|0xA9}}
+|2={{#invoke:Unicode data |lookup|plane|0x1F608}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x1F608;}} 
+
+
+|-
+| [[Unicode_character_property#General_Category|General Category]]
+| {{code|1={{!}}lookup{{!}}category}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|category|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|category|0x002B}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|category|0xA9}}
+|2={{#invoke:Unicode data |lookup|category|0x002B}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x002B;}} 
+
+|- style="border-bottom:2px solid grey;"
+| Controls
+| {{code|1={{!}}is{{!}}control}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|control|A9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|control|FFFF}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|control|A9}}
+|2={{#invoke:Unicode data |lookup|control|FFFF}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#xFFFF;}}
+&lt;!--
+ ID - is{{!}} functions ----- ----- ----- ----- ----- ----- ----- ----- --&gt;
+|- 
+| [[Latin script]]
+|{{code|1={{!}}is{{!}}Latin}}
+| string
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|Latin|abcŁíā̀}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|Latin|abc文xyz}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|Latin|abc}}
+|2={{#invoke:Unicode data |is|Latin|abc文xyz}}
+}}
+| 
+
+|-
+| [[Wikipedia:Article titles|WP:Article title]] &lt;small&gt;([[WP:NCTR]])&lt;/small&gt;
+| {{code|1={{!}}is{{!}}valid_pagename}}
+| string
+| {{ubli
+|1={{tnull|&amp;#35;invoke:Unicode data |is|valid_pagename|Main_page}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|valid_pagename|#&amp;nbsp;(disambiguation)}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|valid_pagename|Main_page}}
+|2={{#invoke:Unicode data |is|valid_pagename|# (disambiguation)}}
+}}
+|
+
+|-
+| [[:en:Bidirectional text|Bidirectionality]], right-to-left&amp;nbsp;scripts
+| {{code|1={{!}}is{{!}}rtl}}
+| string
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|rtl|ش}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|rtl|34}}
+}}
+| {{ubli
+|1={{#invoke:Unicode data |is|rtl|ش}}
+|2={{#invoke:Unicode data |is|rtl|&amp;#x34;}}
+}}
+| {{ubl
+|1=&amp;#x0634;
+|2=&amp;#x34;}} 
+
+|-
+| [[:en:Combining character|Combining character]]
+| {{code|1={{!}}is{{!}}combining}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|combining|0300}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|combining|64}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|combining|0300}}
+|2={{#invoke:Unicode data |is|combining|64}}
+}}
+| {{ubl
+|1=&amp;#x0300;
+|2=&amp;#x64;}} 
+
+|-
+| Character assignation
+| {{code|1={{!}}is{{!}}assigned}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|assigned|A061}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|assigned|FFEF}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|assigned|A061}}
+|2={{#invoke:Unicode data |is|assigned|FFEF}}
+}}
+| {{ubl
+|1=&amp;#xA061;
+|2=;}} 
+
+|-
+| Printable&lt;!-- control: assigned or space-separator --&gt;
+| {{code|1={{!}}is{{!}}printable}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|printable|0061}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|printable|0007}}
+|3={{tnull|&amp;#35;invoke:Unicode data |is|printable|FFFF}}
+}}
+| {{ubl
+|1=&gt;{{#invoke:Unicode data |is|printable|0061}}&lt;
+|2=&gt;{{#invoke:Unicode data |is|printable|0007}}&lt;
+|3=&gt;{{#invoke:Unicode data |is|printable|FFFF}}&lt;
+}}
+| {{ubl
+|1=&gt;&amp;#x0061;&lt;
+|2=&gt;&amp;#x0007;&lt;
+|3=&gt;&amp;#xFFFF;&lt;
+}}
+
+|-
+| {{slink|Whitespace_character|Unicode}}
+| {{code|1={{!}}is{{!}}whitespace}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0x20}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0xA0}}
+|3={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0x64}}
+}}
+| {{ubl
+|1=&amp;gt;{{#invoke:Unicode data |is|whitespace|0x20}}&lt;
+|2=&amp;gt;{{#invoke:Unicode data |is|whitespace|0xA0}}&lt; NBSP
+|3=&amp;gt;{{#invoke:Unicode data |is|whitespace|0x64}}&lt;
+}}
+| {{ubl
+|1=&amp;gt;&amp;#x20;&lt;
+|2=&amp;gt;&amp;#xA0;&lt;
+|3=&amp;gt;&amp;#x64;&lt;}}&lt;!--
+
+ UNKNOWN -- function application as yet unknown --&gt;
+&lt;!-- Hangul submodule used by &lt;code&gt;|lookup|name&lt;/code&gt; to generate names of characters in the [[Hangul Syllables]] block --&gt;
+
+|-
+| [[Unicode alias names and abbreviations|Alias names]]
+| {{code|1={{!}}aliases}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=&amp;#x;
+|2=&amp;#x;}}
+
+|-
+| Combining class
+| {{code|1={{!}}}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=&amp;#x;
+|2=&amp;#x;}}
+
+|-
+| Age
+| {{code|1={{!}}}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=
+|2=}}
+
+|-
+| get_best_script
+| {{code|1={{!}}get_best_script}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=
+|2=}}
+
+|}
+
+==Data modules==
+The data used by functions in this module is found in [[Special:PrefixIndex/Module:Unicode data/|submodules]]. Some are generated by [[:en:AWK|AWK]] scripts shown at [[wikt:User:Kephir/Unicode|User:Kephir/Unicode]] on English Wiktionary, others by Lua scripts on the &lt;code&gt;/make&lt;/code&gt; subpages of the submodules.
+* [[Module:Unicode data/age]]: 'Age' of a character, that is: version introduction number.
+* [[Module:Unicode data/aliases]]: the formal name aliases for characters (from [https://www.unicode.org/Public/UNIDATA/NameAliases.txt NameAliases.txt])
+* [[Module:Unicode data/blocks]]: the list of Unicode blocks (from [https://www.unicode.org/Public/UNIDATA/Blocks.txt Blocks.txt])
+* [[Module:Unicode data/category]]: data mapping characters to their General Category (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedGeneralCategory.txt DerivedGeneralCategory.txt])
+* [[Module:Unicode data/combining]]: data mapping characters to their Combining Classes (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedCombiningClass.txt DerivedCombiningClass.txt])
+* [[Module:Unicode data/control]]: data for identifying characters that belong to the General Categories of Separator and Other (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedGeneralCategory.txt DerivedGeneralCategory.txt])
+* [[Module:Unicode data/derived core properties]]:
+* [[Module:Unicode data/Hangul]]: data used to generate the names of [[Hangul]] syllables (from [https://www.unicode.org/Public/UNIDATA/Jamo.txt Jamo.txt])
+* [[Special:PrefixIndex/Module:Unicode data/names|Module:Unicode data/names/&lt;nowiki&gt;*&lt;/nowiki&gt;]] ({{mono|000hh, .., 0E0hh}}; eg [[:Module:Unicode data/names/000|../names/000]]): names
+* [[Module:Unicode data/scripts]]: data mapping characters to their Unicode script properties (from [https://www.unicode.org/Public/UNIDATA/Scripts.txt Scripts.txt]).
+
+The name data modules ([[Special:PrefixIndex/Module:Unicode data/names/|Module:Unicode data/names/&lt;var&gt;xxx&lt;/var&gt;]]) were compiled from [https://www.unicode.org/Public/UNIDATA/UnicodeData.txt UnicodeData.txt]. Each one contains, at maximum, code points U+xxx000 to U+xxxFFF.
+{{#invoke:Unicode data/documentation functions|show_modules}}
+
+==Copyright==
+The Unicode database is released by Unicode Inc. under the following terms:
+
+&lt;blockquote&gt;
+Copyright © 1991-2018 Unicode, Inc. All rights reserved. Distributed under the Terms of Use in https://www.unicode.org/copyright.html.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of the Unicode data files and any associated documentation (the "Data Files") or Unicode software and any associated documentation (the "Software") to deal in the Data Files or Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, and/or sell copies of the Data Files or Software, and to permit persons to whom the Data Files or Software are furnished to do so, provided that either (a) this copyright and permission notice appear with all copies of the Data Files or Software, or (b) this copyright and permission notice appear in associated Documentation.
+
+THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THE DATA FILES OR SOFTWARE.
+
+Except as contained in this notice, the name of a copyright holder shall not be used in advertising or otherwise to promote the sale, use or other dealings in these Data Files or Software without prior written authorization of the copyright holder.
+&lt;/blockquote&gt;
+
+==Known issues==
+* Reading data like &lt;code&gt;[[:Module:Unicode data/aliases]]&lt;/code&gt; not provided nor documented
+* Test fail: &lt;code&gt;lookup_category&lt;/code&gt; {{mono|U+FFFF}} (&amp;lt;noncharacter-FFFF&gt;) expected: Cn.
+::&lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|category|0xFFFF}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|category|0xFFFF}} [Nil]
+
+==See also==
+* '''Named entities''': for example, {{unichar|22C1|N-ARY LOGICAL OR}}: &lt;code&gt;&lt;nowiki&gt;{{#&lt;/nowiki&gt;invoke:[[:Module:LoadData|LoadData]]|[[:Module:Numcr2namecr|Numcr2namecr]]|0x22C1}}&lt;/code&gt; &amp;rarr; {{#invoke:LoadData|Numcr2namecr|0x22C1}}
+&lt;includeonly&gt;{{sandbox other| |
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:Unicode character modules|Data]]
+[[Category:Lua metamodules]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>lruomwvhzc7rd0p47r7osevu5erooai</sha1>
+    </revision>
+    <revision>
+      <id>916591</id>
+      <parentid>916590</parentid>
+      <timestamp>2025-05-20T21:28:31Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>916591</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="13486" sha1="t2ikc30kierokh7ekfyc2n0n3jqbqcv" xml:space="preserve">&lt;!-- Please place categories where indicated at the bottom of this page and interwikis at Wikidata (see [[Wikipedia:Wikidata]]) --&gt;
+{{#ifeq: {{SUBPAGENAME}} | sandbox
+  | {{#invoke: Unicode_data/testcases | run_tests}}
+  | {{high risk}}{{cascade-protected template|page=module}}
+  }}
+
+== Usage ==
+This module provides functions that access information on Unicode code points. The information is retrieved from data modules generated from the [https://www.unicode.org/Public/UNIDATA/ Unicode Character Database], or derived by rules given in the [https://www.unicode.org/versions/Unicode11.0.0/UnicodeStandard-11.0.pdf Unicode Specification]. It and its submodules were copied from English Wiktionary and then modified; see [[wikt:Module:Unicode data|there]] for more information.
+
+==Parameters and functions==
+===code point===
+The code point is to be entered as '''hexadecimal value'''. For example, {{unichar|A9|COPYRIGHT SIGN}}:
+:{{mono|1={{!}}A9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0xA9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0x00A9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0x00a9&lt;sub&gt;hex&lt;/sub&gt;}}
+:&lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|0x00A9}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|name|0x00A9}}
+
+Incorrect or unintended results:
+:{{mono|1=169&lt;sub&gt;dec&lt;/sub&gt;}}: &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|169}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|name|169}} {{nay}} &amp;mdash;"U+00A9" {{code|1=&amp;copy;}} expected; but is read as {{mono|1=00A9&lt;sub&gt;hex&lt;/sub&gt;}}&amp;nbsp;(that is,&amp;nbsp;{{mono|1={{hex2dec|169}}&lt;sub&gt;dec&lt;/sub&gt;}}
+:{{mono|1=U+00A9}} &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|U+00A9}}&lt;/nowiki&gt;&lt;/code&gt; {{nay}} &amp;mdash;do not use "U+" prefix
+:{{mono|1=غ}} &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|غ}}&lt;/nowiki&gt;&lt;/code&gt; {{nay}} &amp;mdash;cannot enter a character as codepoint
+
+==="{{mono|lookup}}" and "{{mono|1=is}}" functions===
+; {{code|lang=lua|lookup, is}}: Template-invokable functions that allow access to the functions starting with &lt;code&gt;lookup&lt;/code&gt; and &lt;code&gt;is&lt;/code&gt;.For most of the functions, add the code point in hexadecimal base as the next parameter. For &lt;code&gt;is{{!}}Latin&lt;/code&gt;, &lt;code&gt;is{{!}}rtl&lt;/code&gt;, and &lt;code&gt;is{{!}}valid_pagename&lt;/code&gt;, add character string. [[:en:HTML character references|HTML character references]] in the text are decoded by the module into code points.
+:For example, {{tnull|&amp;#35;invoke:Unicode data|is|Latin|àzàhàr̃iyyā̀}} &amp;rarr; {{#invoke:Unicode data|is|Latin|àzàhàr̃iyyā̀}}.
+
+:Internally, in modules, these functions are named using underscore: {{code|lang=lua|lookup_name{{!}}code point}} &amp;larr; {{code|lang=lua|lookup_name}}
+:For &lt;code&gt;&amp;amp;A9;&lt;/code&gt; &lt;big&gt;&amp;#xA9;&lt;/big&gt;: {{tnull|&amp;#35;invoke:Unicode data|lookup|name|A9}}&amp;nbsp;&amp;rarr; {{#invoke:Unicode data|lookup|name|A9}}
+
+==Functions overview==
+* Code points: enter hexadecimal value, for example {{mxt|1={{!}}0x0061}} or {{mxt|1={{!}}61}}; not {{!mxt|1={{!}}U+0061}}.
+{| class="wikitable sortable" style="font-size:90%; vertical-align:top;"
+
+|-
+! Topic
+! Function
+! style="border-right:2px solid grey" | Parameter type&lt;br/&gt;&lt;small&gt;(string=by character(s); c.p. by {{mono|0xHex}} value)&lt;/small&gt;
+! Example
+! Returns
+! Character
+&lt;!--
+ LOOKUP - lookup{{!}} functions ----- ----- ----- ----- ----- ----- ----- ----- --&gt;
+|-
+| Unicode character name
+| {{code|1={{!}}lookup{{!}}name}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|name|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|name|0x0007}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|name|0xA9}}
+|2={{#invoke:Unicode data |lookup|name|0x0007}}
+}}
+
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x0007;}} 
+
+|-
+| [[Script (Unicode)|Scripts]]
+| {{code|1={{!}}lookup{{!}}script}}
+| code point
+| {{tnull|&amp;#35;invoke:Unicode data |lookup|script|A061}}
+| {{#invoke:Unicode data |lookup|script|A061}}
+| {{ubl
+|1=&amp;#xA061;
+|2=}}
+
+|-
+| [[:en:Block (Unicode)|Blocks]]
+| {{code|1={{!}}lookup{{!}}block}}
+| code point
+| {{tnull|&amp;#35;invoke:Unicode data |lookup|block|A061}}
+| {{#invoke:Unicode data |lookup|block|A061}}
+| {{ubl
+|1=&amp;#xA061;
+|2=}}
+
+|-
+| [[Plane (Unicode)|Planes]]
+| {{code|1={{!}}lookup{{!}}plane}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|plane|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|plane|0x1F608}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|plane|0xA9}}
+|2={{#invoke:Unicode data |lookup|plane|0x1F608}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x1F608;}} 
+
+
+|-
+| [[Unicode_character_property#General_Category|General Category]]
+| {{code|1={{!}}lookup{{!}}category}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|category|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|category|0x002B}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|category|0xA9}}
+|2={{#invoke:Unicode data |lookup|category|0x002B}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x002B;}} 
+
+|- style="border-bottom:2px solid grey;"
+| Controls
+| {{code|1={{!}}is{{!}}control}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|control|A9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|control|FFFF}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|control|A9}}
+|2={{#invoke:Unicode data |lookup|control|FFFF}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#xFFFF;}}
+&lt;!--
+ ID - is{{!}} functions ----- ----- ----- ----- ----- ----- ----- ----- --&gt;
+|- 
+| [[Latin script]]
+|{{code|1={{!}}is{{!}}Latin}}
+| string
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|Latin|abcŁíā̀}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|Latin|abc文xyz}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|Latin|abc}}
+|2={{#invoke:Unicode data |is|Latin|abc文xyz}}
+}}
+| 
+
+|-
+| [[Wikipedia:Article titles|WP:Article title]] &lt;small&gt;([[WP:NCTR]])&lt;/small&gt;
+| {{code|1={{!}}is{{!}}valid_pagename}}
+| string
+| {{ubli
+|1={{tnull|&amp;#35;invoke:Unicode data |is|valid_pagename|Main_page}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|valid_pagename|#&amp;nbsp;(disambiguation)}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|valid_pagename|Main_page}}
+|2={{#invoke:Unicode data |is|valid_pagename|# (disambiguation)}}
+}}
+|
+
+|-
+| [[:en:Bidirectional text|Bidirectionality]], right-to-left&amp;nbsp;scripts
+| {{code|1={{!}}is{{!}}rtl}}
+| string
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|rtl|ش}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|rtl|34}}
+}}
+| {{ubli
+|1={{#invoke:Unicode data |is|rtl|ش}}
+|2={{#invoke:Unicode data |is|rtl|&amp;#x34;}}
+}}
+| {{ubl
+|1=&amp;#x0634;
+|2=&amp;#x34;}} 
+
+|-
+| [[:en:Combining character|Combining character]]
+| {{code|1={{!}}is{{!}}combining}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|combining|0300}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|combining|64}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|combining|0300}}
+|2={{#invoke:Unicode data |is|combining|64}}
+}}
+| {{ubl
+|1=&amp;#x0300;
+|2=&amp;#x64;}} 
+
+|-
+| Character assignation
+| {{code|1={{!}}is{{!}}assigned}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|assigned|A061}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|assigned|FFEF}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|assigned|A061}}
+|2={{#invoke:Unicode data |is|assigned|FFEF}}
+}}
+| {{ubl
+|1=&amp;#xA061;
+|2=;}} 
+
+|-
+| Printable&lt;!-- control: assigned or space-separator --&gt;
+| {{code|1={{!}}is{{!}}printable}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|printable|0061}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|printable|0007}}
+|3={{tnull|&amp;#35;invoke:Unicode data |is|printable|FFFF}}
+}}
+| {{ubl
+|1=&gt;{{#invoke:Unicode data |is|printable|0061}}&lt;
+|2=&gt;{{#invoke:Unicode data |is|printable|0007}}&lt;
+|3=&gt;{{#invoke:Unicode data |is|printable|FFFF}}&lt;
+}}
+| {{ubl
+|1=&gt;&amp;#x0061;&lt;
+|2=&gt;&amp;#x0007;&lt;
+|3=&gt;&amp;#xFFFF;&lt;
+}}
+
+|-
+| {{slink|Whitespace_character|Unicode}}
+| {{code|1={{!}}is{{!}}whitespace}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0x20}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0xA0}}
+|3={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0x64}}
+}}
+| {{ubl
+|1=&amp;gt;{{#invoke:Unicode data |is|whitespace|0x20}}&lt;
+|2=&amp;gt;{{#invoke:Unicode data |is|whitespace|0xA0}}&lt; NBSP
+|3=&amp;gt;{{#invoke:Unicode data |is|whitespace|0x64}}&lt;
+}}
+| {{ubl
+|1=&amp;gt;&amp;#x20;&lt;
+|2=&amp;gt;&amp;#xA0;&lt;
+|3=&amp;gt;&amp;#x64;&lt;}}&lt;!--
+
+ UNKNOWN -- function application as yet unknown --&gt;
+&lt;!-- Hangul submodule used by &lt;code&gt;|lookup|name&lt;/code&gt; to generate names of characters in the [[Hangul Syllables]] block --&gt;
+
+|-
+| [[Unicode alias names and abbreviations|Alias names]]
+| {{code|1={{!}}aliases}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=&amp;#x;
+|2=&amp;#x;}}
+
+|-
+| Combining class
+| {{code|1={{!}}}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=&amp;#x;
+|2=&amp;#x;}}
+
+|-
+| Age
+| {{code|1={{!}}}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=
+|2=}}
+
+|-
+| get_best_script
+| {{code|1={{!}}get_best_script}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=
+|2=}}
+
+|}
+
+==Data modules==
+The data used by functions in this module is found in [[Special:PrefixIndex/Module:Unicode data/|submodules]]. Some are generated by [[:en:AWK|AWK]] scripts shown at [[wikt:User:Kephir/Unicode|User:Kephir/Unicode]] on English Wiktionary, others by Lua scripts on the &lt;code&gt;/make&lt;/code&gt; subpages of the submodules.
+* [[Module:Unicode data/age]]: 'Age' of a character, that is: version introduction number.
+* [[Module:Unicode data/aliases]]: the formal name aliases for characters (from [https://www.unicode.org/Public/UNIDATA/NameAliases.txt NameAliases.txt])
+* [[Module:Unicode data/blocks]]: the list of Unicode blocks (from [https://www.unicode.org/Public/UNIDATA/Blocks.txt Blocks.txt])
+* [[Module:Unicode data/category]]: data mapping characters to their General Category (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedGeneralCategory.txt DerivedGeneralCategory.txt])
+* [[Module:Unicode data/combining]]: data mapping characters to their Combining Classes (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedCombiningClass.txt DerivedCombiningClass.txt])
+* [[Module:Unicode data/control]]: data for identifying characters that belong to the General Categories of Separator and Other (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedGeneralCategory.txt DerivedGeneralCategory.txt])
+* [[Module:Unicode data/derived core properties]]:
+* [[Module:Unicode data/Hangul]]: data used to generate the names of [[:en:Hangul|Hangul]] syllables (from [https://www.unicode.org/Public/UNIDATA/Jamo.txt Jamo.txt])
+* [[Special:PrefixIndex/Module:Unicode data/names|Module:Unicode data/names/&lt;nowiki&gt;*&lt;/nowiki&gt;]] ({{mono|000hh, .., 0E0hh}}; eg [[:Module:Unicode data/names/000|../names/000]]): names
+* [[Module:Unicode data/scripts]]: data mapping characters to their Unicode script properties (from [https://www.unicode.org/Public/UNIDATA/Scripts.txt Scripts.txt]).
+
+The name data modules ([[Special:PrefixIndex/Module:Unicode data/names/|Module:Unicode data/names/&lt;var&gt;xxx&lt;/var&gt;]]) were compiled from [https://www.unicode.org/Public/UNIDATA/UnicodeData.txt UnicodeData.txt]. Each one contains, at maximum, code points U+xxx000 to U+xxxFFF.
+{{#invoke:Unicode data/documentation functions|show_modules}}
+
+==Copyright==
+The Unicode database is released by Unicode Inc. under the following terms:
+
+&lt;blockquote&gt;
+Copyright © 1991-2018 Unicode, Inc. All rights reserved. Distributed under the Terms of Use in https://www.unicode.org/copyright.html.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of the Unicode data files and any associated documentation (the "Data Files") or Unicode software and any associated documentation (the "Software") to deal in the Data Files or Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, and/or sell copies of the Data Files or Software, and to permit persons to whom the Data Files or Software are furnished to do so, provided that either (a) this copyright and permission notice appear with all copies of the Data Files or Software, or (b) this copyright and permission notice appear in associated Documentation.
+
+THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THE DATA FILES OR SOFTWARE.
+
+Except as contained in this notice, the name of a copyright holder shall not be used in advertising or otherwise to promote the sale, use or other dealings in these Data Files or Software without prior written authorization of the copyright holder.
+&lt;/blockquote&gt;
+
+==Known issues==
+* Reading data like &lt;code&gt;[[:Module:Unicode data/aliases]]&lt;/code&gt; not provided nor documented
+* Test fail: &lt;code&gt;lookup_category&lt;/code&gt; {{mono|U+FFFF}} (&amp;lt;noncharacter-FFFF&gt;) expected: Cn.
+::&lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|category|0xFFFF}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|category|0xFFFF}} [Nil]
+
+==See also==
+* '''Named entities''': for example, {{unichar|22C1|N-ARY LOGICAL OR}}: &lt;code&gt;&lt;nowiki&gt;{{#&lt;/nowiki&gt;invoke:[[:Module:LoadData|LoadData]]|[[:Module:Numcr2namecr|Numcr2namecr]]|0x22C1}}&lt;/code&gt; &amp;rarr; {{#invoke:LoadData|Numcr2namecr|0x22C1}}
+&lt;includeonly&gt;{{sandbox other| |
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:Unicode character modules|Data]]
+[[Category:Lua metamodules]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>t2ikc30kierokh7ekfyc2n0n3jqbqcv</sha1>
+    </revision>
+    <revision>
+      <id>916592</id>
+      <parentid>916591</parentid>
+      <timestamp>2025-05-22T20:20:47Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>916592</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="13503" sha1="s0o4edr9d5moqhas14rnievl4t9dvnt" xml:space="preserve">&lt;!-- Please place categories where indicated at the bottom of this page and interwikis at Wikidata (see [[Wikipedia:Wikidata]]) --&gt;
+{{#ifeq: {{SUBPAGENAME}} | sandbox
+  | {{#invoke: Unicode_data/testcases | run_tests}}
+  | {{high risk}}{{cascade-protected template|page=module}}
+  }}
+
+== Usage ==
+This module provides functions that access information on Unicode code points. The information is retrieved from data modules generated from the [https://www.unicode.org/Public/UNIDATA/ Unicode Character Database], or derived by rules given in the [https://www.unicode.org/versions/Unicode11.0.0/UnicodeStandard-11.0.pdf Unicode Specification]. It and its submodules were copied from English Wiktionary and then modified; see [[wikt:Module:Unicode data|there]] for more information.
+
+==Parameters and functions==
+===code point===
+The code point is to be entered as '''hexadecimal value'''. For example, {{unichar|A9|COPYRIGHT SIGN}}:
+:{{mono|1={{!}}A9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0xA9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0x00A9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0x00a9&lt;sub&gt;hex&lt;/sub&gt;}}
+:&lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|0x00A9}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|name|0x00A9}}
+
+Incorrect or unintended results:
+:{{mono|1=169&lt;sub&gt;dec&lt;/sub&gt;}}: &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|169}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|name|169}} {{nay}} &amp;mdash;"U+00A9" {{code|1=&amp;copy;}} expected; but is read as {{mono|1=00A9&lt;sub&gt;hex&lt;/sub&gt;}}&amp;nbsp;(that is,&amp;nbsp;{{mono|1={{hex2dec|169}}&lt;sub&gt;dec&lt;/sub&gt;}}
+:{{mono|1=U+00A9}} &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|U+00A9}}&lt;/nowiki&gt;&lt;/code&gt; {{nay}} &amp;mdash;do not use "U+" prefix
+:{{mono|1=غ}} &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|غ}}&lt;/nowiki&gt;&lt;/code&gt; {{nay}} &amp;mdash;cannot enter a character as codepoint
+
+==="{{mono|lookup}}" and "{{mono|1=is}}" functions===
+; {{code|lang=lua|lookup, is}}: Template-invokable functions that allow access to the functions starting with &lt;code&gt;lookup&lt;/code&gt; and &lt;code&gt;is&lt;/code&gt;.For most of the functions, add the code point in hexadecimal base as the next parameter. For &lt;code&gt;is{{!}}Latin&lt;/code&gt;, &lt;code&gt;is{{!}}rtl&lt;/code&gt;, and &lt;code&gt;is{{!}}valid_pagename&lt;/code&gt;, add character string. [[:en:HTML character references|HTML character references]] in the text are decoded by the module into code points.
+:For example, {{tnull|&amp;#35;invoke:Unicode data|is|Latin|àzàhàr̃iyyā̀}} &amp;rarr; {{#invoke:Unicode data|is|Latin|àzàhàr̃iyyā̀}}.
+
+:Internally, in modules, these functions are named using underscore: {{code|lang=lua|lookup_name{{!}}code point}} &amp;larr; {{code|lang=lua|lookup_name}}
+:For &lt;code&gt;&amp;amp;A9;&lt;/code&gt; &lt;big&gt;&amp;#xA9;&lt;/big&gt;: {{tnull|&amp;#35;invoke:Unicode data|lookup|name|A9}}&amp;nbsp;&amp;rarr; {{#invoke:Unicode data|lookup|name|A9}}
+
+==Functions overview==
+* Code points: enter hexadecimal value, for example {{mxt|1={{!}}0x0061}} or {{mxt|1={{!}}61}}; not {{!mxt|1={{!}}U+0061}}.
+{| class="wikitable sortable" style="font-size:90%; vertical-align:top;"
+
+|-
+! Topic
+! Function
+! style="border-right:2px solid grey" | Parameter type&lt;br/&gt;&lt;small&gt;(string=by character(s); c.p. by {{mono|0xHex}} value)&lt;/small&gt;
+! Example
+! Returns
+! Character
+&lt;!--
+ LOOKUP - lookup{{!}} functions ----- ----- ----- ----- ----- ----- ----- ----- --&gt;
+|-
+| Unicode character name
+| {{code|1={{!}}lookup{{!}}name}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|name|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|name|0x0007}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|name|0xA9}}
+|2={{#invoke:Unicode data |lookup|name|0x0007}}
+}}
+
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x0007;}} 
+
+|-
+| [[Script (Unicode)|Scripts]]
+| {{code|1={{!}}lookup{{!}}script}}
+| code point
+| {{tnull|&amp;#35;invoke:Unicode data |lookup|script|A061}}
+| {{#invoke:Unicode data |lookup|script|A061}}
+| {{ubl
+|1=&amp;#xA061;
+|2=}}
+
+|-
+| [[:en:Block (Unicode)|Blocks]]
+| {{code|1={{!}}lookup{{!}}block}}
+| code point
+| {{tnull|&amp;#35;invoke:Unicode data |lookup|block|A061}}
+| {{#invoke:Unicode data |lookup|block|A061}}
+| {{ubl
+|1=&amp;#xA061;
+|2=}}
+
+|-
+| [[Plane (Unicode)|Planes]]
+| {{code|1={{!}}lookup{{!}}plane}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|plane|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|plane|0x1F608}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|plane|0xA9}}
+|2={{#invoke:Unicode data |lookup|plane|0x1F608}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x1F608;}} 
+
+
+|-
+| [[Unicode_character_property#General_Category|General Category]]
+| {{code|1={{!}}lookup{{!}}category}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|category|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|category|0x002B}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|category|0xA9}}
+|2={{#invoke:Unicode data |lookup|category|0x002B}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x002B;}} 
+
+|- style="border-bottom:2px solid grey;"
+| Controls
+| {{code|1={{!}}is{{!}}control}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|control|A9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|control|FFFF}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|control|A9}}
+|2={{#invoke:Unicode data |lookup|control|FFFF}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#xFFFF;}}
+&lt;!--
+ ID - is{{!}} functions ----- ----- ----- ----- ----- ----- ----- ----- --&gt;
+|- 
+| [[:en:Latin script|Latin script]]
+|{{code|1={{!}}is{{!}}Latin}}
+| string
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|Latin|abcŁíā̀}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|Latin|abc文xyz}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|Latin|abc}}
+|2={{#invoke:Unicode data |is|Latin|abc文xyz}}
+}}
+| 
+
+|-
+| [[Wikipedia:Article titles|WP:Article title]] &lt;small&gt;([[WP:NCTR]])&lt;/small&gt;
+| {{code|1={{!}}is{{!}}valid_pagename}}
+| string
+| {{ubli
+|1={{tnull|&amp;#35;invoke:Unicode data |is|valid_pagename|Main_page}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|valid_pagename|#&amp;nbsp;(disambiguation)}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|valid_pagename|Main_page}}
+|2={{#invoke:Unicode data |is|valid_pagename|# (disambiguation)}}
+}}
+|
+
+|-
+| [[:en:Bidirectional text|Bidirectionality]], right-to-left&amp;nbsp;scripts
+| {{code|1={{!}}is{{!}}rtl}}
+| string
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|rtl|ش}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|rtl|34}}
+}}
+| {{ubli
+|1={{#invoke:Unicode data |is|rtl|ش}}
+|2={{#invoke:Unicode data |is|rtl|&amp;#x34;}}
+}}
+| {{ubl
+|1=&amp;#x0634;
+|2=&amp;#x34;}} 
+
+|-
+| [[:en:Combining character|Combining character]]
+| {{code|1={{!}}is{{!}}combining}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|combining|0300}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|combining|64}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|combining|0300}}
+|2={{#invoke:Unicode data |is|combining|64}}
+}}
+| {{ubl
+|1=&amp;#x0300;
+|2=&amp;#x64;}} 
+
+|-
+| Character assignation
+| {{code|1={{!}}is{{!}}assigned}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|assigned|A061}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|assigned|FFEF}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|assigned|A061}}
+|2={{#invoke:Unicode data |is|assigned|FFEF}}
+}}
+| {{ubl
+|1=&amp;#xA061;
+|2=;}} 
+
+|-
+| Printable&lt;!-- control: assigned or space-separator --&gt;
+| {{code|1={{!}}is{{!}}printable}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|printable|0061}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|printable|0007}}
+|3={{tnull|&amp;#35;invoke:Unicode data |is|printable|FFFF}}
+}}
+| {{ubl
+|1=&gt;{{#invoke:Unicode data |is|printable|0061}}&lt;
+|2=&gt;{{#invoke:Unicode data |is|printable|0007}}&lt;
+|3=&gt;{{#invoke:Unicode data |is|printable|FFFF}}&lt;
+}}
+| {{ubl
+|1=&gt;&amp;#x0061;&lt;
+|2=&gt;&amp;#x0007;&lt;
+|3=&gt;&amp;#xFFFF;&lt;
+}}
+
+|-
+| {{slink|Whitespace_character|Unicode}}
+| {{code|1={{!}}is{{!}}whitespace}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0x20}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0xA0}}
+|3={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0x64}}
+}}
+| {{ubl
+|1=&amp;gt;{{#invoke:Unicode data |is|whitespace|0x20}}&lt;
+|2=&amp;gt;{{#invoke:Unicode data |is|whitespace|0xA0}}&lt; NBSP
+|3=&amp;gt;{{#invoke:Unicode data |is|whitespace|0x64}}&lt;
+}}
+| {{ubl
+|1=&amp;gt;&amp;#x20;&lt;
+|2=&amp;gt;&amp;#xA0;&lt;
+|3=&amp;gt;&amp;#x64;&lt;}}&lt;!--
+
+ UNKNOWN -- function application as yet unknown --&gt;
+&lt;!-- Hangul submodule used by &lt;code&gt;|lookup|name&lt;/code&gt; to generate names of characters in the [[Hangul Syllables]] block --&gt;
+
+|-
+| [[Unicode alias names and abbreviations|Alias names]]
+| {{code|1={{!}}aliases}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=&amp;#x;
+|2=&amp;#x;}}
+
+|-
+| Combining class
+| {{code|1={{!}}}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=&amp;#x;
+|2=&amp;#x;}}
+
+|-
+| Age
+| {{code|1={{!}}}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=
+|2=}}
+
+|-
+| get_best_script
+| {{code|1={{!}}get_best_script}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=
+|2=}}
+
+|}
+
+==Data modules==
+The data used by functions in this module is found in [[Special:PrefixIndex/Module:Unicode data/|submodules]]. Some are generated by [[:en:AWK|AWK]] scripts shown at [[wikt:User:Kephir/Unicode|User:Kephir/Unicode]] on English Wiktionary, others by Lua scripts on the &lt;code&gt;/make&lt;/code&gt; subpages of the submodules.
+* [[Module:Unicode data/age]]: 'Age' of a character, that is: version introduction number.
+* [[Module:Unicode data/aliases]]: the formal name aliases for characters (from [https://www.unicode.org/Public/UNIDATA/NameAliases.txt NameAliases.txt])
+* [[Module:Unicode data/blocks]]: the list of Unicode blocks (from [https://www.unicode.org/Public/UNIDATA/Blocks.txt Blocks.txt])
+* [[Module:Unicode data/category]]: data mapping characters to their General Category (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedGeneralCategory.txt DerivedGeneralCategory.txt])
+* [[Module:Unicode data/combining]]: data mapping characters to their Combining Classes (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedCombiningClass.txt DerivedCombiningClass.txt])
+* [[Module:Unicode data/control]]: data for identifying characters that belong to the General Categories of Separator and Other (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedGeneralCategory.txt DerivedGeneralCategory.txt])
+* [[Module:Unicode data/derived core properties]]:
+* [[Module:Unicode data/Hangul]]: data used to generate the names of [[:en:Hangul|Hangul]] syllables (from [https://www.unicode.org/Public/UNIDATA/Jamo.txt Jamo.txt])
+* [[Special:PrefixIndex/Module:Unicode data/names|Module:Unicode data/names/&lt;nowiki&gt;*&lt;/nowiki&gt;]] ({{mono|000hh, .., 0E0hh}}; eg [[:Module:Unicode data/names/000|../names/000]]): names
+* [[Module:Unicode data/scripts]]: data mapping characters to their Unicode script properties (from [https://www.unicode.org/Public/UNIDATA/Scripts.txt Scripts.txt]).
+
+The name data modules ([[Special:PrefixIndex/Module:Unicode data/names/|Module:Unicode data/names/&lt;var&gt;xxx&lt;/var&gt;]]) were compiled from [https://www.unicode.org/Public/UNIDATA/UnicodeData.txt UnicodeData.txt]. Each one contains, at maximum, code points U+xxx000 to U+xxxFFF.
+{{#invoke:Unicode data/documentation functions|show_modules}}
+
+==Copyright==
+The Unicode database is released by Unicode Inc. under the following terms:
+
+&lt;blockquote&gt;
+Copyright © 1991-2018 Unicode, Inc. All rights reserved. Distributed under the Terms of Use in https://www.unicode.org/copyright.html.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of the Unicode data files and any associated documentation (the "Data Files") or Unicode software and any associated documentation (the "Software") to deal in the Data Files or Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, and/or sell copies of the Data Files or Software, and to permit persons to whom the Data Files or Software are furnished to do so, provided that either (a) this copyright and permission notice appear with all copies of the Data Files or Software, or (b) this copyright and permission notice appear in associated Documentation.
+
+THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THE DATA FILES OR SOFTWARE.
+
+Except as contained in this notice, the name of a copyright holder shall not be used in advertising or otherwise to promote the sale, use or other dealings in these Data Files or Software without prior written authorization of the copyright holder.
+&lt;/blockquote&gt;
+
+==Known issues==
+* Reading data like &lt;code&gt;[[:Module:Unicode data/aliases]]&lt;/code&gt; not provided nor documented
+* Test fail: &lt;code&gt;lookup_category&lt;/code&gt; {{mono|U+FFFF}} (&amp;lt;noncharacter-FFFF&gt;) expected: Cn.
+::&lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|category|0xFFFF}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|category|0xFFFF}} [Nil]
+
+==See also==
+* '''Named entities''': for example, {{unichar|22C1|N-ARY LOGICAL OR}}: &lt;code&gt;&lt;nowiki&gt;{{#&lt;/nowiki&gt;invoke:[[:Module:LoadData|LoadData]]|[[:Module:Numcr2namecr|Numcr2namecr]]|0x22C1}}&lt;/code&gt; &amp;rarr; {{#invoke:LoadData|Numcr2namecr|0x22C1}}
+&lt;includeonly&gt;{{sandbox other| |
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:Unicode character modules|Data]]
+[[Category:Lua metamodules]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>s0o4edr9d5moqhas14rnievl4t9dvnt</sha1>
+    </revision>
+    <revision>
+      <id>916593</id>
+      <parentid>916592</parentid>
+      <timestamp>2025-05-24T13:11:22Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>916593</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="13507" sha1="ighdlhxqboythdki0n20wi0moptktre" xml:space="preserve">&lt;!-- Please place categories where indicated at the bottom of this page and interwikis at Wikidata (see [[Wikipedia:Wikidata]]) --&gt;
+{{#ifeq: {{SUBPAGENAME}} | sandbox
+  | {{#invoke: Unicode_data/testcases | run_tests}}
+  | {{high risk}}{{cascade-protected template|page=module}}
+  }}
+
+== Usage ==
+This module provides functions that access information on Unicode code points. The information is retrieved from data modules generated from the [https://www.unicode.org/Public/UNIDATA/ Unicode Character Database], or derived by rules given in the [https://www.unicode.org/versions/Unicode11.0.0/UnicodeStandard-11.0.pdf Unicode Specification]. It and its submodules were copied from English Wiktionary and then modified; see [[wikt:Module:Unicode data|there]] for more information.
+
+==Parameters and functions==
+===code point===
+The code point is to be entered as '''hexadecimal value'''. For example, {{unichar|A9|COPYRIGHT SIGN}}:
+:{{mono|1={{!}}A9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0xA9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0x00A9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0x00a9&lt;sub&gt;hex&lt;/sub&gt;}}
+:&lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|0x00A9}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|name|0x00A9}}
+
+Incorrect or unintended results:
+:{{mono|1=169&lt;sub&gt;dec&lt;/sub&gt;}}: &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|169}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|name|169}} {{nay}} &amp;mdash;"U+00A9" {{code|1=&amp;copy;}} expected; but is read as {{mono|1=00A9&lt;sub&gt;hex&lt;/sub&gt;}}&amp;nbsp;(that is,&amp;nbsp;{{mono|1={{hex2dec|169}}&lt;sub&gt;dec&lt;/sub&gt;}}
+:{{mono|1=U+00A9}} &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|U+00A9}}&lt;/nowiki&gt;&lt;/code&gt; {{nay}} &amp;mdash;do not use "U+" prefix
+:{{mono|1=غ}} &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|غ}}&lt;/nowiki&gt;&lt;/code&gt; {{nay}} &amp;mdash;cannot enter a character as codepoint
+
+==="{{mono|lookup}}" and "{{mono|1=is}}" functions===
+; {{code|lang=lua|lookup, is}}: Template-invokable functions that allow access to the functions starting with &lt;code&gt;lookup&lt;/code&gt; and &lt;code&gt;is&lt;/code&gt;.For most of the functions, add the code point in hexadecimal base as the next parameter. For &lt;code&gt;is{{!}}Latin&lt;/code&gt;, &lt;code&gt;is{{!}}rtl&lt;/code&gt;, and &lt;code&gt;is{{!}}valid_pagename&lt;/code&gt;, add character string. [[:en:HTML character references|HTML character references]] in the text are decoded by the module into code points.
+:For example, {{tnull|&amp;#35;invoke:Unicode data|is|Latin|àzàhàr̃iyyā̀}} &amp;rarr; {{#invoke:Unicode data|is|Latin|àzàhàr̃iyyā̀}}.
+
+:Internally, in modules, these functions are named using underscore: {{code|lang=lua|lookup_name{{!}}code point}} &amp;larr; {{code|lang=lua|lookup_name}}
+:For &lt;code&gt;&amp;amp;A9;&lt;/code&gt; &lt;big&gt;&amp;#xA9;&lt;/big&gt;: {{tnull|&amp;#35;invoke:Unicode data|lookup|name|A9}}&amp;nbsp;&amp;rarr; {{#invoke:Unicode data|lookup|name|A9}}
+
+==Functions overview==
+* Code points: enter hexadecimal value, for example {{mxt|1={{!}}0x0061}} or {{mxt|1={{!}}61}}; not {{!mxt|1={{!}}U+0061}}.
+{| class="wikitable sortable" style="font-size:90%; vertical-align:top;"
+
+|-
+! Topic
+! Function
+! style="border-right:2px solid grey" | Parameter type&lt;br/&gt;&lt;small&gt;(string=by character(s); c.p. by {{mono|0xHex}} value)&lt;/small&gt;
+! Example
+! Returns
+! Character
+&lt;!--
+ LOOKUP - lookup{{!}} functions ----- ----- ----- ----- ----- ----- ----- ----- --&gt;
+|-
+| Unicode character name
+| {{code|1={{!}}lookup{{!}}name}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|name|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|name|0x0007}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|name|0xA9}}
+|2={{#invoke:Unicode data |lookup|name|0x0007}}
+}}
+
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x0007;}} 
+
+|-
+| [[Script (Unicode)|Scripts]]
+| {{code|1={{!}}lookup{{!}}script}}
+| code point
+| {{tnull|&amp;#35;invoke:Unicode data |lookup|script|A061}}
+| {{#invoke:Unicode data |lookup|script|A061}}
+| {{ubl
+|1=&amp;#xA061;
+|2=}}
+
+|-
+| [[:en:Block (Unicode)|Blocks]]
+| {{code|1={{!}}lookup{{!}}block}}
+| code point
+| {{tnull|&amp;#35;invoke:Unicode data |lookup|block|A061}}
+| {{#invoke:Unicode data |lookup|block|A061}}
+| {{ubl
+|1=&amp;#xA061;
+|2=}}
+
+|-
+| [[:en:Plane (Unicode)|Planes]]
+| {{code|1={{!}}lookup{{!}}plane}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|plane|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|plane|0x1F608}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|plane|0xA9}}
+|2={{#invoke:Unicode data |lookup|plane|0x1F608}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x1F608;}} 
+
+
+|-
+| [[Unicode_character_property#General_Category|General Category]]
+| {{code|1={{!}}lookup{{!}}category}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|category|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|category|0x002B}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|category|0xA9}}
+|2={{#invoke:Unicode data |lookup|category|0x002B}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x002B;}} 
+
+|- style="border-bottom:2px solid grey;"
+| Controls
+| {{code|1={{!}}is{{!}}control}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|control|A9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|control|FFFF}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|control|A9}}
+|2={{#invoke:Unicode data |lookup|control|FFFF}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#xFFFF;}}
+&lt;!--
+ ID - is{{!}} functions ----- ----- ----- ----- ----- ----- ----- ----- --&gt;
+|- 
+| [[:en:Latin script|Latin script]]
+|{{code|1={{!}}is{{!}}Latin}}
+| string
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|Latin|abcŁíā̀}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|Latin|abc文xyz}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|Latin|abc}}
+|2={{#invoke:Unicode data |is|Latin|abc文xyz}}
+}}
+| 
+
+|-
+| [[Wikipedia:Article titles|WP:Article title]] &lt;small&gt;([[WP:NCTR]])&lt;/small&gt;
+| {{code|1={{!}}is{{!}}valid_pagename}}
+| string
+| {{ubli
+|1={{tnull|&amp;#35;invoke:Unicode data |is|valid_pagename|Main_page}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|valid_pagename|#&amp;nbsp;(disambiguation)}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|valid_pagename|Main_page}}
+|2={{#invoke:Unicode data |is|valid_pagename|# (disambiguation)}}
+}}
+|
+
+|-
+| [[:en:Bidirectional text|Bidirectionality]], right-to-left&amp;nbsp;scripts
+| {{code|1={{!}}is{{!}}rtl}}
+| string
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|rtl|ش}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|rtl|34}}
+}}
+| {{ubli
+|1={{#invoke:Unicode data |is|rtl|ش}}
+|2={{#invoke:Unicode data |is|rtl|&amp;#x34;}}
+}}
+| {{ubl
+|1=&amp;#x0634;
+|2=&amp;#x34;}} 
+
+|-
+| [[:en:Combining character|Combining character]]
+| {{code|1={{!}}is{{!}}combining}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|combining|0300}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|combining|64}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|combining|0300}}
+|2={{#invoke:Unicode data |is|combining|64}}
+}}
+| {{ubl
+|1=&amp;#x0300;
+|2=&amp;#x64;}} 
+
+|-
+| Character assignation
+| {{code|1={{!}}is{{!}}assigned}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|assigned|A061}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|assigned|FFEF}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|assigned|A061}}
+|2={{#invoke:Unicode data |is|assigned|FFEF}}
+}}
+| {{ubl
+|1=&amp;#xA061;
+|2=;}} 
+
+|-
+| Printable&lt;!-- control: assigned or space-separator --&gt;
+| {{code|1={{!}}is{{!}}printable}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|printable|0061}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|printable|0007}}
+|3={{tnull|&amp;#35;invoke:Unicode data |is|printable|FFFF}}
+}}
+| {{ubl
+|1=&gt;{{#invoke:Unicode data |is|printable|0061}}&lt;
+|2=&gt;{{#invoke:Unicode data |is|printable|0007}}&lt;
+|3=&gt;{{#invoke:Unicode data |is|printable|FFFF}}&lt;
+}}
+| {{ubl
+|1=&gt;&amp;#x0061;&lt;
+|2=&gt;&amp;#x0007;&lt;
+|3=&gt;&amp;#xFFFF;&lt;
+}}
+
+|-
+| {{slink|Whitespace_character|Unicode}}
+| {{code|1={{!}}is{{!}}whitespace}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0x20}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0xA0}}
+|3={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0x64}}
+}}
+| {{ubl
+|1=&amp;gt;{{#invoke:Unicode data |is|whitespace|0x20}}&lt;
+|2=&amp;gt;{{#invoke:Unicode data |is|whitespace|0xA0}}&lt; NBSP
+|3=&amp;gt;{{#invoke:Unicode data |is|whitespace|0x64}}&lt;
+}}
+| {{ubl
+|1=&amp;gt;&amp;#x20;&lt;
+|2=&amp;gt;&amp;#xA0;&lt;
+|3=&amp;gt;&amp;#x64;&lt;}}&lt;!--
+
+ UNKNOWN -- function application as yet unknown --&gt;
+&lt;!-- Hangul submodule used by &lt;code&gt;|lookup|name&lt;/code&gt; to generate names of characters in the [[Hangul Syllables]] block --&gt;
+
+|-
+| [[Unicode alias names and abbreviations|Alias names]]
+| {{code|1={{!}}aliases}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=&amp;#x;
+|2=&amp;#x;}}
+
+|-
+| Combining class
+| {{code|1={{!}}}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=&amp;#x;
+|2=&amp;#x;}}
+
+|-
+| Age
+| {{code|1={{!}}}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=
+|2=}}
+
+|-
+| get_best_script
+| {{code|1={{!}}get_best_script}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=
+|2=}}
+
+|}
+
+==Data modules==
+The data used by functions in this module is found in [[Special:PrefixIndex/Module:Unicode data/|submodules]]. Some are generated by [[:en:AWK|AWK]] scripts shown at [[wikt:User:Kephir/Unicode|User:Kephir/Unicode]] on English Wiktionary, others by Lua scripts on the &lt;code&gt;/make&lt;/code&gt; subpages of the submodules.
+* [[Module:Unicode data/age]]: 'Age' of a character, that is: version introduction number.
+* [[Module:Unicode data/aliases]]: the formal name aliases for characters (from [https://www.unicode.org/Public/UNIDATA/NameAliases.txt NameAliases.txt])
+* [[Module:Unicode data/blocks]]: the list of Unicode blocks (from [https://www.unicode.org/Public/UNIDATA/Blocks.txt Blocks.txt])
+* [[Module:Unicode data/category]]: data mapping characters to their General Category (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedGeneralCategory.txt DerivedGeneralCategory.txt])
+* [[Module:Unicode data/combining]]: data mapping characters to their Combining Classes (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedCombiningClass.txt DerivedCombiningClass.txt])
+* [[Module:Unicode data/control]]: data for identifying characters that belong to the General Categories of Separator and Other (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedGeneralCategory.txt DerivedGeneralCategory.txt])
+* [[Module:Unicode data/derived core properties]]:
+* [[Module:Unicode data/Hangul]]: data used to generate the names of [[:en:Hangul|Hangul]] syllables (from [https://www.unicode.org/Public/UNIDATA/Jamo.txt Jamo.txt])
+* [[Special:PrefixIndex/Module:Unicode data/names|Module:Unicode data/names/&lt;nowiki&gt;*&lt;/nowiki&gt;]] ({{mono|000hh, .., 0E0hh}}; eg [[:Module:Unicode data/names/000|../names/000]]): names
+* [[Module:Unicode data/scripts]]: data mapping characters to their Unicode script properties (from [https://www.unicode.org/Public/UNIDATA/Scripts.txt Scripts.txt]).
+
+The name data modules ([[Special:PrefixIndex/Module:Unicode data/names/|Module:Unicode data/names/&lt;var&gt;xxx&lt;/var&gt;]]) were compiled from [https://www.unicode.org/Public/UNIDATA/UnicodeData.txt UnicodeData.txt]. Each one contains, at maximum, code points U+xxx000 to U+xxxFFF.
+{{#invoke:Unicode data/documentation functions|show_modules}}
+
+==Copyright==
+The Unicode database is released by Unicode Inc. under the following terms:
+
+&lt;blockquote&gt;
+Copyright © 1991-2018 Unicode, Inc. All rights reserved. Distributed under the Terms of Use in https://www.unicode.org/copyright.html.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of the Unicode data files and any associated documentation (the "Data Files") or Unicode software and any associated documentation (the "Software") to deal in the Data Files or Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, and/or sell copies of the Data Files or Software, and to permit persons to whom the Data Files or Software are furnished to do so, provided that either (a) this copyright and permission notice appear with all copies of the Data Files or Software, or (b) this copyright and permission notice appear in associated Documentation.
+
+THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THE DATA FILES OR SOFTWARE.
+
+Except as contained in this notice, the name of a copyright holder shall not be used in advertising or otherwise to promote the sale, use or other dealings in these Data Files or Software without prior written authorization of the copyright holder.
+&lt;/blockquote&gt;
+
+==Known issues==
+* Reading data like &lt;code&gt;[[:Module:Unicode data/aliases]]&lt;/code&gt; not provided nor documented
+* Test fail: &lt;code&gt;lookup_category&lt;/code&gt; {{mono|U+FFFF}} (&amp;lt;noncharacter-FFFF&gt;) expected: Cn.
+::&lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|category|0xFFFF}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|category|0xFFFF}} [Nil]
+
+==See also==
+* '''Named entities''': for example, {{unichar|22C1|N-ARY LOGICAL OR}}: &lt;code&gt;&lt;nowiki&gt;{{#&lt;/nowiki&gt;invoke:[[:Module:LoadData|LoadData]]|[[:Module:Numcr2namecr|Numcr2namecr]]|0x22C1}}&lt;/code&gt; &amp;rarr; {{#invoke:LoadData|Numcr2namecr|0x22C1}}
+&lt;includeonly&gt;{{sandbox other| |
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:Unicode character modules|Data]]
+[[Category:Lua metamodules]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>ighdlhxqboythdki0n20wi0moptktre</sha1>
+    </revision>
+    <revision>
+      <id>916594</id>
+      <parentid>916593</parentid>
+      <timestamp>2025-05-24T20:14:24Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>916594</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="13511" sha1="ob6kr9ihkzfcwia2x3iwp9yfff21955" xml:space="preserve">&lt;!-- Please place categories where indicated at the bottom of this page and interwikis at Wikidata (see [[Wikipedia:Wikidata]]) --&gt;
+{{#ifeq: {{SUBPAGENAME}} | sandbox
+  | {{#invoke: Unicode_data/testcases | run_tests}}
+  | {{high risk}}{{cascade-protected template|page=module}}
+  }}
+
+== Usage ==
+This module provides functions that access information on Unicode code points. The information is retrieved from data modules generated from the [https://www.unicode.org/Public/UNIDATA/ Unicode Character Database], or derived by rules given in the [https://www.unicode.org/versions/Unicode11.0.0/UnicodeStandard-11.0.pdf Unicode Specification]. It and its submodules were copied from English Wiktionary and then modified; see [[wikt:Module:Unicode data|there]] for more information.
+
+==Parameters and functions==
+===code point===
+The code point is to be entered as '''hexadecimal value'''. For example, {{unichar|A9|COPYRIGHT SIGN}}:
+:{{mono|1={{!}}A9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0xA9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0x00A9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0x00a9&lt;sub&gt;hex&lt;/sub&gt;}}
+:&lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|0x00A9}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|name|0x00A9}}
+
+Incorrect or unintended results:
+:{{mono|1=169&lt;sub&gt;dec&lt;/sub&gt;}}: &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|169}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|name|169}} {{nay}} &amp;mdash;"U+00A9" {{code|1=&amp;copy;}} expected; but is read as {{mono|1=00A9&lt;sub&gt;hex&lt;/sub&gt;}}&amp;nbsp;(that is,&amp;nbsp;{{mono|1={{hex2dec|169}}&lt;sub&gt;dec&lt;/sub&gt;}}
+:{{mono|1=U+00A9}} &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|U+00A9}}&lt;/nowiki&gt;&lt;/code&gt; {{nay}} &amp;mdash;do not use "U+" prefix
+:{{mono|1=غ}} &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|غ}}&lt;/nowiki&gt;&lt;/code&gt; {{nay}} &amp;mdash;cannot enter a character as codepoint
+
+==="{{mono|lookup}}" and "{{mono|1=is}}" functions===
+; {{code|lang=lua|lookup, is}}: Template-invokable functions that allow access to the functions starting with &lt;code&gt;lookup&lt;/code&gt; and &lt;code&gt;is&lt;/code&gt;.For most of the functions, add the code point in hexadecimal base as the next parameter. For &lt;code&gt;is{{!}}Latin&lt;/code&gt;, &lt;code&gt;is{{!}}rtl&lt;/code&gt;, and &lt;code&gt;is{{!}}valid_pagename&lt;/code&gt;, add character string. [[:en:HTML character references|HTML character references]] in the text are decoded by the module into code points.
+:For example, {{tnull|&amp;#35;invoke:Unicode data|is|Latin|àzàhàr̃iyyā̀}} &amp;rarr; {{#invoke:Unicode data|is|Latin|àzàhàr̃iyyā̀}}.
+
+:Internally, in modules, these functions are named using underscore: {{code|lang=lua|lookup_name{{!}}code point}} &amp;larr; {{code|lang=lua|lookup_name}}
+:For &lt;code&gt;&amp;amp;A9;&lt;/code&gt; &lt;big&gt;&amp;#xA9;&lt;/big&gt;: {{tnull|&amp;#35;invoke:Unicode data|lookup|name|A9}}&amp;nbsp;&amp;rarr; {{#invoke:Unicode data|lookup|name|A9}}
+
+==Functions overview==
+* Code points: enter hexadecimal value, for example {{mxt|1={{!}}0x0061}} or {{mxt|1={{!}}61}}; not {{!mxt|1={{!}}U+0061}}.
+{| class="wikitable sortable" style="font-size:90%; vertical-align:top;"
+
+|-
+! Topic
+! Function
+! style="border-right:2px solid grey" | Parameter type&lt;br/&gt;&lt;small&gt;(string=by character(s); c.p. by {{mono|0xHex}} value)&lt;/small&gt;
+! Example
+! Returns
+! Character
+&lt;!--
+ LOOKUP - lookup{{!}} functions ----- ----- ----- ----- ----- ----- ----- ----- --&gt;
+|-
+| Unicode character name
+| {{code|1={{!}}lookup{{!}}name}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|name|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|name|0x0007}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|name|0xA9}}
+|2={{#invoke:Unicode data |lookup|name|0x0007}}
+}}
+
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x0007;}} 
+
+|-
+| [[Script (Unicode)|Scripts]]
+| {{code|1={{!}}lookup{{!}}script}}
+| code point
+| {{tnull|&amp;#35;invoke:Unicode data |lookup|script|A061}}
+| {{#invoke:Unicode data |lookup|script|A061}}
+| {{ubl
+|1=&amp;#xA061;
+|2=}}
+
+|-
+| [[:en:Block (Unicode)|Blocks]]
+| {{code|1={{!}}lookup{{!}}block}}
+| code point
+| {{tnull|&amp;#35;invoke:Unicode data |lookup|block|A061}}
+| {{#invoke:Unicode data |lookup|block|A061}}
+| {{ubl
+|1=&amp;#xA061;
+|2=}}
+
+|-
+| [[:en:Plane (Unicode)|Planes]]
+| {{code|1={{!}}lookup{{!}}plane}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|plane|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|plane|0x1F608}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|plane|0xA9}}
+|2={{#invoke:Unicode data |lookup|plane|0x1F608}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x1F608;}} 
+
+
+|-
+| [[Unicode_character_property#General_Category|General Category]]
+| {{code|1={{!}}lookup{{!}}category}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|category|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|category|0x002B}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|category|0xA9}}
+|2={{#invoke:Unicode data |lookup|category|0x002B}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x002B;}} 
+
+|- style="border-bottom:2px solid grey;"
+| Controls
+| {{code|1={{!}}is{{!}}control}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|control|A9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|control|FFFF}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|control|A9}}
+|2={{#invoke:Unicode data |lookup|control|FFFF}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#xFFFF;}}
+&lt;!--
+ ID - is{{!}} functions ----- ----- ----- ----- ----- ----- ----- ----- --&gt;
+|- 
+| [[:en:Latin script|Latin script]]
+|{{code|1={{!}}is{{!}}Latin}}
+| string
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|Latin|abcŁíā̀}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|Latin|abc文xyz}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|Latin|abc}}
+|2={{#invoke:Unicode data |is|Latin|abc文xyz}}
+}}
+| 
+
+|-
+| [[Wikipedia:Article titles|WP:Article title]] &lt;small&gt;([[WP:NCTR]])&lt;/small&gt;
+| {{code|1={{!}}is{{!}}valid_pagename}}
+| string
+| {{ubli
+|1={{tnull|&amp;#35;invoke:Unicode data |is|valid_pagename|Main_page}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|valid_pagename|#&amp;nbsp;(disambiguation)}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|valid_pagename|Main_page}}
+|2={{#invoke:Unicode data |is|valid_pagename|# (disambiguation)}}
+}}
+|
+
+|-
+| [[:en:Bidirectional text|Bidirectionality]], right-to-left&amp;nbsp;scripts
+| {{code|1={{!}}is{{!}}rtl}}
+| string
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|rtl|ش}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|rtl|34}}
+}}
+| {{ubli
+|1={{#invoke:Unicode data |is|rtl|ش}}
+|2={{#invoke:Unicode data |is|rtl|&amp;#x34;}}
+}}
+| {{ubl
+|1=&amp;#x0634;
+|2=&amp;#x34;}} 
+
+|-
+| [[:en:Combining character|Combining character]]
+| {{code|1={{!}}is{{!}}combining}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|combining|0300}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|combining|64}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|combining|0300}}
+|2={{#invoke:Unicode data |is|combining|64}}
+}}
+| {{ubl
+|1=&amp;#x0300;
+|2=&amp;#x64;}} 
+
+|-
+| Character assignation
+| {{code|1={{!}}is{{!}}assigned}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|assigned|A061}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|assigned|FFEF}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|assigned|A061}}
+|2={{#invoke:Unicode data |is|assigned|FFEF}}
+}}
+| {{ubl
+|1=&amp;#xA061;
+|2=;}} 
+
+|-
+| Printable&lt;!-- control: assigned or space-separator --&gt;
+| {{code|1={{!}}is{{!}}printable}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|printable|0061}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|printable|0007}}
+|3={{tnull|&amp;#35;invoke:Unicode data |is|printable|FFFF}}
+}}
+| {{ubl
+|1=&gt;{{#invoke:Unicode data |is|printable|0061}}&lt;
+|2=&gt;{{#invoke:Unicode data |is|printable|0007}}&lt;
+|3=&gt;{{#invoke:Unicode data |is|printable|FFFF}}&lt;
+}}
+| {{ubl
+|1=&gt;&amp;#x0061;&lt;
+|2=&gt;&amp;#x0007;&lt;
+|3=&gt;&amp;#xFFFF;&lt;
+}}
+
+|-
+| {{slink|Whitespace_character|Unicode}}
+| {{code|1={{!}}is{{!}}whitespace}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0x20}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0xA0}}
+|3={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0x64}}
+}}
+| {{ubl
+|1=&amp;gt;{{#invoke:Unicode data |is|whitespace|0x20}}&lt;
+|2=&amp;gt;{{#invoke:Unicode data |is|whitespace|0xA0}}&lt; NBSP
+|3=&amp;gt;{{#invoke:Unicode data |is|whitespace|0x64}}&lt;
+}}
+| {{ubl
+|1=&amp;gt;&amp;#x20;&lt;
+|2=&amp;gt;&amp;#xA0;&lt;
+|3=&amp;gt;&amp;#x64;&lt;}}&lt;!--
+
+ UNKNOWN -- function application as yet unknown --&gt;
+&lt;!-- Hangul submodule used by &lt;code&gt;|lookup|name&lt;/code&gt; to generate names of characters in the [[Hangul Syllables]] block --&gt;
+
+|-
+| [[:en:Unicode alias names and abbreviations|Alias names]]
+| {{code|1={{!}}aliases}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=&amp;#x;
+|2=&amp;#x;}}
+
+|-
+| Combining class
+| {{code|1={{!}}}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=&amp;#x;
+|2=&amp;#x;}}
+
+|-
+| Age
+| {{code|1={{!}}}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=
+|2=}}
+
+|-
+| get_best_script
+| {{code|1={{!}}get_best_script}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=
+|2=}}
+
+|}
+
+==Data modules==
+The data used by functions in this module is found in [[Special:PrefixIndex/Module:Unicode data/|submodules]]. Some are generated by [[:en:AWK|AWK]] scripts shown at [[wikt:User:Kephir/Unicode|User:Kephir/Unicode]] on English Wiktionary, others by Lua scripts on the &lt;code&gt;/make&lt;/code&gt; subpages of the submodules.
+* [[Module:Unicode data/age]]: 'Age' of a character, that is: version introduction number.
+* [[Module:Unicode data/aliases]]: the formal name aliases for characters (from [https://www.unicode.org/Public/UNIDATA/NameAliases.txt NameAliases.txt])
+* [[Module:Unicode data/blocks]]: the list of Unicode blocks (from [https://www.unicode.org/Public/UNIDATA/Blocks.txt Blocks.txt])
+* [[Module:Unicode data/category]]: data mapping characters to their General Category (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedGeneralCategory.txt DerivedGeneralCategory.txt])
+* [[Module:Unicode data/combining]]: data mapping characters to their Combining Classes (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedCombiningClass.txt DerivedCombiningClass.txt])
+* [[Module:Unicode data/control]]: data for identifying characters that belong to the General Categories of Separator and Other (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedGeneralCategory.txt DerivedGeneralCategory.txt])
+* [[Module:Unicode data/derived core properties]]:
+* [[Module:Unicode data/Hangul]]: data used to generate the names of [[:en:Hangul|Hangul]] syllables (from [https://www.unicode.org/Public/UNIDATA/Jamo.txt Jamo.txt])
+* [[Special:PrefixIndex/Module:Unicode data/names|Module:Unicode data/names/&lt;nowiki&gt;*&lt;/nowiki&gt;]] ({{mono|000hh, .., 0E0hh}}; eg [[:Module:Unicode data/names/000|../names/000]]): names
+* [[Module:Unicode data/scripts]]: data mapping characters to their Unicode script properties (from [https://www.unicode.org/Public/UNIDATA/Scripts.txt Scripts.txt]).
+
+The name data modules ([[Special:PrefixIndex/Module:Unicode data/names/|Module:Unicode data/names/&lt;var&gt;xxx&lt;/var&gt;]]) were compiled from [https://www.unicode.org/Public/UNIDATA/UnicodeData.txt UnicodeData.txt]. Each one contains, at maximum, code points U+xxx000 to U+xxxFFF.
+{{#invoke:Unicode data/documentation functions|show_modules}}
+
+==Copyright==
+The Unicode database is released by Unicode Inc. under the following terms:
+
+&lt;blockquote&gt;
+Copyright © 1991-2018 Unicode, Inc. All rights reserved. Distributed under the Terms of Use in https://www.unicode.org/copyright.html.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of the Unicode data files and any associated documentation (the "Data Files") or Unicode software and any associated documentation (the "Software") to deal in the Data Files or Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, and/or sell copies of the Data Files or Software, and to permit persons to whom the Data Files or Software are furnished to do so, provided that either (a) this copyright and permission notice appear with all copies of the Data Files or Software, or (b) this copyright and permission notice appear in associated Documentation.
+
+THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THE DATA FILES OR SOFTWARE.
+
+Except as contained in this notice, the name of a copyright holder shall not be used in advertising or otherwise to promote the sale, use or other dealings in these Data Files or Software without prior written authorization of the copyright holder.
+&lt;/blockquote&gt;
+
+==Known issues==
+* Reading data like &lt;code&gt;[[:Module:Unicode data/aliases]]&lt;/code&gt; not provided nor documented
+* Test fail: &lt;code&gt;lookup_category&lt;/code&gt; {{mono|U+FFFF}} (&amp;lt;noncharacter-FFFF&gt;) expected: Cn.
+::&lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|category|0xFFFF}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|category|0xFFFF}} [Nil]
+
+==See also==
+* '''Named entities''': for example, {{unichar|22C1|N-ARY LOGICAL OR}}: &lt;code&gt;&lt;nowiki&gt;{{#&lt;/nowiki&gt;invoke:[[:Module:LoadData|LoadData]]|[[:Module:Numcr2namecr|Numcr2namecr]]|0x22C1}}&lt;/code&gt; &amp;rarr; {{#invoke:LoadData|Numcr2namecr|0x22C1}}
+&lt;includeonly&gt;{{sandbox other| |
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:Unicode character modules|Data]]
+[[Category:Lua metamodules]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>ob6kr9ihkzfcwia2x3iwp9yfff21955</sha1>
+    </revision>
+    <revision>
+      <id>916595</id>
+      <parentid>916594</parentid>
+      <timestamp>2025-05-25T00:50:12Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Bot: convert local link → enwiki interwiki</comment>
+      <origin>916595</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="13515" sha1="4hivfmu7auh2blgyodtqd5a3clqfrvg" xml:space="preserve">&lt;!-- Please place categories where indicated at the bottom of this page and interwikis at Wikidata (see [[Wikipedia:Wikidata]]) --&gt;
+{{#ifeq: {{SUBPAGENAME}} | sandbox
+  | {{#invoke: Unicode_data/testcases | run_tests}}
+  | {{high risk}}{{cascade-protected template|page=module}}
+  }}
+
+== Usage ==
+This module provides functions that access information on Unicode code points. The information is retrieved from data modules generated from the [https://www.unicode.org/Public/UNIDATA/ Unicode Character Database], or derived by rules given in the [https://www.unicode.org/versions/Unicode11.0.0/UnicodeStandard-11.0.pdf Unicode Specification]. It and its submodules were copied from English Wiktionary and then modified; see [[wikt:Module:Unicode data|there]] for more information.
+
+==Parameters and functions==
+===code point===
+The code point is to be entered as '''hexadecimal value'''. For example, {{unichar|A9|COPYRIGHT SIGN}}:
+:{{mono|1={{!}}A9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0xA9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0x00A9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0x00a9&lt;sub&gt;hex&lt;/sub&gt;}}
+:&lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|0x00A9}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|name|0x00A9}}
+
+Incorrect or unintended results:
+:{{mono|1=169&lt;sub&gt;dec&lt;/sub&gt;}}: &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|169}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|name|169}} {{nay}} &amp;mdash;"U+00A9" {{code|1=&amp;copy;}} expected; but is read as {{mono|1=00A9&lt;sub&gt;hex&lt;/sub&gt;}}&amp;nbsp;(that is,&amp;nbsp;{{mono|1={{hex2dec|169}}&lt;sub&gt;dec&lt;/sub&gt;}}
+:{{mono|1=U+00A9}} &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|U+00A9}}&lt;/nowiki&gt;&lt;/code&gt; {{nay}} &amp;mdash;do not use "U+" prefix
+:{{mono|1=غ}} &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|غ}}&lt;/nowiki&gt;&lt;/code&gt; {{nay}} &amp;mdash;cannot enter a character as codepoint
+
+==="{{mono|lookup}}" and "{{mono|1=is}}" functions===
+; {{code|lang=lua|lookup, is}}: Template-invokable functions that allow access to the functions starting with &lt;code&gt;lookup&lt;/code&gt; and &lt;code&gt;is&lt;/code&gt;.For most of the functions, add the code point in hexadecimal base as the next parameter. For &lt;code&gt;is{{!}}Latin&lt;/code&gt;, &lt;code&gt;is{{!}}rtl&lt;/code&gt;, and &lt;code&gt;is{{!}}valid_pagename&lt;/code&gt;, add character string. [[:en:HTML character references|HTML character references]] in the text are decoded by the module into code points.
+:For example, {{tnull|&amp;#35;invoke:Unicode data|is|Latin|àzàhàr̃iyyā̀}} &amp;rarr; {{#invoke:Unicode data|is|Latin|àzàhàr̃iyyā̀}}.
+
+:Internally, in modules, these functions are named using underscore: {{code|lang=lua|lookup_name{{!}}code point}} &amp;larr; {{code|lang=lua|lookup_name}}
+:For &lt;code&gt;&amp;amp;A9;&lt;/code&gt; &lt;big&gt;&amp;#xA9;&lt;/big&gt;: {{tnull|&amp;#35;invoke:Unicode data|lookup|name|A9}}&amp;nbsp;&amp;rarr; {{#invoke:Unicode data|lookup|name|A9}}
+
+==Functions overview==
+* Code points: enter hexadecimal value, for example {{mxt|1={{!}}0x0061}} or {{mxt|1={{!}}61}}; not {{!mxt|1={{!}}U+0061}}.
+{| class="wikitable sortable" style="font-size:90%; vertical-align:top;"
+
+|-
+! Topic
+! Function
+! style="border-right:2px solid grey" | Parameter type&lt;br/&gt;&lt;small&gt;(string=by character(s); c.p. by {{mono|0xHex}} value)&lt;/small&gt;
+! Example
+! Returns
+! Character
+&lt;!--
+ LOOKUP - lookup{{!}} functions ----- ----- ----- ----- ----- ----- ----- ----- --&gt;
+|-
+| Unicode character name
+| {{code|1={{!}}lookup{{!}}name}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|name|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|name|0x0007}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|name|0xA9}}
+|2={{#invoke:Unicode data |lookup|name|0x0007}}
+}}
+
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x0007;}} 
+
+|-
+| [[:en:Script (Unicode)|Scripts]]
+| {{code|1={{!}}lookup{{!}}script}}
+| code point
+| {{tnull|&amp;#35;invoke:Unicode data |lookup|script|A061}}
+| {{#invoke:Unicode data |lookup|script|A061}}
+| {{ubl
+|1=&amp;#xA061;
+|2=}}
+
+|-
+| [[:en:Block (Unicode)|Blocks]]
+| {{code|1={{!}}lookup{{!}}block}}
+| code point
+| {{tnull|&amp;#35;invoke:Unicode data |lookup|block|A061}}
+| {{#invoke:Unicode data |lookup|block|A061}}
+| {{ubl
+|1=&amp;#xA061;
+|2=}}
+
+|-
+| [[:en:Plane (Unicode)|Planes]]
+| {{code|1={{!}}lookup{{!}}plane}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|plane|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|plane|0x1F608}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|plane|0xA9}}
+|2={{#invoke:Unicode data |lookup|plane|0x1F608}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x1F608;}} 
+
+
+|-
+| [[Unicode_character_property#General_Category|General Category]]
+| {{code|1={{!}}lookup{{!}}category}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|category|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|category|0x002B}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|category|0xA9}}
+|2={{#invoke:Unicode data |lookup|category|0x002B}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x002B;}} 
+
+|- style="border-bottom:2px solid grey;"
+| Controls
+| {{code|1={{!}}is{{!}}control}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|control|A9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|control|FFFF}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|control|A9}}
+|2={{#invoke:Unicode data |lookup|control|FFFF}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#xFFFF;}}
+&lt;!--
+ ID - is{{!}} functions ----- ----- ----- ----- ----- ----- ----- ----- --&gt;
+|- 
+| [[:en:Latin script|Latin script]]
+|{{code|1={{!}}is{{!}}Latin}}
+| string
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|Latin|abcŁíā̀}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|Latin|abc文xyz}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|Latin|abc}}
+|2={{#invoke:Unicode data |is|Latin|abc文xyz}}
+}}
+| 
+
+|-
+| [[Wikipedia:Article titles|WP:Article title]] &lt;small&gt;([[WP:NCTR]])&lt;/small&gt;
+| {{code|1={{!}}is{{!}}valid_pagename}}
+| string
+| {{ubli
+|1={{tnull|&amp;#35;invoke:Unicode data |is|valid_pagename|Main_page}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|valid_pagename|#&amp;nbsp;(disambiguation)}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|valid_pagename|Main_page}}
+|2={{#invoke:Unicode data |is|valid_pagename|# (disambiguation)}}
+}}
+|
+
+|-
+| [[:en:Bidirectional text|Bidirectionality]], right-to-left&amp;nbsp;scripts
+| {{code|1={{!}}is{{!}}rtl}}
+| string
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|rtl|ش}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|rtl|34}}
+}}
+| {{ubli
+|1={{#invoke:Unicode data |is|rtl|ش}}
+|2={{#invoke:Unicode data |is|rtl|&amp;#x34;}}
+}}
+| {{ubl
+|1=&amp;#x0634;
+|2=&amp;#x34;}} 
+
+|-
+| [[:en:Combining character|Combining character]]
+| {{code|1={{!}}is{{!}}combining}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|combining|0300}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|combining|64}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|combining|0300}}
+|2={{#invoke:Unicode data |is|combining|64}}
+}}
+| {{ubl
+|1=&amp;#x0300;
+|2=&amp;#x64;}} 
+
+|-
+| Character assignation
+| {{code|1={{!}}is{{!}}assigned}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|assigned|A061}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|assigned|FFEF}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|assigned|A061}}
+|2={{#invoke:Unicode data |is|assigned|FFEF}}
+}}
+| {{ubl
+|1=&amp;#xA061;
+|2=;}} 
+
+|-
+| Printable&lt;!-- control: assigned or space-separator --&gt;
+| {{code|1={{!}}is{{!}}printable}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|printable|0061}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|printable|0007}}
+|3={{tnull|&amp;#35;invoke:Unicode data |is|printable|FFFF}}
+}}
+| {{ubl
+|1=&gt;{{#invoke:Unicode data |is|printable|0061}}&lt;
+|2=&gt;{{#invoke:Unicode data |is|printable|0007}}&lt;
+|3=&gt;{{#invoke:Unicode data |is|printable|FFFF}}&lt;
+}}
+| {{ubl
+|1=&gt;&amp;#x0061;&lt;
+|2=&gt;&amp;#x0007;&lt;
+|3=&gt;&amp;#xFFFF;&lt;
+}}
+
+|-
+| {{slink|Whitespace_character|Unicode}}
+| {{code|1={{!}}is{{!}}whitespace}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0x20}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0xA0}}
+|3={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0x64}}
+}}
+| {{ubl
+|1=&amp;gt;{{#invoke:Unicode data |is|whitespace|0x20}}&lt;
+|2=&amp;gt;{{#invoke:Unicode data |is|whitespace|0xA0}}&lt; NBSP
+|3=&amp;gt;{{#invoke:Unicode data |is|whitespace|0x64}}&lt;
+}}
+| {{ubl
+|1=&amp;gt;&amp;#x20;&lt;
+|2=&amp;gt;&amp;#xA0;&lt;
+|3=&amp;gt;&amp;#x64;&lt;}}&lt;!--
+
+ UNKNOWN -- function application as yet unknown --&gt;
+&lt;!-- Hangul submodule used by &lt;code&gt;|lookup|name&lt;/code&gt; to generate names of characters in the [[Hangul Syllables]] block --&gt;
+
+|-
+| [[:en:Unicode alias names and abbreviations|Alias names]]
+| {{code|1={{!}}aliases}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=&amp;#x;
+|2=&amp;#x;}}
+
+|-
+| Combining class
+| {{code|1={{!}}}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=&amp;#x;
+|2=&amp;#x;}}
+
+|-
+| Age
+| {{code|1={{!}}}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=
+|2=}}
+
+|-
+| get_best_script
+| {{code|1={{!}}get_best_script}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=
+|2=}}
+
+|}
+
+==Data modules==
+The data used by functions in this module is found in [[Special:PrefixIndex/Module:Unicode data/|submodules]]. Some are generated by [[:en:AWK|AWK]] scripts shown at [[wikt:User:Kephir/Unicode|User:Kephir/Unicode]] on English Wiktionary, others by Lua scripts on the &lt;code&gt;/make&lt;/code&gt; subpages of the submodules.
+* [[Module:Unicode data/age]]: 'Age' of a character, that is: version introduction number.
+* [[Module:Unicode data/aliases]]: the formal name aliases for characters (from [https://www.unicode.org/Public/UNIDATA/NameAliases.txt NameAliases.txt])
+* [[Module:Unicode data/blocks]]: the list of Unicode blocks (from [https://www.unicode.org/Public/UNIDATA/Blocks.txt Blocks.txt])
+* [[Module:Unicode data/category]]: data mapping characters to their General Category (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedGeneralCategory.txt DerivedGeneralCategory.txt])
+* [[Module:Unicode data/combining]]: data mapping characters to their Combining Classes (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedCombiningClass.txt DerivedCombiningClass.txt])
+* [[Module:Unicode data/control]]: data for identifying characters that belong to the General Categories of Separator and Other (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedGeneralCategory.txt DerivedGeneralCategory.txt])
+* [[Module:Unicode data/derived core properties]]:
+* [[Module:Unicode data/Hangul]]: data used to generate the names of [[:en:Hangul|Hangul]] syllables (from [https://www.unicode.org/Public/UNIDATA/Jamo.txt Jamo.txt])
+* [[Special:PrefixIndex/Module:Unicode data/names|Module:Unicode data/names/&lt;nowiki&gt;*&lt;/nowiki&gt;]] ({{mono|000hh, .., 0E0hh}}; eg [[:Module:Unicode data/names/000|../names/000]]): names
+* [[Module:Unicode data/scripts]]: data mapping characters to their Unicode script properties (from [https://www.unicode.org/Public/UNIDATA/Scripts.txt Scripts.txt]).
+
+The name data modules ([[Special:PrefixIndex/Module:Unicode data/names/|Module:Unicode data/names/&lt;var&gt;xxx&lt;/var&gt;]]) were compiled from [https://www.unicode.org/Public/UNIDATA/UnicodeData.txt UnicodeData.txt]. Each one contains, at maximum, code points U+xxx000 to U+xxxFFF.
+{{#invoke:Unicode data/documentation functions|show_modules}}
+
+==Copyright==
+The Unicode database is released by Unicode Inc. under the following terms:
+
+&lt;blockquote&gt;
+Copyright © 1991-2018 Unicode, Inc. All rights reserved. Distributed under the Terms of Use in https://www.unicode.org/copyright.html.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of the Unicode data files and any associated documentation (the "Data Files") or Unicode software and any associated documentation (the "Software") to deal in the Data Files or Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, and/or sell copies of the Data Files or Software, and to permit persons to whom the Data Files or Software are furnished to do so, provided that either (a) this copyright and permission notice appear with all copies of the Data Files or Software, or (b) this copyright and permission notice appear in associated Documentation.
+
+THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THE DATA FILES OR SOFTWARE.
+
+Except as contained in this notice, the name of a copyright holder shall not be used in advertising or otherwise to promote the sale, use or other dealings in these Data Files or Software without prior written authorization of the copyright holder.
+&lt;/blockquote&gt;
+
+==Known issues==
+* Reading data like &lt;code&gt;[[:Module:Unicode data/aliases]]&lt;/code&gt; not provided nor documented
+* Test fail: &lt;code&gt;lookup_category&lt;/code&gt; {{mono|U+FFFF}} (&amp;lt;noncharacter-FFFF&gt;) expected: Cn.
+::&lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|category|0xFFFF}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|category|0xFFFF}} [Nil]
+
+==See also==
+* '''Named entities''': for example, {{unichar|22C1|N-ARY LOGICAL OR}}: &lt;code&gt;&lt;nowiki&gt;{{#&lt;/nowiki&gt;invoke:[[:Module:LoadData|LoadData]]|[[:Module:Numcr2namecr|Numcr2namecr]]|0x22C1}}&lt;/code&gt; &amp;rarr; {{#invoke:LoadData|Numcr2namecr|0x22C1}}
+&lt;includeonly&gt;{{sandbox other| |
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:Unicode character modules|Data]]
+[[Category:Lua metamodules]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>4hivfmu7auh2blgyodtqd5a3clqfrvg</sha1>
+    </revision>
+    <revision>
+      <id>8272</id>
+      <timestamp>2025-11-22T14:38:08Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Text replacement - "↵↵↵" to "
+"</comment>
+      <origin>8272</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="13513" sha1="dwwxtip5em4h0zkk28877j8wc9rd3ng" xml:space="preserve">&lt;!-- Please place categories where indicated at the bottom of this page and interwikis at Wikidata (see [[Wikipedia:Wikidata]]) --&gt;
+{{#ifeq: {{SUBPAGENAME}} | sandbox
+  | {{#invoke: Unicode_data/testcases | run_tests}}
+  | {{high risk}}{{cascade-protected template|page=module}}
+  }}
+
+== Usage ==
+This module provides functions that access information on Unicode code points. The information is retrieved from data modules generated from the [https://www.unicode.org/Public/UNIDATA/ Unicode Character Database], or derived by rules given in the [https://www.unicode.org/versions/Unicode11.0.0/UnicodeStandard-11.0.pdf Unicode Specification]. It and its submodules were copied from English Wiktionary and then modified; see [[wikt:Module:Unicode data|there]] for more information.
+
+==Parameters and functions==
+===code point===
+The code point is to be entered as '''hexadecimal value'''. For example, {{unichar|A9|COPYRIGHT SIGN}}:
+:{{mono|1={{!}}A9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0xA9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0x00A9&lt;sub&gt;hex&lt;/sub&gt;}}
+:{{mono|1={{!}}0x00a9&lt;sub&gt;hex&lt;/sub&gt;}}
+:&lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|0x00A9}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|name|0x00A9}}
+
+Incorrect or unintended results:
+:{{mono|1=169&lt;sub&gt;dec&lt;/sub&gt;}}: &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|169}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|name|169}} {{nay}} &amp;mdash;"U+00A9" {{code|1=&amp;copy;}} expected; but is read as {{mono|1=00A9&lt;sub&gt;hex&lt;/sub&gt;}}&amp;nbsp;(that is,&amp;nbsp;{{mono|1={{hex2dec|169}}&lt;sub&gt;dec&lt;/sub&gt;}}
+:{{mono|1=U+00A9}} &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|U+00A9}}&lt;/nowiki&gt;&lt;/code&gt; {{nay}} &amp;mdash;do not use "U+" prefix
+:{{mono|1=غ}} &lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|name|غ}}&lt;/nowiki&gt;&lt;/code&gt; {{nay}} &amp;mdash;cannot enter a character as codepoint
+
+==="{{mono|lookup}}" and "{{mono|1=is}}" functions===
+; {{code|lang=lua|lookup, is}}: Template-invokable functions that allow access to the functions starting with &lt;code&gt;lookup&lt;/code&gt; and &lt;code&gt;is&lt;/code&gt;.For most of the functions, add the code point in hexadecimal base as the next parameter. For &lt;code&gt;is{{!}}Latin&lt;/code&gt;, &lt;code&gt;is{{!}}rtl&lt;/code&gt;, and &lt;code&gt;is{{!}}valid_pagename&lt;/code&gt;, add character string. [[:en:HTML character references|HTML character references]] in the text are decoded by the module into code points.
+:For example, {{tnull|&amp;#35;invoke:Unicode data|is|Latin|àzàhàr̃iyyā̀}} &amp;rarr; {{#invoke:Unicode data|is|Latin|àzàhàr̃iyyā̀}}.
+
+:Internally, in modules, these functions are named using underscore: {{code|lang=lua|lookup_name{{!}}code point}} &amp;larr; {{code|lang=lua|lookup_name}}
+:For &lt;code&gt;&amp;amp;A9;&lt;/code&gt; &lt;big&gt;&amp;#xA9;&lt;/big&gt;: {{tnull|&amp;#35;invoke:Unicode data|lookup|name|A9}}&amp;nbsp;&amp;rarr; {{#invoke:Unicode data|lookup|name|A9}}
+
+==Functions overview==
+* Code points: enter hexadecimal value, for example {{mxt|1={{!}}0x0061}} or {{mxt|1={{!}}61}}; not {{!mxt|1={{!}}U+0061}}.
+{| class="wikitable sortable" style="font-size:90%; vertical-align:top;"
+
+|-
+! Topic
+! Function
+! style="border-right:2px solid grey" | Parameter type&lt;br/&gt;&lt;small&gt;(string=by character(s); c.p. by {{mono|0xHex}} value)&lt;/small&gt;
+! Example
+! Returns
+! Character
+&lt;!--
+ LOOKUP - lookup{{!}} functions ----- ----- ----- ----- ----- ----- ----- ----- --&gt;
+|-
+| Unicode character name
+| {{code|1={{!}}lookup{{!}}name}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|name|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|name|0x0007}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|name|0xA9}}
+|2={{#invoke:Unicode data |lookup|name|0x0007}}
+}}
+
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x0007;}} 
+
+|-
+| [[:en:Script (Unicode)|Scripts]]
+| {{code|1={{!}}lookup{{!}}script}}
+| code point
+| {{tnull|&amp;#35;invoke:Unicode data |lookup|script|A061}}
+| {{#invoke:Unicode data |lookup|script|A061}}
+| {{ubl
+|1=&amp;#xA061;
+|2=}}
+
+|-
+| [[:en:Block (Unicode)|Blocks]]
+| {{code|1={{!}}lookup{{!}}block}}
+| code point
+| {{tnull|&amp;#35;invoke:Unicode data |lookup|block|A061}}
+| {{#invoke:Unicode data |lookup|block|A061}}
+| {{ubl
+|1=&amp;#xA061;
+|2=}}
+
+|-
+| [[:en:Plane (Unicode)|Planes]]
+| {{code|1={{!}}lookup{{!}}plane}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|plane|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|plane|0x1F608}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|plane|0xA9}}
+|2={{#invoke:Unicode data |lookup|plane|0x1F608}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x1F608;}} 
+|-
+| [[Unicode_character_property#General_Category|General Category]]
+| {{code|1={{!}}lookup{{!}}category}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|category|0xA9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|category|0x002B}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|category|0xA9}}
+|2={{#invoke:Unicode data |lookup|category|0x002B}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#x002B;}} 
+
+|- style="border-bottom:2px solid grey;"
+| Controls
+| {{code|1={{!}}is{{!}}control}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |lookup|control|A9}}
+|2={{tnull|&amp;#35;invoke:Unicode data |lookup|control|FFFF}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |lookup|control|A9}}
+|2={{#invoke:Unicode data |lookup|control|FFFF}}
+}}
+| {{ubl
+|1=&amp;#xA9;
+|2=&amp;#xFFFF;}}
+&lt;!--
+ ID - is{{!}} functions ----- ----- ----- ----- ----- ----- ----- ----- --&gt;
+|- 
+| [[:en:Latin script|Latin script]]
+|{{code|1={{!}}is{{!}}Latin}}
+| string
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|Latin|abcŁíā̀}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|Latin|abc文xyz}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|Latin|abc}}
+|2={{#invoke:Unicode data |is|Latin|abc文xyz}}
+}}
+| 
+
+|-
+| [[Wikipedia:Article titles|WP:Article title]] &lt;small&gt;([[WP:NCTR]])&lt;/small&gt;
+| {{code|1={{!}}is{{!}}valid_pagename}}
+| string
+| {{ubli
+|1={{tnull|&amp;#35;invoke:Unicode data |is|valid_pagename|Main_page}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|valid_pagename|#&amp;nbsp;(disambiguation)}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|valid_pagename|Main_page}}
+|2={{#invoke:Unicode data |is|valid_pagename|# (disambiguation)}}
+}}
+|
+
+|-
+| [[:en:Bidirectional text|Bidirectionality]], right-to-left&amp;nbsp;scripts
+| {{code|1={{!}}is{{!}}rtl}}
+| string
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|rtl|ش}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|rtl|34}}
+}}
+| {{ubli
+|1={{#invoke:Unicode data |is|rtl|ش}}
+|2={{#invoke:Unicode data |is|rtl|&amp;#x34;}}
+}}
+| {{ubl
+|1=&amp;#x0634;
+|2=&amp;#x34;}} 
+
+|-
+| [[:en:Combining character|Combining character]]
+| {{code|1={{!}}is{{!}}combining}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|combining|0300}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|combining|64}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|combining|0300}}
+|2={{#invoke:Unicode data |is|combining|64}}
+}}
+| {{ubl
+|1=&amp;#x0300;
+|2=&amp;#x64;}} 
+
+|-
+| Character assignation
+| {{code|1={{!}}is{{!}}assigned}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|assigned|A061}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|assigned|FFEF}}
+}}
+| {{ubl
+|1={{#invoke:Unicode data |is|assigned|A061}}
+|2={{#invoke:Unicode data |is|assigned|FFEF}}
+}}
+| {{ubl
+|1=&amp;#xA061;
+|2=;}} 
+
+|-
+| Printable&lt;!-- control: assigned or space-separator --&gt;
+| {{code|1={{!}}is{{!}}printable}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|printable|0061}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|printable|0007}}
+|3={{tnull|&amp;#35;invoke:Unicode data |is|printable|FFFF}}
+}}
+| {{ubl
+|1=&gt;{{#invoke:Unicode data |is|printable|0061}}&lt;
+|2=&gt;{{#invoke:Unicode data |is|printable|0007}}&lt;
+|3=&gt;{{#invoke:Unicode data |is|printable|FFFF}}&lt;
+}}
+| {{ubl
+|1=&gt;&amp;#x0061;&lt;
+|2=&gt;&amp;#x0007;&lt;
+|3=&gt;&amp;#xFFFF;&lt;
+}}
+
+|-
+| {{slink|Whitespace_character|Unicode}}
+| {{code|1={{!}}is{{!}}whitespace}}
+| code point
+| {{ubl
+|1={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0x20}}
+|2={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0xA0}}
+|3={{tnull|&amp;#35;invoke:Unicode data |is|whitespace|0x64}}
+}}
+| {{ubl
+|1=&amp;gt;{{#invoke:Unicode data |is|whitespace|0x20}}&lt;
+|2=&amp;gt;{{#invoke:Unicode data |is|whitespace|0xA0}}&lt; NBSP
+|3=&amp;gt;{{#invoke:Unicode data |is|whitespace|0x64}}&lt;
+}}
+| {{ubl
+|1=&amp;gt;&amp;#x20;&lt;
+|2=&amp;gt;&amp;#xA0;&lt;
+|3=&amp;gt;&amp;#x64;&lt;}}&lt;!--
+
+ UNKNOWN -- function application as yet unknown --&gt;
+&lt;!-- Hangul submodule used by &lt;code&gt;|lookup|name&lt;/code&gt; to generate names of characters in the [[Hangul Syllables]] block --&gt;
+
+|-
+| [[:en:Unicode alias names and abbreviations|Alias names]]
+| {{code|1={{!}}aliases}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=&amp;#x;
+|2=&amp;#x;}}
+
+|-
+| Combining class
+| {{code|1={{!}}}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=&amp;#x;
+|2=&amp;#x;}}
+
+|-
+| Age
+| {{code|1={{!}}}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=
+|2=}}
+
+|-
+| get_best_script
+| {{code|1={{!}}get_best_script}}
+| 
+| [application unknown]
+|
+| {{ubl
+|1=
+|2=}}
+
+|}
+
+==Data modules==
+The data used by functions in this module is found in [[Special:PrefixIndex/Module:Unicode data/|submodules]]. Some are generated by [[:en:AWK|AWK]] scripts shown at [[wikt:User:Kephir/Unicode|User:Kephir/Unicode]] on English Wiktionary, others by Lua scripts on the &lt;code&gt;/make&lt;/code&gt; subpages of the submodules.
+* [[Module:Unicode data/age]]: 'Age' of a character, that is: version introduction number.
+* [[Module:Unicode data/aliases]]: the formal name aliases for characters (from [https://www.unicode.org/Public/UNIDATA/NameAliases.txt NameAliases.txt])
+* [[Module:Unicode data/blocks]]: the list of Unicode blocks (from [https://www.unicode.org/Public/UNIDATA/Blocks.txt Blocks.txt])
+* [[Module:Unicode data/category]]: data mapping characters to their General Category (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedGeneralCategory.txt DerivedGeneralCategory.txt])
+* [[Module:Unicode data/combining]]: data mapping characters to their Combining Classes (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedCombiningClass.txt DerivedCombiningClass.txt])
+* [[Module:Unicode data/control]]: data for identifying characters that belong to the General Categories of Separator and Other (from [https://www.unicode.org/Public/UNIDATA/extracted/DerivedGeneralCategory.txt DerivedGeneralCategory.txt])
+* [[Module:Unicode data/derived core properties]]:
+* [[Module:Unicode data/Hangul]]: data used to generate the names of [[:en:Hangul|Hangul]] syllables (from [https://www.unicode.org/Public/UNIDATA/Jamo.txt Jamo.txt])
+* [[Special:PrefixIndex/Module:Unicode data/names|Module:Unicode data/names/&lt;nowiki&gt;*&lt;/nowiki&gt;]] ({{mono|000hh, .., 0E0hh}}; eg [[:Module:Unicode data/names/000|../names/000]]): names
+* [[Module:Unicode data/scripts]]: data mapping characters to their Unicode script properties (from [https://www.unicode.org/Public/UNIDATA/Scripts.txt Scripts.txt]).
+
+The name data modules ([[Special:PrefixIndex/Module:Unicode data/names/|Module:Unicode data/names/&lt;var&gt;xxx&lt;/var&gt;]]) were compiled from [https://www.unicode.org/Public/UNIDATA/UnicodeData.txt UnicodeData.txt]. Each one contains, at maximum, code points U+xxx000 to U+xxxFFF.
+{{#invoke:Unicode data/documentation functions|show_modules}}
+
+==Copyright==
+The Unicode database is released by Unicode Inc. under the following terms:
+
+&lt;blockquote&gt;
+Copyright © 1991-2018 Unicode, Inc. All rights reserved. Distributed under the Terms of Use in https://www.unicode.org/copyright.html.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of the Unicode data files and any associated documentation (the "Data Files") or Unicode software and any associated documentation (the "Software") to deal in the Data Files or Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, and/or sell copies of the Data Files or Software, and to permit persons to whom the Data Files or Software are furnished to do so, provided that either (a) this copyright and permission notice appear with all copies of the Data Files or Software, or (b) this copyright and permission notice appear in associated Documentation.
+
+THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THE DATA FILES OR SOFTWARE.
+
+Except as contained in this notice, the name of a copyright holder shall not be used in advertising or otherwise to promote the sale, use or other dealings in these Data Files or Software without prior written authorization of the copyright holder.
+&lt;/blockquote&gt;
+
+==Known issues==
+* Reading data like &lt;code&gt;[[:Module:Unicode data/aliases]]&lt;/code&gt; not provided nor documented
+* Test fail: &lt;code&gt;lookup_category&lt;/code&gt; {{mono|U+FFFF}} (&amp;lt;noncharacter-FFFF&gt;) expected: Cn.
+::&lt;code&gt;&lt;nowiki&gt;{{#invoke:Unicode data|lookup|category|0xFFFF}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:Unicode data|lookup|category|0xFFFF}} [Nil]
+
+==See also==
+* '''Named entities''': for example, {{unichar|22C1|N-ARY LOGICAL OR}}: &lt;code&gt;&lt;nowiki&gt;{{#&lt;/nowiki&gt;invoke:[[:Module:LoadData|LoadData]]|[[:Module:Numcr2namecr|Numcr2namecr]]|0x22C1}}&lt;/code&gt; &amp;rarr; {{#invoke:LoadData|Numcr2namecr|0x22C1}}
+&lt;includeonly&gt;{{sandbox other| |
+&lt;!-- Categories below this line, please; interwikis at Wikidata --&gt;
+[[Category:Unicode character modules|Data]]
+[[Category:Lua metamodules]]
+}}&lt;/includeonly&gt;</text>
+      <sha1>dwwxtip5em4h0zkk28877j8wc9rd3ng</sha1>
+    </revision>
+  </page>
+</mediawiki>

@@ -1,0 +1,523 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Sister project logo</title>
+    <ns>828</ns>
+    <id>166418</id>
+    <revision>
+      <id>3646614</id>
+      <timestamp>2026-04-02T02:50:49Z</timestamp>
+      <contributor>
+        <username>en&gt;Hike395</username>
+        <id>0</id>
+      </contributor>
+      <comment>fix handling of image parameter</comment>
+      <origin>3646614</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2132" sha1="0pipv4aule2ozdl2ed4e2r0imenbloz" xml:space="preserve">require('strict')
+
+local p = {}
+
+-- Lazy-load logo file names and other metadata
+local data = mw.loadData('Module:Sister project logo/data')
+
+-- Convert table of arguments into wiki image markup
+local function imageMarkup(args)
+	local x = {}
+	-- positional arguments first
+	for _, arg in ipairs(args) do
+		table.insert(x,arg)
+	end
+	-- named arguments converted to foo=bar
+	for k, v in pairs(args) do
+		if not tonumber(k) then
+			table.insert(x,k..'='..v)
+		end
+	end
+	return '[['..table.concat(x,'|')..']]'
+end
+
+function p._main(args)
+	local localArgs = {}
+	-- map possibly verbose project argument into canonical project string
+	local project = args.project and args.project:lower()
+	project = data.projectMap[project] or project
+	-- image=none means bail (for [[Template:Sister project]])
+	if args.image == 'none' then
+		return ''
+	-- if image specified, return it instead of stored logo (for [[Template:Sister project]])
+	elseif args.image then
+		return args.image
+	else
+		local logoImage = data.logo[project]
+		-- if project is unknown, use Wikimedia logo (for [[Template:Sister project]])
+		if not logoImage then
+			project = 'wm'
+		    logoImage = data.logo['wm']
+		end
+		table.insert(localArgs,'File:'..logoImage)
+	end
+	-- size=large means use sizes from [[Template:Wikipedia's sister projects]]
+	-- size defaults to 40x40px (for [[Template:Sister project]])
+	table.insert(localArgs,args.size == 'large' and (data.largeSize[project] or '35px') or args.size or '40x40px')
+	-- if logo is PD, blank link and alt (to suppress from screen readers)
+    if data.PDicon[project] then
+		localArgs.link = ''
+		localArgs.alt = ''
+	else
+		localArgs.alt = data.logoAlt[project]
+	end
+	-- For dark mode, flip dark-on-light icons to be light-on-dark
+	-- Also: use editor-specified classes (for [[Template:Sister-inline]])
+	localArgs.class = "noviewer"..(data.darkOnLight[project] and " skin-invert-image" or "")
+                                ..(args.class and " "..args.class or "")
+	return imageMarkup(localArgs)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame)
+	return p._main(args) or ''
+end
+
+return p</text>
+      <sha1>0pipv4aule2ozdl2ed4e2r0imenbloz</sha1>
+    </revision>
+    <revision>
+      <id>3646428</id>
+      <timestamp>2026-04-24T16:31:14Z</timestamp>
+      <contributor>
+        <username>en&gt;Hike395</username>
+        <id>0</id>
+      </contributor>
+      <comment>fix handling of image parameter</comment>
+      <origin>3646428</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2132" sha1="0pipv4aule2ozdl2ed4e2r0imenbloz" xml:space="preserve">require('strict')
+
+local p = {}
+
+-- Lazy-load logo file names and other metadata
+local data = mw.loadData('Module:Sister project logo/data')
+
+-- Convert table of arguments into wiki image markup
+local function imageMarkup(args)
+	local x = {}
+	-- positional arguments first
+	for _, arg in ipairs(args) do
+		table.insert(x,arg)
+	end
+	-- named arguments converted to foo=bar
+	for k, v in pairs(args) do
+		if not tonumber(k) then
+			table.insert(x,k..'='..v)
+		end
+	end
+	return '[['..table.concat(x,'|')..']]'
+end
+
+function p._main(args)
+	local localArgs = {}
+	-- map possibly verbose project argument into canonical project string
+	local project = args.project and args.project:lower()
+	project = data.projectMap[project] or project
+	-- image=none means bail (for [[Template:Sister project]])
+	if args.image == 'none' then
+		return ''
+	-- if image specified, return it instead of stored logo (for [[Template:Sister project]])
+	elseif args.image then
+		return args.image
+	else
+		local logoImage = data.logo[project]
+		-- if project is unknown, use Wikimedia logo (for [[Template:Sister project]])
+		if not logoImage then
+			project = 'wm'
+		    logoImage = data.logo['wm']
+		end
+		table.insert(localArgs,'File:'..logoImage)
+	end
+	-- size=large means use sizes from [[Template:Wikipedia's sister projects]]
+	-- size defaults to 40x40px (for [[Template:Sister project]])
+	table.insert(localArgs,args.size == 'large' and (data.largeSize[project] or '35px') or args.size or '40x40px')
+	-- if logo is PD, blank link and alt (to suppress from screen readers)
+    if data.PDicon[project] then
+		localArgs.link = ''
+		localArgs.alt = ''
+	else
+		localArgs.alt = data.logoAlt[project]
+	end
+	-- For dark mode, flip dark-on-light icons to be light-on-dark
+	-- Also: use editor-specified classes (for [[Template:Sister-inline]])
+	localArgs.class = "noviewer"..(data.darkOnLight[project] and " skin-invert-image" or "")
+                                ..(args.class and " "..args.class or "")
+	return imageMarkup(localArgs)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame)
+	return p._main(args) or ''
+end
+
+return p</text>
+      <sha1>0pipv4aule2ozdl2ed4e2r0imenbloz</sha1>
+    </revision>
+    <revision>
+      <id>3646429</id>
+      <parentid>3646428</parentid>
+      <timestamp>2026-04-24T16:31:14Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: trying to do a last fix of these, they will be fixed and not bloat the site</comment>
+      <origin>3646428</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2132" sha1="0pipv4aule2ozdl2ed4e2r0imenbloz" xml:space="preserve">require('strict')
+
+local p = {}
+
+-- Lazy-load logo file names and other metadata
+local data = mw.loadData('Module:Sister project logo/data')
+
+-- Convert table of arguments into wiki image markup
+local function imageMarkup(args)
+	local x = {}
+	-- positional arguments first
+	for _, arg in ipairs(args) do
+		table.insert(x,arg)
+	end
+	-- named arguments converted to foo=bar
+	for k, v in pairs(args) do
+		if not tonumber(k) then
+			table.insert(x,k..'='..v)
+		end
+	end
+	return '[['..table.concat(x,'|')..']]'
+end
+
+function p._main(args)
+	local localArgs = {}
+	-- map possibly verbose project argument into canonical project string
+	local project = args.project and args.project:lower()
+	project = data.projectMap[project] or project
+	-- image=none means bail (for [[Template:Sister project]])
+	if args.image == 'none' then
+		return ''
+	-- if image specified, return it instead of stored logo (for [[Template:Sister project]])
+	elseif args.image then
+		return args.image
+	else
+		local logoImage = data.logo[project]
+		-- if project is unknown, use Wikimedia logo (for [[Template:Sister project]])
+		if not logoImage then
+			project = 'wm'
+		    logoImage = data.logo['wm']
+		end
+		table.insert(localArgs,'File:'..logoImage)
+	end
+	-- size=large means use sizes from [[Template:Wikipedia's sister projects]]
+	-- size defaults to 40x40px (for [[Template:Sister project]])
+	table.insert(localArgs,args.size == 'large' and (data.largeSize[project] or '35px') or args.size or '40x40px')
+	-- if logo is PD, blank link and alt (to suppress from screen readers)
+    if data.PDicon[project] then
+		localArgs.link = ''
+		localArgs.alt = ''
+	else
+		localArgs.alt = data.logoAlt[project]
+	end
+	-- For dark mode, flip dark-on-light icons to be light-on-dark
+	-- Also: use editor-specified classes (for [[Template:Sister-inline]])
+	localArgs.class = "noviewer"..(data.darkOnLight[project] and " skin-invert-image" or "")
+                                ..(args.class and " "..args.class or "")
+	return imageMarkup(localArgs)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame)
+	return p._main(args) or ''
+end
+
+return p</text>
+      <sha1>0pipv4aule2ozdl2ed4e2r0imenbloz</sha1>
+    </revision>
+    <revision>
+      <id>3646615</id>
+      <parentid>3646429</parentid>
+      <timestamp>2026-04-24T16:31:50Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: en</comment>
+      <origin>3646428</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2132" sha1="0pipv4aule2ozdl2ed4e2r0imenbloz" xml:space="preserve">require('strict')
+
+local p = {}
+
+-- Lazy-load logo file names and other metadata
+local data = mw.loadData('Module:Sister project logo/data')
+
+-- Convert table of arguments into wiki image markup
+local function imageMarkup(args)
+	local x = {}
+	-- positional arguments first
+	for _, arg in ipairs(args) do
+		table.insert(x,arg)
+	end
+	-- named arguments converted to foo=bar
+	for k, v in pairs(args) do
+		if not tonumber(k) then
+			table.insert(x,k..'='..v)
+		end
+	end
+	return '[['..table.concat(x,'|')..']]'
+end
+
+function p._main(args)
+	local localArgs = {}
+	-- map possibly verbose project argument into canonical project string
+	local project = args.project and args.project:lower()
+	project = data.projectMap[project] or project
+	-- image=none means bail (for [[Template:Sister project]])
+	if args.image == 'none' then
+		return ''
+	-- if image specified, return it instead of stored logo (for [[Template:Sister project]])
+	elseif args.image then
+		return args.image
+	else
+		local logoImage = data.logo[project]
+		-- if project is unknown, use Wikimedia logo (for [[Template:Sister project]])
+		if not logoImage then
+			project = 'wm'
+		    logoImage = data.logo['wm']
+		end
+		table.insert(localArgs,'File:'..logoImage)
+	end
+	-- size=large means use sizes from [[Template:Wikipedia's sister projects]]
+	-- size defaults to 40x40px (for [[Template:Sister project]])
+	table.insert(localArgs,args.size == 'large' and (data.largeSize[project] or '35px') or args.size or '40x40px')
+	-- if logo is PD, blank link and alt (to suppress from screen readers)
+    if data.PDicon[project] then
+		localArgs.link = ''
+		localArgs.alt = ''
+	else
+		localArgs.alt = data.logoAlt[project]
+	end
+	-- For dark mode, flip dark-on-light icons to be light-on-dark
+	-- Also: use editor-specified classes (for [[Template:Sister-inline]])
+	localArgs.class = "noviewer"..(data.darkOnLight[project] and " skin-invert-image" or "")
+                                ..(args.class and " "..args.class or "")
+	return imageMarkup(localArgs)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame)
+	return p._main(args) or ''
+end
+
+return p</text>
+      <sha1>0pipv4aule2ozdl2ed4e2r0imenbloz</sha1>
+    </revision>
+    <revision>
+      <id>3647083</id>
+      <parentid>3646615</parentid>
+      <timestamp>2026-04-24T16:34:24Z</timestamp>
+      <contributor>
+        <username>en&gt;Hike395</username>
+        <id>0</id>
+      </contributor>
+      <comment>fix handling of image parameter</comment>
+      <origin>3646428</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2132" sha1="0pipv4aule2ozdl2ed4e2r0imenbloz" xml:space="preserve">require('strict')
+
+local p = {}
+
+-- Lazy-load logo file names and other metadata
+local data = mw.loadData('Module:Sister project logo/data')
+
+-- Convert table of arguments into wiki image markup
+local function imageMarkup(args)
+	local x = {}
+	-- positional arguments first
+	for _, arg in ipairs(args) do
+		table.insert(x,arg)
+	end
+	-- named arguments converted to foo=bar
+	for k, v in pairs(args) do
+		if not tonumber(k) then
+			table.insert(x,k..'='..v)
+		end
+	end
+	return '[['..table.concat(x,'|')..']]'
+end
+
+function p._main(args)
+	local localArgs = {}
+	-- map possibly verbose project argument into canonical project string
+	local project = args.project and args.project:lower()
+	project = data.projectMap[project] or project
+	-- image=none means bail (for [[Template:Sister project]])
+	if args.image == 'none' then
+		return ''
+	-- if image specified, return it instead of stored logo (for [[Template:Sister project]])
+	elseif args.image then
+		return args.image
+	else
+		local logoImage = data.logo[project]
+		-- if project is unknown, use Wikimedia logo (for [[Template:Sister project]])
+		if not logoImage then
+			project = 'wm'
+		    logoImage = data.logo['wm']
+		end
+		table.insert(localArgs,'File:'..logoImage)
+	end
+	-- size=large means use sizes from [[Template:Wikipedia's sister projects]]
+	-- size defaults to 40x40px (for [[Template:Sister project]])
+	table.insert(localArgs,args.size == 'large' and (data.largeSize[project] or '35px') or args.size or '40x40px')
+	-- if logo is PD, blank link and alt (to suppress from screen readers)
+    if data.PDicon[project] then
+		localArgs.link = ''
+		localArgs.alt = ''
+	else
+		localArgs.alt = data.logoAlt[project]
+	end
+	-- For dark mode, flip dark-on-light icons to be light-on-dark
+	-- Also: use editor-specified classes (for [[Template:Sister-inline]])
+	localArgs.class = "noviewer"..(data.darkOnLight[project] and " skin-invert-image" or "")
+                                ..(args.class and " "..args.class or "")
+	return imageMarkup(localArgs)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame)
+	return p._main(args) or ''
+end
+
+return p</text>
+      <sha1>0pipv4aule2ozdl2ed4e2r0imenbloz</sha1>
+    </revision>
+    <revision>
+      <id>3647084</id>
+      <parentid>3647083</parentid>
+      <timestamp>2026-04-24T16:34:24Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: en</comment>
+      <origin>3646428</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2132" sha1="0pipv4aule2ozdl2ed4e2r0imenbloz" xml:space="preserve">require('strict')
+
+local p = {}
+
+-- Lazy-load logo file names and other metadata
+local data = mw.loadData('Module:Sister project logo/data')
+
+-- Convert table of arguments into wiki image markup
+local function imageMarkup(args)
+	local x = {}
+	-- positional arguments first
+	for _, arg in ipairs(args) do
+		table.insert(x,arg)
+	end
+	-- named arguments converted to foo=bar
+	for k, v in pairs(args) do
+		if not tonumber(k) then
+			table.insert(x,k..'='..v)
+		end
+	end
+	return '[['..table.concat(x,'|')..']]'
+end
+
+function p._main(args)
+	local localArgs = {}
+	-- map possibly verbose project argument into canonical project string
+	local project = args.project and args.project:lower()
+	project = data.projectMap[project] or project
+	-- image=none means bail (for [[Template:Sister project]])
+	if args.image == 'none' then
+		return ''
+	-- if image specified, return it instead of stored logo (for [[Template:Sister project]])
+	elseif args.image then
+		return args.image
+	else
+		local logoImage = data.logo[project]
+		-- if project is unknown, use Wikimedia logo (for [[Template:Sister project]])
+		if not logoImage then
+			project = 'wm'
+		    logoImage = data.logo['wm']
+		end
+		table.insert(localArgs,'File:'..logoImage)
+	end
+	-- size=large means use sizes from [[Template:Wikipedia's sister projects]]
+	-- size defaults to 40x40px (for [[Template:Sister project]])
+	table.insert(localArgs,args.size == 'large' and (data.largeSize[project] or '35px') or args.size or '40x40px')
+	-- if logo is PD, blank link and alt (to suppress from screen readers)
+    if data.PDicon[project] then
+		localArgs.link = ''
+		localArgs.alt = ''
+	else
+		localArgs.alt = data.logoAlt[project]
+	end
+	-- For dark mode, flip dark-on-light icons to be light-on-dark
+	-- Also: use editor-specified classes (for [[Template:Sister-inline]])
+	localArgs.class = "noviewer"..(data.darkOnLight[project] and " skin-invert-image" or "")
+                                ..(args.class and " "..args.class or "")
+	return imageMarkup(localArgs)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame)
+	return p._main(args) or ''
+end
+
+return p</text>
+      <sha1>0pipv4aule2ozdl2ed4e2r0imenbloz</sha1>
+    </revision>
+  </page>
+</mediawiki>

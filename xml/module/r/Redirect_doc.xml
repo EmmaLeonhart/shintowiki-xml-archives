@@ -1,0 +1,234 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Redirect/doc</title>
+    <ns>828</ns>
+    <id>8244</id>
+    <revision>
+      <id>916523</id>
+      <timestamp>2025-01-02T21:15:16Z</timestamp>
+      <contributor>
+        <username>en&gt;TheDragonFire</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Reverted edits by [[Special:Contribs/2A00:1851:800A:AB09:1C29:C9F0:5A7F:3DB4|2A00:1851:800A:AB09:1C29:C9F0:5A7F:3DB4]] ([[User talk:2A00:1851:800A:AB09:1C29:C9F0:5A7F:3DB4|talk]]) to last version by SunDawn</comment>
+      <origin>916523</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="4263" sha1="b58t3hwcxxq5qbgun0ql2dr59haf8ko" xml:space="preserve">{{used in system}}
+{{Module rating|beta}}
+{{Module rating|protected}}
+{{Lua|Module:Arguments}}
+This module contains functions to find the target of a [[Help:Redirect|redirect]] page.
+
+== Main ==
+
+The main function accepts the name of a single page.  It determines if the page is a redirect; if so it looks up the page, extracts the target, and returns the target name as text. Its usage is &lt;code&gt;&lt;nowiki&gt;{{#invoke:redirect|main|page-name}}&lt;/nowiki&gt;&lt;/code&gt;. If &lt;code&gt;page-name&lt;/code&gt; does not exist or is not a redirect then &lt;code&gt;page-name&lt;/code&gt; is returned. If &lt;code&gt;page-name&lt;/code&gt; is blank then blank is returned.
+
+The function normally neither takes nor gives square brackets, so to show the result as a link use &lt;code&gt;&lt;nowiki&gt;[[{{#invoke:redirect|main|page-name}}]]&lt;/nowiki&gt;&lt;/code&gt;.  
+
+If the parameter ''bracket'' is given a nonblank value, brackets will be passed on if present.
+
+=== Examples ===
+
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:redirect|main|WP:AFC}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:redirect|main|WP:AFC}}
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:redirect|main|[[WP:AFD]]|bracket=yes}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:redirect|main|[[WP:AFD]]|bracket=yes}}
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:redirect|main|Wikipedia:Articles for deletion}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:redirect|main|Wikipedia:Articles for deletion}}
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:redirect|main|Wikipedia:Articles for rumination}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:redirect|main|Wikipedia:Articles for rumination}}
+
+Note: [[WP:AFC]] and [[WP:AFD]] are both redirects, but [[Wikipedia:Articles for deletion]] is not, and [[Wikipedia:Articles for rumination]] does not exist.
+
+=== LuaMain ===
+
+If you want to use the main function from another Lua module, you may want to use the luaMain function. This provides the same functionality as the main function, but doesn't require that a frame object be available.
+
+To use this, first load the module.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local mRedirect = require('Module:Redirect')
+&lt;/syntaxhighlight&gt;
+
+Then use the function with the following syntax: 
+
+&lt;syntaxhighlight lang="lua"&gt;
+mRedirect.luaMain(rname, bracket)
+&lt;/syntaxhighlight&gt;
+
+&lt;var&gt;rname&lt;/var&gt; is the name of the redirect page, and if &lt;var&gt;bracket&lt;/var&gt; is anything but false or nil, the module will produce a link rather than just a page name.
+
+== IsRedirect ==
+
+The isRedirect function is used from wiki pages to find out if a given page is a redirect or not. If the page is a redirect, the function returns "yes", and if not the output is blank. Its usage is &lt;code&gt;&lt;nowiki&gt;{{#invoke:redirect|isRedirect|page-name}}&lt;/nowiki&gt;&lt;/code&gt;.
+
+=== Examples ===
+
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:redirect|isRedirect|WP:AFC}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:redirect|isRedirect|WP:AFC}}
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:redirect|isRedirect|Wikipedia:Articles for deletion}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:redirect|isRedirect|Wikipedia:Articles for deletion}}
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:redirect|isRedirect|Wikipedia:Articles for rumination}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:redirect|isRedirect|Wikipedia:Articles for rumination}}
+
+=== LuaIsRedirect ===
+The isRedirect can be accessed from other Lua modules in the same way as the main function:
+
+&lt;syntaxhighlight lang="lua"&gt;
+local mRedirect = require('Module:Redirect')
+mRedirect.luaIsRedirect(rname)
+&lt;/syntaxhighlight&gt;
+
+== GetTarget ==
+
+The getTarget function fetches the target page name of a redirect page, and is only usable from Lua. If the page specified is a redirect, then the target is returned; otherwise the function returns nil.
+
+To use it, first load the module.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local mRedirect = require('Module:Redirect')
+&lt;/syntaxhighlight&gt;
+
+Then use the function with the following syntax: 
+
+&lt;syntaxhighlight lang="lua"&gt;
+mRedirect.getTarget(page)
+&lt;/syntaxhighlight&gt;
+
+&lt;var&gt;page&lt;/var&gt; can be either the name of the redirect page as a string, or a [[mw:Extension:Scribunto/Lua reference manual#Title objects|mw.title object]].
+
+==See also==
+* [[phab:T68974]] -  Provide a standard way to get the target of a redirect page
+* [[mw:Extension:Scribunto/Lua reference manual#Title objects]], the Scribunto interface for determining a page's redirect status
+* [[Template:Get QID]], which uses this module 
+* [[Template:Submit an edit request]], which uses this module</text>
+      <sha1>b58t3hwcxxq5qbgun0ql2dr59haf8ko</sha1>
+    </revision>
+    <revision>
+      <id>8245</id>
+      <timestamp>2025-01-10T09:34:26Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: IMPORTING ALL WANTED MODULES</comment>
+      <origin>8245</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="4263" sha1="b58t3hwcxxq5qbgun0ql2dr59haf8ko" xml:space="preserve">{{used in system}}
+{{Module rating|beta}}
+{{Module rating|protected}}
+{{Lua|Module:Arguments}}
+This module contains functions to find the target of a [[Help:Redirect|redirect]] page.
+
+== Main ==
+
+The main function accepts the name of a single page.  It determines if the page is a redirect; if so it looks up the page, extracts the target, and returns the target name as text. Its usage is &lt;code&gt;&lt;nowiki&gt;{{#invoke:redirect|main|page-name}}&lt;/nowiki&gt;&lt;/code&gt;. If &lt;code&gt;page-name&lt;/code&gt; does not exist or is not a redirect then &lt;code&gt;page-name&lt;/code&gt; is returned. If &lt;code&gt;page-name&lt;/code&gt; is blank then blank is returned.
+
+The function normally neither takes nor gives square brackets, so to show the result as a link use &lt;code&gt;&lt;nowiki&gt;[[{{#invoke:redirect|main|page-name}}]]&lt;/nowiki&gt;&lt;/code&gt;.  
+
+If the parameter ''bracket'' is given a nonblank value, brackets will be passed on if present.
+
+=== Examples ===
+
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:redirect|main|WP:AFC}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:redirect|main|WP:AFC}}
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:redirect|main|[[WP:AFD]]|bracket=yes}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:redirect|main|[[WP:AFD]]|bracket=yes}}
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:redirect|main|Wikipedia:Articles for deletion}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:redirect|main|Wikipedia:Articles for deletion}}
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:redirect|main|Wikipedia:Articles for rumination}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:redirect|main|Wikipedia:Articles for rumination}}
+
+Note: [[WP:AFC]] and [[WP:AFD]] are both redirects, but [[Wikipedia:Articles for deletion]] is not, and [[Wikipedia:Articles for rumination]] does not exist.
+
+=== LuaMain ===
+
+If you want to use the main function from another Lua module, you may want to use the luaMain function. This provides the same functionality as the main function, but doesn't require that a frame object be available.
+
+To use this, first load the module.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local mRedirect = require('Module:Redirect')
+&lt;/syntaxhighlight&gt;
+
+Then use the function with the following syntax: 
+
+&lt;syntaxhighlight lang="lua"&gt;
+mRedirect.luaMain(rname, bracket)
+&lt;/syntaxhighlight&gt;
+
+&lt;var&gt;rname&lt;/var&gt; is the name of the redirect page, and if &lt;var&gt;bracket&lt;/var&gt; is anything but false or nil, the module will produce a link rather than just a page name.
+
+== IsRedirect ==
+
+The isRedirect function is used from wiki pages to find out if a given page is a redirect or not. If the page is a redirect, the function returns "yes", and if not the output is blank. Its usage is &lt;code&gt;&lt;nowiki&gt;{{#invoke:redirect|isRedirect|page-name}}&lt;/nowiki&gt;&lt;/code&gt;.
+
+=== Examples ===
+
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:redirect|isRedirect|WP:AFC}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:redirect|isRedirect|WP:AFC}}
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:redirect|isRedirect|Wikipedia:Articles for deletion}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:redirect|isRedirect|Wikipedia:Articles for deletion}}
+* &lt;code&gt;&lt;nowiki&gt;{{#invoke:redirect|isRedirect|Wikipedia:Articles for rumination}}&lt;/nowiki&gt;&lt;/code&gt; &amp;rarr; {{#invoke:redirect|isRedirect|Wikipedia:Articles for rumination}}
+
+=== LuaIsRedirect ===
+The isRedirect can be accessed from other Lua modules in the same way as the main function:
+
+&lt;syntaxhighlight lang="lua"&gt;
+local mRedirect = require('Module:Redirect')
+mRedirect.luaIsRedirect(rname)
+&lt;/syntaxhighlight&gt;
+
+== GetTarget ==
+
+The getTarget function fetches the target page name of a redirect page, and is only usable from Lua. If the page specified is a redirect, then the target is returned; otherwise the function returns nil.
+
+To use it, first load the module.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local mRedirect = require('Module:Redirect')
+&lt;/syntaxhighlight&gt;
+
+Then use the function with the following syntax: 
+
+&lt;syntaxhighlight lang="lua"&gt;
+mRedirect.getTarget(page)
+&lt;/syntaxhighlight&gt;
+
+&lt;var&gt;page&lt;/var&gt; can be either the name of the redirect page as a string, or a [[mw:Extension:Scribunto/Lua reference manual#Title objects|mw.title object]].
+
+==See also==
+* [[phab:T68974]] -  Provide a standard way to get the target of a redirect page
+* [[mw:Extension:Scribunto/Lua reference manual#Title objects]], the Scribunto interface for determining a page's redirect status
+* [[Template:Get QID]], which uses this module 
+* [[Template:Submit an edit request]], which uses this module</text>
+      <sha1>b58t3hwcxxq5qbgun0ql2dr59haf8ko</sha1>
+    </revision>
+  </page>
+</mediawiki>

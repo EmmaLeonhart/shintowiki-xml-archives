@@ -1,0 +1,542 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Protection banner/doc</title>
+    <ns>828</ns>
+    <id>8241</id>
+    <revision>
+      <id>916516</id>
+      <timestamp>2023-09-04T16:59:18Z</timestamp>
+      <contributor>
+        <username>en&gt;Zinnober9</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <origin>916516</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="6613" sha1="cv4yru3595eynn9yhdj9h24jx0r6kg3" xml:space="preserve">{{High-use}}
+{{Module rating|protected}}
+{{Lua|Module:Protection banner/config|Module:File link|Module:Effective protection level|Module:Effective protection expiry|Module:Yesno|Module:Arguments|Module:Message box|Module:Submit an edit request}}
+This module creates protection banners and padlock icons that are placed at the top of [[Help:Protection|protected pages]].
+
+== Usage ==
+
+Most users will not need to use this module directly. For adding protection templates to pages you can use the {{tl|pp}} template, or you may find it more convenient to use one of the more specific protection templates in the table below.
+
+{{protection templates}}
+
+=== From wikitext ===
+
+ &amp;#123;{#invoke:Protection banner|main
+ | 1        = ''reason''
+ | small    = ''yes/no''
+ | action   = ''action''
+ | date     = ''protection date''
+ | user     = ''username''
+ | section  = ''talk page section name''
+ | category = ''yes''
+ }&amp;#125;
+
+The #invoke syntax can be used for creating protection templates more specific than {{tl|pp}}. For example, it is possible to create a protection template which always shows a padlock icon by using the code &lt;code&gt;&lt;nowiki&gt;{{#invoke:Protection banner|main|small=yes}}&lt;/nowiki&gt;&lt;/code&gt;. Pages which call this template will still be able to use other arguments, like ''action''. However, this only works one level deep; a page calling a template which calls another template containing the above code will not automatically be able to use parameters like ''action''.
+
+'''''Note:''' You should no longer specify the expiry, as it is automatically retrieved in all cases.''
+
+=== From Lua ===
+
+First, load the module.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local mProtectionBanner = require('Module:Protection banner')
+&lt;/syntaxhighlight&gt;
+
+Then you can make protection banners by using the _main function.
+
+&lt;syntaxhighlight lang="lua"&gt;
+mProtectionBanner._main(args, cfg, titleObj)
+&lt;/syntaxhighlight&gt;
+
+&lt;var&gt;args&lt;/var&gt; is a table of arguments to pass to the module. For possible keys and values for this table, see the [[#Parameters|parameters section]]. The &lt;var&gt;cfg&lt;/var&gt; and &lt;var&gt;titleObj&lt;/var&gt; variables are intended only for testing; &lt;var&gt;cfg&lt;/var&gt; specifies a customised config table to use instead of [[Module:Protection banner/config]], and &lt;var&gt;titleObj&lt;/var&gt; specifies a mw.title object to use instead of the current title. &lt;var&gt;args&lt;/var&gt;, &lt;var&gt;cfg&lt;/var&gt; and &lt;var&gt;titleObj&lt;/var&gt; are all optional.
+
+== Parameters ==
+
+All parameters are optional.
+
+* '''1''' – the reason that the page was protected. If set, this must be one of the values listed in the [[#Reasons|reasons table]].
+* '''small''' – if set to "yes", "y", "1", or "true", a padlock icon is generated instead of a full protection banner.
+* '''action''' – the protection action. Must be one of "edit" (for normal protection), "move" (for move-protection) or "autoreview" (for pending changes). The default value is "edit".
+* '''date''' – the protection date. This must be valid input to the second parameter of the [[mw:Help:Extension:ParserFunctions##time|#time parser function]]. This argument has an effect for reasons that use the PROTECTIONDATE parameter in their configuration. As of July 2014, those were the "office" and "reset" reasons.
+* '''user''' – the username of the user to generate links for. As of July 2014, this only has an effect when the "usertalk" reason is specified.
+* '''section''' – the section name of the protected page's talk page where discussion is taking place. This works for most, but not all, values of ''reason''.
+* '''category''' – categories are suppressed if this is set to "no", "n", "0", or "false".
+* '''catonly''' – if set to "yes", "y", "1", or "true", will only return the protection categories, and not return the banner or padlock. This has no visible output.
+
+== Reasons ==
+
+The following table contains the available reasons, plus the actions for which they are available.
+
+{{#invoke:Protection banner/documentation|reasonTable}}
+
+== Errors ==
+
+Below is a list of some of the common errors that this module can produce, and how to fix them.
+
+=== Invalid protection date ===
+
+{{error|Error: invalid protection date ("abc")}}
+
+This error is produced if you supply a {{para|date}} parameter value that is not recognised as a valid date by the #time parser function. If in doubt, you can just use a date in the format "dd Month YYYY", e.g. "{{#time:j F Y|+ 1 week}}". To see a full range of valid inputs, see the [[mw:Help:Extension:ParserFunctions##time|#time documentation]] (only the first parameter, the ''format string'', may be specified).
+
+=== Invalid action ===
+
+{{error|Error: invalid action ("abc")}}
+
+This error is produced if you specify an invalid protection action. There are only three valid actions: &lt;code&gt;edit&lt;/code&gt; (the default, for normal protection), &lt;code&gt;move&lt;/code&gt; (for move-protection), and &lt;code&gt;autoreview&lt;/code&gt; (for [[WP:PC|pending changes]]). This should only be possible if you are using a template that supports manually specifying the protection action, such as {{tl|pp}}, or if you are using #invoke directly. If this is not the case, please leave a message on [[Module talk:Protection banner]].
+
+=== Reasons cannot contain the pipe character ===
+
+{{error|Error: reasons cannot contain the pipe character ("&amp;#124;")}}
+
+This error is produced if you specify a reason using the {{para|1}} parameter that includes a pipe character ("&amp;#124;"). Please check that you are not entering the {{tl|!}} template into this parameter by mistake. The pipe character is disallowed as the module uses it internally. A list of valid reasons can be seen in the [[#Reasons|reasons section]].
+
+=== Other errors ===
+
+If you see an error other than the ones above, it is likely to either be a bug in the module or mistake in the configuration. Please post a message about it at [[Module talk:Protection banner]].
+
+== Technical details ==
+
+This module uses configuration data from [[Module:Protection banner/config]]. Most of the module's behaviour can be configured there, making it easily portable across different wikis and different languages.
+
+General test cases for the module can be found at [[w:en:Module:Protection banner/testcases|Module:Protection banner/testcases]], and test cases specific to enwiki's config can be found at [[w:en:Module:Protection banner/config/testcases|Module:Protection banner/config/testcases]].
+
+Bug reports and feature requests should be made on [[w:en:Module talk:Protection banner|the module's talk page]].
+&lt;includeonly&gt;{{#ifeq:{{SUBPAGENAME}}|sandbox||
+&lt;!-- Categories go here and interwikis go in Wikidata. --&gt;
+}}&lt;/includeonly&gt;</text>
+      <sha1>cv4yru3595eynn9yhdj9h24jx0r6kg3</sha1>
+    </revision>
+    <revision>
+      <id>916517</id>
+      <parentid>916516</parentid>
+      <timestamp>2025-01-10T09:34:24Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: IMPORTING ALL WANTED MODULES</comment>
+      <origin>916516</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="6613" sha1="cv4yru3595eynn9yhdj9h24jx0r6kg3" xml:space="preserve">{{High-use}}
+{{Module rating|protected}}
+{{Lua|Module:Protection banner/config|Module:File link|Module:Effective protection level|Module:Effective protection expiry|Module:Yesno|Module:Arguments|Module:Message box|Module:Submit an edit request}}
+This module creates protection banners and padlock icons that are placed at the top of [[Help:Protection|protected pages]].
+
+== Usage ==
+
+Most users will not need to use this module directly. For adding protection templates to pages you can use the {{tl|pp}} template, or you may find it more convenient to use one of the more specific protection templates in the table below.
+
+{{protection templates}}
+
+=== From wikitext ===
+
+ &amp;#123;{#invoke:Protection banner|main
+ | 1        = ''reason''
+ | small    = ''yes/no''
+ | action   = ''action''
+ | date     = ''protection date''
+ | user     = ''username''
+ | section  = ''talk page section name''
+ | category = ''yes''
+ }&amp;#125;
+
+The #invoke syntax can be used for creating protection templates more specific than {{tl|pp}}. For example, it is possible to create a protection template which always shows a padlock icon by using the code &lt;code&gt;&lt;nowiki&gt;{{#invoke:Protection banner|main|small=yes}}&lt;/nowiki&gt;&lt;/code&gt;. Pages which call this template will still be able to use other arguments, like ''action''. However, this only works one level deep; a page calling a template which calls another template containing the above code will not automatically be able to use parameters like ''action''.
+
+'''''Note:''' You should no longer specify the expiry, as it is automatically retrieved in all cases.''
+
+=== From Lua ===
+
+First, load the module.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local mProtectionBanner = require('Module:Protection banner')
+&lt;/syntaxhighlight&gt;
+
+Then you can make protection banners by using the _main function.
+
+&lt;syntaxhighlight lang="lua"&gt;
+mProtectionBanner._main(args, cfg, titleObj)
+&lt;/syntaxhighlight&gt;
+
+&lt;var&gt;args&lt;/var&gt; is a table of arguments to pass to the module. For possible keys and values for this table, see the [[#Parameters|parameters section]]. The &lt;var&gt;cfg&lt;/var&gt; and &lt;var&gt;titleObj&lt;/var&gt; variables are intended only for testing; &lt;var&gt;cfg&lt;/var&gt; specifies a customised config table to use instead of [[Module:Protection banner/config]], and &lt;var&gt;titleObj&lt;/var&gt; specifies a mw.title object to use instead of the current title. &lt;var&gt;args&lt;/var&gt;, &lt;var&gt;cfg&lt;/var&gt; and &lt;var&gt;titleObj&lt;/var&gt; are all optional.
+
+== Parameters ==
+
+All parameters are optional.
+
+* '''1''' – the reason that the page was protected. If set, this must be one of the values listed in the [[#Reasons|reasons table]].
+* '''small''' – if set to "yes", "y", "1", or "true", a padlock icon is generated instead of a full protection banner.
+* '''action''' – the protection action. Must be one of "edit" (for normal protection), "move" (for move-protection) or "autoreview" (for pending changes). The default value is "edit".
+* '''date''' – the protection date. This must be valid input to the second parameter of the [[mw:Help:Extension:ParserFunctions##time|#time parser function]]. This argument has an effect for reasons that use the PROTECTIONDATE parameter in their configuration. As of July 2014, those were the "office" and "reset" reasons.
+* '''user''' – the username of the user to generate links for. As of July 2014, this only has an effect when the "usertalk" reason is specified.
+* '''section''' – the section name of the protected page's talk page where discussion is taking place. This works for most, but not all, values of ''reason''.
+* '''category''' – categories are suppressed if this is set to "no", "n", "0", or "false".
+* '''catonly''' – if set to "yes", "y", "1", or "true", will only return the protection categories, and not return the banner or padlock. This has no visible output.
+
+== Reasons ==
+
+The following table contains the available reasons, plus the actions for which they are available.
+
+{{#invoke:Protection banner/documentation|reasonTable}}
+
+== Errors ==
+
+Below is a list of some of the common errors that this module can produce, and how to fix them.
+
+=== Invalid protection date ===
+
+{{error|Error: invalid protection date ("abc")}}
+
+This error is produced if you supply a {{para|date}} parameter value that is not recognised as a valid date by the #time parser function. If in doubt, you can just use a date in the format "dd Month YYYY", e.g. "{{#time:j F Y|+ 1 week}}". To see a full range of valid inputs, see the [[mw:Help:Extension:ParserFunctions##time|#time documentation]] (only the first parameter, the ''format string'', may be specified).
+
+=== Invalid action ===
+
+{{error|Error: invalid action ("abc")}}
+
+This error is produced if you specify an invalid protection action. There are only three valid actions: &lt;code&gt;edit&lt;/code&gt; (the default, for normal protection), &lt;code&gt;move&lt;/code&gt; (for move-protection), and &lt;code&gt;autoreview&lt;/code&gt; (for [[WP:PC|pending changes]]). This should only be possible if you are using a template that supports manually specifying the protection action, such as {{tl|pp}}, or if you are using #invoke directly. If this is not the case, please leave a message on [[Module talk:Protection banner]].
+
+=== Reasons cannot contain the pipe character ===
+
+{{error|Error: reasons cannot contain the pipe character ("&amp;#124;")}}
+
+This error is produced if you specify a reason using the {{para|1}} parameter that includes a pipe character ("&amp;#124;"). Please check that you are not entering the {{tl|!}} template into this parameter by mistake. The pipe character is disallowed as the module uses it internally. A list of valid reasons can be seen in the [[#Reasons|reasons section]].
+
+=== Other errors ===
+
+If you see an error other than the ones above, it is likely to either be a bug in the module or mistake in the configuration. Please post a message about it at [[Module talk:Protection banner]].
+
+== Technical details ==
+
+This module uses configuration data from [[Module:Protection banner/config]]. Most of the module's behaviour can be configured there, making it easily portable across different wikis and different languages.
+
+General test cases for the module can be found at [[w:en:Module:Protection banner/testcases|Module:Protection banner/testcases]], and test cases specific to enwiki's config can be found at [[w:en:Module:Protection banner/config/testcases|Module:Protection banner/config/testcases]].
+
+Bug reports and feature requests should be made on [[w:en:Module talk:Protection banner|the module's talk page]].
+&lt;includeonly&gt;{{#ifeq:{{SUBPAGENAME}}|sandbox||
+&lt;!-- Categories go here and interwikis go in Wikidata. --&gt;
+}}&lt;/includeonly&gt;</text>
+      <sha1>cv4yru3595eynn9yhdj9h24jx0r6kg3</sha1>
+    </revision>
+    <revision>
+      <id>916518</id>
+      <parentid>916517</parentid>
+      <timestamp>2025-05-05T01:01:37Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Auto generating page. date placed far in the past so it is attributed to Immanuelle and FireflyBot sends them messages if it is ever imported to Wikipedia.</comment>
+      <origin>916518</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="197" sha1="i8n5vlojxpr5ckywoog6dxqsv5agr9q" xml:space="preserve">#redirect[[en:Module:Protection_banner/doc]]
+&lt;includeonly&gt;[[Category:Erroneous transclusions of Module:Protection_banner/doc]]&lt;/includeonly&gt;
+&lt;noinclude&gt;[[Category:Wikipedia overwrites]]&lt;/noinclude&gt;</text>
+      <sha1>i8n5vlojxpr5ckywoog6dxqsv5agr9q</sha1>
+    </revision>
+    <revision>
+      <id>916519</id>
+      <parentid>916518</parentid>
+      <timestamp>2025-05-05T01:01:38Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>916518</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="197" sha1="i8n5vlojxpr5ckywoog6dxqsv5agr9q" xml:space="preserve">#redirect[[en:Module:Protection_banner/doc]]
+&lt;includeonly&gt;[[Category:Erroneous transclusions of Module:Protection_banner/doc]]&lt;/includeonly&gt;
+&lt;noinclude&gt;[[Category:Wikipedia overwrites]]&lt;/noinclude&gt;</text>
+      <sha1>i8n5vlojxpr5ckywoog6dxqsv5agr9q</sha1>
+    </revision>
+    <revision>
+      <id>8242</id>
+      <timestamp>2025-05-20T08:43:58Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Bot: remove deleted category Wikipedia overwrites</comment>
+      <origin>8242</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="164" sha1="500i5kz9loy5ywf70hsgk9rxc38m020" xml:space="preserve">#redirect[[en:Module:Protection_banner/doc]]
+&lt;includeonly&gt;[[Category:Erroneous transclusions of Module:Protection_banner/doc]]&lt;/includeonly&gt;
+&lt;noinclude&gt;&lt;/noinclude&gt;</text>
+      <sha1>500i5kz9loy5ywf70hsgk9rxc38m020</sha1>
+    </revision>
+    <revision>
+      <id>3558204</id>
+      <parentid>8242</parentid>
+      <timestamp>2026-03-20T19:49:18Z</timestamp>
+      <contributor>
+        <username>en&gt;Jonesey95</username>
+        <id>0</id>
+      </contributor>
+      <comment>Undid revision [[Special:Diff/1336643646|1336643646]] by [[Special:Contributions/IdiosyncraticLawyer|IdiosyncraticLawyer]] ([[User talk:IdiosyncraticLawyer|talk]]). Less helpful than the local page.</comment>
+      <origin>3558204</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="6628" sha1="ibb340x7c1fnpsmxz1lqnho3cm4jirv" xml:space="preserve">{{High-use}}
+{{Module rating|protected}}
+{{Lua|Module:Protection banner/config|Module:File link|Module:Effective protection level|Module:Effective protection expiry|Module:Yesno|Module:Arguments|Module:Message box|Module:Submit an edit request}}
+This module creates protection banners and padlock icons that are placed at the top of [[Wikipedia:Protection policy|protected pages]]. Most users will not need to use this module directly. 
+
+== Usage ==
+
+For adding protection templates to pages you can use the {{tl|pp}} template, or you may find it more convenient to use one of the more specific protection templates in the table below.
+
+{{protection templates}}
+
+=== From wikitext ===
+
+ &amp;#123;{#invoke:Protection banner|main
+ | 1        = ''reason''
+ | small    = ''yes/no''
+ | action   = ''action''
+ | date     = ''protection date''
+ | user     = ''username''
+ | section  = ''talk page section name''
+ | category = ''yes''
+ }&amp;#125;
+
+The #invoke syntax can be used for creating protection templates more specific than {{tl|pp}}. For example, it is possible to create a protection template which always shows a padlock icon by using the code &lt;code&gt;&lt;nowiki&gt;{{#invoke:Protection banner|main|small=yes}}&lt;/nowiki&gt;&lt;/code&gt;. Pages which call this template will still be able to use other arguments, like ''action''. However, this only works one level deep; a page calling a template which calls another template containing the above code will not automatically be able to use parameters like ''action''.
+
+'''''Note:''' You should no longer specify the expiry, as it is automatically retrieved in all cases.''
+
+=== From Lua ===
+
+First, load the module.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local mProtectionBanner = require('Module:Protection banner')
+&lt;/syntaxhighlight&gt;
+
+Then you can make protection banners by using the _main function.
+
+&lt;syntaxhighlight lang="lua"&gt;
+mProtectionBanner._main(args, cfg, titleObj)
+&lt;/syntaxhighlight&gt;
+
+&lt;var&gt;args&lt;/var&gt; is a table of arguments to pass to the module. For possible keys and values for this table, see the [[#Parameters|parameters section]]. The &lt;var&gt;cfg&lt;/var&gt; and &lt;var&gt;titleObj&lt;/var&gt; variables are intended only for testing; &lt;var&gt;cfg&lt;/var&gt; specifies a customised config table to use instead of [[Module:Protection banner/config]], and &lt;var&gt;titleObj&lt;/var&gt; specifies a mw.title object to use instead of the current title. &lt;var&gt;args&lt;/var&gt;, &lt;var&gt;cfg&lt;/var&gt; and &lt;var&gt;titleObj&lt;/var&gt; are all optional.
+
+== Parameters ==
+
+All parameters are optional.
+
+* '''1''' – the reason that the page was protected. If set, this must be one of the values listed in the [[#Reasons|reasons table]].
+* '''small''' – if set to "yes", "y", "1", or "true", a padlock icon is generated instead of a full protection banner.
+* '''action''' – the protection action. Must be one of "edit" (for normal protection), "move" (for move-protection) or "autoreview" (for pending changes). The default value is "edit".
+* '''date''' – the protection date. This must be valid input to the second parameter of the [[mw:Help:Extension:ParserFunctions##time|#time parser function]]. This argument has an effect for reasons that use the PROTECTIONDATE parameter in their configuration. As of July 2014, those were the "office" and "reset" reasons.
+* '''user''' – the username of the user to generate links for. As of July 2014, this only has an effect when the "usertalk" reason is specified.
+* '''section''' – the section name of the protected page's talk page where discussion is taking place. This works for most, but not all, values of ''reason''.
+* '''category''' – categories are suppressed if this is set to "no", "n", "0", or "false".
+* '''catonly''' – if set to "yes", "y", "1", or "true", will only return the protection categories, and not return the banner or padlock. This has no visible output.
+
+== Reasons ==
+
+The following table contains the available reasons, plus the actions for which they are available.
+
+{{#invoke:Protection banner/documentation|reasonTable}}
+
+== Errors ==
+
+Below is a list of some of the common errors that this module can produce, and how to fix them.
+
+=== Invalid protection date ===
+
+{{error|Error: invalid protection date ("abc")}}
+
+This error is produced if you supply a {{para|date}} parameter value that is not recognised as a valid date by the #time parser function. If in doubt, you can just use a date in the format "dd Month YYYY", e.g. "{{#time:j F Y|+ 1 week}}". To see a full range of valid inputs, see the [[mw:Help:Extension:ParserFunctions##time|#time documentation]] (only the first parameter, the ''format string'', may be specified).
+
+=== Invalid action ===
+
+{{error|Error: invalid action ("abc")}}
+
+This error is produced if you specify an invalid protection action. There are only three valid actions: &lt;code&gt;edit&lt;/code&gt; (the default, for normal protection), &lt;code&gt;move&lt;/code&gt; (for move-protection), and &lt;code&gt;autoreview&lt;/code&gt; (for [[WP:PC|pending changes]]). This should only be possible if you are using a template that supports manually specifying the protection action, such as {{tl|pp}}, or if you are using #invoke directly. If this is not the case, please leave a message on [[Module talk:Protection banner]].
+
+=== Reasons cannot contain the pipe character ===
+
+{{error|Error: reasons cannot contain the pipe character ("&amp;#124;")}}
+
+This error is produced if you specify a reason using the {{para|1}} parameter that includes a pipe character ("&amp;#124;"). Please check that you are not entering the {{tl|!}} magic word into this parameter by mistake. The pipe character is disallowed as the module uses it internally. A list of valid reasons can be seen in the [[#Reasons|reasons section]].
+
+=== Other errors ===
+
+If you see an error other than the ones above, it is likely to either be a bug in the module or mistake in the configuration. Please post a message about it at [[Module talk:Protection banner]].
+
+== Technical details ==
+
+This module uses configuration data from [[Module:Protection banner/config]]. Most of the module's behaviour can be configured there, making it easily portable across different wikis and different languages.
+
+General test cases for the module can be found at [[w:en:Module:Protection banner/testcases|Module:Protection banner/testcases]], and test cases specific to enwiki's config can be found at [[w:en:Module:Protection banner/config/testcases|Module:Protection banner/config/testcases]].
+
+Bug reports and feature requests should be made on [[w:en:Module talk:Protection banner|the module's talk page]].
+&lt;includeonly&gt;{{#ifeq:{{SUBPAGENAME}}|sandbox||
+&lt;!-- Categories go here and interwikis go in Wikidata. --&gt;
+}}&lt;/includeonly&gt;</text>
+      <sha1>ibb340x7c1fnpsmxz1lqnho3cm4jirv</sha1>
+    </revision>
+    <revision>
+      <id>3558205</id>
+      <parentid>3558204</parentid>
+      <timestamp>2026-03-20T19:49:19Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting </comment>
+      <origin>3558204</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="6628" sha1="ibb340x7c1fnpsmxz1lqnho3cm4jirv" xml:space="preserve">{{High-use}}
+{{Module rating|protected}}
+{{Lua|Module:Protection banner/config|Module:File link|Module:Effective protection level|Module:Effective protection expiry|Module:Yesno|Module:Arguments|Module:Message box|Module:Submit an edit request}}
+This module creates protection banners and padlock icons that are placed at the top of [[Wikipedia:Protection policy|protected pages]]. Most users will not need to use this module directly. 
+
+== Usage ==
+
+For adding protection templates to pages you can use the {{tl|pp}} template, or you may find it more convenient to use one of the more specific protection templates in the table below.
+
+{{protection templates}}
+
+=== From wikitext ===
+
+ &amp;#123;{#invoke:Protection banner|main
+ | 1        = ''reason''
+ | small    = ''yes/no''
+ | action   = ''action''
+ | date     = ''protection date''
+ | user     = ''username''
+ | section  = ''talk page section name''
+ | category = ''yes''
+ }&amp;#125;
+
+The #invoke syntax can be used for creating protection templates more specific than {{tl|pp}}. For example, it is possible to create a protection template which always shows a padlock icon by using the code &lt;code&gt;&lt;nowiki&gt;{{#invoke:Protection banner|main|small=yes}}&lt;/nowiki&gt;&lt;/code&gt;. Pages which call this template will still be able to use other arguments, like ''action''. However, this only works one level deep; a page calling a template which calls another template containing the above code will not automatically be able to use parameters like ''action''.
+
+'''''Note:''' You should no longer specify the expiry, as it is automatically retrieved in all cases.''
+
+=== From Lua ===
+
+First, load the module.
+
+&lt;syntaxhighlight lang="lua"&gt;
+local mProtectionBanner = require('Module:Protection banner')
+&lt;/syntaxhighlight&gt;
+
+Then you can make protection banners by using the _main function.
+
+&lt;syntaxhighlight lang="lua"&gt;
+mProtectionBanner._main(args, cfg, titleObj)
+&lt;/syntaxhighlight&gt;
+
+&lt;var&gt;args&lt;/var&gt; is a table of arguments to pass to the module. For possible keys and values for this table, see the [[#Parameters|parameters section]]. The &lt;var&gt;cfg&lt;/var&gt; and &lt;var&gt;titleObj&lt;/var&gt; variables are intended only for testing; &lt;var&gt;cfg&lt;/var&gt; specifies a customised config table to use instead of [[Module:Protection banner/config]], and &lt;var&gt;titleObj&lt;/var&gt; specifies a mw.title object to use instead of the current title. &lt;var&gt;args&lt;/var&gt;, &lt;var&gt;cfg&lt;/var&gt; and &lt;var&gt;titleObj&lt;/var&gt; are all optional.
+
+== Parameters ==
+
+All parameters are optional.
+
+* '''1''' – the reason that the page was protected. If set, this must be one of the values listed in the [[#Reasons|reasons table]].
+* '''small''' – if set to "yes", "y", "1", or "true", a padlock icon is generated instead of a full protection banner.
+* '''action''' – the protection action. Must be one of "edit" (for normal protection), "move" (for move-protection) or "autoreview" (for pending changes). The default value is "edit".
+* '''date''' – the protection date. This must be valid input to the second parameter of the [[mw:Help:Extension:ParserFunctions##time|#time parser function]]. This argument has an effect for reasons that use the PROTECTIONDATE parameter in their configuration. As of July 2014, those were the "office" and "reset" reasons.
+* '''user''' – the username of the user to generate links for. As of July 2014, this only has an effect when the "usertalk" reason is specified.
+* '''section''' – the section name of the protected page's talk page where discussion is taking place. This works for most, but not all, values of ''reason''.
+* '''category''' – categories are suppressed if this is set to "no", "n", "0", or "false".
+* '''catonly''' – if set to "yes", "y", "1", or "true", will only return the protection categories, and not return the banner or padlock. This has no visible output.
+
+== Reasons ==
+
+The following table contains the available reasons, plus the actions for which they are available.
+
+{{#invoke:Protection banner/documentation|reasonTable}}
+
+== Errors ==
+
+Below is a list of some of the common errors that this module can produce, and how to fix them.
+
+=== Invalid protection date ===
+
+{{error|Error: invalid protection date ("abc")}}
+
+This error is produced if you supply a {{para|date}} parameter value that is not recognised as a valid date by the #time parser function. If in doubt, you can just use a date in the format "dd Month YYYY", e.g. "{{#time:j F Y|+ 1 week}}". To see a full range of valid inputs, see the [[mw:Help:Extension:ParserFunctions##time|#time documentation]] (only the first parameter, the ''format string'', may be specified).
+
+=== Invalid action ===
+
+{{error|Error: invalid action ("abc")}}
+
+This error is produced if you specify an invalid protection action. There are only three valid actions: &lt;code&gt;edit&lt;/code&gt; (the default, for normal protection), &lt;code&gt;move&lt;/code&gt; (for move-protection), and &lt;code&gt;autoreview&lt;/code&gt; (for [[WP:PC|pending changes]]). This should only be possible if you are using a template that supports manually specifying the protection action, such as {{tl|pp}}, or if you are using #invoke directly. If this is not the case, please leave a message on [[Module talk:Protection banner]].
+
+=== Reasons cannot contain the pipe character ===
+
+{{error|Error: reasons cannot contain the pipe character ("&amp;#124;")}}
+
+This error is produced if you specify a reason using the {{para|1}} parameter that includes a pipe character ("&amp;#124;"). Please check that you are not entering the {{tl|!}} magic word into this parameter by mistake. The pipe character is disallowed as the module uses it internally. A list of valid reasons can be seen in the [[#Reasons|reasons section]].
+
+=== Other errors ===
+
+If you see an error other than the ones above, it is likely to either be a bug in the module or mistake in the configuration. Please post a message about it at [[Module talk:Protection banner]].
+
+== Technical details ==
+
+This module uses configuration data from [[Module:Protection banner/config]]. Most of the module's behaviour can be configured there, making it easily portable across different wikis and different languages.
+
+General test cases for the module can be found at [[w:en:Module:Protection banner/testcases|Module:Protection banner/testcases]], and test cases specific to enwiki's config can be found at [[w:en:Module:Protection banner/config/testcases|Module:Protection banner/config/testcases]].
+
+Bug reports and feature requests should be made on [[w:en:Module talk:Protection banner|the module's talk page]].
+&lt;includeonly&gt;{{#ifeq:{{SUBPAGENAME}}|sandbox||
+&lt;!-- Categories go here and interwikis go in Wikidata. --&gt;
+}}&lt;/includeonly&gt;</text>
+      <sha1>ibb340x7c1fnpsmxz1lqnho3cm4jirv</sha1>
+    </revision>
+  </page>
+</mediawiki>

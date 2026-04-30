@@ -1,0 +1,2926 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:MultiReplace</title>
+    <ns>828</ns>
+    <id>1211</id>
+    <revision>
+      <id>553695</id>
+      <timestamp>2016-07-14T05:49:38Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Petr Matas</username>
+        <id>0</id>
+      </contributor>
+      <comment>[[WP:AES|←]]Created page with 'p = {}  function p.main(frame) 	local args = frame:getParent().args 	local input = args[1] 	local plain = args.plain == "yes"  	local i = 1 	local changeList = {...'</comment>
+      <origin>553695</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1194" sha1="bej5eeg5nn96ahjhbxkj8im2snetifz" xml:space="preserve">p = {}
+
+function p.main(frame)
+	local args = frame:getParent().args
+	local input = args[1]
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return frame:expandTemplate{
+				title = 'Error',
+				args = { 'Multireplace: Unpaired argument: &lt;code&gt;' + (i * 2 - 1) + ' = ' + change.repl + '&lt;/code&gt;' }
+			}
+		end
+		changeList[i] = change
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start &lt; bestStart then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result + mw.ustring.sub(input, pos, bestStart - 1)
+		if bestchange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result + (plain and change.repl or mw.ustring.gsub(fragment, change.pattern, change.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+return p</text>
+      <sha1>bej5eeg5nn96ahjhbxkj8im2snetifz</sha1>
+    </revision>
+    <revision>
+      <id>553696</id>
+      <parentid>553695</parentid>
+      <timestamp>2016-07-14T06:17:49Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Petr Matas</username>
+        <id>0</id>
+      </contributor>
+      <origin>553696</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1207" sha1="0rp2bmzg7j772y8g96uv6gqrpk2boyi" xml:space="preserve">p = {}
+
+function p.main(frame)
+	local args = frame:getParent().args
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return frame:expandTemplate{
+				title = 'Error',
+				args = { 'Multireplace: Unpaired argument: &lt;code&gt;' + (i * 2 - 1) + ' = ' + change.repl + '&lt;/code&gt;' }
+			}
+		end
+		changeList[i] = change
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start &lt; bestStart then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result + mw.ustring.sub(input, pos, bestStart - 1)
+		if bestchange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result + (plain and change.repl or mw.ustring.gsub(fragment, change.pattern, change.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+return p</text>
+      <sha1>0rp2bmzg7j772y8g96uv6gqrpk2boyi</sha1>
+    </revision>
+    <revision>
+      <id>553697</id>
+      <parentid>553696</parentid>
+      <timestamp>2016-07-14T06:33:56Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Petr Matas</username>
+        <id>0</id>
+      </contributor>
+      <origin>553697</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1213" sha1="1nr4g1eeefgnudjr6ovl94jjein7xtu" xml:space="preserve">p = {}
+
+function p.main(frame)
+	local args = frame:getParent().args
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return frame:expandTemplate{
+				title = 'Error',
+				args = { 'Multireplace: Unpaired argument: &lt;code&gt;' .. (i * 2 - 1) .. ' = ' .. change.repl .. '&lt;/code&gt;' }
+			}
+		end
+		changeList[i] = change
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start &lt; bestStart then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestchange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and change.repl or mw.ustring.gsub(fragment, change.pattern, change.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+return p</text>
+      <sha1>1nr4g1eeefgnudjr6ovl94jjein7xtu</sha1>
+    </revision>
+    <revision>
+      <id>553698</id>
+      <parentid>553697</parentid>
+      <timestamp>2016-07-14T06:51:02Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Petr Matas</username>
+        <id>0</id>
+      </contributor>
+      <origin>553698</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1225" sha1="fnilyd5ng7ndr3w8gc5qa4fbkaatv6d" xml:space="preserve">p = {}
+
+function p.main(frame)
+	local args = frame:getParent().args
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return frame:expandTemplate{
+				title = 'Error',
+				args = { 'Multireplace: Unpaired argument: &lt;code&gt;' .. (i * 2 - 1) .. ' = ' .. change.repl .. '&lt;/code&gt;' }
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start &lt; bestStart then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestchange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and change.repl or mw.ustring.gsub(fragment, change.pattern, change.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+return p</text>
+      <sha1>fnilyd5ng7ndr3w8gc5qa4fbkaatv6d</sha1>
+    </revision>
+    <revision>
+      <id>553699</id>
+      <parentid>553698</parentid>
+      <timestamp>2016-07-14T07:59:17Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Petr Matas</username>
+        <id>0</id>
+      </contributor>
+      <origin>553699</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1221" sha1="qe6p5mhs6wnsfcv3j1l95s9zxl1rpil" xml:space="preserve">p = {}
+
+function p.main(frame)
+	local args = frame:getParent().args
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return frame:expandTemplate{
+				title = 'Error',
+				args = { 'Multireplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. change.repl .. '&lt;/code&gt;' }
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start &lt; bestStart then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestchange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and change.repl or mw.ustring.gsub(fragment, change.pattern, change.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+return p</text>
+      <sha1>qe6p5mhs6wnsfcv3j1l95s9zxl1rpil</sha1>
+    </revision>
+    <revision>
+      <id>553700</id>
+      <parentid>553699</parentid>
+      <timestamp>2016-07-14T08:00:45Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Petr Matas</username>
+        <id>0</id>
+      </contributor>
+      <origin>553700</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1224" sha1="5pbgzevloe4uk9w76qx1d177k693ham" xml:space="preserve">p = {}
+
+function p.main(frame)
+	local args = frame:getParent().args
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return frame:expandTemplate{
+				title = 'Error',
+				args = { 'Multireplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. change.pattern .. '&lt;/code&gt;' }
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start &lt; bestStart then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestchange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and change.repl or mw.ustring.gsub(fragment, change.pattern, change.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+return p</text>
+      <sha1>5pbgzevloe4uk9w76qx1d177k693ham</sha1>
+    </revision>
+    <revision>
+      <id>553701</id>
+      <parentid>553700</parentid>
+      <timestamp>2016-07-14T08:03:31Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Petr Matas</username>
+        <id>0</id>
+      </contributor>
+      <origin>553701</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1236" sha1="7t09p4irrjqvz9d4dwyn4i9egiixqvn" xml:space="preserve">p = {}
+
+function p.main(frame)
+	local args = frame:getParent().args
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return frame:expandTemplate{
+				title = 'Error',
+				args = { 'Multireplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. change.pattern .. '&lt;/code&gt;' }
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestchange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and change.repl or mw.ustring.gsub(fragment, change.pattern, change.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+return p</text>
+      <sha1>7t09p4irrjqvz9d4dwyn4i9egiixqvn</sha1>
+    </revision>
+    <revision>
+      <id>553702</id>
+      <parentid>553701</parentid>
+      <timestamp>2016-07-14T08:15:34Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Petr Matas</username>
+        <id>0</id>
+      </contributor>
+      <origin>553702</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1252" sha1="r1npyhd3q0smdnyj4utdx2kq1kr2pdl" xml:space="preserve">p = {}
+
+function p.main(frame)
+	local args = frame:getParent().args
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return frame:expandTemplate{
+				title = 'Error',
+				args = { 'Multireplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. change.pattern .. '&lt;/code&gt;' }
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestchange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+return p</text>
+      <sha1>r1npyhd3q0smdnyj4utdx2kq1kr2pdl</sha1>
+    </revision>
+    <revision>
+      <id>553703</id>
+      <parentid>553702</parentid>
+      <timestamp>2016-07-14T08:20:22Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Petr Matas</username>
+        <id>0</id>
+      </contributor>
+      <origin>553703</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1252" sha1="cao98d7pqx659fy4qha64f9dxftfcqz" xml:space="preserve">p = {}
+
+function p.main(frame)
+	local args = frame:getParent().args
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return frame:expandTemplate{
+				title = 'Error',
+				args = { 'Multireplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. change.pattern .. '&lt;/code&gt;' }
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+return p</text>
+      <sha1>cao98d7pqx659fy4qha64f9dxftfcqz</sha1>
+    </revision>
+    <revision>
+      <id>553704</id>
+      <parentid>553703</parentid>
+      <timestamp>2016-07-14T08:23:58Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Petr Matas</username>
+        <id>0</id>
+      </contributor>
+      <origin>553704</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1278" sha1="fcjgu2ura6usgfopy14jpg7hbo8drok" xml:space="preserve">p = {}
+
+function p.main(frame)
+	local args = frame:getParent().args
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return frame:expandTemplate{
+				title = 'Error',
+				args = { 'Multireplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. change.pattern .. '&lt;/code&gt;' }
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result .. "x" .. args[10] .. "x"
+end
+
+return p</text>
+      <sha1>fcjgu2ura6usgfopy14jpg7hbo8drok</sha1>
+    </revision>
+    <revision>
+      <id>553705</id>
+      <parentid>553704</parentid>
+      <timestamp>2016-07-14T08:51:30Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Petr Matas</username>
+        <id>0</id>
+      </contributor>
+      <origin>553705</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1321" sha1="6l8dd5oz56kj121vf6vbr1lio9o4lgd" xml:space="preserve">p = {}
+
+function p.main(frame)
+	local args = frame:getParent().args
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return frame:expandTemplate{
+				title = 'Error',
+				args = { 'Multireplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. change.pattern .. '&lt;/code&gt;' }
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+		result = result .. "(pos=" .. pos .. ")"
+	end
+	return result .. "x" .. args[10] .. "x"
+end
+
+return p</text>
+      <sha1>6l8dd5oz56kj121vf6vbr1lio9o4lgd</sha1>
+    </revision>
+    <revision>
+      <id>553706</id>
+      <parentid>553705</parentid>
+      <timestamp>2016-07-14T08:56:55Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Petr Matas</username>
+        <id>0</id>
+      </contributor>
+      <origin>553706</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1366" sha1="sic2zwxt2i5uedvkcwddnkfn94kxh6k" xml:space="preserve">p = {}
+
+function p.main(frame)
+	local args = frame:getParent().args
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return frame:expandTemplate{
+				title = 'Error',
+				args = { 'Multireplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. change.pattern .. '&lt;/code&gt;' }
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. "(" .. fragment .. ")"
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+		result = result .. "(pos=" .. pos .. ")"
+	end
+	return result .. "x" .. args[10] .. "x"
+end
+
+return p</text>
+      <sha1>sic2zwxt2i5uedvkcwddnkfn94kxh6k</sha1>
+    </revision>
+    <revision>
+      <id>553707</id>
+      <parentid>553706</parentid>
+      <timestamp>2016-07-14T09:00:26Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Petr Matas</username>
+        <id>0</id>
+      </contributor>
+      <origin>553707</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1404" sha1="nux1z2nac2v6dc7fhw0nud42yrl7pez" xml:space="preserve">p = {}
+
+function p.main(frame)
+	local args = frame:getParent().args
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return frame:expandTemplate{
+				title = 'Error',
+				args = { 'Multireplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. change.pattern .. '&lt;/code&gt;' }
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. "(" .. bestStart .. "-" ..bestStop .. ":" .. fragment .. ")"
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+		result = result .. "(pos=" .. pos .. ")"
+	end
+	return result .. "x" .. args[10] .. "x"
+end
+
+return p</text>
+      <sha1>nux1z2nac2v6dc7fhw0nud42yrl7pez</sha1>
+    </revision>
+    <revision>
+      <id>553708</id>
+      <parentid>553707</parentid>
+      <timestamp>2016-07-14T09:19:59Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Petr Matas</username>
+        <id>0</id>
+      </contributor>
+      <origin>553708</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1378" sha1="a2nqgxi14gj58q2100tu7bt0ioj1v8r" xml:space="preserve">p = {}
+
+function p.main(frame)
+	local args = frame:getParent().args
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return frame:expandTemplate{
+				title = 'Error',
+				args = { 'Multireplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. change.pattern .. '&lt;/code&gt;' }
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. "(" .. bestStart .. "-" ..bestStop .. ":" .. fragment .. ")"
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+		result = result .. "(pos=" .. pos .. ")"
+	end
+	return result
+end
+
+return p</text>
+      <sha1>a2nqgxi14gj58q2100tu7bt0ioj1v8r</sha1>
+    </revision>
+    <revision>
+      <id>553709</id>
+      <parentid>553708</parentid>
+      <timestamp>2016-07-14T09:24:51Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Petr Matas</username>
+        <id>0</id>
+      </contributor>
+      <origin>553709</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1252" sha1="cao98d7pqx659fy4qha64f9dxftfcqz" xml:space="preserve">p = {}
+
+function p.main(frame)
+	local args = frame:getParent().args
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return frame:expandTemplate{
+				title = 'Error',
+				args = { 'Multireplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. change.pattern .. '&lt;/code&gt;' }
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+return p</text>
+      <sha1>cao98d7pqx659fy4qha64f9dxftfcqz</sha1>
+    </revision>
+    <revision>
+      <id>553710</id>
+      <parentid>553709</parentid>
+      <timestamp>2017-10-10T17:19:53Z</timestamp>
+      <contributor>
+        <username>MusikAnimal</username>
+        <id>53</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:MultiReplace]]": [[WP:High-risk templates|High-risk module]] ([Edit=Require template editor access] (indefinite))</comment>
+      <origin>553709</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1252" sha1="cao98d7pqx659fy4qha64f9dxftfcqz" xml:space="preserve">p = {}
+
+function p.main(frame)
+	local args = frame:getParent().args
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return frame:expandTemplate{
+				title = 'Error',
+				args = { 'Multireplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. change.pattern .. '&lt;/code&gt;' }
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+return p</text>
+      <sha1>cao98d7pqx659fy4qha64f9dxftfcqz</sha1>
+    </revision>
+    <revision>
+      <id>553711</id>
+      <parentid>553710</parentid>
+      <timestamp>2017-10-10T17:32:02Z</timestamp>
+      <contributor>
+        <username>MusikAnimal</username>
+        <id>53</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection level for "[[Module:MultiReplace]]": [[WP:High-risk templates|High-risk Lua module]]: allow extended confirmed editors to edit ([Edit=Require extended confirmed access] (indefinite))</comment>
+      <origin>553709</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1252" sha1="cao98d7pqx659fy4qha64f9dxftfcqz" xml:space="preserve">p = {}
+
+function p.main(frame)
+	local args = frame:getParent().args
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return frame:expandTemplate{
+				title = 'Error',
+				args = { 'Multireplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. change.pattern .. '&lt;/code&gt;' }
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+return p</text>
+      <sha1>cao98d7pqx659fy4qha64f9dxftfcqz</sha1>
+    </revision>
+    <revision>
+      <id>553712</id>
+      <parentid>553711</parentid>
+      <timestamp>2018-04-12T22:45:07Z</timestamp>
+      <contributor>
+        <username>Ahecht</username>
+        <id>54</id>
+      </contributor>
+      <comment>No reason to call a template that calls a module that calls mw.html.create. Just call mw.html.create directly.</comment>
+      <origin>553712</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1273" sha1="8yh1btra7mpdku9ei9dh2tn8vt1c9iu" xml:space="preserve">p = {}
+
+function p.main(frame)
+	local args = frame:getParent().args
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return tostring(mw.html.create("strong"):addClass('error')
+        		:wikitext('Multireplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. change.pattern .. '&lt;/code&gt;')
+        	)
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+return p</text>
+      <sha1>8yh1btra7mpdku9ei9dh2tn8vt1c9iu</sha1>
+    </revision>
+    <revision>
+      <id>553713</id>
+      <parentid>553712</parentid>
+      <timestamp>2018-04-12T22:46:09Z</timestamp>
+      <contributor>
+        <username>Ahecht</username>
+        <id>54</id>
+      </contributor>
+      <minor/>
+      <comment>spaces→tabs</comment>
+      <origin>553713</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1261" sha1="7weaeghd97bbiw639b7q0hmiarkzaph" xml:space="preserve">p = {}
+
+function p.main(frame)
+	local args = frame:getParent().args
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return tostring(mw.html.create("strong"):addClass('error')
+				:wikitext('Multireplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. change.pattern .. '&lt;/code&gt;')
+			)
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+return p</text>
+      <sha1>7weaeghd97bbiw639b7q0hmiarkzaph</sha1>
+    </revision>
+    <revision>
+      <id>553714</id>
+      <parentid>553713</parentid>
+      <timestamp>2018-04-14T10:13:41Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Petr Matas</username>
+        <id>0</id>
+      </contributor>
+      <comment>Call [[Module:Error]] to avoid copy&amp;paste programming</comment>
+      <origin>553714</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1229" sha1="ds5xdynzrq35zih3ufyu1ak2zr0h83c" xml:space="preserve">p = {}
+
+function p.main(frame)
+	local args = frame:getParent().args
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return require('Module:Error').error{
+				'MultiReplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. change.pattern .. '&lt;/code&gt;'
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+return p</text>
+      <sha1>ds5xdynzrq35zih3ufyu1ak2zr0h83c</sha1>
+    </revision>
+    <revision>
+      <id>553715</id>
+      <parentid>553714</parentid>
+      <timestamp>2018-04-18T14:48:53Z</timestamp>
+      <contributor>
+        <username>Ahecht</username>
+        <id>54</id>
+      </contributor>
+      <comment>sync from sandbox. Allow call by direct invocation.</comment>
+      <origin>553715</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1496" sha1="9i7vesgni29nktitoqkx59ltqcuhev4" xml:space="preserve">p = {}
+
+local function MultiReplace(args)
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return require('Module:Error').error{
+				'MultiReplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. change.pattern .. '&lt;/code&gt;'
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+function p.main(frame)
+	local args
+	if type(frame.args) == 'table' then
+		if frame.args[1] then
+			args = frame.args
+			if args[1] == '' then
+				args[1] = frame:getParent().args[1]
+			end
+		else
+			args = frame:getParent().args
+		end
+	else
+		args = frame
+	end
+	return MultiReplace(args)
+end
+
+return p</text>
+      <sha1>9i7vesgni29nktitoqkx59ltqcuhev4</sha1>
+    </revision>
+    <revision>
+      <id>553716</id>
+      <parentid>553715</parentid>
+      <timestamp>2018-04-25T18:43:33Z</timestamp>
+      <contributor>
+        <username>Ahecht</username>
+        <id>54</id>
+      </contributor>
+      <comment>rm Superfluous input sanitization</comment>
+      <origin>553716</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1424" sha1="29qzri5ultm4rkhmomf4e5yvbwh6w79" xml:space="preserve">p = {}
+
+local function MultiReplace(args)
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return require('Module:Error').error{
+				'MultiReplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. change.pattern .. '&lt;/code&gt;'
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+function p.main(frame)
+	local args
+	if type(frame.args) == 'table' then
+		if frame.args[1] then
+			args = frame.args
+		else
+			args = frame:getParent().args
+		end
+	else
+		args = frame
+	end
+	return MultiReplace(args)
+end
+
+return p</text>
+      <sha1>29qzri5ultm4rkhmomf4e5yvbwh6w79</sha1>
+    </revision>
+    <revision>
+      <id>553717</id>
+      <parentid>553716</parentid>
+      <timestamp>2018-04-25T18:55:39Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Petr Matas</username>
+        <id>0</id>
+      </contributor>
+      <comment>Better readable p.main</comment>
+      <origin>553717</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1412" sha1="slrxcx8d9xhfwu46o95pdiyb4kghan3" xml:space="preserve">p = {}
+
+local function MultiReplace(args)
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return require('Module:Error').error{
+				'MultiReplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. change.pattern .. '&lt;/code&gt;'
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+function p.main(frame)
+	local args
+	if type(frame.args) ~= 'table' then
+		args = frame
+	elseif frame.args[1] then
+		args = frame.args
+	else
+		args = frame:getParent().args
+	end
+	return MultiReplace(args)
+end
+
+return p</text>
+      <sha1>slrxcx8d9xhfwu46o95pdiyb4kghan3</sha1>
+    </revision>
+    <revision>
+      <id>553718</id>
+      <parentid>553717</parentid>
+      <timestamp>2018-04-29T15:19:30Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Petr Matas</username>
+        <id>0</id>
+      </contributor>
+      <comment>Allow a call from Lua without curly braces</comment>
+      <origin>553718</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1424" sha1="95xnv3yvolixngufi1jdsiwnf7fdf62" xml:space="preserve">p = {}
+
+local function MultiReplace(args)
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return require('Module:Error').error{
+				'MultiReplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. change.pattern .. '&lt;/code&gt;'
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+function p.main(frame, ...)
+	local args =
+		type(frame) ~= 'table' and {frame, ...} or
+		type(frame.args) ~= 'table' and frame or
+		frame.args[1] and frame.args or
+		frame:getParent().args
+	return MultiReplace(args)
+end
+
+return p</text>
+      <sha1>95xnv3yvolixngufi1jdsiwnf7fdf62</sha1>
+    </revision>
+    <revision>
+      <id>553719</id>
+      <parentid>553718</parentid>
+      <timestamp>2019-02-25T03:38:04Z</timestamp>
+      <contributor>
+        <username>MusikAnimal</username>
+        <id>53</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection level for "[[Module:MultiReplace]]": [[WP:High-risk templates|High-risk Lua module]] ([Edit=Require template editor access] (indefinite) [Move=Require template editor access] (indefinite))</comment>
+      <origin>553718</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1424" sha1="95xnv3yvolixngufi1jdsiwnf7fdf62" xml:space="preserve">p = {}
+
+local function MultiReplace(args)
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return require('Module:Error').error{
+				'MultiReplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. change.pattern .. '&lt;/code&gt;'
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+function p.main(frame, ...)
+	local args =
+		type(frame) ~= 'table' and {frame, ...} or
+		type(frame.args) ~= 'table' and frame or
+		frame.args[1] and frame.args or
+		frame:getParent().args
+	return MultiReplace(args)
+end
+
+return p</text>
+      <sha1>95xnv3yvolixngufi1jdsiwnf7fdf62</sha1>
+    </revision>
+    <revision>
+      <id>553690</id>
+      <timestamp>2022-11-15T20:58:00Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <comment>Per edit request</comment>
+      <origin>553690</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1446" sha1="6zo47ee57vf0m5j8jpjxogh6942fd2q" xml:space="preserve">local p = {}
+
+local function MultiReplace(args)
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return require('Module:Error').error{
+				'MultiReplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. mw.text.nowiki(change.pattern) .. '&lt;/code&gt;'
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+function p.main(frame, ...)
+	local args =
+		type(frame) ~= 'table' and {frame, ...} or
+		type(frame.args) ~= 'table' and frame or
+		frame.args[1] and frame.args or
+		frame:getParent().args
+	return MultiReplace(args)
+end
+
+return p</text>
+      <sha1>6zo47ee57vf0m5j8jpjxogh6942fd2q</sha1>
+    </revision>
+    <revision>
+      <id>553691</id>
+      <parentid>553690</parentid>
+      <timestamp>2024-06-29T13:44:26Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:MultiReplace]]</comment>
+      <origin>553690</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1446" sha1="6zo47ee57vf0m5j8jpjxogh6942fd2q" xml:space="preserve">local p = {}
+
+local function MultiReplace(args)
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return require('Module:Error').error{
+				'MultiReplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. mw.text.nowiki(change.pattern) .. '&lt;/code&gt;'
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+function p.main(frame, ...)
+	local args =
+		type(frame) ~= 'table' and {frame, ...} or
+		type(frame.args) ~= 'table' and frame or
+		frame.args[1] and frame.args or
+		frame:getParent().args
+	return MultiReplace(args)
+end
+
+return p</text>
+      <sha1>6zo47ee57vf0m5j8jpjxogh6942fd2q</sha1>
+    </revision>
+    <revision>
+      <id>553692</id>
+      <parentid>553691</parentid>
+      <timestamp>2024-12-20T02:05:10Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Adding [[Category:pages from wikipedia]][[en:{{subst:PAGENAME}}]][[Category:pages from wikipedia]] on using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>553692</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1539" sha1="9lxtorduq7vmzpizjxv4scoo1g1ngiw" xml:space="preserve">local p = {}
+
+local function MultiReplace(args)
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return require('Module:Error').error{
+				'MultiReplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. mw.text.nowiki(change.pattern) .. '&lt;/code&gt;'
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+function p.main(frame, ...)
+	local args =
+		type(frame) ~= 'table' and {frame, ...} or
+		type(frame.args) ~= 'table' and frame or
+		frame.args[1] and frame.args or
+		frame:getParent().args
+	return MultiReplace(args)
+end
+
+return p
+
+[[Category:pages from wikipedia]][[en:{{subst:PAGENAME}}]][[Category:pages from wikipedia]]</text>
+      <sha1>9lxtorduq7vmzpizjxv4scoo1g1ngiw</sha1>
+    </revision>
+    <revision>
+      <id>553693</id>
+      <parentid>553692</parentid>
+      <timestamp>2024-12-22T02:05:10Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Fixing Terrible editing mistake</comment>
+      <origin>553693</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1448" sha1="e8p83vuyfeay5og40dhzn3na96g4dqr" xml:space="preserve">local p = {}
+
+local function MultiReplace(args)
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return require('Module:Error').error{
+				'MultiReplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. mw.text.nowiki(change.pattern) .. '&lt;/code&gt;'
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+function p.main(frame, ...)
+	local args =
+		type(frame) ~= 'table' and {frame, ...} or
+		type(frame.args) ~= 'table' and frame or
+		frame.args[1] and frame.args or
+		frame:getParent().args
+	return MultiReplace(args)
+end
+
+return p
+
+</text>
+      <sha1>e8p83vuyfeay5og40dhzn3na96g4dqr</sha1>
+    </revision>
+    <revision>
+      <id>553694</id>
+      <parentid>553693</parentid>
+      <timestamp>2024-12-23T02:34:47Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Fixing my edit mistake that put this category on numerous templates it did not belong on</comment>
+      <origin>553693</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1448" sha1="e8p83vuyfeay5og40dhzn3na96g4dqr" xml:space="preserve">local p = {}
+
+local function MultiReplace(args)
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return require('Module:Error').error{
+				'MultiReplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. mw.text.nowiki(change.pattern) .. '&lt;/code&gt;'
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+function p.main(frame, ...)
+	local args =
+		type(frame) ~= 'table' and {frame, ...} or
+		type(frame.args) ~= 'table' and frame or
+		frame.args[1] and frame.args or
+		frame:getParent().args
+	return MultiReplace(args)
+end
+
+return p
+
+</text>
+      <sha1>e8p83vuyfeay5og40dhzn3na96g4dqr</sha1>
+    </revision>
+    <revision>
+      <id>1212</id>
+      <timestamp>2025-03-25T05:23:25Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 25 revisions imported from [[:wikipedia:Module:MultiReplace]]</comment>
+      <origin>1212</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1448" sha1="e8p83vuyfeay5og40dhzn3na96g4dqr" xml:space="preserve">local p = {}
+
+local function MultiReplace(args)
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return require('Module:Error').error{
+				'MultiReplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. mw.text.nowiki(change.pattern) .. '&lt;/code&gt;'
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+function p.main(frame, ...)
+	local args =
+		type(frame) ~= 'table' and {frame, ...} or
+		type(frame.args) ~= 'table' and frame or
+		frame.args[1] and frame.args or
+		frame:getParent().args
+	return MultiReplace(args)
+end
+
+return p
+
+</text>
+      <sha1>e8p83vuyfeay5og40dhzn3na96g4dqr</sha1>
+    </revision>
+    <revision>
+      <id>3304529</id>
+      <parentid>1212</parentid>
+      <timestamp>2026-02-26T20:18:56Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <comment>Per edit request</comment>
+      <origin>3304529</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1446" sha1="6zo47ee57vf0m5j8jpjxogh6942fd2q" xml:space="preserve">local p = {}
+
+local function MultiReplace(args)
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return require('Module:Error').error{
+				'MultiReplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. mw.text.nowiki(change.pattern) .. '&lt;/code&gt;'
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+function p.main(frame, ...)
+	local args =
+		type(frame) ~= 'table' and {frame, ...} or
+		type(frame.args) ~= 'table' and frame or
+		frame.args[1] and frame.args or
+		frame:getParent().args
+	return MultiReplace(args)
+end
+
+return p</text>
+      <sha1>6zo47ee57vf0m5j8jpjxogh6942fd2q</sha1>
+    </revision>
+    <revision>
+      <id>3304530</id>
+      <parentid>3304529</parentid>
+      <timestamp>2026-02-26T20:18:56Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: importing this file, and also doing a full refresh import of all dependencies, because I am concerned this is one with a lot of broken dependencies. Intended end result is the template [[Template:Talk page header]] which is gonna be highly customized to our usage later on</comment>
+      <origin>3304529</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1446" sha1="6zo47ee57vf0m5j8jpjxogh6942fd2q" xml:space="preserve">local p = {}
+
+local function MultiReplace(args)
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return require('Module:Error').error{
+				'MultiReplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. mw.text.nowiki(change.pattern) .. '&lt;/code&gt;'
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+function p.main(frame, ...)
+	local args =
+		type(frame) ~= 'table' and {frame, ...} or
+		type(frame.args) ~= 'table' and frame or
+		frame.args[1] and frame.args or
+		frame:getParent().args
+	return MultiReplace(args)
+end
+
+return p</text>
+      <sha1>6zo47ee57vf0m5j8jpjxogh6942fd2q</sha1>
+    </revision>
+    <revision>
+      <id>3406927</id>
+      <parentid>3304530</parentid>
+      <timestamp>2026-03-12T20:03:03Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <comment>Per edit request</comment>
+      <origin>3304529</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1446" sha1="6zo47ee57vf0m5j8jpjxogh6942fd2q" xml:space="preserve">local p = {}
+
+local function MultiReplace(args)
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return require('Module:Error').error{
+				'MultiReplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. mw.text.nowiki(change.pattern) .. '&lt;/code&gt;'
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+function p.main(frame, ...)
+	local args =
+		type(frame) ~= 'table' and {frame, ...} or
+		type(frame.args) ~= 'table' and frame or
+		frame.args[1] and frame.args or
+		frame:getParent().args
+	return MultiReplace(args)
+end
+
+return p</text>
+      <sha1>6zo47ee57vf0m5j8jpjxogh6942fd2q</sha1>
+    </revision>
+    <revision>
+      <id>3406928</id>
+      <parentid>3406927</parentid>
+      <timestamp>2026-03-12T20:03:03Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3304529</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1446" sha1="6zo47ee57vf0m5j8jpjxogh6942fd2q" xml:space="preserve">local p = {}
+
+local function MultiReplace(args)
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return require('Module:Error').error{
+				'MultiReplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. mw.text.nowiki(change.pattern) .. '&lt;/code&gt;'
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+function p.main(frame, ...)
+	local args =
+		type(frame) ~= 'table' and {frame, ...} or
+		type(frame.args) ~= 'table' and frame or
+		frame.args[1] and frame.args or
+		frame:getParent().args
+	return MultiReplace(args)
+end
+
+return p</text>
+      <sha1>6zo47ee57vf0m5j8jpjxogh6942fd2q</sha1>
+    </revision>
+    <revision>
+      <id>3408534</id>
+      <parentid>3406928</parentid>
+      <timestamp>2026-03-12T20:38:23Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <comment>Per edit request</comment>
+      <origin>3304529</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1446" sha1="6zo47ee57vf0m5j8jpjxogh6942fd2q" xml:space="preserve">local p = {}
+
+local function MultiReplace(args)
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return require('Module:Error').error{
+				'MultiReplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. mw.text.nowiki(change.pattern) .. '&lt;/code&gt;'
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+function p.main(frame, ...)
+	local args =
+		type(frame) ~= 'table' and {frame, ...} or
+		type(frame.args) ~= 'table' and frame or
+		frame.args[1] and frame.args or
+		frame:getParent().args
+	return MultiReplace(args)
+end
+
+return p</text>
+      <sha1>6zo47ee57vf0m5j8jpjxogh6942fd2q</sha1>
+    </revision>
+    <revision>
+      <id>3408535</id>
+      <parentid>3408534</parentid>
+      <timestamp>2026-03-12T20:38:23Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3304529</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1446" sha1="6zo47ee57vf0m5j8jpjxogh6942fd2q" xml:space="preserve">local p = {}
+
+local function MultiReplace(args)
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return require('Module:Error').error{
+				'MultiReplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. mw.text.nowiki(change.pattern) .. '&lt;/code&gt;'
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+function p.main(frame, ...)
+	local args =
+		type(frame) ~= 'table' and {frame, ...} or
+		type(frame.args) ~= 'table' and frame or
+		frame.args[1] and frame.args or
+		frame:getParent().args
+	return MultiReplace(args)
+end
+
+return p</text>
+      <sha1>6zo47ee57vf0m5j8jpjxogh6942fd2q</sha1>
+    </revision>
+    <revision>
+      <id>3429440</id>
+      <parentid>3408535</parentid>
+      <timestamp>2026-03-13T09:06:05Z</timestamp>
+      <contributor>
+        <username>en&gt;Pppery</username>
+        <id>0</id>
+      </contributor>
+      <comment>Per edit request</comment>
+      <origin>3304529</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1446" sha1="6zo47ee57vf0m5j8jpjxogh6942fd2q" xml:space="preserve">local p = {}
+
+local function MultiReplace(args)
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return require('Module:Error').error{
+				'MultiReplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. mw.text.nowiki(change.pattern) .. '&lt;/code&gt;'
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+function p.main(frame, ...)
+	local args =
+		type(frame) ~= 'table' and {frame, ...} or
+		type(frame.args) ~= 'table' and frame or
+		frame.args[1] and frame.args or
+		frame:getParent().args
+	return MultiReplace(args)
+end
+
+return p</text>
+      <sha1>6zo47ee57vf0m5j8jpjxogh6942fd2q</sha1>
+    </revision>
+    <revision>
+      <id>3429441</id>
+      <parentid>3429440</parentid>
+      <timestamp>2026-03-13T09:06:05Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Bot: reimport from enwiki to fix erroneous transclusions [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23043689808|manual triggered pipeline]]</comment>
+      <origin>3304529</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1446" sha1="6zo47ee57vf0m5j8jpjxogh6942fd2q" xml:space="preserve">local p = {}
+
+local function MultiReplace(args)
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return require('Module:Error').error{
+				'MultiReplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. mw.text.nowiki(change.pattern) .. '&lt;/code&gt;'
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+function p.main(frame, ...)
+	local args =
+		type(frame) ~= 'table' and {frame, ...} or
+		type(frame.args) ~= 'table' and frame or
+		frame.args[1] and frame.args or
+		frame:getParent().args
+	return MultiReplace(args)
+end
+
+return p</text>
+      <sha1>6zo47ee57vf0m5j8jpjxogh6942fd2q</sha1>
+    </revision>
+    <revision>
+      <id>3558152</id>
+      <parentid>3429441</parentid>
+      <timestamp>2026-03-20T19:48:14Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <comment>Per edit request</comment>
+      <origin>3304529</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1446" sha1="6zo47ee57vf0m5j8jpjxogh6942fd2q" xml:space="preserve">local p = {}
+
+local function MultiReplace(args)
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return require('Module:Error').error{
+				'MultiReplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. mw.text.nowiki(change.pattern) .. '&lt;/code&gt;'
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+function p.main(frame, ...)
+	local args =
+		type(frame) ~= 'table' and {frame, ...} or
+		type(frame.args) ~= 'table' and frame or
+		frame.args[1] and frame.args or
+		frame:getParent().args
+	return MultiReplace(args)
+end
+
+return p</text>
+      <sha1>6zo47ee57vf0m5j8jpjxogh6942fd2q</sha1>
+    </revision>
+    <revision>
+      <id>3558153</id>
+      <parentid>3558152</parentid>
+      <timestamp>2026-03-20T19:48:14Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting </comment>
+      <origin>3304529</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1446" sha1="6zo47ee57vf0m5j8jpjxogh6942fd2q" xml:space="preserve">local p = {}
+
+local function MultiReplace(args)
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return require('Module:Error').error{
+				'MultiReplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. mw.text.nowiki(change.pattern) .. '&lt;/code&gt;'
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+function p.main(frame, ...)
+	local args =
+		type(frame) ~= 'table' and {frame, ...} or
+		type(frame.args) ~= 'table' and frame or
+		frame.args[1] and frame.args or
+		frame:getParent().args
+	return MultiReplace(args)
+end
+
+return p</text>
+      <sha1>6zo47ee57vf0m5j8jpjxogh6942fd2q</sha1>
+    </revision>
+    <revision>
+      <id>3568979</id>
+      <parentid>3558153</parentid>
+      <timestamp>2026-03-24T21:35:22Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <comment>Per edit request</comment>
+      <origin>3304529</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1446" sha1="6zo47ee57vf0m5j8jpjxogh6942fd2q" xml:space="preserve">local p = {}
+
+local function MultiReplace(args)
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return require('Module:Error').error{
+				'MultiReplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. mw.text.nowiki(change.pattern) .. '&lt;/code&gt;'
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+function p.main(frame, ...)
+	local args =
+		type(frame) ~= 'table' and {frame, ...} or
+		type(frame.args) ~= 'table' and frame or
+		frame.args[1] and frame.args or
+		frame:getParent().args
+	return MultiReplace(args)
+end
+
+return p</text>
+      <sha1>6zo47ee57vf0m5j8jpjxogh6942fd2q</sha1>
+    </revision>
+    <revision>
+      <id>3568980</id>
+      <parentid>3568979</parentid>
+      <timestamp>2026-03-24T21:35:22Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3304529</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1446" sha1="6zo47ee57vf0m5j8jpjxogh6942fd2q" xml:space="preserve">local p = {}
+
+local function MultiReplace(args)
+	local input = args[1] or "{{{1}}}"
+	local plain = args.plain == "yes"
+
+	local i = 1
+	local changeList = {}
+	while args[i * 2] do
+		local change = {pattern = args[i * 2], repl = args[i * 2 + 1]}
+		if not change.repl then
+			return require('Module:Error').error{
+				'MultiReplace: Unpaired argument: &lt;code&gt;' .. (i * 2) .. ' = ' .. mw.text.nowiki(change.pattern) .. '&lt;/code&gt;'
+			}
+		end
+		changeList[i] = change
+		i = i + 1
+	end
+	
+	local matchList = {}
+	local pos = 1
+	local len = mw.ustring.len(input)
+	local result = ""
+	while pos &lt;= len do
+		local bestStart = len + 1
+		local bestStop = len
+		local bestChange
+		for _, change in ipairs(changeList) do
+			local start, stop = mw.ustring.find(input, change.pattern, pos, plain)
+			if start and (start &lt; bestStart) then
+				bestStart = start
+				bestStop = stop
+				bestChange = change
+			end
+		end
+		result = result .. mw.ustring.sub(input, pos, bestStart - 1)
+		if bestChange then
+			local fragment = mw.ustring.sub(input, bestStart, bestStop)
+			result = result .. (plain and bestChange.repl or
+				mw.ustring.gsub(fragment, bestChange.pattern, bestChange.repl, 1))
+		end
+		pos = bestStop + 1
+	end
+	return result
+end
+
+function p.main(frame, ...)
+	local args =
+		type(frame) ~= 'table' and {frame, ...} or
+		type(frame.args) ~= 'table' and frame or
+		frame.args[1] and frame.args or
+		frame:getParent().args
+	return MultiReplace(args)
+end
+
+return p</text>
+      <sha1>6zo47ee57vf0m5j8jpjxogh6942fd2q</sha1>
+    </revision>
+  </page>
+</mediawiki>

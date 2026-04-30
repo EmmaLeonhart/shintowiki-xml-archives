@@ -1,0 +1,1025 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Portal-inline</title>
+    <ns>828</ns>
+    <id>622</id>
+    <revision>
+      <id>513946</id>
+      <timestamp>2024-05-23T01:19:29Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Hike395</username>
+        <id>0</id>
+      </contributor>
+      <comment>use nowrap class</comment>
+      <origin>513946</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2657" sha1="mey3brj3f83aev0dztjx2bveknpu165" xml:space="preserve">-- determine whether we're being called from a sandbox
+local isSandbox = mw.getCurrentFrame():getTitle():find('sandbox', 1, true)
+local sandbox = isSandbox and '/sandbox' or ''
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local portalModule = require('Module:Portal'..sandbox)
+local getImageName = portalModule._image
+local checkPortals = portalModule._checkPortals
+local processPortalArgs = portalModule._processPortalArgs
+
+local p = {}
+
+-- Function to format error message and tracking category
+-- Arguments:
+--   errMsg: string, or nil/false if no error
+--   trackingCat: string for tracking category (or empty string)
+local function formatError(errMsg, trackingCat)
+	local result = trackingCat or ''
+	if errMsg then
+		local errTag = mw.html.create('span')
+		errTag:addClass("error")
+		errTag:css("font-size",'100%')
+		errTag:wikitext("Error: "..errMsg)
+		result = tostring(errTag)..result
+	end
+	return result
+end
+
+local function image(portal, args)
+	local size = args.size == "tiny" and "16x16px" or "32x28px"
+	return string.format('[[File:%s|class=noviewer|%s]]',getImageName(portal,true), size)
+end
+
+local function link(portal, args)
+	local displayName = ""
+	if not (args.text == "" or args.text == nil) then
+		displayName = args.text
+	elseif args.short then
+		displayName = portal
+	else
+		displayName = portal .. "&amp;#32;portal"
+	end
+	return string.format('[[Portal:%s|%s]]',portal,displayName)
+end
+
+function p._main(portals, args)
+	mw.logObject(args)
+	
+	-- Normalize all arguments
+	if args.redlinks == 'include' then args.redlinks = true end
+	for key, default in pairs({tracking=true,redlinks=false,short=false}) do
+		if args[key] == nil then args[key] = default end
+		args[key] = yesno(args[key], default)
+	end
+	
+	local trackingCat = ''
+	local errMsg = nil
+	
+	-- Check for existing categories, drop if not. 
+	-- Possible generate tracking category &amp; error message if needed
+	args.minPortals = args.minPortals or 1
+	args.maxPortals = args.maxPortals or 1
+	portals, trackingCat, errMsg = checkPortals(portals,args)
+	-- use more specific tracking cat for inline portal
+	trackingCat = mw.ustring.gsub(trackingCat,"Portal templates","Portal-inline template")
+	-- either too many/few portals, or no portals left after filtering, then return
+	if errMsg or #portals == 0 then
+		return formatError(errMsg, trackingCat)
+	end
+	return mw.ustring.format('&lt;span class="nowrap"&gt;%s &lt;/span&gt;%s%s',
+		image(portals[1],args),link(portals[1],args),(trackingCat or ''))
+end
+
+function p.main(frame)
+	local origArgs = getArgs(frame)
+	local portals, args = processPortalArgs(origArgs)
+	return p._main(portals, args)
+end
+
+return p</text>
+      <sha1>mey3brj3f83aev0dztjx2bveknpu165</sha1>
+    </revision>
+    <revision>
+      <id>513947</id>
+      <parentid>513946</parentid>
+      <timestamp>2024-06-28T09:39:34Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:Portal-inline]]</comment>
+      <origin>513946</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2657" sha1="mey3brj3f83aev0dztjx2bveknpu165" xml:space="preserve">-- determine whether we're being called from a sandbox
+local isSandbox = mw.getCurrentFrame():getTitle():find('sandbox', 1, true)
+local sandbox = isSandbox and '/sandbox' or ''
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local portalModule = require('Module:Portal'..sandbox)
+local getImageName = portalModule._image
+local checkPortals = portalModule._checkPortals
+local processPortalArgs = portalModule._processPortalArgs
+
+local p = {}
+
+-- Function to format error message and tracking category
+-- Arguments:
+--   errMsg: string, or nil/false if no error
+--   trackingCat: string for tracking category (or empty string)
+local function formatError(errMsg, trackingCat)
+	local result = trackingCat or ''
+	if errMsg then
+		local errTag = mw.html.create('span')
+		errTag:addClass("error")
+		errTag:css("font-size",'100%')
+		errTag:wikitext("Error: "..errMsg)
+		result = tostring(errTag)..result
+	end
+	return result
+end
+
+local function image(portal, args)
+	local size = args.size == "tiny" and "16x16px" or "32x28px"
+	return string.format('[[File:%s|class=noviewer|%s]]',getImageName(portal,true), size)
+end
+
+local function link(portal, args)
+	local displayName = ""
+	if not (args.text == "" or args.text == nil) then
+		displayName = args.text
+	elseif args.short then
+		displayName = portal
+	else
+		displayName = portal .. "&amp;#32;portal"
+	end
+	return string.format('[[Portal:%s|%s]]',portal,displayName)
+end
+
+function p._main(portals, args)
+	mw.logObject(args)
+	
+	-- Normalize all arguments
+	if args.redlinks == 'include' then args.redlinks = true end
+	for key, default in pairs({tracking=true,redlinks=false,short=false}) do
+		if args[key] == nil then args[key] = default end
+		args[key] = yesno(args[key], default)
+	end
+	
+	local trackingCat = ''
+	local errMsg = nil
+	
+	-- Check for existing categories, drop if not. 
+	-- Possible generate tracking category &amp; error message if needed
+	args.minPortals = args.minPortals or 1
+	args.maxPortals = args.maxPortals or 1
+	portals, trackingCat, errMsg = checkPortals(portals,args)
+	-- use more specific tracking cat for inline portal
+	trackingCat = mw.ustring.gsub(trackingCat,"Portal templates","Portal-inline template")
+	-- either too many/few portals, or no portals left after filtering, then return
+	if errMsg or #portals == 0 then
+		return formatError(errMsg, trackingCat)
+	end
+	return mw.ustring.format('&lt;span class="nowrap"&gt;%s &lt;/span&gt;%s%s',
+		image(portals[1],args),link(portals[1],args),(trackingCat or ''))
+end
+
+function p.main(frame)
+	local origArgs = getArgs(frame)
+	local portals, args = processPortalArgs(origArgs)
+	return p._main(portals, args)
+end
+
+return p</text>
+      <sha1>mey3brj3f83aev0dztjx2bveknpu165</sha1>
+    </revision>
+    <revision>
+      <id>513948</id>
+      <parentid>513947</parentid>
+      <timestamp>2024-11-04T17:24:09Z</timestamp>
+      <contributor>
+        <username>Ahecht</username>
+        <id>54</id>
+      </contributor>
+      <comment>add nowrap parameter</comment>
+      <origin>513948</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2762" sha1="83xuiz4ttmcvyuu29s5tcfp2hr6kr6e" xml:space="preserve">-- determine whether we're being called from a sandbox
+local isSandbox = mw.getCurrentFrame():getTitle():find('sandbox', 1, true)
+local sandbox = isSandbox and '/sandbox' or ''
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local portalModule = require('Module:Portal'..sandbox)
+local getImageName = portalModule._image
+local checkPortals = portalModule._checkPortals
+local processPortalArgs = portalModule._processPortalArgs
+
+local p = {}
+
+-- Function to format error message and tracking category
+-- Arguments:
+--   errMsg: string, or nil/false if no error
+--   trackingCat: string for tracking category (or empty string)
+local function formatError(errMsg, trackingCat)
+	local result = trackingCat or ''
+	if errMsg then
+		local errTag = mw.html.create('span')
+		errTag:addClass("error")
+		errTag:css("font-size",'100%')
+		errTag:wikitext("Error: "..errMsg)
+		result = tostring(errTag)..result
+	end
+	return result
+end
+
+local function image(portal, args)
+	local size = args.size == "tiny" and "16x16px" or "32x28px"
+	return string.format('[[File:%s|class=noviewer|%s]]',getImageName(portal,true), size)
+end
+
+local function link(portal, args)
+	local displayName = ""
+	if not (args.text == "" or args.text == nil) then
+		displayName = args.text
+	elseif args.short then
+		displayName = portal
+	else
+		displayName = portal .. "&amp;#32;portal"
+	end
+	return string.format('[[Portal:%s|%s]]',portal,displayName)
+end
+
+function p._main(portals, args)
+	mw.logObject(args)
+	
+	-- Normalize all arguments
+	if args.redlinks == 'include' then args.redlinks = true end
+	for key, default in pairs({tracking=true,redlinks=false,short=false}) do
+		if args[key] == nil then args[key] = default end
+		args[key] = yesno(args[key], default)
+	end
+	
+	local trackingCat = ''
+	local errMsg = nil
+	
+	-- Check for existing categories, drop if not. 
+	-- Possible generate tracking category &amp; error message if needed
+	args.minPortals = args.minPortals or 1
+	args.maxPortals = args.maxPortals or 1
+	portals, trackingCat, errMsg = checkPortals(portals,args)
+	-- use more specific tracking cat for inline portal
+	trackingCat = mw.ustring.gsub(trackingCat,"Portal templates","Portal-inline template")
+	-- either too many/few portals, or no portals left after filtering, then return
+	if errMsg or #portals == 0 then
+		return formatError(errMsg, trackingCat)
+	end
+	fstring = '&lt;span class="nowrap"&gt;%s &lt;/span&gt;%s%s'
+	if yesno(args.nowrap or '') then
+		fstring = '&lt;span class="nowrap"&gt;%s %s%s&lt;/span&gt;'
+	end
+	return mw.ustring.format(fstring,image(portals[1],args),link(portals[1],args),(trackingCat or ''))
+end
+
+function p.main(frame)
+	local origArgs = getArgs(frame)
+	local portals, args = processPortalArgs(origArgs)
+	return p._main(portals, args)
+end
+
+return p</text>
+      <sha1>83xuiz4ttmcvyuu29s5tcfp2hr6kr6e</sha1>
+    </revision>
+    <revision>
+      <id>513949</id>
+      <parentid>513948</parentid>
+      <timestamp>2025-02-16T23:02:49Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:Portal-inline]]: re-importing this </comment>
+      <origin>513948</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2762" sha1="83xuiz4ttmcvyuu29s5tcfp2hr6kr6e" xml:space="preserve">-- determine whether we're being called from a sandbox
+local isSandbox = mw.getCurrentFrame():getTitle():find('sandbox', 1, true)
+local sandbox = isSandbox and '/sandbox' or ''
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local portalModule = require('Module:Portal'..sandbox)
+local getImageName = portalModule._image
+local checkPortals = portalModule._checkPortals
+local processPortalArgs = portalModule._processPortalArgs
+
+local p = {}
+
+-- Function to format error message and tracking category
+-- Arguments:
+--   errMsg: string, or nil/false if no error
+--   trackingCat: string for tracking category (or empty string)
+local function formatError(errMsg, trackingCat)
+	local result = trackingCat or ''
+	if errMsg then
+		local errTag = mw.html.create('span')
+		errTag:addClass("error")
+		errTag:css("font-size",'100%')
+		errTag:wikitext("Error: "..errMsg)
+		result = tostring(errTag)..result
+	end
+	return result
+end
+
+local function image(portal, args)
+	local size = args.size == "tiny" and "16x16px" or "32x28px"
+	return string.format('[[File:%s|class=noviewer|%s]]',getImageName(portal,true), size)
+end
+
+local function link(portal, args)
+	local displayName = ""
+	if not (args.text == "" or args.text == nil) then
+		displayName = args.text
+	elseif args.short then
+		displayName = portal
+	else
+		displayName = portal .. "&amp;#32;portal"
+	end
+	return string.format('[[Portal:%s|%s]]',portal,displayName)
+end
+
+function p._main(portals, args)
+	mw.logObject(args)
+	
+	-- Normalize all arguments
+	if args.redlinks == 'include' then args.redlinks = true end
+	for key, default in pairs({tracking=true,redlinks=false,short=false}) do
+		if args[key] == nil then args[key] = default end
+		args[key] = yesno(args[key], default)
+	end
+	
+	local trackingCat = ''
+	local errMsg = nil
+	
+	-- Check for existing categories, drop if not. 
+	-- Possible generate tracking category &amp; error message if needed
+	args.minPortals = args.minPortals or 1
+	args.maxPortals = args.maxPortals or 1
+	portals, trackingCat, errMsg = checkPortals(portals,args)
+	-- use more specific tracking cat for inline portal
+	trackingCat = mw.ustring.gsub(trackingCat,"Portal templates","Portal-inline template")
+	-- either too many/few portals, or no portals left after filtering, then return
+	if errMsg or #portals == 0 then
+		return formatError(errMsg, trackingCat)
+	end
+	fstring = '&lt;span class="nowrap"&gt;%s &lt;/span&gt;%s%s'
+	if yesno(args.nowrap or '') then
+		fstring = '&lt;span class="nowrap"&gt;%s %s%s&lt;/span&gt;'
+	end
+	return mw.ustring.format(fstring,image(portals[1],args),link(portals[1],args),(trackingCat or ''))
+end
+
+function p.main(frame)
+	local origArgs = getArgs(frame)
+	local portals, args = processPortalArgs(origArgs)
+	return p._main(portals, args)
+end
+
+return p</text>
+      <sha1>83xuiz4ttmcvyuu29s5tcfp2hr6kr6e</sha1>
+    </revision>
+    <revision>
+      <id>513950</id>
+      <parentid>513949</parentid>
+      <timestamp>2025-03-08T16:22:58Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Hike395</username>
+        <id>0</id>
+      </contributor>
+      <comment>enable "small" size = size of portal bar icon, make aspect ratio match other portal icons</comment>
+      <origin>513950</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2814" sha1="t9axcqrve8msld6jgolf2ijgs6dzh3r" xml:space="preserve">-- determine whether we're being called from a sandbox
+local isSandbox = mw.getCurrentFrame():getTitle():find('sandbox', 1, true)
+local sandbox = isSandbox and '/sandbox' or ''
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local portalModule = require('Module:Portal'..sandbox)
+local getImageName = portalModule._image
+local checkPortals = portalModule._checkPortals
+local processPortalArgs = portalModule._processPortalArgs
+
+local p = {}
+
+-- Function to format error message and tracking category
+-- Arguments:
+--   errMsg: string, or nil/false if no error
+--   trackingCat: string for tracking category (or empty string)
+local function formatError(errMsg, trackingCat)
+	local result = trackingCat or ''
+	if errMsg then
+		local errTag = mw.html.create('span')
+		errTag:addClass("error")
+		errTag:css("font-size",'100%')
+		errTag:wikitext("Error: "..errMsg)
+		result = tostring(errTag)..result
+	end
+	return result
+end
+
+local function image(portal, args)
+	local size = args.size == "small" and "21x19px" or
+                 args.size == "tiny" and "17x15px" or
+                 "32x28px"
+	return string.format('[[File:%s|class=noviewer|%s]]',getImageName(portal,true), size)
+end
+
+local function link(portal, args)
+	local displayName = ""
+	if not (args.text == "" or args.text == nil) then
+		displayName = args.text
+	elseif args.short then
+		displayName = portal
+	else
+		displayName = portal .. "&amp;#32;portal"
+	end
+	return string.format('[[Portal:%s|%s]]',portal,displayName)
+end
+
+function p._main(portals, args)
+	
+	-- Normalize all arguments
+	if args.redlinks == 'include' then args.redlinks = true end
+	for key, default in pairs({tracking=true,redlinks=false,short=false}) do
+		if args[key] == nil then args[key] = default end
+		args[key] = yesno(args[key], default)
+	end
+	
+	local trackingCat = ''
+	local errMsg = nil
+	
+	-- Check for existing categories, drop if not. 
+	-- Possible generate tracking category &amp; error message if needed
+	args.minPortals = args.minPortals or 1
+	args.maxPortals = args.maxPortals or 1
+	portals, trackingCat, errMsg = checkPortals(portals,args)
+	-- use more specific tracking cat for inline portal
+	trackingCat = mw.ustring.gsub(trackingCat,"Portal templates","Portal-inline template")
+	-- either too many/few portals, or no portals left after filtering, then return
+	if errMsg or #portals == 0 then
+		return formatError(errMsg, trackingCat)
+	end
+	fstring = '&lt;span class="nowrap"&gt;%s &lt;/span&gt;%s%s'
+	if yesno(args.nowrap or '') then
+		fstring = '&lt;span class="nowrap"&gt;%s %s%s&lt;/span&gt;'
+	end
+	return mw.ustring.format(fstring,image(portals[1],args),link(portals[1],args),(trackingCat or ''))
+end
+
+function p.main(frame)
+	local origArgs = getArgs(frame)
+	local portals, args = processPortalArgs(origArgs)
+	return p._main(portals, args)
+end
+
+return p</text>
+      <sha1>t9axcqrve8msld6jgolf2ijgs6dzh3r</sha1>
+    </revision>
+    <revision>
+      <id>513951</id>
+      <parentid>513950</parentid>
+      <timestamp>2025-03-11T08:58:34Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:Portal-inline]]</comment>
+      <origin>513950</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2814" sha1="t9axcqrve8msld6jgolf2ijgs6dzh3r" xml:space="preserve">-- determine whether we're being called from a sandbox
+local isSandbox = mw.getCurrentFrame():getTitle():find('sandbox', 1, true)
+local sandbox = isSandbox and '/sandbox' or ''
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local portalModule = require('Module:Portal'..sandbox)
+local getImageName = portalModule._image
+local checkPortals = portalModule._checkPortals
+local processPortalArgs = portalModule._processPortalArgs
+
+local p = {}
+
+-- Function to format error message and tracking category
+-- Arguments:
+--   errMsg: string, or nil/false if no error
+--   trackingCat: string for tracking category (or empty string)
+local function formatError(errMsg, trackingCat)
+	local result = trackingCat or ''
+	if errMsg then
+		local errTag = mw.html.create('span')
+		errTag:addClass("error")
+		errTag:css("font-size",'100%')
+		errTag:wikitext("Error: "..errMsg)
+		result = tostring(errTag)..result
+	end
+	return result
+end
+
+local function image(portal, args)
+	local size = args.size == "small" and "21x19px" or
+                 args.size == "tiny" and "17x15px" or
+                 "32x28px"
+	return string.format('[[File:%s|class=noviewer|%s]]',getImageName(portal,true), size)
+end
+
+local function link(portal, args)
+	local displayName = ""
+	if not (args.text == "" or args.text == nil) then
+		displayName = args.text
+	elseif args.short then
+		displayName = portal
+	else
+		displayName = portal .. "&amp;#32;portal"
+	end
+	return string.format('[[Portal:%s|%s]]',portal,displayName)
+end
+
+function p._main(portals, args)
+	
+	-- Normalize all arguments
+	if args.redlinks == 'include' then args.redlinks = true end
+	for key, default in pairs({tracking=true,redlinks=false,short=false}) do
+		if args[key] == nil then args[key] = default end
+		args[key] = yesno(args[key], default)
+	end
+	
+	local trackingCat = ''
+	local errMsg = nil
+	
+	-- Check for existing categories, drop if not. 
+	-- Possible generate tracking category &amp; error message if needed
+	args.minPortals = args.minPortals or 1
+	args.maxPortals = args.maxPortals or 1
+	portals, trackingCat, errMsg = checkPortals(portals,args)
+	-- use more specific tracking cat for inline portal
+	trackingCat = mw.ustring.gsub(trackingCat,"Portal templates","Portal-inline template")
+	-- either too many/few portals, or no portals left after filtering, then return
+	if errMsg or #portals == 0 then
+		return formatError(errMsg, trackingCat)
+	end
+	fstring = '&lt;span class="nowrap"&gt;%s &lt;/span&gt;%s%s'
+	if yesno(args.nowrap or '') then
+		fstring = '&lt;span class="nowrap"&gt;%s %s%s&lt;/span&gt;'
+	end
+	return mw.ustring.format(fstring,image(portals[1],args),link(portals[1],args),(trackingCat or ''))
+end
+
+function p.main(frame)
+	local origArgs = getArgs(frame)
+	local portals, args = processPortalArgs(origArgs)
+	return p._main(portals, args)
+end
+
+return p</text>
+      <sha1>t9axcqrve8msld6jgolf2ijgs6dzh3r</sha1>
+    </revision>
+    <revision>
+      <id>513952</id>
+      <parentid>513951</parentid>
+      <timestamp>2025-03-11T09:01:18Z</timestamp>
+      <contributor>
+        <username>en&gt;Hike395</username>
+        <id>0</id>
+      </contributor>
+      <comment>enable "small" size = size of portal bar icon, make aspect ratio match other portal icons</comment>
+      <origin>513950</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2814" sha1="t9axcqrve8msld6jgolf2ijgs6dzh3r" xml:space="preserve">-- determine whether we're being called from a sandbox
+local isSandbox = mw.getCurrentFrame():getTitle():find('sandbox', 1, true)
+local sandbox = isSandbox and '/sandbox' or ''
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local portalModule = require('Module:Portal'..sandbox)
+local getImageName = portalModule._image
+local checkPortals = portalModule._checkPortals
+local processPortalArgs = portalModule._processPortalArgs
+
+local p = {}
+
+-- Function to format error message and tracking category
+-- Arguments:
+--   errMsg: string, or nil/false if no error
+--   trackingCat: string for tracking category (or empty string)
+local function formatError(errMsg, trackingCat)
+	local result = trackingCat or ''
+	if errMsg then
+		local errTag = mw.html.create('span')
+		errTag:addClass("error")
+		errTag:css("font-size",'100%')
+		errTag:wikitext("Error: "..errMsg)
+		result = tostring(errTag)..result
+	end
+	return result
+end
+
+local function image(portal, args)
+	local size = args.size == "small" and "21x19px" or
+                 args.size == "tiny" and "17x15px" or
+                 "32x28px"
+	return string.format('[[File:%s|class=noviewer|%s]]',getImageName(portal,true), size)
+end
+
+local function link(portal, args)
+	local displayName = ""
+	if not (args.text == "" or args.text == nil) then
+		displayName = args.text
+	elseif args.short then
+		displayName = portal
+	else
+		displayName = portal .. "&amp;#32;portal"
+	end
+	return string.format('[[Portal:%s|%s]]',portal,displayName)
+end
+
+function p._main(portals, args)
+	
+	-- Normalize all arguments
+	if args.redlinks == 'include' then args.redlinks = true end
+	for key, default in pairs({tracking=true,redlinks=false,short=false}) do
+		if args[key] == nil then args[key] = default end
+		args[key] = yesno(args[key], default)
+	end
+	
+	local trackingCat = ''
+	local errMsg = nil
+	
+	-- Check for existing categories, drop if not. 
+	-- Possible generate tracking category &amp; error message if needed
+	args.minPortals = args.minPortals or 1
+	args.maxPortals = args.maxPortals or 1
+	portals, trackingCat, errMsg = checkPortals(portals,args)
+	-- use more specific tracking cat for inline portal
+	trackingCat = mw.ustring.gsub(trackingCat,"Portal templates","Portal-inline template")
+	-- either too many/few portals, or no portals left after filtering, then return
+	if errMsg or #portals == 0 then
+		return formatError(errMsg, trackingCat)
+	end
+	fstring = '&lt;span class="nowrap"&gt;%s &lt;/span&gt;%s%s'
+	if yesno(args.nowrap or '') then
+		fstring = '&lt;span class="nowrap"&gt;%s %s%s&lt;/span&gt;'
+	end
+	return mw.ustring.format(fstring,image(portals[1],args),link(portals[1],args),(trackingCat or ''))
+end
+
+function p.main(frame)
+	local origArgs = getArgs(frame)
+	local portals, args = processPortalArgs(origArgs)
+	return p._main(portals, args)
+end
+
+return p</text>
+      <sha1>t9axcqrve8msld6jgolf2ijgs6dzh3r</sha1>
+    </revision>
+    <revision>
+      <id>623</id>
+      <timestamp>2025-03-11T09:01:19Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported: more imports</comment>
+      <origin>623</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2814" sha1="t9axcqrve8msld6jgolf2ijgs6dzh3r" xml:space="preserve">-- determine whether we're being called from a sandbox
+local isSandbox = mw.getCurrentFrame():getTitle():find('sandbox', 1, true)
+local sandbox = isSandbox and '/sandbox' or ''
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local portalModule = require('Module:Portal'..sandbox)
+local getImageName = portalModule._image
+local checkPortals = portalModule._checkPortals
+local processPortalArgs = portalModule._processPortalArgs
+
+local p = {}
+
+-- Function to format error message and tracking category
+-- Arguments:
+--   errMsg: string, or nil/false if no error
+--   trackingCat: string for tracking category (or empty string)
+local function formatError(errMsg, trackingCat)
+	local result = trackingCat or ''
+	if errMsg then
+		local errTag = mw.html.create('span')
+		errTag:addClass("error")
+		errTag:css("font-size",'100%')
+		errTag:wikitext("Error: "..errMsg)
+		result = tostring(errTag)..result
+	end
+	return result
+end
+
+local function image(portal, args)
+	local size = args.size == "small" and "21x19px" or
+                 args.size == "tiny" and "17x15px" or
+                 "32x28px"
+	return string.format('[[File:%s|class=noviewer|%s]]',getImageName(portal,true), size)
+end
+
+local function link(portal, args)
+	local displayName = ""
+	if not (args.text == "" or args.text == nil) then
+		displayName = args.text
+	elseif args.short then
+		displayName = portal
+	else
+		displayName = portal .. "&amp;#32;portal"
+	end
+	return string.format('[[Portal:%s|%s]]',portal,displayName)
+end
+
+function p._main(portals, args)
+	
+	-- Normalize all arguments
+	if args.redlinks == 'include' then args.redlinks = true end
+	for key, default in pairs({tracking=true,redlinks=false,short=false}) do
+		if args[key] == nil then args[key] = default end
+		args[key] = yesno(args[key], default)
+	end
+	
+	local trackingCat = ''
+	local errMsg = nil
+	
+	-- Check for existing categories, drop if not. 
+	-- Possible generate tracking category &amp; error message if needed
+	args.minPortals = args.minPortals or 1
+	args.maxPortals = args.maxPortals or 1
+	portals, trackingCat, errMsg = checkPortals(portals,args)
+	-- use more specific tracking cat for inline portal
+	trackingCat = mw.ustring.gsub(trackingCat,"Portal templates","Portal-inline template")
+	-- either too many/few portals, or no portals left after filtering, then return
+	if errMsg or #portals == 0 then
+		return formatError(errMsg, trackingCat)
+	end
+	fstring = '&lt;span class="nowrap"&gt;%s &lt;/span&gt;%s%s'
+	if yesno(args.nowrap or '') then
+		fstring = '&lt;span class="nowrap"&gt;%s %s%s&lt;/span&gt;'
+	end
+	return mw.ustring.format(fstring,image(portals[1],args),link(portals[1],args),(trackingCat or ''))
+end
+
+function p.main(frame)
+	local origArgs = getArgs(frame)
+	local portals, args = processPortalArgs(origArgs)
+	return p._main(portals, args)
+end
+
+return p</text>
+      <sha1>t9axcqrve8msld6jgolf2ijgs6dzh3r</sha1>
+    </revision>
+    <revision>
+      <id>3407598</id>
+      <parentid>623</parentid>
+      <timestamp>2026-03-12T20:23:09Z</timestamp>
+      <contributor>
+        <username>en&gt;Hike395</username>
+        <id>0</id>
+      </contributor>
+      <comment>noviewer class already supplied by getImageName()</comment>
+      <origin>3407598</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2799" sha1="34r722h4azs7oeaspjhcpwmtnkva8kx" xml:space="preserve">-- determine whether we're being called from a sandbox
+local isSandbox = mw.getCurrentFrame():getTitle():find('sandbox', 1, true)
+local sandbox = isSandbox and '/sandbox' or ''
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local portalModule = require('Module:Portal'..sandbox)
+local getImageName = portalModule._image
+local checkPortals = portalModule._checkPortals
+local processPortalArgs = portalModule._processPortalArgs
+
+local p = {}
+
+-- Function to format error message and tracking category
+-- Arguments:
+--   errMsg: string, or nil/false if no error
+--   trackingCat: string for tracking category (or empty string)
+local function formatError(errMsg, trackingCat)
+	local result = trackingCat or ''
+	if errMsg then
+		local errTag = mw.html.create('span')
+		errTag:addClass("error")
+		errTag:css("font-size",'100%')
+		errTag:wikitext("Error: "..errMsg)
+		result = tostring(errTag)..result
+	end
+	return result
+end
+
+local function image(portal, args)
+	local size = args.size == "small" and "21x19px" or
+                 args.size == "tiny" and "17x15px" or
+                 "32x28px"
+	return string.format('[[File:%s|%s]]',getImageName(portal,true), size)
+end
+
+local function link(portal, args)
+	local displayName = ""
+	if not (args.text == "" or args.text == nil) then
+		displayName = args.text
+	elseif args.short then
+		displayName = portal
+	else
+		displayName = portal .. "&amp;#32;portal"
+	end
+	return string.format('[[Portal:%s|%s]]',portal,displayName)
+end
+
+function p._main(portals, args)
+	
+	-- Normalize all arguments
+	if args.redlinks == 'include' then args.redlinks = true end
+	for key, default in pairs({tracking=true,redlinks=false,short=false}) do
+		if args[key] == nil then args[key] = default end
+		args[key] = yesno(args[key], default)
+	end
+	
+	local trackingCat = ''
+	local errMsg = nil
+	
+	-- Check for existing categories, drop if not. 
+	-- Possible generate tracking category &amp; error message if needed
+	args.minPortals = args.minPortals or 1
+	args.maxPortals = args.maxPortals or 1
+	portals, trackingCat, errMsg = checkPortals(portals,args)
+	-- use more specific tracking cat for inline portal
+	trackingCat = mw.ustring.gsub(trackingCat,"Portal templates","Portal-inline template")
+	-- either too many/few portals, or no portals left after filtering, then return
+	if errMsg or #portals == 0 then
+		return formatError(errMsg, trackingCat)
+	end
+	fstring = '&lt;span class="nowrap"&gt;%s &lt;/span&gt;%s%s'
+	if yesno(args.nowrap or '') then
+		fstring = '&lt;span class="nowrap"&gt;%s %s%s&lt;/span&gt;'
+	end
+	return mw.ustring.format(fstring,image(portals[1],args),link(portals[1],args),(trackingCat or ''))
+end
+
+function p.main(frame)
+	local origArgs = getArgs(frame)
+	local portals, args = processPortalArgs(origArgs)
+	return p._main(portals, args)
+end
+
+return p</text>
+      <sha1>34r722h4azs7oeaspjhcpwmtnkva8kx</sha1>
+    </revision>
+    <revision>
+      <id>3407599</id>
+      <parentid>3407598</parentid>
+      <timestamp>2026-03-12T20:23:09Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3407598</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2799" sha1="34r722h4azs7oeaspjhcpwmtnkva8kx" xml:space="preserve">-- determine whether we're being called from a sandbox
+local isSandbox = mw.getCurrentFrame():getTitle():find('sandbox', 1, true)
+local sandbox = isSandbox and '/sandbox' or ''
+
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local portalModule = require('Module:Portal'..sandbox)
+local getImageName = portalModule._image
+local checkPortals = portalModule._checkPortals
+local processPortalArgs = portalModule._processPortalArgs
+
+local p = {}
+
+-- Function to format error message and tracking category
+-- Arguments:
+--   errMsg: string, or nil/false if no error
+--   trackingCat: string for tracking category (or empty string)
+local function formatError(errMsg, trackingCat)
+	local result = trackingCat or ''
+	if errMsg then
+		local errTag = mw.html.create('span')
+		errTag:addClass("error")
+		errTag:css("font-size",'100%')
+		errTag:wikitext("Error: "..errMsg)
+		result = tostring(errTag)..result
+	end
+	return result
+end
+
+local function image(portal, args)
+	local size = args.size == "small" and "21x19px" or
+                 args.size == "tiny" and "17x15px" or
+                 "32x28px"
+	return string.format('[[File:%s|%s]]',getImageName(portal,true), size)
+end
+
+local function link(portal, args)
+	local displayName = ""
+	if not (args.text == "" or args.text == nil) then
+		displayName = args.text
+	elseif args.short then
+		displayName = portal
+	else
+		displayName = portal .. "&amp;#32;portal"
+	end
+	return string.format('[[Portal:%s|%s]]',portal,displayName)
+end
+
+function p._main(portals, args)
+	
+	-- Normalize all arguments
+	if args.redlinks == 'include' then args.redlinks = true end
+	for key, default in pairs({tracking=true,redlinks=false,short=false}) do
+		if args[key] == nil then args[key] = default end
+		args[key] = yesno(args[key], default)
+	end
+	
+	local trackingCat = ''
+	local errMsg = nil
+	
+	-- Check for existing categories, drop if not. 
+	-- Possible generate tracking category &amp; error message if needed
+	args.minPortals = args.minPortals or 1
+	args.maxPortals = args.maxPortals or 1
+	portals, trackingCat, errMsg = checkPortals(portals,args)
+	-- use more specific tracking cat for inline portal
+	trackingCat = mw.ustring.gsub(trackingCat,"Portal templates","Portal-inline template")
+	-- either too many/few portals, or no portals left after filtering, then return
+	if errMsg or #portals == 0 then
+		return formatError(errMsg, trackingCat)
+	end
+	fstring = '&lt;span class="nowrap"&gt;%s &lt;/span&gt;%s%s'
+	if yesno(args.nowrap or '') then
+		fstring = '&lt;span class="nowrap"&gt;%s %s%s&lt;/span&gt;'
+	end
+	return mw.ustring.format(fstring,image(portals[1],args),link(portals[1],args),(trackingCat or ''))
+end
+
+function p.main(frame)
+	local origArgs = getArgs(frame)
+	local portals, args = processPortalArgs(origArgs)
+	return p._main(portals, args)
+end
+
+return p</text>
+      <sha1>34r722h4azs7oeaspjhcpwmtnkva8kx</sha1>
+    </revision>
+  </page>
+</mediawiki>

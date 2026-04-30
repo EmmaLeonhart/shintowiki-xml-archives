@@ -1,0 +1,4006 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Ordnance Survey coordinates</title>
+    <ns>828</ns>
+    <id>486</id>
+    <revision>
+      <id>495240</id>
+      <timestamp>2024-06-12T20:41:04Z</timestamp>
+      <contributor>
+        <username>Ahecht</username>
+        <id>54</id>
+      </contributor>
+      <comment>local _ = 0 to reduce lua errors</comment>
+      <origin>495240</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="19371" sha1="0c1tnfls6u7av6lc7e75qi6tema0t30" xml:space="preserve">--[[ Ordnance Survey / Lat Long functions in Lua 
+
+****** ORDNANCE SURVEY TO LAT LONG FUNCTIONS ******
+
+Ported to Lua from PHP by Wikipedia User Hike395, 18 Aug 2019
+
+found by RWH at http://www.megalithia.com/search/llfuncshighlight.php
+
+With thanks to Andy, G4JNT for inspiration in GEOG, and to the OSGB for their white paper on coordinate transformation
+describing the iterative method used
+thanks to the Ordnance survey of Ireland for details of the true and false origins of the Irish grid
+
+You may use and redistribute this code under the terms of the GPL see http://www.gnu.org/copyleft/gpl.html
+
+
+Written by Richard
+www.megalithia.com
+v0.something 27/2/2000
+v 1.01 28 June 2004
+v 1.02 6 Aug 2004 line 89 add "0" to chars in ngr=stripcharsnotinbag Thx Andy
+v 1.03 9 Mar 2005 Jan (Klingon) added conversion to WGS84 map datum and removed limitation of digits of the grid ref
+v 1.04 10 Aug 2005 Richard correct error trapping (only manifest on malformed ngrs
+
+This code is predicated on the assumption that your are ONLY feeding it Irish or UK Grid references.
+It uses the single char prefix of Irish grid refs to tell the difference, UK grid refs have a two letter prefix.
+We would like an even number of digits for the rest of the grid ref.
+Anything in the NGR other than 0-9, A-Z, a-z is eliminated.
+WARNING this assumes there are no decimal points in your NGR components.
+
+The transformation from OSGB36/Ireland 1965 to WGS84 is more precise than 5 m.
+
+The function is case insensitive
+
+Lat/Long to Ordnance Survey conversion is at bottom of file, see further authorship there
+
+]]
+
+local oscoord = {}
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local namespace = mw.title.getCurrentTitle().namespace
+
+local pow = math.pow
+local sqrt = math.sqrt
+local abs = math.abs
+local floor = math.floor
+local ceil = math.ceil
+local sin = math.sin
+local cos = math.cos
+local tan = math.tan
+local atan = math.atan
+local deg2rad = math.rad
+local rad2deg = math.deg
+
+
+
+--[[ DATUM SHIFT USING HELMERT TRANSFORMATION
+ *
+ * height above the ellipsoid is ignored
+ * latitude and longitude must be given in decimal degrees
+ *
+ * no transformation if abs(latitude)&gt;89 or abs(longitude)&gt;89
+ * (lifting this restriction requires some more lines of code)
+ *
+ * Written in 2009 by user Telford at de.wikipedia
+ * Based on math described in "A Guide to Coordinate Systems in Great Britain"
+ * by the UK Ordnance Survey
+ * URL: https://www.ordnancesurvey.co.uk/documents/resources/guide-coordinate-systems-great-britain.pdf
+]]
+
+-- Datum parameters
+
+local OSGBglobe = {
+	semimajor = 6377563.396,
+	semiminor = 6356256.910,
+	ecc = 0.006670539761597529073698869358812557054558,
+	n1 = 0.00167322025032508731869331280635710896296,
+	scale = 0.9996012717,
+    e0 = 400000.0,
+    n0 = -100000.0,
+    lat0 = 49.0,
+    lon0 = -2.0
+}
+
+local IEglobe = {
+	semimajor = 6377340.189,
+	semiminor = 6356034.447,
+	ecc = 0.006670540293336110419293763349975612794125,
+	n1 = 0.001673220384152058651484728058385228837777,
+	scale = 1.000035,
+	e0 = 200000.0,
+	n0 = 250000.0,
+	lat0 = 53.5,
+	lon0 = -8.0
+}
+
+local WGSglobe = {
+	semimajor = 6378137.0,
+	semiminor = 6356752.3141,
+	ecc = 0.00669438003551279089034150031998869922791
+}
+
+local WGS2OSGBparam = {
+ -- Table 4, Section 6.6, Ordnance Survey document 
+	semimajor_src = WGSglobe.semimajor,
+	semiminor_src = WGSglobe.semiminor,
+	ecc_src = WGSglobe.ecc,
+	semimajor_dst = OSGBglobe.semimajor,
+	semiminor_dst = OSGBglobe.semiminor,
+	ecc_dst = OSGBglobe.ecc,
+	tx = -446.448,
+    ty = 125.157,
+    tz = -542.060,
+    s0 = 0.0000204894,
+    rx = deg2rad ( -.1502/3600. ),
+    ry = deg2rad ( -.2470/3600. ),
+    rz = deg2rad ( -.8421/3600. )
+}
+
+local OSGB2WGSparam = {
+	semimajor_src = OSGBglobe.semimajor,
+	semiminor_src = OSGBglobe.semiminor,
+	ecc_src = OSGBglobe.ecc,
+	semimajor_dst = WGSglobe.semimajor,
+	semiminor_dst = WGSglobe.semiminor,
+	ecc_dst = WGSglobe.ecc,
+	tx = -WGS2OSGBparam.tx,
+    ty = -WGS2OSGBparam.ty,
+    tz = -WGS2OSGBparam.tz,
+    s0 = -WGS2OSGBparam.s0,
+    rx = -WGS2OSGBparam.rx,
+    ry = -WGS2OSGBparam.ry,
+    rz = -WGS2OSGBparam.rz,
+}
+
+local IE2WGSparam = {
+	semimajor_src = IEglobe.semimajor,
+	semiminor_src = IEglobe.semiminor,
+	ecc_src = IEglobe.ecc,
+	semimajor_dst = WGSglobe.semimajor,
+	semiminor_dst = WGSglobe.semiminor,
+	ecc_dst = WGSglobe.ecc,
+	tx = 482.53,
+	ty = -130.596,
+	tz = 564.557,
+	s0 = 8.15/1000000.0,
+	rx = deg2rad( -1.042/3600.0 ),
+	ry = deg2rad( -0.214/3600.0 ),
+	rz = deg2rad( -0.631/3600.0 )
+}
+
+local function HelmertDatumShift ( latitude , longitude, param )
+	-- latitude and longitude are in degrees
+    -- return if latitude or longitude out of range 
+
+    if abs(latitude) &gt; 89. or abs(longitude) &gt; 89. then
+    	return {lat=latitude, lon=longitude}
+    end
+
+	param = param or WGS2OSGBparam
+
+    -- parameters for ellipsoids
+    -- Annex A.1, Ordnance Survey document --
+
+    local a1 = param.semimajor_src
+    local b1 = param.semiminor_src
+    local e1 = param.ecc_src
+
+    local a2 = param.semimajor_dst
+    local b2 = param.semiminor_dst
+    local e2 = param.ecc_dst
+
+    -- convert latitude and longitude to cartesian coordinates
+    -- math in Annex B.1, Ordnance Survey document
+    local phi = deg2rad ( latitude )
+    local lambda = deg2rad ( longitude )
+    local cosphi = cos ( phi )
+    local sinphi = sin ( phi )
+    local coslambda = cos ( lambda )
+    local sinlambda = sin ( lambda )
+
+    local ny = a1 / sqrt ( 1. - e1*sinphi*sinphi )
+
+    local x1 = ny * cosphi * coslambda
+    local y1 = ny * cosphi * sinlambda
+    local z1 = ny * ( 1. - e1 ) * sinphi
+    -- the helmert transformation proper
+    -- Equation 3, Section 6.2, Ordnance Survey document
+
+    local x2 = x1 + param.tx + ( param.s0 * x1 - param.rz * y1 + param.ry * z1 )
+    local y2 = y1 + param.ty + ( param.rz * x1 + param.s0 * y1 - param.rx * z1 )
+    local z2 = z1 + param.tz + ( -param.ry *x1 + param.rx * y1 + param.s0 * z1 )
+    -- convert cartesian coordinates to latitude and longitude
+    -- math in Annex B.2, of Ordnance Survey document 
+
+    lambda = atan ( y2 / x2 )
+
+    local p2 = sqrt ( x2*x2 + y2*y2 )
+    phi = atan ( z2 / p2*(1.-e2) )
+
+    local n0 = 101
+
+	local phi_alt
+    repeat
+	    phi_alt = phi
+	    ny = a2 / sqrt ( 1. - e2 * sin(phi) * sin(phi) )
+	    phi = atan ( (z2 + e2 * ny * sin(phi)) / p2 )
+	    n0 = n0 - 1
+    until abs ( phi - phi_alt ) &lt;= 0.000000000001 or n0 &lt;= 0
+
+	return {lat=rad2deg(phi),lon=rad2deg(lambda)}
+
+end
+
+--  LAT LONG TO OS GRID LIBRARY RESUMES HERE
+
+local function northeast(lett,num,shift)
+   -- split into northings and eastings
+   local le=mw.ustring.len(num)
+   if le%2 == 1 then
+   	 return {err="Malformed numerical part of NGR"}
+   end
+   local pr=le/2
+   local n = mw.ustring.sub(num,pr+1)
+   local e = mw.ustring.sub(num,1,pr)
+   -- Hack to move to center of square: append a 5 to northings and eastings
+   shift = yesno(shift)
+   if shift then
+     n = n.."5"
+     e = e.."5"
+     pr = pr+1
+   end
+   -- end hack
+   n = n == '' and 0 or n
+   e = e == '' and 0 or e
+   pr = pow(10.0,(5.0-pr))
+   local T1 = mw.ustring.byte(mw.ustring.sub(lett,1,1))-65
+   if T1&gt;8 then
+     T1 = T1-1
+   end
+   local T2 = nil
+   if mw.ustring.len(lett)&gt;1 then
+     T2 = mw.ustring.byte(mw.ustring.sub(lett,2))-65
+     if T2&gt;8 then
+       T2 = T2-1
+     end
+   end
+   return {n=n,e=e,pr=pr,T1=T1,T2=T2}
+end
+
+local function EN2LL(e,n,datum)
+   local a = datum.semimajor*datum.scale
+   local b = datum.semiminor*datum.scale
+   local lat0rad = deg2rad(datum.lat0)
+   local n1 = datum.n1
+   local n12 = n1*n1
+   local n13 = n12*n1
+   local k=(n-datum.n0)/a+lat0rad
+   local nextcounter=0
+   local j3, j4, j5, j6, m
+   repeat
+     nextcounter=nextcounter+1
+     local k3=k-lat0rad
+     local k4=k+lat0rad
+     j3=(1.0+n1+1.25*n12+1.25*n13)*k3
+     j4=(3.0*n1+3.0*n12+2.625*n13)*sin(k3)*cos(k4)
+     j5=(1.875*n12+1.875*n13)*sin(2.0*k3)*cos(2.0*k4)
+     j6=35.0/24.0*n13*sin(3.0*k3)*cos(3.0*k4)
+     m=b*(j3-j4+j5-j6)
+     k=k+(n-datum.n0-m)/a
+   until abs(n-datum.n0-m)&lt;=0.000000001 or nextcounter&gt;=100
+   local x = 1.0-datum.ecc*pow(sin(k),2.0)
+   local v=a/sqrt(x)
+   local r=v*(1.0-datum.ecc)/x
+   local h2=v/r-1.0
+   local y1=e-datum.e0
+   local tank = tan(k)
+   local tank2 = tank*tank
+   local tank4 = tank2*tank2
+   local tank6 = tank2*tank4
+   local cosk = cos(k)
+   local yv = y1/v -- dimensionless quantity in series expansion
+   local yv2 = yv*yv
+   local yv3 = yv*yv2
+   local yv5 = yv3*yv2
+   local yv7 = yv5*yv2
+   j3=tank/(2.0*r)
+   j4=tank/(24.0*r)*(5.0+3.0*tank2+h2-9.0*tank2*h2)
+   j5=tank/(720.0*r)*(61.0+90.0*tank2+45.0*tank4)
+   local k9=k-y1*(yv*j3+yv3*j4-yv5*j5)
+   j6=1.0/(cosk)
+   local j7=1.0/(cosk*6.0)*(v/r+2.0*tank2)
+   local j8=1.0/(cosk*120.0)*(5.0+28.0*tank2+24.0*tank4)
+   local j9=1.0/(cosk*5040.0)
+   j9=j9*(61.0+662.0*tank2+1320.0*tank4+720.0*tank6)
+   local long=datum.lon0+rad2deg(yv*j6-yv3*j7+yv5*j8-yv7*j9)
+   local lat=rad2deg(k9)
+   return {lat=lat,lon=long}
+end
+
+local function GBEN2LL(e,n)
+   local latlong = EN2LL(e,n,OSGBglobe)
+   local helmert = HelmertDatumShift ( latlong.lat, latlong.lon, OSGB2WGSparam)
+   return {region="GB",lat=helmert.lat,long=helmert.lon}
+end
+
+
+local function GB2LL(lett,num)
+   -- British OS to Lat+Long
+   -- first caclulate e,n
+   -- computing e and n exactly, to get SW corner of box
+   local ne = northeast(lett,num)
+   if ne.err then
+   	 return {region="GB",err=ne.err}
+   end
+   -- use British definition of e and n
+   local e=500000.0*(ne.T1%5)+100000.0*(ne.T2%5)-1000000.0+ne.e*ne.pr
+   local n=1900000.0-500000.0*floor(ne.T1/5)-100000.0*floor(ne.T2/5)+ne.n*ne.pr
+   local result = GBEN2LL(e,n)
+   result.prec = 0.8165*ne.pr
+   return result
+end
+   
+local function IrishEN2LL(e,n)
+   local latlong = EN2LL(e,n,IEglobe)
+   local helmert = HelmertDatumShift ( latlong.lat, latlong.lon, IE2WGSparam)
+   return {region="IE",lat=helmert.lat,long=helmert.lon}
+end
+
+local function Irish2LL(lett,num)
+   -- Irish OS to Lat+Long
+   -- first caclulate e,n
+   -- computing e and n exactly, to get SW corner of box
+   local ne = northeast(lett,num)
+   if ne.err then
+   	 return {region="IE", err=ne.err}
+   end
+   -- use Irish definition of northing and easting
+   local e=100000.0*(ne.T1%5.0)+ne.e*ne.pr
+   local n=ne.n*ne.pr+100000.0*(4.0-floor(ne.T1/5.0))
+   local result = IrishEN2LL(e,n)
+   result.prec = 0.8165*ne.pr  -- useful @ Commons
+   return result
+end
+
+local function empty(s)
+  return not s or s == ''
+end
+
+local function NGR2LL(ngr)
+  local result = {}
+  local _ = 0
+  ngr, _ = mw.ustring.gsub(mw.ustring.upper(ngr),"[%s%p]","")
+  local first, last, lett, num = mw.ustring.find(ngr,"^([A-Z]+)(%d+)$")
+  if not first or empty(lett) or empty(num) or mw.ustring.len(lett) &gt; 2 then
+  	return {err="Malformed NGR"}
+  end
+  if mw.ustring.len(lett) == 1 then
+    return Irish2LL(lett,num)
+  end
+  return GB2LL(lett, num)
+end
+
+local function split(s,sep)
+-- split a string s into chunks, separated by sep
+  sep = sep or "%s"
+  local t = {}
+  for chunk in mw.ustring.gmatch(s,"([^"..sep.."]+)") do
+    table.insert(t,chunk)
+  end
+  return t
+end
+
+local function trim(s)
+  local _ = 0
+  s, _ = mw.ustring.gsub(s,"^%s+","")
+  s, _ = mw.ustring.gsub(s,"%s+$","")
+  return s
+end
+
+local function alldigits(s)
+  return not mw.ustring.find(s,"%D")
+end
+
+local function warning(errmsg)
+  local preview = require('Module:If preview')
+  local msg = errmsg or 'Empty OS grid ref'
+
+  local html = preview._warning({ msg })
+
+  if namespace == 0 and errmsg then
+  	html = html..'[[Category:Pages with malformed OS coordinates]]'
+  end
+  return html
+end
+
+function oscoord._main(args)
+  local input = args[1]
+  if empty(input) then
+  	return warning(nil)
+  end
+  local linktitle = args[2]
+  local namearg = args["name"]
+  local rawurl = yesno(args["rawurl"])
+  local args = split(input,'_')
+  local LL
+  local restargs = 1
+  local current_page = mw.title.getCurrentTitle()
+  local pagename = mw.uri.encode( current_page.prefixedText, 'WIKI' )
+  if #args &gt;= 2 and alldigits(args[2]) then
+    if mw.ustring.sub(args[1],1,1) == 'i' then
+      local firstArg = mw.ustring.sub(args[1],2)
+      if alldigits(firstArg) then
+        LL = IrishEN2LL(firstArg,args[2])
+	    restargs = 3
+	    if empty(linktitle) then
+          linktitle=args[1]..'_'..args[2]
+	    end
+      end
+    elseif alldigits(args[1]) then
+      LL = GBEN2LL(args[1],args[2])
+      restargs = 3
+      if empty(linktitle) then
+        linktitle=args[1]..'_'..args[2]
+      end
+    end
+  else
+    LL = NGR2LL(args[1])
+    restargs = 2
+    if empty(linktitle) then
+      linktitle=args[1]
+    end
+  end
+  linktitle = trim(linktitle)
+  if not empty(LL.err) then
+    return linktitle ..warning(LL.err)
+  end
+  -- https://geohack.toolforge.org/geohack.php?pagename=Mount_Whitney&amp;params=36.578580925_N_118.29199495_W_type:mountain_region:US-CA_scale:100000_source:NGS
+  local url = ''
+  if not rawurl then
+  	url = url..'['
+  end
+  url = url..'https://geohack.toolforge.org/geohack.php?'
+  if not empty(pagename) then
+  	url = url..'pagename='..pagename..'&amp;'
+  end
+  LL.lat = LL.lat or 0
+  LL.long = LL.long or 0
+  LL.lat = ceil(LL.lat*1000000)/1000000
+  LL.long = ceil(LL.long*1000000)/1000000
+  url = url..'params='..mw.ustring.format('%.6f',LL.lat)..'_N_'
+  if LL.long &lt; 0 then
+  	url = url..mw.ustring.format('%.6f',-LL.long)..'_W'
+  else
+  	url = url..mw.ustring.format('%.6f',LL.long)..'_E'
+  end
+  for i = restargs,#args do
+  	url = url..'_'..args[i]
+  end
+  if not mw.ustring.find(input,"region") and LL.region then
+    url = url..'_region:'..LL.region
+  end
+  if not mw.ustring.find(input,"scale") and
+     not mw.ustring.find(input,"type") and
+     not mw.ustring.find(input,"dim") and LL.prec then
+     	url = url..'_dim:'..floor(50*LL.prec+0.5)..'m'
+  end
+  if not empty(namearg) then
+    url = url .. "&amp;title=" .. mw.uri.encode(namearg)
+  end
+  if not rawurl then
+	url = url..' '..linktitle..']'
+  end
+  return url
+end
+
+function oscoord._oscoord(args)
+	local output = '&lt;span class="plainlinks nourlexpansion" style="white-space: nowrap"&gt;' .. oscoord._main(args) .. '&lt;/span&gt;'
+	if namespace == 0 then
+		output = output .. '[[Category:Articles with OS grid coordinates]]'
+	end
+	return output
+end
+
+function oscoord.main(frame)
+	local args = getArgs(frame)
+	return oscoord._main(args)
+end
+
+function oscoord.oscoord(frame)
+	local args = getArgs(frame)
+	return oscoord._oscoord(args)
+end
+
+--[[
+ ******  LAT/LONG CONVERSION TO OS GRID REF FUNCTIONS *****
+ *  Uses the WGS-84 ellipsoid and only works for GB grid ref
+ *
+ *  See also:
+ *  http://www.posc.org/Epicentre.2_2/DataModel/ExamplesofUsage/eu_cs34h.html
+ *  http://kanadier.gps-info.de/d-utm-gitter.htm
+ *  http://www.gpsy.com/gpsinfo/geotoutm/
+ *  http://www.colorado.edu/geography/gcraft/notes/gps/gps_f.html
+ *  http://search.cpan.org/src/GRAHAMC/Geo-Coordinates-UTM-0.05/
+ *  UK Ordnance Survey grid (OSBG36): http://www.gps.gov.uk/guidecontents.asp
+ *  Swiss CH1903: http://www.gps.gov.uk/guidecontents.asp
+ *
+ *  ----------------------------------------------------------------------
+ *
+ *  Copyright 2005, Egil Kvaleberg &lt;egil@kvaleberg.no&gt;
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ 
+ Converted to Lua by User:Hike395 on 2023-12-15
+]]
+
+
+local function find_M ( lat_rad )
+	local e = OSGBglobe.ecc
+	local e2 = e*e
+	local e3 = e*e*e
+
+	return OSGBglobe.semimajor * ( ( 1 - e/4 - 3 * e2/64
+			      - 5 * e3/256
+			    ) * lat_rad
+			  - ( 3 * e/8 + 3 * e2/32
+			      + 45 * e3/1024
+			    ) * sin(2 * lat_rad)
+			  + ( 15 * e2/256 +
+			      45 * e3/1024
+			    ) * sin(4 * lat_rad)
+			  - ( 35 * e3/3072
+			    ) * sin(6 * lat_rad) )
+end
+
+--[[
+*  Convert latitude, longitude in decimal degrees to
+*  Transverse Mercator Easting and Northing based on a GB origin
+*
+*  return nil if problems
+]]
+local function LatLonOrigin2TM( latitude, longitude )
+	if longitude &lt; -180 or longitude &gt; 180 or latitude &lt; -80 or latitude &gt; 84 then
+		return nil
+	end
+
+	local longitude2 = longitude - floor((longitude + 180)/360) * 360
+
+	local lat_rad = deg2rad( latitude )
+
+	local e = OSGBglobe.ecc
+	local e_prime_sq = e / (1-e)
+
+	local v = OSGBglobe.semimajor / sqrt(1 - e * sin(lat_rad)*sin(lat_rad))
+	local tank = tan(lat_rad)
+	local T = tank*tank
+	local T2 = T*T
+	local C = e_prime_sq * pow( cos(lat_rad), 2)
+	local A = deg2rad( longitude2 -OSGBglobe.lon0 ) * cos(lat_rad)
+	local A2 = A*A
+	local A3 = A2*A
+	local A4 = A2*A2
+	local A5 = A3*A2
+	local A6 = A3*A3
+	local M = find_M( lat_rad )
+	local M0 = 0.0
+	if latitude_origin ~= 0 then
+		M0 = find_M(deg2rad( OSGBglobe.lat0 ))
+	end
+
+	local northing = OSGBglobe.n0 + OSGBglobe.scale *
+			    ( (M - M0) + v*tan(lat_rad) * 
+			      ( A2/2 
+				+ (5 - T + 9*C + 4*C*C) * A4/24
+				+ (61 - 58*T + T2
+				+ 600*C - 330*e_prime_sq) * A6/720 ))
+
+	local easting = OSGBglobe.e0 + OSGBglobe.scale * v *
+			   ( A 
+			     + (1-T+C)*A3/6
+			     + (5 - 18*T + T2 + 72*C 
+				- 58 * e_prime_sq)*A5/120 )
+
+	return {northing=northing,easting=easting}
+end
+
+--[[
+*  Convert latitude, longitude in decimal degrees to
+*  OSBG36 Easting and Northing
+]]
+local function LatLon2OSGB36( latlon, prec )
+	local tm = LatLonOrigin2TM(latlon.lat, latlon.lon)
+	if not tm then return '' end
+	if not tonumber(prec) then prec = 5 end
+	prec = floor(prec+0.5)
+	if prec &gt; 5 then prec = 5 end
+	if prec &lt; 1 then prec = 1 end
+
+	-- fix by Roger W Haworth
+	local grid_x = floor( tm.easting / 100000 )
+	local grid_y = floor( tm.northing / 100000 )
+	if grid_x &lt; 0 or grid_x &gt; 6 or grid_y &lt; 0 or grid_y &gt; 12 then return '' end
+	--               0000000001111111111222222
+	--               1234567890123456789012345
+	local letters = "ABCDEFGHJKLMNOPQRSTUVWXYZ"
+	
+	local indx1 = 18-floor(grid_y/5)*5+floor(grid_x/5)
+	local indx2 = 21-(grid_y%5)*5+grid_x%5
+	local c1 = mw.ustring.sub(letters,indx1,indx1)
+	local c2 = mw.ustring.sub(letters,indx2,indx2)
+
+	local easting = tm.easting%100000
+	local northing = tm.northing%100000
+	local grid = pow(10.0,5.0-prec)
+	easting = floor(easting/grid)
+	northing = floor(northing/grid)
+	local fmt = '%0'..prec..'d'
+	local e = mw.ustring.format(fmt, easting)
+	local n = mw.ustring.format(fmt, northing)
+
+	return c1..c2..e..n
+
+end
+
+function oscoord._WGS2OSGB(lat,lon,prec)
+	return LatLon2OSGB36(HelmertDatumShift(lat,lon,WGS2OSGBparam),prec)
+end
+
+function oscoord.WGS2OSGB(frame)
+	local args = getArgs(frame)
+	return args[1] and args[2] and oscoord._WGS2OSGB(args[1],args[2],args[3]) or ''
+end
+
+function oscoord.LL2OS(frame)
+	local args = getArgs(frame)
+	if not args[1] or not args[2] then return '' end
+	local gridRef = oscoord._WGS2OSGB(args[1],args[2],args.prec)
+	if not gridRef or #gridRef == 0 then return '' end
+	if args[3] then
+		gridRef = gridRef..'_'..args[3]
+	end
+	return oscoord._oscoord({gridRef,args.linktitle,name=args.name})
+end
+
+return oscoord</text>
+      <sha1>0c1tnfls6u7av6lc7e75qi6tema0t30</sha1>
+    </revision>
+    <revision>
+      <id>495241</id>
+      <parentid>495240</parentid>
+      <timestamp>2024-06-26T02:51:44Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:Ordnance_Survey_coordinates]]</comment>
+      <origin>495240</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="19371" sha1="0c1tnfls6u7av6lc7e75qi6tema0t30" xml:space="preserve">--[[ Ordnance Survey / Lat Long functions in Lua 
+
+****** ORDNANCE SURVEY TO LAT LONG FUNCTIONS ******
+
+Ported to Lua from PHP by Wikipedia User Hike395, 18 Aug 2019
+
+found by RWH at http://www.megalithia.com/search/llfuncshighlight.php
+
+With thanks to Andy, G4JNT for inspiration in GEOG, and to the OSGB for their white paper on coordinate transformation
+describing the iterative method used
+thanks to the Ordnance survey of Ireland for details of the true and false origins of the Irish grid
+
+You may use and redistribute this code under the terms of the GPL see http://www.gnu.org/copyleft/gpl.html
+
+
+Written by Richard
+www.megalithia.com
+v0.something 27/2/2000
+v 1.01 28 June 2004
+v 1.02 6 Aug 2004 line 89 add "0" to chars in ngr=stripcharsnotinbag Thx Andy
+v 1.03 9 Mar 2005 Jan (Klingon) added conversion to WGS84 map datum and removed limitation of digits of the grid ref
+v 1.04 10 Aug 2005 Richard correct error trapping (only manifest on malformed ngrs
+
+This code is predicated on the assumption that your are ONLY feeding it Irish or UK Grid references.
+It uses the single char prefix of Irish grid refs to tell the difference, UK grid refs have a two letter prefix.
+We would like an even number of digits for the rest of the grid ref.
+Anything in the NGR other than 0-9, A-Z, a-z is eliminated.
+WARNING this assumes there are no decimal points in your NGR components.
+
+The transformation from OSGB36/Ireland 1965 to WGS84 is more precise than 5 m.
+
+The function is case insensitive
+
+Lat/Long to Ordnance Survey conversion is at bottom of file, see further authorship there
+
+]]
+
+local oscoord = {}
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local namespace = mw.title.getCurrentTitle().namespace
+
+local pow = math.pow
+local sqrt = math.sqrt
+local abs = math.abs
+local floor = math.floor
+local ceil = math.ceil
+local sin = math.sin
+local cos = math.cos
+local tan = math.tan
+local atan = math.atan
+local deg2rad = math.rad
+local rad2deg = math.deg
+
+
+
+--[[ DATUM SHIFT USING HELMERT TRANSFORMATION
+ *
+ * height above the ellipsoid is ignored
+ * latitude and longitude must be given in decimal degrees
+ *
+ * no transformation if abs(latitude)&gt;89 or abs(longitude)&gt;89
+ * (lifting this restriction requires some more lines of code)
+ *
+ * Written in 2009 by user Telford at de.wikipedia
+ * Based on math described in "A Guide to Coordinate Systems in Great Britain"
+ * by the UK Ordnance Survey
+ * URL: https://www.ordnancesurvey.co.uk/documents/resources/guide-coordinate-systems-great-britain.pdf
+]]
+
+-- Datum parameters
+
+local OSGBglobe = {
+	semimajor = 6377563.396,
+	semiminor = 6356256.910,
+	ecc = 0.006670539761597529073698869358812557054558,
+	n1 = 0.00167322025032508731869331280635710896296,
+	scale = 0.9996012717,
+    e0 = 400000.0,
+    n0 = -100000.0,
+    lat0 = 49.0,
+    lon0 = -2.0
+}
+
+local IEglobe = {
+	semimajor = 6377340.189,
+	semiminor = 6356034.447,
+	ecc = 0.006670540293336110419293763349975612794125,
+	n1 = 0.001673220384152058651484728058385228837777,
+	scale = 1.000035,
+	e0 = 200000.0,
+	n0 = 250000.0,
+	lat0 = 53.5,
+	lon0 = -8.0
+}
+
+local WGSglobe = {
+	semimajor = 6378137.0,
+	semiminor = 6356752.3141,
+	ecc = 0.00669438003551279089034150031998869922791
+}
+
+local WGS2OSGBparam = {
+ -- Table 4, Section 6.6, Ordnance Survey document 
+	semimajor_src = WGSglobe.semimajor,
+	semiminor_src = WGSglobe.semiminor,
+	ecc_src = WGSglobe.ecc,
+	semimajor_dst = OSGBglobe.semimajor,
+	semiminor_dst = OSGBglobe.semiminor,
+	ecc_dst = OSGBglobe.ecc,
+	tx = -446.448,
+    ty = 125.157,
+    tz = -542.060,
+    s0 = 0.0000204894,
+    rx = deg2rad ( -.1502/3600. ),
+    ry = deg2rad ( -.2470/3600. ),
+    rz = deg2rad ( -.8421/3600. )
+}
+
+local OSGB2WGSparam = {
+	semimajor_src = OSGBglobe.semimajor,
+	semiminor_src = OSGBglobe.semiminor,
+	ecc_src = OSGBglobe.ecc,
+	semimajor_dst = WGSglobe.semimajor,
+	semiminor_dst = WGSglobe.semiminor,
+	ecc_dst = WGSglobe.ecc,
+	tx = -WGS2OSGBparam.tx,
+    ty = -WGS2OSGBparam.ty,
+    tz = -WGS2OSGBparam.tz,
+    s0 = -WGS2OSGBparam.s0,
+    rx = -WGS2OSGBparam.rx,
+    ry = -WGS2OSGBparam.ry,
+    rz = -WGS2OSGBparam.rz,
+}
+
+local IE2WGSparam = {
+	semimajor_src = IEglobe.semimajor,
+	semiminor_src = IEglobe.semiminor,
+	ecc_src = IEglobe.ecc,
+	semimajor_dst = WGSglobe.semimajor,
+	semiminor_dst = WGSglobe.semiminor,
+	ecc_dst = WGSglobe.ecc,
+	tx = 482.53,
+	ty = -130.596,
+	tz = 564.557,
+	s0 = 8.15/1000000.0,
+	rx = deg2rad( -1.042/3600.0 ),
+	ry = deg2rad( -0.214/3600.0 ),
+	rz = deg2rad( -0.631/3600.0 )
+}
+
+local function HelmertDatumShift ( latitude , longitude, param )
+	-- latitude and longitude are in degrees
+    -- return if latitude or longitude out of range 
+
+    if abs(latitude) &gt; 89. or abs(longitude) &gt; 89. then
+    	return {lat=latitude, lon=longitude}
+    end
+
+	param = param or WGS2OSGBparam
+
+    -- parameters for ellipsoids
+    -- Annex A.1, Ordnance Survey document --
+
+    local a1 = param.semimajor_src
+    local b1 = param.semiminor_src
+    local e1 = param.ecc_src
+
+    local a2 = param.semimajor_dst
+    local b2 = param.semiminor_dst
+    local e2 = param.ecc_dst
+
+    -- convert latitude and longitude to cartesian coordinates
+    -- math in Annex B.1, Ordnance Survey document
+    local phi = deg2rad ( latitude )
+    local lambda = deg2rad ( longitude )
+    local cosphi = cos ( phi )
+    local sinphi = sin ( phi )
+    local coslambda = cos ( lambda )
+    local sinlambda = sin ( lambda )
+
+    local ny = a1 / sqrt ( 1. - e1*sinphi*sinphi )
+
+    local x1 = ny * cosphi * coslambda
+    local y1 = ny * cosphi * sinlambda
+    local z1 = ny * ( 1. - e1 ) * sinphi
+    -- the helmert transformation proper
+    -- Equation 3, Section 6.2, Ordnance Survey document
+
+    local x2 = x1 + param.tx + ( param.s0 * x1 - param.rz * y1 + param.ry * z1 )
+    local y2 = y1 + param.ty + ( param.rz * x1 + param.s0 * y1 - param.rx * z1 )
+    local z2 = z1 + param.tz + ( -param.ry *x1 + param.rx * y1 + param.s0 * z1 )
+    -- convert cartesian coordinates to latitude and longitude
+    -- math in Annex B.2, of Ordnance Survey document 
+
+    lambda = atan ( y2 / x2 )
+
+    local p2 = sqrt ( x2*x2 + y2*y2 )
+    phi = atan ( z2 / p2*(1.-e2) )
+
+    local n0 = 101
+
+	local phi_alt
+    repeat
+	    phi_alt = phi
+	    ny = a2 / sqrt ( 1. - e2 * sin(phi) * sin(phi) )
+	    phi = atan ( (z2 + e2 * ny * sin(phi)) / p2 )
+	    n0 = n0 - 1
+    until abs ( phi - phi_alt ) &lt;= 0.000000000001 or n0 &lt;= 0
+
+	return {lat=rad2deg(phi),lon=rad2deg(lambda)}
+
+end
+
+--  LAT LONG TO OS GRID LIBRARY RESUMES HERE
+
+local function northeast(lett,num,shift)
+   -- split into northings and eastings
+   local le=mw.ustring.len(num)
+   if le%2 == 1 then
+   	 return {err="Malformed numerical part of NGR"}
+   end
+   local pr=le/2
+   local n = mw.ustring.sub(num,pr+1)
+   local e = mw.ustring.sub(num,1,pr)
+   -- Hack to move to center of square: append a 5 to northings and eastings
+   shift = yesno(shift)
+   if shift then
+     n = n.."5"
+     e = e.."5"
+     pr = pr+1
+   end
+   -- end hack
+   n = n == '' and 0 or n
+   e = e == '' and 0 or e
+   pr = pow(10.0,(5.0-pr))
+   local T1 = mw.ustring.byte(mw.ustring.sub(lett,1,1))-65
+   if T1&gt;8 then
+     T1 = T1-1
+   end
+   local T2 = nil
+   if mw.ustring.len(lett)&gt;1 then
+     T2 = mw.ustring.byte(mw.ustring.sub(lett,2))-65
+     if T2&gt;8 then
+       T2 = T2-1
+     end
+   end
+   return {n=n,e=e,pr=pr,T1=T1,T2=T2}
+end
+
+local function EN2LL(e,n,datum)
+   local a = datum.semimajor*datum.scale
+   local b = datum.semiminor*datum.scale
+   local lat0rad = deg2rad(datum.lat0)
+   local n1 = datum.n1
+   local n12 = n1*n1
+   local n13 = n12*n1
+   local k=(n-datum.n0)/a+lat0rad
+   local nextcounter=0
+   local j3, j4, j5, j6, m
+   repeat
+     nextcounter=nextcounter+1
+     local k3=k-lat0rad
+     local k4=k+lat0rad
+     j3=(1.0+n1+1.25*n12+1.25*n13)*k3
+     j4=(3.0*n1+3.0*n12+2.625*n13)*sin(k3)*cos(k4)
+     j5=(1.875*n12+1.875*n13)*sin(2.0*k3)*cos(2.0*k4)
+     j6=35.0/24.0*n13*sin(3.0*k3)*cos(3.0*k4)
+     m=b*(j3-j4+j5-j6)
+     k=k+(n-datum.n0-m)/a
+   until abs(n-datum.n0-m)&lt;=0.000000001 or nextcounter&gt;=100
+   local x = 1.0-datum.ecc*pow(sin(k),2.0)
+   local v=a/sqrt(x)
+   local r=v*(1.0-datum.ecc)/x
+   local h2=v/r-1.0
+   local y1=e-datum.e0
+   local tank = tan(k)
+   local tank2 = tank*tank
+   local tank4 = tank2*tank2
+   local tank6 = tank2*tank4
+   local cosk = cos(k)
+   local yv = y1/v -- dimensionless quantity in series expansion
+   local yv2 = yv*yv
+   local yv3 = yv*yv2
+   local yv5 = yv3*yv2
+   local yv7 = yv5*yv2
+   j3=tank/(2.0*r)
+   j4=tank/(24.0*r)*(5.0+3.0*tank2+h2-9.0*tank2*h2)
+   j5=tank/(720.0*r)*(61.0+90.0*tank2+45.0*tank4)
+   local k9=k-y1*(yv*j3+yv3*j4-yv5*j5)
+   j6=1.0/(cosk)
+   local j7=1.0/(cosk*6.0)*(v/r+2.0*tank2)
+   local j8=1.0/(cosk*120.0)*(5.0+28.0*tank2+24.0*tank4)
+   local j9=1.0/(cosk*5040.0)
+   j9=j9*(61.0+662.0*tank2+1320.0*tank4+720.0*tank6)
+   local long=datum.lon0+rad2deg(yv*j6-yv3*j7+yv5*j8-yv7*j9)
+   local lat=rad2deg(k9)
+   return {lat=lat,lon=long}
+end
+
+local function GBEN2LL(e,n)
+   local latlong = EN2LL(e,n,OSGBglobe)
+   local helmert = HelmertDatumShift ( latlong.lat, latlong.lon, OSGB2WGSparam)
+   return {region="GB",lat=helmert.lat,long=helmert.lon}
+end
+
+
+local function GB2LL(lett,num)
+   -- British OS to Lat+Long
+   -- first caclulate e,n
+   -- computing e and n exactly, to get SW corner of box
+   local ne = northeast(lett,num)
+   if ne.err then
+   	 return {region="GB",err=ne.err}
+   end
+   -- use British definition of e and n
+   local e=500000.0*(ne.T1%5)+100000.0*(ne.T2%5)-1000000.0+ne.e*ne.pr
+   local n=1900000.0-500000.0*floor(ne.T1/5)-100000.0*floor(ne.T2/5)+ne.n*ne.pr
+   local result = GBEN2LL(e,n)
+   result.prec = 0.8165*ne.pr
+   return result
+end
+   
+local function IrishEN2LL(e,n)
+   local latlong = EN2LL(e,n,IEglobe)
+   local helmert = HelmertDatumShift ( latlong.lat, latlong.lon, IE2WGSparam)
+   return {region="IE",lat=helmert.lat,long=helmert.lon}
+end
+
+local function Irish2LL(lett,num)
+   -- Irish OS to Lat+Long
+   -- first caclulate e,n
+   -- computing e and n exactly, to get SW corner of box
+   local ne = northeast(lett,num)
+   if ne.err then
+   	 return {region="IE", err=ne.err}
+   end
+   -- use Irish definition of northing and easting
+   local e=100000.0*(ne.T1%5.0)+ne.e*ne.pr
+   local n=ne.n*ne.pr+100000.0*(4.0-floor(ne.T1/5.0))
+   local result = IrishEN2LL(e,n)
+   result.prec = 0.8165*ne.pr  -- useful @ Commons
+   return result
+end
+
+local function empty(s)
+  return not s or s == ''
+end
+
+local function NGR2LL(ngr)
+  local result = {}
+  local _ = 0
+  ngr, _ = mw.ustring.gsub(mw.ustring.upper(ngr),"[%s%p]","")
+  local first, last, lett, num = mw.ustring.find(ngr,"^([A-Z]+)(%d+)$")
+  if not first or empty(lett) or empty(num) or mw.ustring.len(lett) &gt; 2 then
+  	return {err="Malformed NGR"}
+  end
+  if mw.ustring.len(lett) == 1 then
+    return Irish2LL(lett,num)
+  end
+  return GB2LL(lett, num)
+end
+
+local function split(s,sep)
+-- split a string s into chunks, separated by sep
+  sep = sep or "%s"
+  local t = {}
+  for chunk in mw.ustring.gmatch(s,"([^"..sep.."]+)") do
+    table.insert(t,chunk)
+  end
+  return t
+end
+
+local function trim(s)
+  local _ = 0
+  s, _ = mw.ustring.gsub(s,"^%s+","")
+  s, _ = mw.ustring.gsub(s,"%s+$","")
+  return s
+end
+
+local function alldigits(s)
+  return not mw.ustring.find(s,"%D")
+end
+
+local function warning(errmsg)
+  local preview = require('Module:If preview')
+  local msg = errmsg or 'Empty OS grid ref'
+
+  local html = preview._warning({ msg })
+
+  if namespace == 0 and errmsg then
+  	html = html..'[[Category:Pages with malformed OS coordinates]]'
+  end
+  return html
+end
+
+function oscoord._main(args)
+  local input = args[1]
+  if empty(input) then
+  	return warning(nil)
+  end
+  local linktitle = args[2]
+  local namearg = args["name"]
+  local rawurl = yesno(args["rawurl"])
+  local args = split(input,'_')
+  local LL
+  local restargs = 1
+  local current_page = mw.title.getCurrentTitle()
+  local pagename = mw.uri.encode( current_page.prefixedText, 'WIKI' )
+  if #args &gt;= 2 and alldigits(args[2]) then
+    if mw.ustring.sub(args[1],1,1) == 'i' then
+      local firstArg = mw.ustring.sub(args[1],2)
+      if alldigits(firstArg) then
+        LL = IrishEN2LL(firstArg,args[2])
+	    restargs = 3
+	    if empty(linktitle) then
+          linktitle=args[1]..'_'..args[2]
+	    end
+      end
+    elseif alldigits(args[1]) then
+      LL = GBEN2LL(args[1],args[2])
+      restargs = 3
+      if empty(linktitle) then
+        linktitle=args[1]..'_'..args[2]
+      end
+    end
+  else
+    LL = NGR2LL(args[1])
+    restargs = 2
+    if empty(linktitle) then
+      linktitle=args[1]
+    end
+  end
+  linktitle = trim(linktitle)
+  if not empty(LL.err) then
+    return linktitle ..warning(LL.err)
+  end
+  -- https://geohack.toolforge.org/geohack.php?pagename=Mount_Whitney&amp;params=36.578580925_N_118.29199495_W_type:mountain_region:US-CA_scale:100000_source:NGS
+  local url = ''
+  if not rawurl then
+  	url = url..'['
+  end
+  url = url..'https://geohack.toolforge.org/geohack.php?'
+  if not empty(pagename) then
+  	url = url..'pagename='..pagename..'&amp;'
+  end
+  LL.lat = LL.lat or 0
+  LL.long = LL.long or 0
+  LL.lat = ceil(LL.lat*1000000)/1000000
+  LL.long = ceil(LL.long*1000000)/1000000
+  url = url..'params='..mw.ustring.format('%.6f',LL.lat)..'_N_'
+  if LL.long &lt; 0 then
+  	url = url..mw.ustring.format('%.6f',-LL.long)..'_W'
+  else
+  	url = url..mw.ustring.format('%.6f',LL.long)..'_E'
+  end
+  for i = restargs,#args do
+  	url = url..'_'..args[i]
+  end
+  if not mw.ustring.find(input,"region") and LL.region then
+    url = url..'_region:'..LL.region
+  end
+  if not mw.ustring.find(input,"scale") and
+     not mw.ustring.find(input,"type") and
+     not mw.ustring.find(input,"dim") and LL.prec then
+     	url = url..'_dim:'..floor(50*LL.prec+0.5)..'m'
+  end
+  if not empty(namearg) then
+    url = url .. "&amp;title=" .. mw.uri.encode(namearg)
+  end
+  if not rawurl then
+	url = url..' '..linktitle..']'
+  end
+  return url
+end
+
+function oscoord._oscoord(args)
+	local output = '&lt;span class="plainlinks nourlexpansion" style="white-space: nowrap"&gt;' .. oscoord._main(args) .. '&lt;/span&gt;'
+	if namespace == 0 then
+		output = output .. '[[Category:Articles with OS grid coordinates]]'
+	end
+	return output
+end
+
+function oscoord.main(frame)
+	local args = getArgs(frame)
+	return oscoord._main(args)
+end
+
+function oscoord.oscoord(frame)
+	local args = getArgs(frame)
+	return oscoord._oscoord(args)
+end
+
+--[[
+ ******  LAT/LONG CONVERSION TO OS GRID REF FUNCTIONS *****
+ *  Uses the WGS-84 ellipsoid and only works for GB grid ref
+ *
+ *  See also:
+ *  http://www.posc.org/Epicentre.2_2/DataModel/ExamplesofUsage/eu_cs34h.html
+ *  http://kanadier.gps-info.de/d-utm-gitter.htm
+ *  http://www.gpsy.com/gpsinfo/geotoutm/
+ *  http://www.colorado.edu/geography/gcraft/notes/gps/gps_f.html
+ *  http://search.cpan.org/src/GRAHAMC/Geo-Coordinates-UTM-0.05/
+ *  UK Ordnance Survey grid (OSBG36): http://www.gps.gov.uk/guidecontents.asp
+ *  Swiss CH1903: http://www.gps.gov.uk/guidecontents.asp
+ *
+ *  ----------------------------------------------------------------------
+ *
+ *  Copyright 2005, Egil Kvaleberg &lt;egil@kvaleberg.no&gt;
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ 
+ Converted to Lua by User:Hike395 on 2023-12-15
+]]
+
+
+local function find_M ( lat_rad )
+	local e = OSGBglobe.ecc
+	local e2 = e*e
+	local e3 = e*e*e
+
+	return OSGBglobe.semimajor * ( ( 1 - e/4 - 3 * e2/64
+			      - 5 * e3/256
+			    ) * lat_rad
+			  - ( 3 * e/8 + 3 * e2/32
+			      + 45 * e3/1024
+			    ) * sin(2 * lat_rad)
+			  + ( 15 * e2/256 +
+			      45 * e3/1024
+			    ) * sin(4 * lat_rad)
+			  - ( 35 * e3/3072
+			    ) * sin(6 * lat_rad) )
+end
+
+--[[
+*  Convert latitude, longitude in decimal degrees to
+*  Transverse Mercator Easting and Northing based on a GB origin
+*
+*  return nil if problems
+]]
+local function LatLonOrigin2TM( latitude, longitude )
+	if longitude &lt; -180 or longitude &gt; 180 or latitude &lt; -80 or latitude &gt; 84 then
+		return nil
+	end
+
+	local longitude2 = longitude - floor((longitude + 180)/360) * 360
+
+	local lat_rad = deg2rad( latitude )
+
+	local e = OSGBglobe.ecc
+	local e_prime_sq = e / (1-e)
+
+	local v = OSGBglobe.semimajor / sqrt(1 - e * sin(lat_rad)*sin(lat_rad))
+	local tank = tan(lat_rad)
+	local T = tank*tank
+	local T2 = T*T
+	local C = e_prime_sq * pow( cos(lat_rad), 2)
+	local A = deg2rad( longitude2 -OSGBglobe.lon0 ) * cos(lat_rad)
+	local A2 = A*A
+	local A3 = A2*A
+	local A4 = A2*A2
+	local A5 = A3*A2
+	local A6 = A3*A3
+	local M = find_M( lat_rad )
+	local M0 = 0.0
+	if latitude_origin ~= 0 then
+		M0 = find_M(deg2rad( OSGBglobe.lat0 ))
+	end
+
+	local northing = OSGBglobe.n0 + OSGBglobe.scale *
+			    ( (M - M0) + v*tan(lat_rad) * 
+			      ( A2/2 
+				+ (5 - T + 9*C + 4*C*C) * A4/24
+				+ (61 - 58*T + T2
+				+ 600*C - 330*e_prime_sq) * A6/720 ))
+
+	local easting = OSGBglobe.e0 + OSGBglobe.scale * v *
+			   ( A 
+			     + (1-T+C)*A3/6
+			     + (5 - 18*T + T2 + 72*C 
+				- 58 * e_prime_sq)*A5/120 )
+
+	return {northing=northing,easting=easting}
+end
+
+--[[
+*  Convert latitude, longitude in decimal degrees to
+*  OSBG36 Easting and Northing
+]]
+local function LatLon2OSGB36( latlon, prec )
+	local tm = LatLonOrigin2TM(latlon.lat, latlon.lon)
+	if not tm then return '' end
+	if not tonumber(prec) then prec = 5 end
+	prec = floor(prec+0.5)
+	if prec &gt; 5 then prec = 5 end
+	if prec &lt; 1 then prec = 1 end
+
+	-- fix by Roger W Haworth
+	local grid_x = floor( tm.easting / 100000 )
+	local grid_y = floor( tm.northing / 100000 )
+	if grid_x &lt; 0 or grid_x &gt; 6 or grid_y &lt; 0 or grid_y &gt; 12 then return '' end
+	--               0000000001111111111222222
+	--               1234567890123456789012345
+	local letters = "ABCDEFGHJKLMNOPQRSTUVWXYZ"
+	
+	local indx1 = 18-floor(grid_y/5)*5+floor(grid_x/5)
+	local indx2 = 21-(grid_y%5)*5+grid_x%5
+	local c1 = mw.ustring.sub(letters,indx1,indx1)
+	local c2 = mw.ustring.sub(letters,indx2,indx2)
+
+	local easting = tm.easting%100000
+	local northing = tm.northing%100000
+	local grid = pow(10.0,5.0-prec)
+	easting = floor(easting/grid)
+	northing = floor(northing/grid)
+	local fmt = '%0'..prec..'d'
+	local e = mw.ustring.format(fmt, easting)
+	local n = mw.ustring.format(fmt, northing)
+
+	return c1..c2..e..n
+
+end
+
+function oscoord._WGS2OSGB(lat,lon,prec)
+	return LatLon2OSGB36(HelmertDatumShift(lat,lon,WGS2OSGBparam),prec)
+end
+
+function oscoord.WGS2OSGB(frame)
+	local args = getArgs(frame)
+	return args[1] and args[2] and oscoord._WGS2OSGB(args[1],args[2],args[3]) or ''
+end
+
+function oscoord.LL2OS(frame)
+	local args = getArgs(frame)
+	if not args[1] or not args[2] then return '' end
+	local gridRef = oscoord._WGS2OSGB(args[1],args[2],args.prec)
+	if not gridRef or #gridRef == 0 then return '' end
+	if args[3] then
+		gridRef = gridRef..'_'..args[3]
+	end
+	return oscoord._oscoord({gridRef,args.linktitle,name=args.name})
+end
+
+return oscoord</text>
+      <sha1>0c1tnfls6u7av6lc7e75qi6tema0t30</sha1>
+    </revision>
+    <revision>
+      <id>487</id>
+      <timestamp>2025-11-22T14:38:06Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Text replacement - "↵↵↵" to "
+"</comment>
+      <origin>487</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="19363" sha1="tl2bpihzkb1zv8ihz722k4l68fb8as0" xml:space="preserve">--[[ Ordnance Survey / Lat Long functions in Lua 
+
+****** ORDNANCE SURVEY TO LAT LONG FUNCTIONS ******
+
+Ported to Lua from PHP by Wikipedia User Hike395, 18 Aug 2019
+
+found by RWH at http://www.megalithia.com/search/llfuncshighlight.php
+
+With thanks to Andy, G4JNT for inspiration in GEOG, and to the OSGB for their white paper on coordinate transformation
+describing the iterative method used
+thanks to the Ordnance survey of Ireland for details of the true and false origins of the Irish grid
+
+You may use and redistribute this code under the terms of the GPL see http://www.gnu.org/copyleft/gpl.html
+Written by Richard
+www.megalithia.com
+v0.something 27/2/2000
+v 1.01 28 June 2004
+v 1.02 6 Aug 2004 line 89 add "0" to chars in ngr=stripcharsnotinbag Thx Andy
+v 1.03 9 Mar 2005 Jan (Klingon) added conversion to WGS84 map datum and removed limitation of digits of the grid ref
+v 1.04 10 Aug 2005 Richard correct error trapping (only manifest on malformed ngrs
+
+This code is predicated on the assumption that your are ONLY feeding it Irish or UK Grid references.
+It uses the single char prefix of Irish grid refs to tell the difference, UK grid refs have a two letter prefix.
+We would like an even number of digits for the rest of the grid ref.
+Anything in the NGR other than 0-9, A-Z, a-z is eliminated.
+WARNING this assumes there are no decimal points in your NGR components.
+
+The transformation from OSGB36/Ireland 1965 to WGS84 is more precise than 5 m.
+
+The function is case insensitive
+
+Lat/Long to Ordnance Survey conversion is at bottom of file, see further authorship there
+
+]]
+
+local oscoord = {}
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local namespace = mw.title.getCurrentTitle().namespace
+
+local pow = math.pow
+local sqrt = math.sqrt
+local abs = math.abs
+local floor = math.floor
+local ceil = math.ceil
+local sin = math.sin
+local cos = math.cos
+local tan = math.tan
+local atan = math.atan
+local deg2rad = math.rad
+local rad2deg = math.deg
+
+--[[ DATUM SHIFT USING HELMERT TRANSFORMATION
+ *
+ * height above the ellipsoid is ignored
+ * latitude and longitude must be given in decimal degrees
+ *
+ * no transformation if abs(latitude)&gt;89 or abs(longitude)&gt;89
+ * (lifting this restriction requires some more lines of code)
+ *
+ * Written in 2009 by user Telford at de.wikipedia
+ * Based on math described in "A Guide to Coordinate Systems in Great Britain"
+ * by the UK Ordnance Survey
+ * URL: https://www.ordnancesurvey.co.uk/documents/resources/guide-coordinate-systems-great-britain.pdf
+]]
+
+-- Datum parameters
+
+local OSGBglobe = {
+	semimajor = 6377563.396,
+	semiminor = 6356256.910,
+	ecc = 0.006670539761597529073698869358812557054558,
+	n1 = 0.00167322025032508731869331280635710896296,
+	scale = 0.9996012717,
+    e0 = 400000.0,
+    n0 = -100000.0,
+    lat0 = 49.0,
+    lon0 = -2.0
+}
+
+local IEglobe = {
+	semimajor = 6377340.189,
+	semiminor = 6356034.447,
+	ecc = 0.006670540293336110419293763349975612794125,
+	n1 = 0.001673220384152058651484728058385228837777,
+	scale = 1.000035,
+	e0 = 200000.0,
+	n0 = 250000.0,
+	lat0 = 53.5,
+	lon0 = -8.0
+}
+
+local WGSglobe = {
+	semimajor = 6378137.0,
+	semiminor = 6356752.3141,
+	ecc = 0.00669438003551279089034150031998869922791
+}
+
+local WGS2OSGBparam = {
+ -- Table 4, Section 6.6, Ordnance Survey document 
+	semimajor_src = WGSglobe.semimajor,
+	semiminor_src = WGSglobe.semiminor,
+	ecc_src = WGSglobe.ecc,
+	semimajor_dst = OSGBglobe.semimajor,
+	semiminor_dst = OSGBglobe.semiminor,
+	ecc_dst = OSGBglobe.ecc,
+	tx = -446.448,
+    ty = 125.157,
+    tz = -542.060,
+    s0 = 0.0000204894,
+    rx = deg2rad ( -.1502/3600. ),
+    ry = deg2rad ( -.2470/3600. ),
+    rz = deg2rad ( -.8421/3600. )
+}
+
+local OSGB2WGSparam = {
+	semimajor_src = OSGBglobe.semimajor,
+	semiminor_src = OSGBglobe.semiminor,
+	ecc_src = OSGBglobe.ecc,
+	semimajor_dst = WGSglobe.semimajor,
+	semiminor_dst = WGSglobe.semiminor,
+	ecc_dst = WGSglobe.ecc,
+	tx = -WGS2OSGBparam.tx,
+    ty = -WGS2OSGBparam.ty,
+    tz = -WGS2OSGBparam.tz,
+    s0 = -WGS2OSGBparam.s0,
+    rx = -WGS2OSGBparam.rx,
+    ry = -WGS2OSGBparam.ry,
+    rz = -WGS2OSGBparam.rz,
+}
+
+local IE2WGSparam = {
+	semimajor_src = IEglobe.semimajor,
+	semiminor_src = IEglobe.semiminor,
+	ecc_src = IEglobe.ecc,
+	semimajor_dst = WGSglobe.semimajor,
+	semiminor_dst = WGSglobe.semiminor,
+	ecc_dst = WGSglobe.ecc,
+	tx = 482.53,
+	ty = -130.596,
+	tz = 564.557,
+	s0 = 8.15/1000000.0,
+	rx = deg2rad( -1.042/3600.0 ),
+	ry = deg2rad( -0.214/3600.0 ),
+	rz = deg2rad( -0.631/3600.0 )
+}
+
+local function HelmertDatumShift ( latitude , longitude, param )
+	-- latitude and longitude are in degrees
+    -- return if latitude or longitude out of range 
+
+    if abs(latitude) &gt; 89. or abs(longitude) &gt; 89. then
+    	return {lat=latitude, lon=longitude}
+    end
+
+	param = param or WGS2OSGBparam
+
+    -- parameters for ellipsoids
+    -- Annex A.1, Ordnance Survey document --
+
+    local a1 = param.semimajor_src
+    local b1 = param.semiminor_src
+    local e1 = param.ecc_src
+
+    local a2 = param.semimajor_dst
+    local b2 = param.semiminor_dst
+    local e2 = param.ecc_dst
+
+    -- convert latitude and longitude to cartesian coordinates
+    -- math in Annex B.1, Ordnance Survey document
+    local phi = deg2rad ( latitude )
+    local lambda = deg2rad ( longitude )
+    local cosphi = cos ( phi )
+    local sinphi = sin ( phi )
+    local coslambda = cos ( lambda )
+    local sinlambda = sin ( lambda )
+
+    local ny = a1 / sqrt ( 1. - e1*sinphi*sinphi )
+
+    local x1 = ny * cosphi * coslambda
+    local y1 = ny * cosphi * sinlambda
+    local z1 = ny * ( 1. - e1 ) * sinphi
+    -- the helmert transformation proper
+    -- Equation 3, Section 6.2, Ordnance Survey document
+
+    local x2 = x1 + param.tx + ( param.s0 * x1 - param.rz * y1 + param.ry * z1 )
+    local y2 = y1 + param.ty + ( param.rz * x1 + param.s0 * y1 - param.rx * z1 )
+    local z2 = z1 + param.tz + ( -param.ry *x1 + param.rx * y1 + param.s0 * z1 )
+    -- convert cartesian coordinates to latitude and longitude
+    -- math in Annex B.2, of Ordnance Survey document 
+
+    lambda = atan ( y2 / x2 )
+
+    local p2 = sqrt ( x2*x2 + y2*y2 )
+    phi = atan ( z2 / p2*(1.-e2) )
+
+    local n0 = 101
+
+	local phi_alt
+    repeat
+	    phi_alt = phi
+	    ny = a2 / sqrt ( 1. - e2 * sin(phi) * sin(phi) )
+	    phi = atan ( (z2 + e2 * ny * sin(phi)) / p2 )
+	    n0 = n0 - 1
+    until abs ( phi - phi_alt ) &lt;= 0.000000000001 or n0 &lt;= 0
+
+	return {lat=rad2deg(phi),lon=rad2deg(lambda)}
+
+end
+
+--  LAT LONG TO OS GRID LIBRARY RESUMES HERE
+
+local function northeast(lett,num,shift)
+   -- split into northings and eastings
+   local le=mw.ustring.len(num)
+   if le%2 == 1 then
+   	 return {err="Malformed numerical part of NGR"}
+   end
+   local pr=le/2
+   local n = mw.ustring.sub(num,pr+1)
+   local e = mw.ustring.sub(num,1,pr)
+   -- Hack to move to center of square: append a 5 to northings and eastings
+   shift = yesno(shift)
+   if shift then
+     n = n.."5"
+     e = e.."5"
+     pr = pr+1
+   end
+   -- end hack
+   n = n == '' and 0 or n
+   e = e == '' and 0 or e
+   pr = pow(10.0,(5.0-pr))
+   local T1 = mw.ustring.byte(mw.ustring.sub(lett,1,1))-65
+   if T1&gt;8 then
+     T1 = T1-1
+   end
+   local T2 = nil
+   if mw.ustring.len(lett)&gt;1 then
+     T2 = mw.ustring.byte(mw.ustring.sub(lett,2))-65
+     if T2&gt;8 then
+       T2 = T2-1
+     end
+   end
+   return {n=n,e=e,pr=pr,T1=T1,T2=T2}
+end
+
+local function EN2LL(e,n,datum)
+   local a = datum.semimajor*datum.scale
+   local b = datum.semiminor*datum.scale
+   local lat0rad = deg2rad(datum.lat0)
+   local n1 = datum.n1
+   local n12 = n1*n1
+   local n13 = n12*n1
+   local k=(n-datum.n0)/a+lat0rad
+   local nextcounter=0
+   local j3, j4, j5, j6, m
+   repeat
+     nextcounter=nextcounter+1
+     local k3=k-lat0rad
+     local k4=k+lat0rad
+     j3=(1.0+n1+1.25*n12+1.25*n13)*k3
+     j4=(3.0*n1+3.0*n12+2.625*n13)*sin(k3)*cos(k4)
+     j5=(1.875*n12+1.875*n13)*sin(2.0*k3)*cos(2.0*k4)
+     j6=35.0/24.0*n13*sin(3.0*k3)*cos(3.0*k4)
+     m=b*(j3-j4+j5-j6)
+     k=k+(n-datum.n0-m)/a
+   until abs(n-datum.n0-m)&lt;=0.000000001 or nextcounter&gt;=100
+   local x = 1.0-datum.ecc*pow(sin(k),2.0)
+   local v=a/sqrt(x)
+   local r=v*(1.0-datum.ecc)/x
+   local h2=v/r-1.0
+   local y1=e-datum.e0
+   local tank = tan(k)
+   local tank2 = tank*tank
+   local tank4 = tank2*tank2
+   local tank6 = tank2*tank4
+   local cosk = cos(k)
+   local yv = y1/v -- dimensionless quantity in series expansion
+   local yv2 = yv*yv
+   local yv3 = yv*yv2
+   local yv5 = yv3*yv2
+   local yv7 = yv5*yv2
+   j3=tank/(2.0*r)
+   j4=tank/(24.0*r)*(5.0+3.0*tank2+h2-9.0*tank2*h2)
+   j5=tank/(720.0*r)*(61.0+90.0*tank2+45.0*tank4)
+   local k9=k-y1*(yv*j3+yv3*j4-yv5*j5)
+   j6=1.0/(cosk)
+   local j7=1.0/(cosk*6.0)*(v/r+2.0*tank2)
+   local j8=1.0/(cosk*120.0)*(5.0+28.0*tank2+24.0*tank4)
+   local j9=1.0/(cosk*5040.0)
+   j9=j9*(61.0+662.0*tank2+1320.0*tank4+720.0*tank6)
+   local long=datum.lon0+rad2deg(yv*j6-yv3*j7+yv5*j8-yv7*j9)
+   local lat=rad2deg(k9)
+   return {lat=lat,lon=long}
+end
+
+local function GBEN2LL(e,n)
+   local latlong = EN2LL(e,n,OSGBglobe)
+   local helmert = HelmertDatumShift ( latlong.lat, latlong.lon, OSGB2WGSparam)
+   return {region="GB",lat=helmert.lat,long=helmert.lon}
+end
+local function GB2LL(lett,num)
+   -- British OS to Lat+Long
+   -- first caclulate e,n
+   -- computing e and n exactly, to get SW corner of box
+   local ne = northeast(lett,num)
+   if ne.err then
+   	 return {region="GB",err=ne.err}
+   end
+   -- use British definition of e and n
+   local e=500000.0*(ne.T1%5)+100000.0*(ne.T2%5)-1000000.0+ne.e*ne.pr
+   local n=1900000.0-500000.0*floor(ne.T1/5)-100000.0*floor(ne.T2/5)+ne.n*ne.pr
+   local result = GBEN2LL(e,n)
+   result.prec = 0.8165*ne.pr
+   return result
+end
+   
+local function IrishEN2LL(e,n)
+   local latlong = EN2LL(e,n,IEglobe)
+   local helmert = HelmertDatumShift ( latlong.lat, latlong.lon, IE2WGSparam)
+   return {region="IE",lat=helmert.lat,long=helmert.lon}
+end
+
+local function Irish2LL(lett,num)
+   -- Irish OS to Lat+Long
+   -- first caclulate e,n
+   -- computing e and n exactly, to get SW corner of box
+   local ne = northeast(lett,num)
+   if ne.err then
+   	 return {region="IE", err=ne.err}
+   end
+   -- use Irish definition of northing and easting
+   local e=100000.0*(ne.T1%5.0)+ne.e*ne.pr
+   local n=ne.n*ne.pr+100000.0*(4.0-floor(ne.T1/5.0))
+   local result = IrishEN2LL(e,n)
+   result.prec = 0.8165*ne.pr  -- useful @ Commons
+   return result
+end
+
+local function empty(s)
+  return not s or s == ''
+end
+
+local function NGR2LL(ngr)
+  local result = {}
+  local _ = 0
+  ngr, _ = mw.ustring.gsub(mw.ustring.upper(ngr),"[%s%p]","")
+  local first, last, lett, num = mw.ustring.find(ngr,"^([A-Z]+)(%d+)$")
+  if not first or empty(lett) or empty(num) or mw.ustring.len(lett) &gt; 2 then
+  	return {err="Malformed NGR"}
+  end
+  if mw.ustring.len(lett) == 1 then
+    return Irish2LL(lett,num)
+  end
+  return GB2LL(lett, num)
+end
+
+local function split(s,sep)
+-- split a string s into chunks, separated by sep
+  sep = sep or "%s"
+  local t = {}
+  for chunk in mw.ustring.gmatch(s,"([^"..sep.."]+)") do
+    table.insert(t,chunk)
+  end
+  return t
+end
+
+local function trim(s)
+  local _ = 0
+  s, _ = mw.ustring.gsub(s,"^%s+","")
+  s, _ = mw.ustring.gsub(s,"%s+$","")
+  return s
+end
+
+local function alldigits(s)
+  return not mw.ustring.find(s,"%D")
+end
+
+local function warning(errmsg)
+  local preview = require('Module:If preview')
+  local msg = errmsg or 'Empty OS grid ref'
+
+  local html = preview._warning({ msg })
+
+  if namespace == 0 and errmsg then
+  	html = html..'[[Category:Pages with malformed OS coordinates]]'
+  end
+  return html
+end
+
+function oscoord._main(args)
+  local input = args[1]
+  if empty(input) then
+  	return warning(nil)
+  end
+  local linktitle = args[2]
+  local namearg = args["name"]
+  local rawurl = yesno(args["rawurl"])
+  local args = split(input,'_')
+  local LL
+  local restargs = 1
+  local current_page = mw.title.getCurrentTitle()
+  local pagename = mw.uri.encode( current_page.prefixedText, 'WIKI' )
+  if #args &gt;= 2 and alldigits(args[2]) then
+    if mw.ustring.sub(args[1],1,1) == 'i' then
+      local firstArg = mw.ustring.sub(args[1],2)
+      if alldigits(firstArg) then
+        LL = IrishEN2LL(firstArg,args[2])
+	    restargs = 3
+	    if empty(linktitle) then
+          linktitle=args[1]..'_'..args[2]
+	    end
+      end
+    elseif alldigits(args[1]) then
+      LL = GBEN2LL(args[1],args[2])
+      restargs = 3
+      if empty(linktitle) then
+        linktitle=args[1]..'_'..args[2]
+      end
+    end
+  else
+    LL = NGR2LL(args[1])
+    restargs = 2
+    if empty(linktitle) then
+      linktitle=args[1]
+    end
+  end
+  linktitle = trim(linktitle)
+  if not empty(LL.err) then
+    return linktitle ..warning(LL.err)
+  end
+  -- https://geohack.toolforge.org/geohack.php?pagename=Mount_Whitney&amp;params=36.578580925_N_118.29199495_W_type:mountain_region:US-CA_scale:100000_source:NGS
+  local url = ''
+  if not rawurl then
+  	url = url..'['
+  end
+  url = url..'https://geohack.toolforge.org/geohack.php?'
+  if not empty(pagename) then
+  	url = url..'pagename='..pagename..'&amp;'
+  end
+  LL.lat = LL.lat or 0
+  LL.long = LL.long or 0
+  LL.lat = ceil(LL.lat*1000000)/1000000
+  LL.long = ceil(LL.long*1000000)/1000000
+  url = url..'params='..mw.ustring.format('%.6f',LL.lat)..'_N_'
+  if LL.long &lt; 0 then
+  	url = url..mw.ustring.format('%.6f',-LL.long)..'_W'
+  else
+  	url = url..mw.ustring.format('%.6f',LL.long)..'_E'
+  end
+  for i = restargs,#args do
+  	url = url..'_'..args[i]
+  end
+  if not mw.ustring.find(input,"region") and LL.region then
+    url = url..'_region:'..LL.region
+  end
+  if not mw.ustring.find(input,"scale") and
+     not mw.ustring.find(input,"type") and
+     not mw.ustring.find(input,"dim") and LL.prec then
+     	url = url..'_dim:'..floor(50*LL.prec+0.5)..'m'
+  end
+  if not empty(namearg) then
+    url = url .. "&amp;title=" .. mw.uri.encode(namearg)
+  end
+  if not rawurl then
+	url = url..' '..linktitle..']'
+  end
+  return url
+end
+
+function oscoord._oscoord(args)
+	local output = '&lt;span class="plainlinks nourlexpansion" style="white-space: nowrap"&gt;' .. oscoord._main(args) .. '&lt;/span&gt;'
+	if namespace == 0 then
+		output = output .. '[[Category:Articles with OS grid coordinates]]'
+	end
+	return output
+end
+
+function oscoord.main(frame)
+	local args = getArgs(frame)
+	return oscoord._main(args)
+end
+
+function oscoord.oscoord(frame)
+	local args = getArgs(frame)
+	return oscoord._oscoord(args)
+end
+
+--[[
+ ******  LAT/LONG CONVERSION TO OS GRID REF FUNCTIONS *****
+ *  Uses the WGS-84 ellipsoid and only works for GB grid ref
+ *
+ *  See also:
+ *  http://www.posc.org/Epicentre.2_2/DataModel/ExamplesofUsage/eu_cs34h.html
+ *  http://kanadier.gps-info.de/d-utm-gitter.htm
+ *  http://www.gpsy.com/gpsinfo/geotoutm/
+ *  http://www.colorado.edu/geography/gcraft/notes/gps/gps_f.html
+ *  http://search.cpan.org/src/GRAHAMC/Geo-Coordinates-UTM-0.05/
+ *  UK Ordnance Survey grid (OSBG36): http://www.gps.gov.uk/guidecontents.asp
+ *  Swiss CH1903: http://www.gps.gov.uk/guidecontents.asp
+ *
+ *  ----------------------------------------------------------------------
+ *
+ *  Copyright 2005, Egil Kvaleberg &lt;egil@kvaleberg.no&gt;
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ 
+ Converted to Lua by User:Hike395 on 2023-12-15
+]]
+local function find_M ( lat_rad )
+	local e = OSGBglobe.ecc
+	local e2 = e*e
+	local e3 = e*e*e
+
+	return OSGBglobe.semimajor * ( ( 1 - e/4 - 3 * e2/64
+			      - 5 * e3/256
+			    ) * lat_rad
+			  - ( 3 * e/8 + 3 * e2/32
+			      + 45 * e3/1024
+			    ) * sin(2 * lat_rad)
+			  + ( 15 * e2/256 +
+			      45 * e3/1024
+			    ) * sin(4 * lat_rad)
+			  - ( 35 * e3/3072
+			    ) * sin(6 * lat_rad) )
+end
+
+--[[
+*  Convert latitude, longitude in decimal degrees to
+*  Transverse Mercator Easting and Northing based on a GB origin
+*
+*  return nil if problems
+]]
+local function LatLonOrigin2TM( latitude, longitude )
+	if longitude &lt; -180 or longitude &gt; 180 or latitude &lt; -80 or latitude &gt; 84 then
+		return nil
+	end
+
+	local longitude2 = longitude - floor((longitude + 180)/360) * 360
+
+	local lat_rad = deg2rad( latitude )
+
+	local e = OSGBglobe.ecc
+	local e_prime_sq = e / (1-e)
+
+	local v = OSGBglobe.semimajor / sqrt(1 - e * sin(lat_rad)*sin(lat_rad))
+	local tank = tan(lat_rad)
+	local T = tank*tank
+	local T2 = T*T
+	local C = e_prime_sq * pow( cos(lat_rad), 2)
+	local A = deg2rad( longitude2 -OSGBglobe.lon0 ) * cos(lat_rad)
+	local A2 = A*A
+	local A3 = A2*A
+	local A4 = A2*A2
+	local A5 = A3*A2
+	local A6 = A3*A3
+	local M = find_M( lat_rad )
+	local M0 = 0.0
+	if latitude_origin ~= 0 then
+		M0 = find_M(deg2rad( OSGBglobe.lat0 ))
+	end
+
+	local northing = OSGBglobe.n0 + OSGBglobe.scale *
+			    ( (M - M0) + v*tan(lat_rad) * 
+			      ( A2/2 
+				+ (5 - T + 9*C + 4*C*C) * A4/24
+				+ (61 - 58*T + T2
+				+ 600*C - 330*e_prime_sq) * A6/720 ))
+
+	local easting = OSGBglobe.e0 + OSGBglobe.scale * v *
+			   ( A 
+			     + (1-T+C)*A3/6
+			     + (5 - 18*T + T2 + 72*C 
+				- 58 * e_prime_sq)*A5/120 )
+
+	return {northing=northing,easting=easting}
+end
+
+--[[
+*  Convert latitude, longitude in decimal degrees to
+*  OSBG36 Easting and Northing
+]]
+local function LatLon2OSGB36( latlon, prec )
+	local tm = LatLonOrigin2TM(latlon.lat, latlon.lon)
+	if not tm then return '' end
+	if not tonumber(prec) then prec = 5 end
+	prec = floor(prec+0.5)
+	if prec &gt; 5 then prec = 5 end
+	if prec &lt; 1 then prec = 1 end
+
+	-- fix by Roger W Haworth
+	local grid_x = floor( tm.easting / 100000 )
+	local grid_y = floor( tm.northing / 100000 )
+	if grid_x &lt; 0 or grid_x &gt; 6 or grid_y &lt; 0 or grid_y &gt; 12 then return '' end
+	--               0000000001111111111222222
+	--               1234567890123456789012345
+	local letters = "ABCDEFGHJKLMNOPQRSTUVWXYZ"
+	
+	local indx1 = 18-floor(grid_y/5)*5+floor(grid_x/5)
+	local indx2 = 21-(grid_y%5)*5+grid_x%5
+	local c1 = mw.ustring.sub(letters,indx1,indx1)
+	local c2 = mw.ustring.sub(letters,indx2,indx2)
+
+	local easting = tm.easting%100000
+	local northing = tm.northing%100000
+	local grid = pow(10.0,5.0-prec)
+	easting = floor(easting/grid)
+	northing = floor(northing/grid)
+	local fmt = '%0'..prec..'d'
+	local e = mw.ustring.format(fmt, easting)
+	local n = mw.ustring.format(fmt, northing)
+
+	return c1..c2..e..n
+
+end
+
+function oscoord._WGS2OSGB(lat,lon,prec)
+	return LatLon2OSGB36(HelmertDatumShift(lat,lon,WGS2OSGBparam),prec)
+end
+
+function oscoord.WGS2OSGB(frame)
+	local args = getArgs(frame)
+	return args[1] and args[2] and oscoord._WGS2OSGB(args[1],args[2],args[3]) or ''
+end
+
+function oscoord.LL2OS(frame)
+	local args = getArgs(frame)
+	if not args[1] or not args[2] then return '' end
+	local gridRef = oscoord._WGS2OSGB(args[1],args[2],args.prec)
+	if not gridRef or #gridRef == 0 then return '' end
+	if args[3] then
+		gridRef = gridRef..'_'..args[3]
+	end
+	return oscoord._oscoord({gridRef,args.linktitle,name=args.name})
+end
+
+return oscoord</text>
+      <sha1>tl2bpihzkb1zv8ihz722k4l68fb8as0</sha1>
+    </revision>
+    <revision>
+      <id>3646604</id>
+      <parentid>487</parentid>
+      <timestamp>2025-12-12T00:05:45Z</timestamp>
+      <contributor>
+        <username>en&gt;Hike395</username>
+        <id>0</id>
+      </contributor>
+      <comment>drop unused arg to directLink()</comment>
+      <origin>3646604</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="18806" sha1="g69agyzk1cjmf6qrfshir89kg7m4uu5" xml:space="preserve">--[[ Ordnance Survey / Lat Long functions in Lua 
+
+****** ORDNANCE SURVEY TO LAT LONG FUNCTIONS ******
+
+Ported to Lua from PHP by Wikipedia User Hike395, 18 Aug 2019
+
+found by RWH at http://www.megalithia.com/search/llfuncshighlight.php
+
+With thanks to Andy, G4JNT for inspiration in GEOG, and to the OSGB for their white paper on coordinate transformation
+describing the iterative method used
+thanks to the Ordnance survey of Ireland for details of the true and false origins of the Irish grid
+
+You may use and redistribute this code under the terms of the GPL see http://www.gnu.org/copyleft/gpl.html
+
+
+Written by Richard
+www.megalithia.com
+v0.something 27/2/2000
+v 1.01 28 June 2004
+v 1.02 6 Aug 2004 line 89 add "0" to chars in ngr=stripcharsnotinbag Thx Andy
+v 1.03 9 Mar 2005 Jan (Klingon) added conversion to WGS84 map datum and removed limitation of digits of the grid ref
+v 1.04 10 Aug 2005 Richard correct error trapping (only manifest on malformed ngrs
+
+This code is predicated on the assumption that your are ONLY feeding it Irish or UK Grid references.
+It uses the single char prefix of Irish grid refs to tell the difference, UK grid refs have a two letter prefix.
+We would like an even number of digits for the rest of the grid ref.
+Anything in the NGR other than 0-9, A-Z, a-z is eliminated.
+WARNING this assumes there are no decimal points in your NGR components.
+
+The transformation from OSGB36/Ireland 1965 to WGS84 is more precise than 5 m.
+
+The function is case insensitive
+
+Lat/Long to Ordnance Survey conversion is at bottom of file, see further authorship there
+
+]]
+
+local oscoord = {}
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local namespace = mw.title.getCurrentTitle().namespace
+
+local pow = math.pow
+local sqrt = math.sqrt
+local abs = math.abs
+local floor = math.floor
+local ceil = math.ceil
+local sin = math.sin
+local cos = math.cos
+local tan = math.tan
+local atan = math.atan2
+local deg2rad = math.rad
+local rad2deg = math.deg
+
+
+
+--[[ DATUM SHIFT USING HELMERT TRANSFORMATION
+ *
+ * height above the ellipsoid is ignored
+ * latitude and longitude must be given in decimal degrees
+ *
+ * no transformation if abs(latitude)&gt;89 or abs(longitude)&gt;89
+ * (lifting this restriction requires some more lines of code)
+ *
+ * Written in 2009 by user Telford at de.wikipedia
+ * Based on math described in "A Guide to Coordinate Systems in Great Britain"
+ * by the UK Ordnance Survey
+ * URL: https://www.ordnancesurvey.co.uk/documents/resources/guide-coordinate-systems-great-britain.pdf
+]]
+
+-- Datum parameters
+
+local data = mw.loadData('Module:Ordnance Survey coordinates/data')
+
+local OSGBglobe = data.OSGBglobe
+local IEglobe = data.IEglobe
+local WGSglobe = data.WGSglobe
+local WGS2OSGBparam = data.WGS2OSGBparam
+local OSGB2WGSparam = data.OSGB2WGSparam
+local IE2WGSparam = data.IE2WGSparam
+
+local function HelmertDatumShift ( latitude , longitude, param )
+	-- latitude and longitude are in degrees
+
+	param = param or WGS2OSGBparam
+
+    -- parameters for ellipsoids
+    -- Annex A.1, Ordnance Survey document --
+
+    local a1 = param.semimajor_src
+    local b1 = param.semiminor_src
+    local e1 = param.ecc_src
+
+    local a2 = param.semimajor_dst
+    local b2 = param.semiminor_dst
+    local e2 = param.ecc_dst
+
+    -- convert latitude and longitude to cartesian coordinates
+    -- math in Annex B.1, Ordnance Survey document
+    local phi = deg2rad ( latitude )
+    local lambda = deg2rad ( longitude )
+    local cosphi = cos ( phi )
+    local sinphi = sin ( phi )
+    local coslambda = cos ( lambda )
+    local sinlambda = sin ( lambda )
+
+    local ny = a1 / sqrt ( 1. - e1*sinphi*sinphi )
+
+    local x1 = ny * cosphi * coslambda
+    local y1 = ny * cosphi * sinlambda
+    local z1 = ny * ( 1. - e1 ) * sinphi
+    -- the helmert transformation proper
+    -- Equation 3, Section 6.2, Ordnance Survey document
+
+    local x2 = x1 + param.tx + ( param.s0 * x1 - param.rz * y1 + param.ry * z1 )
+    local y2 = y1 + param.ty + ( param.rz * x1 + param.s0 * y1 - param.rx * z1 )
+    local z2 = z1 + param.tz + ( -param.ry *x1 + param.rx * y1 + param.s0 * z1 )
+    -- convert cartesian coordinates to latitude and longitude
+    -- math in Annex B.2, of Ordnance Survey document 
+
+    lambda = atan ( y2, x2 )
+
+    local p2 = sqrt ( x2*x2 + y2*y2 )
+    phi = atan ( z2, p2*(1.-e2) )
+
+    local n0 = 101
+
+	local phi_alt
+    repeat
+	    phi_alt = phi
+	    ny = a2 / sqrt ( 1. - e2 * sin(phi) * sin(phi) )
+	    phi = atan ( z2 + e2 * ny * sin(phi), p2)
+	    n0 = n0 - 1
+    until abs ( phi - phi_alt ) &lt;= 0.000000000001 or n0 &lt;= 0
+
+	return {lat=rad2deg(phi),lon=rad2deg(lambda)}
+
+end
+
+--  LAT LONG TO OS GRID LIBRARY RESUMES HERE
+
+local function northeast(lett,num,shift)
+   -- split into northings and eastings
+   local le=mw.ustring.len(num)
+   if le%2 == 1 then
+   	 return {err="Malformed numerical part of NGR"}
+   end
+   local pr=le/2
+   local n = mw.ustring.sub(num,pr+1)
+   local e = mw.ustring.sub(num,1,pr)
+   -- Hack to move to center of square: append a 5 to northings and eastings
+   shift = yesno(shift)
+   if shift then
+     n = n.."5"
+     e = e.."5"
+     pr = pr+1
+   end
+   -- end hack
+   n = n == '' and 0 or n
+   e = e == '' and 0 or e
+   pr = pow(10.0,(5.0-pr))
+   local T1 = mw.ustring.byte(mw.ustring.sub(lett,1,1))-65
+   if T1&gt;8 then
+     T1 = T1-1
+   end
+   local T2 = nil
+   if mw.ustring.len(lett)&gt;1 then
+     T2 = mw.ustring.byte(mw.ustring.sub(lett,2))-65
+     if T2&gt;8 then
+       T2 = T2-1
+     end
+   end
+   return {n=n,e=e,pr=pr,T1=T1,T2=T2}
+end
+
+local function EN2LL(e,n,datum)
+   local a = datum.semimajor*datum.scale
+   local b = datum.semiminor*datum.scale
+   local lat0rad = deg2rad(datum.lat0)
+   local n1 = datum.n1
+   local n12 = n1*n1
+   local n13 = n12*n1
+   local k=(n-datum.n0)/a+lat0rad
+   local nextcounter=0
+   local j3, j4, j5, j6, m
+   repeat
+     nextcounter=nextcounter+1
+     local k3=k-lat0rad
+     local k4=k+lat0rad
+     j3=(1.0+n1+1.25*n12+1.25*n13)*k3
+     j4=(3.0*n1+3.0*n12+2.625*n13)*sin(k3)*cos(k4)
+     j5=(1.875*n12+1.875*n13)*sin(2.0*k3)*cos(2.0*k4)
+     j6=35.0/24.0*n13*sin(3.0*k3)*cos(3.0*k4)
+     m=b*(j3-j4+j5-j6)
+     k=k+(n-datum.n0-m)/a
+   until abs(n-datum.n0-m)&lt;=0.000000001 or nextcounter&gt;=100
+   local x = 1.0-datum.ecc*pow(sin(k),2.0)
+   local v=a/sqrt(x)
+   local r=v*(1.0-datum.ecc)/x
+   local h2=v/r-1.0
+   local y1=e-datum.e0
+   local tank = tan(k)
+   local tank2 = tank*tank
+   local tank4 = tank2*tank2
+   local tank6 = tank2*tank4
+   local cosk = cos(k)
+   local yv = y1/v -- dimensionless quantity in series expansion
+   local yv2 = yv*yv
+   local yv3 = yv*yv2
+   local yv5 = yv3*yv2
+   local yv7 = yv5*yv2
+   j3=tank/(2.0*r)
+   j4=tank/(24.0*r)*(5.0+3.0*tank2+h2-9.0*tank2*h2)
+   j5=tank/(720.0*r)*(61.0+90.0*tank2+45.0*tank4)
+   local k9=k-y1*(yv*j3+yv3*j4-yv5*j5)
+   j6=1.0/(cosk)
+   local j7=1.0/(cosk*6.0)*(v/r+2.0*tank2)
+   local j8=1.0/(cosk*120.0)*(5.0+28.0*tank2+24.0*tank4)
+   local j9=1.0/(cosk*5040.0)
+   j9=j9*(61.0+662.0*tank2+1320.0*tank4+720.0*tank6)
+   local long=datum.lon0+rad2deg(yv*j6-yv3*j7+yv5*j8-yv7*j9)
+   local lat=rad2deg(k9)
+   return {lat=lat,lon=long}
+end
+
+local function GBEN2LL(e,n)
+   local latlong = EN2LL(e,n,OSGBglobe)
+   local helmert = HelmertDatumShift ( latlong.lat, latlong.lon, OSGB2WGSparam)
+   return {region="GB",lat=helmert.lat,long=helmert.lon}
+end
+
+
+local function GB2LL(lett,num)
+   -- British OS to Lat+Long
+   -- first caclulate e,n
+   -- computing e and n exactly, to get SW corner of box
+   local ne = northeast(lett,num)
+   if ne.err then
+   	 return {region="GB",err=ne.err}
+   end
+   -- use British definition of e and n
+   local e=500000.0*(ne.T1%5)+100000.0*(ne.T2%5)-1000000.0+ne.e*ne.pr
+   local n=1900000.0-500000.0*floor(ne.T1/5)-100000.0*floor(ne.T2/5)+ne.n*ne.pr
+   local result = GBEN2LL(e,n)
+   result.prec = 0.8165*ne.pr
+   return result
+end
+   
+local function IrishEN2LL(e,n)
+   local latlong = EN2LL(e,n,IEglobe)
+   local helmert = HelmertDatumShift ( latlong.lat, latlong.lon, IE2WGSparam)
+   return {region="IE",lat=helmert.lat,long=helmert.lon}
+end
+
+local function Irish2LL(lett,num)
+   -- Irish OS to Lat+Long
+   -- first caclulate e,n
+   -- computing e and n exactly, to get SW corner of box
+   local ne = northeast(lett,num)
+   if ne.err then
+   	 return {region="IE", err=ne.err}
+   end
+   -- use Irish definition of northing and easting
+   local e=100000.0*(ne.T1%5.0)+ne.e*ne.pr
+   local n=ne.n*ne.pr+100000.0*(4.0-floor(ne.T1/5.0))
+   local result = IrishEN2LL(e,n)
+   result.prec = 0.8165*ne.pr  -- useful @ Commons
+   return result
+end
+
+local function empty(s)
+  return not s or s == ''
+end
+
+local function NGR2LL(ngr)
+  local result = {}
+  local _ = 0
+  ngr, _ = mw.ustring.gsub(mw.ustring.upper(ngr),"[%s%p]","")
+  local first, last, lett, num = mw.ustring.find(ngr,"^([A-Z]+)(%d+)$")
+  if not first or empty(lett) or empty(num) or mw.ustring.len(lett) &gt; 2 then
+  	return {err="Malformed NGR"}
+  end
+  if mw.ustring.len(lett) == 1 then
+    return Irish2LL(lett,num)
+  end
+  return GB2LL(lett, num)
+end
+
+local function split(s,sep)
+-- split a string s into chunks, separated by sep
+  sep = sep or "%s"
+  local t = {}
+  for chunk in mw.ustring.gmatch(s,"([^"..sep.."]+)") do
+    table.insert(t,chunk)
+  end
+  return t
+end
+
+local function trim(s)
+  local _ = 0
+  s, _ = mw.ustring.gsub(s,"^%s+","")
+  s, _ = mw.ustring.gsub(s,"%s+$","")
+  return s
+end
+
+local function alldigits(s)
+  return not mw.ustring.find(s,"%D")
+end
+
+local function warning(errmsg)
+  local preview = require('Module:If preview')
+  local msg = errmsg or 'Empty OS grid ref'
+
+  local html = preview._warning({ msg })
+
+  if namespace == 0 and errmsg then
+  	html = html..'[[Category:Pages with malformed OS coordinates]]'
+  end
+  return html
+end
+
+-- generate URL of geohack map
+local function geohack(main_args, other_args, LL)
+  -- create geohack link. Example:
+  -- https://geohack.toolforge.org/geohack.php?pagename=Mount_Whitney&amp;params=36.578580925_N_118.29199495_W_type:mountain_region:US-CA_scale:100000_source:NGS
+  local url = 'https://geohack.toolforge.org/geohack.php?'
+  local input = main_args[1]
+  local namearg = main_args["name"]
+  local current_page = mw.title.getCurrentTitle()
+  local pagename = mw.uri.encode( current_page.prefixedText, 'WIKI' )
+  if not empty(pagename) then
+  	url = url..'pagename='..pagename..'&amp;'
+  end
+  url = url..'params='..mw.ustring.format('%.6f',LL.lat)..'_N_'
+  if LL.long &lt; 0 then
+  	url = url..mw.ustring.format('%.6f',-LL.long)..'_W'
+  else
+  	url = url..mw.ustring.format('%.6f',LL.long)..'_E'
+  end
+  for _, a in ipairs(other_args) do
+  	url = url..'_'..a
+  end
+  if not mw.ustring.find(input,"region") and LL.region then
+    url = url..'_region:'..LL.region
+  end
+  if not mw.ustring.find(input,"scale") and
+     not mw.ustring.find(input,"type") and
+     not mw.ustring.find(input,"dim") and LL.prec then
+     	url = url..'_dim:'..floor(50*LL.prec+0.5)..'m'
+  end
+  if not empty(namearg) then
+    url = url .. "&amp;title=" .. mw.uri.encode(namearg)
+  end
+  return url
+end
+
+-- function to generate direct link to OS map
+local function directLink(other_args, LL)
+  -- create direct link to OS maps. The template is
+  -- https://explore.osmaps.com/pin?lat={latdegdec}&amp;lon={londegdec}&amp;zoom={osmzoom}&amp;overlays=&amp;style=Standard&amp;type=2d
+  local args = {}
+  for _, a in ipairs(other_args) do
+    local splitOut = mw.text.split(a, ':', true)
+    args[splitOut[1]] = splitOut[2]
+  end
+  if not args.scale and not args.type and not args.dim then
+    args.dim = LL.prec and tostring(floor(50*LL.prec+0.5))..'m'
+  end
+  args.viewport_cm = 10
+  local zoom = require('Module:Infobox dim')._zoom
+  local lvl = zoom(args) or 12
+  local url = mw.ustring.format('https://explore.osmaps.com/pin?lat=%.6f&amp;lon=%.6f&amp;zoom=%d&amp;overlays=&amp;style=Standard&amp;type=2d',
+                                LL.lat,LL.long,lvl)
+  return url
+end
+
+function oscoord._main(main_args)
+  local input = main_args[1]
+  if empty(input) then
+  	return warning(nil)
+  end
+  local linktitle = main_args[2]
+  local rawurl = yesno(main_args["rawurl"])
+  local direct = yesno(main_args["direct"])
+  local args = split(input,'_')
+  local LL
+  local restargs = 1
+  if #args &gt;= 2 and alldigits(args[2]) then
+    if mw.ustring.sub(args[1],1,1) == 'i' then
+      local firstArg = mw.ustring.sub(args[1],2)
+      if alldigits(firstArg) then
+        LL = IrishEN2LL(firstArg,args[2])
+	    restargs = 3
+	    if empty(linktitle) then
+          linktitle=args[1]..'_'..args[2]
+	    end
+      end
+    elseif alldigits(args[1]) then
+      LL = GBEN2LL(args[1],args[2])
+      restargs = 3
+      if empty(linktitle) then
+        linktitle=args[1]..'_'..args[2]
+      end
+    end
+  else
+    LL = NGR2LL(args[1])
+    restargs = 2
+    if empty(linktitle) then
+      linktitle=args[1]
+    end
+  end
+  linktitle = trim(linktitle)
+  if not empty(LL.err) then
+    return linktitle ..warning(LL.err)
+  end
+  LL.lat = LL.lat or 0
+  LL.long = LL.long or 0
+  LL.lat = ceil(LL.lat*1000000)/1000000
+  LL.long = ceil(LL.long*1000000)/1000000
+  local other_args = {}
+  for i = restargs, #args do
+    table.insert(other_args, args[i])
+  end
+  local url
+  if not direct then
+    url = geohack(main_args, other_args, LL)
+  else
+    url = directLink(other_args, LL)
+  end
+  if not rawurl then
+	url = '['..url..' '..linktitle..']'
+  end
+  return url
+end
+
+function oscoord._oscoord(args)
+	local output = '&lt;span class="plainlinks nourlexpansion" style="white-space: nowrap"&gt;' .. oscoord._main(args) .. '&lt;/span&gt;'
+	if namespace == 0 then
+		output = output .. '[[Category:Articles with OS grid coordinates]]'
+	end
+	return output
+end
+
+function oscoord.main(frame)
+	local args = getArgs(frame)
+	return oscoord._main(args)
+end
+
+function oscoord.oscoord(frame)
+	local args = getArgs(frame)
+	return oscoord._oscoord(args)
+end
+
+--[[
+ ******  LAT/LONG CONVERSION TO OS GRID REF FUNCTIONS *****
+ *  Uses the WGS-84 ellipsoid and only works for GB grid ref
+ *
+ *  See also:
+ *  http://www.posc.org/Epicentre.2_2/DataModel/ExamplesofUsage/eu_cs34h.html
+ *  http://kanadier.gps-info.de/d-utm-gitter.htm
+ *  http://www.gpsy.com/gpsinfo/geotoutm/
+ *  http://www.colorado.edu/geography/gcraft/notes/gps/gps_f.html
+ *  http://search.cpan.org/src/GRAHAMC/Geo-Coordinates-UTM-0.05/
+ *  UK Ordnance Survey grid (OSBG36): http://www.gps.gov.uk/guidecontents.asp
+ *  Swiss CH1903: http://www.gps.gov.uk/guidecontents.asp
+ *
+ *  ----------------------------------------------------------------------
+ *
+ *  Copyright 2005, Egil Kvaleberg &lt;egil@kvaleberg.no&gt;
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ 
+ Converted to Lua by User:Hike395 on 2023-12-15
+]]
+
+
+local function find_M ( lat_rad )
+	local e = OSGBglobe.ecc
+	local e2 = e*e
+	local e3 = e*e*e
+
+	return OSGBglobe.semimajor * ( ( 1 - e/4 - 3 * e2/64
+			      - 5 * e3/256
+			    ) * lat_rad
+			  - ( 3 * e/8 + 3 * e2/32
+			      + 45 * e3/1024
+			    ) * sin(2 * lat_rad)
+			  + ( 15 * e2/256 +
+			      45 * e3/1024
+			    ) * sin(4 * lat_rad)
+			  - ( 35 * e3/3072
+			    ) * sin(6 * lat_rad) )
+end
+
+--[[
+*  Convert latitude, longitude in decimal degrees to
+*  Transverse Mercator Easting and Northing based on a GB origin
+*
+*  return nil if problems
+]]
+local function LatLonOrigin2TM( latitude, longitude )
+	if longitude &lt; -180 or longitude &gt; 180 or latitude &lt; -80 or latitude &gt; 84 then
+		return nil
+	end
+
+	local longitude2 = longitude - floor((longitude + 180)/360) * 360
+
+	local lat_rad = deg2rad( latitude )
+
+	local e = OSGBglobe.ecc
+	local e_prime_sq = e / (1-e)
+
+	local v = OSGBglobe.semimajor / sqrt(1 - e * sin(lat_rad)*sin(lat_rad))
+	local tank = tan(lat_rad)
+	local T = tank*tank
+	local T2 = T*T
+	local C = e_prime_sq * pow( cos(lat_rad), 2)
+	local A = deg2rad( longitude2 -OSGBglobe.lon0 ) * cos(lat_rad)
+	local A2 = A*A
+	local A3 = A2*A
+	local A4 = A2*A2
+	local A5 = A3*A2
+	local A6 = A3*A3
+	local M = find_M( lat_rad )
+	local M0 = 0.0
+	if latitude_origin ~= 0 then
+		M0 = find_M(deg2rad( OSGBglobe.lat0 ))
+	end
+
+	local northing = OSGBglobe.n0 + OSGBglobe.scale *
+			    ( (M - M0) + v*tan(lat_rad) * 
+			      ( A2/2 
+				+ (5 - T + 9*C + 4*C*C) * A4/24
+				+ (61 - 58*T + T2
+				+ 600*C - 330*e_prime_sq) * A6/720 ))
+
+	local easting = OSGBglobe.e0 + OSGBglobe.scale * v *
+			   ( A 
+			     + (1-T+C)*A3/6
+			     + (5 - 18*T + T2 + 72*C 
+				- 58 * e_prime_sq)*A5/120 )
+
+	return {northing=northing,easting=easting}
+end
+
+--[[
+*  Convert latitude, longitude in decimal degrees to
+*  OSBG36 Easting and Northing
+]]
+local function LatLon2OSGB36( latlon, prec )
+	local tm = LatLonOrigin2TM(latlon.lat, latlon.lon)
+	if not tm then return '' end
+	if not tonumber(prec) then prec = 5 end
+	prec = floor(prec+0.5)
+	if prec &gt; 5 then prec = 5 end
+	if prec &lt; 1 then prec = 1 end
+
+	-- fix by Roger W Haworth
+	local grid_x = floor( tm.easting / 100000 )
+	local grid_y = floor( tm.northing / 100000 )
+	if grid_x &lt; 0 or grid_x &gt; 6 or grid_y &lt; 0 or grid_y &gt; 12 then return '' end
+	--               0000000001111111111222222
+	--               1234567890123456789012345
+	local letters = "ABCDEFGHJKLMNOPQRSTUVWXYZ"
+	
+	local indx1 = 18-floor(grid_y/5)*5+floor(grid_x/5)
+	local indx2 = 21-(grid_y%5)*5+grid_x%5
+	local c1 = mw.ustring.sub(letters,indx1,indx1)
+	local c2 = mw.ustring.sub(letters,indx2,indx2)
+
+	local easting = tm.easting%100000
+	local northing = tm.northing%100000
+	local grid = pow(10.0,5.0-prec)
+	easting = floor(easting/grid)
+	northing = floor(northing/grid)
+	local fmt = '%0'..prec..'d'
+	local e = mw.ustring.format(fmt, easting)
+	local n = mw.ustring.format(fmt, northing)
+
+	return c1..c2..e..n
+
+end
+
+function oscoord._WGS2OSGB(lat,lon,prec)
+	return LatLon2OSGB36(HelmertDatumShift(lat,lon,WGS2OSGBparam),prec)
+end
+
+function oscoord.WGS2OSGB(frame)
+	local args = getArgs(frame)
+	return args[1] and args[2] and oscoord._WGS2OSGB(args[1],args[2],args[3]) or ''
+end
+
+function oscoord.LL2OS(frame)
+	local args = getArgs(frame)
+	if not args[1] or not args[2] then return '' end
+	local gridRef = oscoord._WGS2OSGB(args[1],args[2],args.prec)
+	if not gridRef or #gridRef == 0 then return '' end
+	if args[3] then
+		gridRef = gridRef..'_'..args[3]
+	end
+	return oscoord._oscoord({gridRef,args.linktitle,name=args.name})
+end
+
+return oscoord</text>
+      <sha1>g69agyzk1cjmf6qrfshir89kg7m4uu5</sha1>
+    </revision>
+    <revision>
+      <id>3320825</id>
+      <parentid>487</parentid>
+      <timestamp>2026-02-27T05:25:04Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "by Use" to "by function"</comment>
+      <origin>3320825</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="19368" sha1="hc7e2e33cq7cus4ke3gxzpvnx2f8jce" xml:space="preserve">--[[ Ordnance Survey / Lat Long functions in Lua 
+
+****** ORDNANCE SURVEY TO LAT LONG FUNCTIONS ******
+
+Ported to Lua from PHP by Wikipedia User Hike395, 18 Aug 2019
+
+found by RWH at http://www.megalithia.com/search/llfuncshighlight.php
+
+With thanks to Andy, G4JNT for inspiration in GEOG, and to the OSGB for their white paper on coordinate transformation
+describing the iterative method used
+thanks to the Ordnance survey of Ireland for details of the true and false origins of the Irish grid
+
+You may use and redistribute this code under the terms of the GPL see http://www.gnu.org/copyleft/gpl.html
+Written by Richard
+www.megalithia.com
+v0.something 27/2/2000
+v 1.01 28 June 2004
+v 1.02 6 Aug 2004 line 89 add "0" to chars in ngr=stripcharsnotinbag Thx Andy
+v 1.03 9 Mar 2005 Jan (Klingon) added conversion to WGS84 map datum and removed limitation of digits of the grid ref
+v 1.04 10 Aug 2005 Richard correct error trapping (only manifest on malformed ngrs
+
+This code is predicated on the assumption that your are ONLY feeding it Irish or UK Grid references.
+It uses the single char prefix of Irish grid refs to tell the difference, UK grid refs have a two letter prefix.
+We would like an even number of digits for the rest of the grid ref.
+Anything in the NGR other than 0-9, A-Z, a-z is eliminated.
+WARNING this assumes there are no decimal points in your NGR components.
+
+The transformation from OSGB36/Ireland 1965 to WGS84 is more precise than 5 m.
+
+The function is case insensitive
+
+Lat/Long to Ordnance Survey conversion is at bottom of file, see further authorship there
+
+]]
+
+local oscoord = {}
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local namespace = mw.title.getCurrentTitle().namespace
+
+local pow = math.pow
+local sqrt = math.sqrt
+local abs = math.abs
+local floor = math.floor
+local ceil = math.ceil
+local sin = math.sin
+local cos = math.cos
+local tan = math.tan
+local atan = math.atan
+local deg2rad = math.rad
+local rad2deg = math.deg
+
+--[[ DATUM SHIFT USING HELMERT TRANSFORMATION
+ *
+ * height above the ellipsoid is ignored
+ * latitude and longitude must be given in decimal degrees
+ *
+ * no transformation if abs(latitude)&gt;89 or abs(longitude)&gt;89
+ * (lifting this restriction requires some more lines of code)
+ *
+ * Written in 2009 by user Telford at de.wikipedia
+ * Based on math described in "A Guide to Coordinate Systems in Great Britain"
+ * by the UK Ordnance Survey
+ * URL: https://www.ordnancesurvey.co.uk/documents/resources/guide-coordinate-systems-great-britain.pdf
+]]
+
+-- Datum parameters
+
+local OSGBglobe = {
+	semimajor = 6377563.396,
+	semiminor = 6356256.910,
+	ecc = 0.006670539761597529073698869358812557054558,
+	n1 = 0.00167322025032508731869331280635710896296,
+	scale = 0.9996012717,
+    e0 = 400000.0,
+    n0 = -100000.0,
+    lat0 = 49.0,
+    lon0 = -2.0
+}
+
+local IEglobe = {
+	semimajor = 6377340.189,
+	semiminor = 6356034.447,
+	ecc = 0.006670540293336110419293763349975612794125,
+	n1 = 0.001673220384152058651484728058385228837777,
+	scale = 1.000035,
+	e0 = 200000.0,
+	n0 = 250000.0,
+	lat0 = 53.5,
+	lon0 = -8.0
+}
+
+local WGSglobe = {
+	semimajor = 6378137.0,
+	semiminor = 6356752.3141,
+	ecc = 0.00669438003551279089034150031998869922791
+}
+
+local WGS2OSGBparam = {
+ -- Table 4, Section 6.6, Ordnance Survey document 
+	semimajor_src = WGSglobe.semimajor,
+	semiminor_src = WGSglobe.semiminor,
+	ecc_src = WGSglobe.ecc,
+	semimajor_dst = OSGBglobe.semimajor,
+	semiminor_dst = OSGBglobe.semiminor,
+	ecc_dst = OSGBglobe.ecc,
+	tx = -446.448,
+    ty = 125.157,
+    tz = -542.060,
+    s0 = 0.0000204894,
+    rx = deg2rad ( -.1502/3600. ),
+    ry = deg2rad ( -.2470/3600. ),
+    rz = deg2rad ( -.8421/3600. )
+}
+
+local OSGB2WGSparam = {
+	semimajor_src = OSGBglobe.semimajor,
+	semiminor_src = OSGBglobe.semiminor,
+	ecc_src = OSGBglobe.ecc,
+	semimajor_dst = WGSglobe.semimajor,
+	semiminor_dst = WGSglobe.semiminor,
+	ecc_dst = WGSglobe.ecc,
+	tx = -WGS2OSGBparam.tx,
+    ty = -WGS2OSGBparam.ty,
+    tz = -WGS2OSGBparam.tz,
+    s0 = -WGS2OSGBparam.s0,
+    rx = -WGS2OSGBparam.rx,
+    ry = -WGS2OSGBparam.ry,
+    rz = -WGS2OSGBparam.rz,
+}
+
+local IE2WGSparam = {
+	semimajor_src = IEglobe.semimajor,
+	semiminor_src = IEglobe.semiminor,
+	ecc_src = IEglobe.ecc,
+	semimajor_dst = WGSglobe.semimajor,
+	semiminor_dst = WGSglobe.semiminor,
+	ecc_dst = WGSglobe.ecc,
+	tx = 482.53,
+	ty = -130.596,
+	tz = 564.557,
+	s0 = 8.15/1000000.0,
+	rx = deg2rad( -1.042/3600.0 ),
+	ry = deg2rad( -0.214/3600.0 ),
+	rz = deg2rad( -0.631/3600.0 )
+}
+
+local function HelmertDatumShift ( latitude , longitude, param )
+	-- latitude and longitude are in degrees
+    -- return if latitude or longitude out of range 
+
+    if abs(latitude) &gt; 89. or abs(longitude) &gt; 89. then
+    	return {lat=latitude, lon=longitude}
+    end
+
+	param = param or WGS2OSGBparam
+
+    -- parameters for ellipsoids
+    -- Annex A.1, Ordnance Survey document --
+
+    local a1 = param.semimajor_src
+    local b1 = param.semiminor_src
+    local e1 = param.ecc_src
+
+    local a2 = param.semimajor_dst
+    local b2 = param.semiminor_dst
+    local e2 = param.ecc_dst
+
+    -- convert latitude and longitude to cartesian coordinates
+    -- math in Annex B.1, Ordnance Survey document
+    local phi = deg2rad ( latitude )
+    local lambda = deg2rad ( longitude )
+    local cosphi = cos ( phi )
+    local sinphi = sin ( phi )
+    local coslambda = cos ( lambda )
+    local sinlambda = sin ( lambda )
+
+    local ny = a1 / sqrt ( 1. - e1*sinphi*sinphi )
+
+    local x1 = ny * cosphi * coslambda
+    local y1 = ny * cosphi * sinlambda
+    local z1 = ny * ( 1. - e1 ) * sinphi
+    -- the helmert transformation proper
+    -- Equation 3, Section 6.2, Ordnance Survey document
+
+    local x2 = x1 + param.tx + ( param.s0 * x1 - param.rz * y1 + param.ry * z1 )
+    local y2 = y1 + param.ty + ( param.rz * x1 + param.s0 * y1 - param.rx * z1 )
+    local z2 = z1 + param.tz + ( -param.ry *x1 + param.rx * y1 + param.s0 * z1 )
+    -- convert cartesian coordinates to latitude and longitude
+    -- math in Annex B.2, of Ordnance Survey document 
+
+    lambda = atan ( y2 / x2 )
+
+    local p2 = sqrt ( x2*x2 + y2*y2 )
+    phi = atan ( z2 / p2*(1.-e2) )
+
+    local n0 = 101
+
+	local phi_alt
+    repeat
+	    phi_alt = phi
+	    ny = a2 / sqrt ( 1. - e2 * sin(phi) * sin(phi) )
+	    phi = atan ( (z2 + e2 * ny * sin(phi)) / p2 )
+	    n0 = n0 - 1
+    until abs ( phi - phi_alt ) &lt;= 0.000000000001 or n0 &lt;= 0
+
+	return {lat=rad2deg(phi),lon=rad2deg(lambda)}
+
+end
+
+--  LAT LONG TO OS GRID LIBRARY RESUMES HERE
+
+local function northeast(lett,num,shift)
+   -- split into northings and eastings
+   local le=mw.ustring.len(num)
+   if le%2 == 1 then
+   	 return {err="Malformed numerical part of NGR"}
+   end
+   local pr=le/2
+   local n = mw.ustring.sub(num,pr+1)
+   local e = mw.ustring.sub(num,1,pr)
+   -- Hack to move to center of square: append a 5 to northings and eastings
+   shift = yesno(shift)
+   if shift then
+     n = n.."5"
+     e = e.."5"
+     pr = pr+1
+   end
+   -- end hack
+   n = n == '' and 0 or n
+   e = e == '' and 0 or e
+   pr = pow(10.0,(5.0-pr))
+   local T1 = mw.ustring.byte(mw.ustring.sub(lett,1,1))-65
+   if T1&gt;8 then
+     T1 = T1-1
+   end
+   local T2 = nil
+   if mw.ustring.len(lett)&gt;1 then
+     T2 = mw.ustring.byte(mw.ustring.sub(lett,2))-65
+     if T2&gt;8 then
+       T2 = T2-1
+     end
+   end
+   return {n=n,e=e,pr=pr,T1=T1,T2=T2}
+end
+
+local function EN2LL(e,n,datum)
+   local a = datum.semimajor*datum.scale
+   local b = datum.semiminor*datum.scale
+   local lat0rad = deg2rad(datum.lat0)
+   local n1 = datum.n1
+   local n12 = n1*n1
+   local n13 = n12*n1
+   local k=(n-datum.n0)/a+lat0rad
+   local nextcounter=0
+   local j3, j4, j5, j6, m
+   repeat
+     nextcounter=nextcounter+1
+     local k3=k-lat0rad
+     local k4=k+lat0rad
+     j3=(1.0+n1+1.25*n12+1.25*n13)*k3
+     j4=(3.0*n1+3.0*n12+2.625*n13)*sin(k3)*cos(k4)
+     j5=(1.875*n12+1.875*n13)*sin(2.0*k3)*cos(2.0*k4)
+     j6=35.0/24.0*n13*sin(3.0*k3)*cos(3.0*k4)
+     m=b*(j3-j4+j5-j6)
+     k=k+(n-datum.n0-m)/a
+   until abs(n-datum.n0-m)&lt;=0.000000001 or nextcounter&gt;=100
+   local x = 1.0-datum.ecc*pow(sin(k),2.0)
+   local v=a/sqrt(x)
+   local r=v*(1.0-datum.ecc)/x
+   local h2=v/r-1.0
+   local y1=e-datum.e0
+   local tank = tan(k)
+   local tank2 = tank*tank
+   local tank4 = tank2*tank2
+   local tank6 = tank2*tank4
+   local cosk = cos(k)
+   local yv = y1/v -- dimensionless quantity in series expansion
+   local yv2 = yv*yv
+   local yv3 = yv*yv2
+   local yv5 = yv3*yv2
+   local yv7 = yv5*yv2
+   j3=tank/(2.0*r)
+   j4=tank/(24.0*r)*(5.0+3.0*tank2+h2-9.0*tank2*h2)
+   j5=tank/(720.0*r)*(61.0+90.0*tank2+45.0*tank4)
+   local k9=k-y1*(yv*j3+yv3*j4-yv5*j5)
+   j6=1.0/(cosk)
+   local j7=1.0/(cosk*6.0)*(v/r+2.0*tank2)
+   local j8=1.0/(cosk*120.0)*(5.0+28.0*tank2+24.0*tank4)
+   local j9=1.0/(cosk*5040.0)
+   j9=j9*(61.0+662.0*tank2+1320.0*tank4+720.0*tank6)
+   local long=datum.lon0+rad2deg(yv*j6-yv3*j7+yv5*j8-yv7*j9)
+   local lat=rad2deg(k9)
+   return {lat=lat,lon=long}
+end
+
+local function GBEN2LL(e,n)
+   local latlong = EN2LL(e,n,OSGBglobe)
+   local helmert = HelmertDatumShift ( latlong.lat, latlong.lon, OSGB2WGSparam)
+   return {region="GB",lat=helmert.lat,long=helmert.lon}
+end
+local function GB2LL(lett,num)
+   -- British OS to Lat+Long
+   -- first caclulate e,n
+   -- computing e and n exactly, to get SW corner of box
+   local ne = northeast(lett,num)
+   if ne.err then
+   	 return {region="GB",err=ne.err}
+   end
+   -- use British definition of e and n
+   local e=500000.0*(ne.T1%5)+100000.0*(ne.T2%5)-1000000.0+ne.e*ne.pr
+   local n=1900000.0-500000.0*floor(ne.T1/5)-100000.0*floor(ne.T2/5)+ne.n*ne.pr
+   local result = GBEN2LL(e,n)
+   result.prec = 0.8165*ne.pr
+   return result
+end
+   
+local function IrishEN2LL(e,n)
+   local latlong = EN2LL(e,n,IEglobe)
+   local helmert = HelmertDatumShift ( latlong.lat, latlong.lon, IE2WGSparam)
+   return {region="IE",lat=helmert.lat,long=helmert.lon}
+end
+
+local function Irish2LL(lett,num)
+   -- Irish OS to Lat+Long
+   -- first caclulate e,n
+   -- computing e and n exactly, to get SW corner of box
+   local ne = northeast(lett,num)
+   if ne.err then
+   	 return {region="IE", err=ne.err}
+   end
+   -- use Irish definition of northing and easting
+   local e=100000.0*(ne.T1%5.0)+ne.e*ne.pr
+   local n=ne.n*ne.pr+100000.0*(4.0-floor(ne.T1/5.0))
+   local result = IrishEN2LL(e,n)
+   result.prec = 0.8165*ne.pr  -- useful @ Commons
+   return result
+end
+
+local function empty(s)
+  return not s or s == ''
+end
+
+local function NGR2LL(ngr)
+  local result = {}
+  local _ = 0
+  ngr, _ = mw.ustring.gsub(mw.ustring.upper(ngr),"[%s%p]","")
+  local first, last, lett, num = mw.ustring.find(ngr,"^([A-Z]+)(%d+)$")
+  if not first or empty(lett) or empty(num) or mw.ustring.len(lett) &gt; 2 then
+  	return {err="Malformed NGR"}
+  end
+  if mw.ustring.len(lett) == 1 then
+    return Irish2LL(lett,num)
+  end
+  return GB2LL(lett, num)
+end
+
+local function split(s,sep)
+-- split a string s into chunks, separated by sep
+  sep = sep or "%s"
+  local t = {}
+  for chunk in mw.ustring.gmatch(s,"([^"..sep.."]+)") do
+    table.insert(t,chunk)
+  end
+  return t
+end
+
+local function trim(s)
+  local _ = 0
+  s, _ = mw.ustring.gsub(s,"^%s+","")
+  s, _ = mw.ustring.gsub(s,"%s+$","")
+  return s
+end
+
+local function alldigits(s)
+  return not mw.ustring.find(s,"%D")
+end
+
+local function warning(errmsg)
+  local preview = require('Module:If preview')
+  local msg = errmsg or 'Empty OS grid ref'
+
+  local html = preview._warning({ msg })
+
+  if namespace == 0 and errmsg then
+  	html = html..'[[Category:Pages with malformed OS coordinates]]'
+  end
+  return html
+end
+
+function oscoord._main(args)
+  local input = args[1]
+  if empty(input) then
+  	return warning(nil)
+  end
+  local linktitle = args[2]
+  local namearg = args["name"]
+  local rawurl = yesno(args["rawurl"])
+  local args = split(input,'_')
+  local LL
+  local restargs = 1
+  local current_page = mw.title.getCurrentTitle()
+  local pagename = mw.uri.encode( current_page.prefixedText, 'WIKI' )
+  if #args &gt;= 2 and alldigits(args[2]) then
+    if mw.ustring.sub(args[1],1,1) == 'i' then
+      local firstArg = mw.ustring.sub(args[1],2)
+      if alldigits(firstArg) then
+        LL = IrishEN2LL(firstArg,args[2])
+	    restargs = 3
+	    if empty(linktitle) then
+          linktitle=args[1]..'_'..args[2]
+	    end
+      end
+    elseif alldigits(args[1]) then
+      LL = GBEN2LL(args[1],args[2])
+      restargs = 3
+      if empty(linktitle) then
+        linktitle=args[1]..'_'..args[2]
+      end
+    end
+  else
+    LL = NGR2LL(args[1])
+    restargs = 2
+    if empty(linktitle) then
+      linktitle=args[1]
+    end
+  end
+  linktitle = trim(linktitle)
+  if not empty(LL.err) then
+    return linktitle ..warning(LL.err)
+  end
+  -- https://geohack.toolforge.org/geohack.php?pagename=Mount_Whitney&amp;params=36.578580925_N_118.29199495_W_type:mountain_region:US-CA_scale:100000_source:NGS
+  local url = ''
+  if not rawurl then
+  	url = url..'['
+  end
+  url = url..'https://geohack.toolforge.org/geohack.php?'
+  if not empty(pagename) then
+  	url = url..'pagename='..pagename..'&amp;'
+  end
+  LL.lat = LL.lat or 0
+  LL.long = LL.long or 0
+  LL.lat = ceil(LL.lat*1000000)/1000000
+  LL.long = ceil(LL.long*1000000)/1000000
+  url = url..'params='..mw.ustring.format('%.6f',LL.lat)..'_N_'
+  if LL.long &lt; 0 then
+  	url = url..mw.ustring.format('%.6f',-LL.long)..'_W'
+  else
+  	url = url..mw.ustring.format('%.6f',LL.long)..'_E'
+  end
+  for i = restargs,#args do
+  	url = url..'_'..args[i]
+  end
+  if not mw.ustring.find(input,"region") and LL.region then
+    url = url..'_region:'..LL.region
+  end
+  if not mw.ustring.find(input,"scale") and
+     not mw.ustring.find(input,"type") and
+     not mw.ustring.find(input,"dim") and LL.prec then
+     	url = url..'_dim:'..floor(50*LL.prec+0.5)..'m'
+  end
+  if not empty(namearg) then
+    url = url .. "&amp;title=" .. mw.uri.encode(namearg)
+  end
+  if not rawurl then
+	url = url..' '..linktitle..']'
+  end
+  return url
+end
+
+function oscoord._oscoord(args)
+	local output = '&lt;span class="plainlinks nourlexpansion" style="white-space: nowrap"&gt;' .. oscoord._main(args) .. '&lt;/span&gt;'
+	if namespace == 0 then
+		output = output .. '[[Category:Articles with OS grid coordinates]]'
+	end
+	return output
+end
+
+function oscoord.main(frame)
+	local args = getArgs(frame)
+	return oscoord._main(args)
+end
+
+function oscoord.oscoord(frame)
+	local args = getArgs(frame)
+	return oscoord._oscoord(args)
+end
+
+--[[
+ ******  LAT/LONG CONVERSION TO OS GRID REF FUNCTIONS *****
+ *  Uses the WGS-84 ellipsoid and only works for GB grid ref
+ *
+ *  See also:
+ *  http://www.posc.org/Epicentre.2_2/DataModel/ExamplesofUsage/eu_cs34h.html
+ *  http://kanadier.gps-info.de/d-utm-gitter.htm
+ *  http://www.gpsy.com/gpsinfo/geotoutm/
+ *  http://www.colorado.edu/geography/gcraft/notes/gps/gps_f.html
+ *  http://search.cpan.org/src/GRAHAMC/Geo-Coordinates-UTM-0.05/
+ *  UK Ordnance Survey grid (OSBG36): http://www.gps.gov.uk/guidecontents.asp
+ *  Swiss CH1903: http://www.gps.gov.uk/guidecontents.asp
+ *
+ *  ----------------------------------------------------------------------
+ *
+ *  Copyright 2005, Egil Kvaleberg &lt;egil@kvaleberg.no&gt;
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ 
+ Converted to Lua by functionr:Hike395 on 2023-12-15
+]]
+local function find_M ( lat_rad )
+	local e = OSGBglobe.ecc
+	local e2 = e*e
+	local e3 = e*e*e
+
+	return OSGBglobe.semimajor * ( ( 1 - e/4 - 3 * e2/64
+			      - 5 * e3/256
+			    ) * lat_rad
+			  - ( 3 * e/8 + 3 * e2/32
+			      + 45 * e3/1024
+			    ) * sin(2 * lat_rad)
+			  + ( 15 * e2/256 +
+			      45 * e3/1024
+			    ) * sin(4 * lat_rad)
+			  - ( 35 * e3/3072
+			    ) * sin(6 * lat_rad) )
+end
+
+--[[
+*  Convert latitude, longitude in decimal degrees to
+*  Transverse Mercator Easting and Northing based on a GB origin
+*
+*  return nil if problems
+]]
+local function LatLonOrigin2TM( latitude, longitude )
+	if longitude &lt; -180 or longitude &gt; 180 or latitude &lt; -80 or latitude &gt; 84 then
+		return nil
+	end
+
+	local longitude2 = longitude - floor((longitude + 180)/360) * 360
+
+	local lat_rad = deg2rad( latitude )
+
+	local e = OSGBglobe.ecc
+	local e_prime_sq = e / (1-e)
+
+	local v = OSGBglobe.semimajor / sqrt(1 - e * sin(lat_rad)*sin(lat_rad))
+	local tank = tan(lat_rad)
+	local T = tank*tank
+	local T2 = T*T
+	local C = e_prime_sq * pow( cos(lat_rad), 2)
+	local A = deg2rad( longitude2 -OSGBglobe.lon0 ) * cos(lat_rad)
+	local A2 = A*A
+	local A3 = A2*A
+	local A4 = A2*A2
+	local A5 = A3*A2
+	local A6 = A3*A3
+	local M = find_M( lat_rad )
+	local M0 = 0.0
+	if latitude_origin ~= 0 then
+		M0 = find_M(deg2rad( OSGBglobe.lat0 ))
+	end
+
+	local northing = OSGBglobe.n0 + OSGBglobe.scale *
+			    ( (M - M0) + v*tan(lat_rad) * 
+			      ( A2/2 
+				+ (5 - T + 9*C + 4*C*C) * A4/24
+				+ (61 - 58*T + T2
+				+ 600*C - 330*e_prime_sq) * A6/720 ))
+
+	local easting = OSGBglobe.e0 + OSGBglobe.scale * v *
+			   ( A 
+			     + (1-T+C)*A3/6
+			     + (5 - 18*T + T2 + 72*C 
+				- 58 * e_prime_sq)*A5/120 )
+
+	return {northing=northing,easting=easting}
+end
+
+--[[
+*  Convert latitude, longitude in decimal degrees to
+*  OSBG36 Easting and Northing
+]]
+local function LatLon2OSGB36( latlon, prec )
+	local tm = LatLonOrigin2TM(latlon.lat, latlon.lon)
+	if not tm then return '' end
+	if not tonumber(prec) then prec = 5 end
+	prec = floor(prec+0.5)
+	if prec &gt; 5 then prec = 5 end
+	if prec &lt; 1 then prec = 1 end
+
+	-- fix by Roger W Haworth
+	local grid_x = floor( tm.easting / 100000 )
+	local grid_y = floor( tm.northing / 100000 )
+	if grid_x &lt; 0 or grid_x &gt; 6 or grid_y &lt; 0 or grid_y &gt; 12 then return '' end
+	--               0000000001111111111222222
+	--               1234567890123456789012345
+	local letters = "ABCDEFGHJKLMNOPQRSTUVWXYZ"
+	
+	local indx1 = 18-floor(grid_y/5)*5+floor(grid_x/5)
+	local indx2 = 21-(grid_y%5)*5+grid_x%5
+	local c1 = mw.ustring.sub(letters,indx1,indx1)
+	local c2 = mw.ustring.sub(letters,indx2,indx2)
+
+	local easting = tm.easting%100000
+	local northing = tm.northing%100000
+	local grid = pow(10.0,5.0-prec)
+	easting = floor(easting/grid)
+	northing = floor(northing/grid)
+	local fmt = '%0'..prec..'d'
+	local e = mw.ustring.format(fmt, easting)
+	local n = mw.ustring.format(fmt, northing)
+
+	return c1..c2..e..n
+
+end
+
+function oscoord._WGS2OSGB(lat,lon,prec)
+	return LatLon2OSGB36(HelmertDatumShift(lat,lon,WGS2OSGBparam),prec)
+end
+
+function oscoord.WGS2OSGB(frame)
+	local args = getArgs(frame)
+	return args[1] and args[2] and oscoord._WGS2OSGB(args[1],args[2],args[3]) or ''
+end
+
+function oscoord.LL2OS(frame)
+	local args = getArgs(frame)
+	if not args[1] or not args[2] then return '' end
+	local gridRef = oscoord._WGS2OSGB(args[1],args[2],args.prec)
+	if not gridRef or #gridRef == 0 then return '' end
+	if args[3] then
+		gridRef = gridRef..'_'..args[3]
+	end
+	return oscoord._oscoord({gridRef,args.linktitle,name=args.name})
+end
+
+return oscoord</text>
+      <sha1>hc7e2e33cq7cus4ke3gxzpvnx2f8jce</sha1>
+    </revision>
+    <revision>
+      <id>3646605</id>
+      <parentid>3320825</parentid>
+      <timestamp>2026-04-24T16:31:50Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: en</comment>
+      <origin>3320825</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="19368" sha1="hc7e2e33cq7cus4ke3gxzpvnx2f8jce" xml:space="preserve">--[[ Ordnance Survey / Lat Long functions in Lua 
+
+****** ORDNANCE SURVEY TO LAT LONG FUNCTIONS ******
+
+Ported to Lua from PHP by Wikipedia User Hike395, 18 Aug 2019
+
+found by RWH at http://www.megalithia.com/search/llfuncshighlight.php
+
+With thanks to Andy, G4JNT for inspiration in GEOG, and to the OSGB for their white paper on coordinate transformation
+describing the iterative method used
+thanks to the Ordnance survey of Ireland for details of the true and false origins of the Irish grid
+
+You may use and redistribute this code under the terms of the GPL see http://www.gnu.org/copyleft/gpl.html
+Written by Richard
+www.megalithia.com
+v0.something 27/2/2000
+v 1.01 28 June 2004
+v 1.02 6 Aug 2004 line 89 add "0" to chars in ngr=stripcharsnotinbag Thx Andy
+v 1.03 9 Mar 2005 Jan (Klingon) added conversion to WGS84 map datum and removed limitation of digits of the grid ref
+v 1.04 10 Aug 2005 Richard correct error trapping (only manifest on malformed ngrs
+
+This code is predicated on the assumption that your are ONLY feeding it Irish or UK Grid references.
+It uses the single char prefix of Irish grid refs to tell the difference, UK grid refs have a two letter prefix.
+We would like an even number of digits for the rest of the grid ref.
+Anything in the NGR other than 0-9, A-Z, a-z is eliminated.
+WARNING this assumes there are no decimal points in your NGR components.
+
+The transformation from OSGB36/Ireland 1965 to WGS84 is more precise than 5 m.
+
+The function is case insensitive
+
+Lat/Long to Ordnance Survey conversion is at bottom of file, see further authorship there
+
+]]
+
+local oscoord = {}
+local getArgs = require('Module:Arguments').getArgs
+local yesno = require('Module:Yesno')
+local namespace = mw.title.getCurrentTitle().namespace
+
+local pow = math.pow
+local sqrt = math.sqrt
+local abs = math.abs
+local floor = math.floor
+local ceil = math.ceil
+local sin = math.sin
+local cos = math.cos
+local tan = math.tan
+local atan = math.atan
+local deg2rad = math.rad
+local rad2deg = math.deg
+
+--[[ DATUM SHIFT USING HELMERT TRANSFORMATION
+ *
+ * height above the ellipsoid is ignored
+ * latitude and longitude must be given in decimal degrees
+ *
+ * no transformation if abs(latitude)&gt;89 or abs(longitude)&gt;89
+ * (lifting this restriction requires some more lines of code)
+ *
+ * Written in 2009 by user Telford at de.wikipedia
+ * Based on math described in "A Guide to Coordinate Systems in Great Britain"
+ * by the UK Ordnance Survey
+ * URL: https://www.ordnancesurvey.co.uk/documents/resources/guide-coordinate-systems-great-britain.pdf
+]]
+
+-- Datum parameters
+
+local OSGBglobe = {
+	semimajor = 6377563.396,
+	semiminor = 6356256.910,
+	ecc = 0.006670539761597529073698869358812557054558,
+	n1 = 0.00167322025032508731869331280635710896296,
+	scale = 0.9996012717,
+    e0 = 400000.0,
+    n0 = -100000.0,
+    lat0 = 49.0,
+    lon0 = -2.0
+}
+
+local IEglobe = {
+	semimajor = 6377340.189,
+	semiminor = 6356034.447,
+	ecc = 0.006670540293336110419293763349975612794125,
+	n1 = 0.001673220384152058651484728058385228837777,
+	scale = 1.000035,
+	e0 = 200000.0,
+	n0 = 250000.0,
+	lat0 = 53.5,
+	lon0 = -8.0
+}
+
+local WGSglobe = {
+	semimajor = 6378137.0,
+	semiminor = 6356752.3141,
+	ecc = 0.00669438003551279089034150031998869922791
+}
+
+local WGS2OSGBparam = {
+ -- Table 4, Section 6.6, Ordnance Survey document 
+	semimajor_src = WGSglobe.semimajor,
+	semiminor_src = WGSglobe.semiminor,
+	ecc_src = WGSglobe.ecc,
+	semimajor_dst = OSGBglobe.semimajor,
+	semiminor_dst = OSGBglobe.semiminor,
+	ecc_dst = OSGBglobe.ecc,
+	tx = -446.448,
+    ty = 125.157,
+    tz = -542.060,
+    s0 = 0.0000204894,
+    rx = deg2rad ( -.1502/3600. ),
+    ry = deg2rad ( -.2470/3600. ),
+    rz = deg2rad ( -.8421/3600. )
+}
+
+local OSGB2WGSparam = {
+	semimajor_src = OSGBglobe.semimajor,
+	semiminor_src = OSGBglobe.semiminor,
+	ecc_src = OSGBglobe.ecc,
+	semimajor_dst = WGSglobe.semimajor,
+	semiminor_dst = WGSglobe.semiminor,
+	ecc_dst = WGSglobe.ecc,
+	tx = -WGS2OSGBparam.tx,
+    ty = -WGS2OSGBparam.ty,
+    tz = -WGS2OSGBparam.tz,
+    s0 = -WGS2OSGBparam.s0,
+    rx = -WGS2OSGBparam.rx,
+    ry = -WGS2OSGBparam.ry,
+    rz = -WGS2OSGBparam.rz,
+}
+
+local IE2WGSparam = {
+	semimajor_src = IEglobe.semimajor,
+	semiminor_src = IEglobe.semiminor,
+	ecc_src = IEglobe.ecc,
+	semimajor_dst = WGSglobe.semimajor,
+	semiminor_dst = WGSglobe.semiminor,
+	ecc_dst = WGSglobe.ecc,
+	tx = 482.53,
+	ty = -130.596,
+	tz = 564.557,
+	s0 = 8.15/1000000.0,
+	rx = deg2rad( -1.042/3600.0 ),
+	ry = deg2rad( -0.214/3600.0 ),
+	rz = deg2rad( -0.631/3600.0 )
+}
+
+local function HelmertDatumShift ( latitude , longitude, param )
+	-- latitude and longitude are in degrees
+    -- return if latitude or longitude out of range 
+
+    if abs(latitude) &gt; 89. or abs(longitude) &gt; 89. then
+    	return {lat=latitude, lon=longitude}
+    end
+
+	param = param or WGS2OSGBparam
+
+    -- parameters for ellipsoids
+    -- Annex A.1, Ordnance Survey document --
+
+    local a1 = param.semimajor_src
+    local b1 = param.semiminor_src
+    local e1 = param.ecc_src
+
+    local a2 = param.semimajor_dst
+    local b2 = param.semiminor_dst
+    local e2 = param.ecc_dst
+
+    -- convert latitude and longitude to cartesian coordinates
+    -- math in Annex B.1, Ordnance Survey document
+    local phi = deg2rad ( latitude )
+    local lambda = deg2rad ( longitude )
+    local cosphi = cos ( phi )
+    local sinphi = sin ( phi )
+    local coslambda = cos ( lambda )
+    local sinlambda = sin ( lambda )
+
+    local ny = a1 / sqrt ( 1. - e1*sinphi*sinphi )
+
+    local x1 = ny * cosphi * coslambda
+    local y1 = ny * cosphi * sinlambda
+    local z1 = ny * ( 1. - e1 ) * sinphi
+    -- the helmert transformation proper
+    -- Equation 3, Section 6.2, Ordnance Survey document
+
+    local x2 = x1 + param.tx + ( param.s0 * x1 - param.rz * y1 + param.ry * z1 )
+    local y2 = y1 + param.ty + ( param.rz * x1 + param.s0 * y1 - param.rx * z1 )
+    local z2 = z1 + param.tz + ( -param.ry *x1 + param.rx * y1 + param.s0 * z1 )
+    -- convert cartesian coordinates to latitude and longitude
+    -- math in Annex B.2, of Ordnance Survey document 
+
+    lambda = atan ( y2 / x2 )
+
+    local p2 = sqrt ( x2*x2 + y2*y2 )
+    phi = atan ( z2 / p2*(1.-e2) )
+
+    local n0 = 101
+
+	local phi_alt
+    repeat
+	    phi_alt = phi
+	    ny = a2 / sqrt ( 1. - e2 * sin(phi) * sin(phi) )
+	    phi = atan ( (z2 + e2 * ny * sin(phi)) / p2 )
+	    n0 = n0 - 1
+    until abs ( phi - phi_alt ) &lt;= 0.000000000001 or n0 &lt;= 0
+
+	return {lat=rad2deg(phi),lon=rad2deg(lambda)}
+
+end
+
+--  LAT LONG TO OS GRID LIBRARY RESUMES HERE
+
+local function northeast(lett,num,shift)
+   -- split into northings and eastings
+   local le=mw.ustring.len(num)
+   if le%2 == 1 then
+   	 return {err="Malformed numerical part of NGR"}
+   end
+   local pr=le/2
+   local n = mw.ustring.sub(num,pr+1)
+   local e = mw.ustring.sub(num,1,pr)
+   -- Hack to move to center of square: append a 5 to northings and eastings
+   shift = yesno(shift)
+   if shift then
+     n = n.."5"
+     e = e.."5"
+     pr = pr+1
+   end
+   -- end hack
+   n = n == '' and 0 or n
+   e = e == '' and 0 or e
+   pr = pow(10.0,(5.0-pr))
+   local T1 = mw.ustring.byte(mw.ustring.sub(lett,1,1))-65
+   if T1&gt;8 then
+     T1 = T1-1
+   end
+   local T2 = nil
+   if mw.ustring.len(lett)&gt;1 then
+     T2 = mw.ustring.byte(mw.ustring.sub(lett,2))-65
+     if T2&gt;8 then
+       T2 = T2-1
+     end
+   end
+   return {n=n,e=e,pr=pr,T1=T1,T2=T2}
+end
+
+local function EN2LL(e,n,datum)
+   local a = datum.semimajor*datum.scale
+   local b = datum.semiminor*datum.scale
+   local lat0rad = deg2rad(datum.lat0)
+   local n1 = datum.n1
+   local n12 = n1*n1
+   local n13 = n12*n1
+   local k=(n-datum.n0)/a+lat0rad
+   local nextcounter=0
+   local j3, j4, j5, j6, m
+   repeat
+     nextcounter=nextcounter+1
+     local k3=k-lat0rad
+     local k4=k+lat0rad
+     j3=(1.0+n1+1.25*n12+1.25*n13)*k3
+     j4=(3.0*n1+3.0*n12+2.625*n13)*sin(k3)*cos(k4)
+     j5=(1.875*n12+1.875*n13)*sin(2.0*k3)*cos(2.0*k4)
+     j6=35.0/24.0*n13*sin(3.0*k3)*cos(3.0*k4)
+     m=b*(j3-j4+j5-j6)
+     k=k+(n-datum.n0-m)/a
+   until abs(n-datum.n0-m)&lt;=0.000000001 or nextcounter&gt;=100
+   local x = 1.0-datum.ecc*pow(sin(k),2.0)
+   local v=a/sqrt(x)
+   local r=v*(1.0-datum.ecc)/x
+   local h2=v/r-1.0
+   local y1=e-datum.e0
+   local tank = tan(k)
+   local tank2 = tank*tank
+   local tank4 = tank2*tank2
+   local tank6 = tank2*tank4
+   local cosk = cos(k)
+   local yv = y1/v -- dimensionless quantity in series expansion
+   local yv2 = yv*yv
+   local yv3 = yv*yv2
+   local yv5 = yv3*yv2
+   local yv7 = yv5*yv2
+   j3=tank/(2.0*r)
+   j4=tank/(24.0*r)*(5.0+3.0*tank2+h2-9.0*tank2*h2)
+   j5=tank/(720.0*r)*(61.0+90.0*tank2+45.0*tank4)
+   local k9=k-y1*(yv*j3+yv3*j4-yv5*j5)
+   j6=1.0/(cosk)
+   local j7=1.0/(cosk*6.0)*(v/r+2.0*tank2)
+   local j8=1.0/(cosk*120.0)*(5.0+28.0*tank2+24.0*tank4)
+   local j9=1.0/(cosk*5040.0)
+   j9=j9*(61.0+662.0*tank2+1320.0*tank4+720.0*tank6)
+   local long=datum.lon0+rad2deg(yv*j6-yv3*j7+yv5*j8-yv7*j9)
+   local lat=rad2deg(k9)
+   return {lat=lat,lon=long}
+end
+
+local function GBEN2LL(e,n)
+   local latlong = EN2LL(e,n,OSGBglobe)
+   local helmert = HelmertDatumShift ( latlong.lat, latlong.lon, OSGB2WGSparam)
+   return {region="GB",lat=helmert.lat,long=helmert.lon}
+end
+local function GB2LL(lett,num)
+   -- British OS to Lat+Long
+   -- first caclulate e,n
+   -- computing e and n exactly, to get SW corner of box
+   local ne = northeast(lett,num)
+   if ne.err then
+   	 return {region="GB",err=ne.err}
+   end
+   -- use British definition of e and n
+   local e=500000.0*(ne.T1%5)+100000.0*(ne.T2%5)-1000000.0+ne.e*ne.pr
+   local n=1900000.0-500000.0*floor(ne.T1/5)-100000.0*floor(ne.T2/5)+ne.n*ne.pr
+   local result = GBEN2LL(e,n)
+   result.prec = 0.8165*ne.pr
+   return result
+end
+   
+local function IrishEN2LL(e,n)
+   local latlong = EN2LL(e,n,IEglobe)
+   local helmert = HelmertDatumShift ( latlong.lat, latlong.lon, IE2WGSparam)
+   return {region="IE",lat=helmert.lat,long=helmert.lon}
+end
+
+local function Irish2LL(lett,num)
+   -- Irish OS to Lat+Long
+   -- first caclulate e,n
+   -- computing e and n exactly, to get SW corner of box
+   local ne = northeast(lett,num)
+   if ne.err then
+   	 return {region="IE", err=ne.err}
+   end
+   -- use Irish definition of northing and easting
+   local e=100000.0*(ne.T1%5.0)+ne.e*ne.pr
+   local n=ne.n*ne.pr+100000.0*(4.0-floor(ne.T1/5.0))
+   local result = IrishEN2LL(e,n)
+   result.prec = 0.8165*ne.pr  -- useful @ Commons
+   return result
+end
+
+local function empty(s)
+  return not s or s == ''
+end
+
+local function NGR2LL(ngr)
+  local result = {}
+  local _ = 0
+  ngr, _ = mw.ustring.gsub(mw.ustring.upper(ngr),"[%s%p]","")
+  local first, last, lett, num = mw.ustring.find(ngr,"^([A-Z]+)(%d+)$")
+  if not first or empty(lett) or empty(num) or mw.ustring.len(lett) &gt; 2 then
+  	return {err="Malformed NGR"}
+  end
+  if mw.ustring.len(lett) == 1 then
+    return Irish2LL(lett,num)
+  end
+  return GB2LL(lett, num)
+end
+
+local function split(s,sep)
+-- split a string s into chunks, separated by sep
+  sep = sep or "%s"
+  local t = {}
+  for chunk in mw.ustring.gmatch(s,"([^"..sep.."]+)") do
+    table.insert(t,chunk)
+  end
+  return t
+end
+
+local function trim(s)
+  local _ = 0
+  s, _ = mw.ustring.gsub(s,"^%s+","")
+  s, _ = mw.ustring.gsub(s,"%s+$","")
+  return s
+end
+
+local function alldigits(s)
+  return not mw.ustring.find(s,"%D")
+end
+
+local function warning(errmsg)
+  local preview = require('Module:If preview')
+  local msg = errmsg or 'Empty OS grid ref'
+
+  local html = preview._warning({ msg })
+
+  if namespace == 0 and errmsg then
+  	html = html..'[[Category:Pages with malformed OS coordinates]]'
+  end
+  return html
+end
+
+function oscoord._main(args)
+  local input = args[1]
+  if empty(input) then
+  	return warning(nil)
+  end
+  local linktitle = args[2]
+  local namearg = args["name"]
+  local rawurl = yesno(args["rawurl"])
+  local args = split(input,'_')
+  local LL
+  local restargs = 1
+  local current_page = mw.title.getCurrentTitle()
+  local pagename = mw.uri.encode( current_page.prefixedText, 'WIKI' )
+  if #args &gt;= 2 and alldigits(args[2]) then
+    if mw.ustring.sub(args[1],1,1) == 'i' then
+      local firstArg = mw.ustring.sub(args[1],2)
+      if alldigits(firstArg) then
+        LL = IrishEN2LL(firstArg,args[2])
+	    restargs = 3
+	    if empty(linktitle) then
+          linktitle=args[1]..'_'..args[2]
+	    end
+      end
+    elseif alldigits(args[1]) then
+      LL = GBEN2LL(args[1],args[2])
+      restargs = 3
+      if empty(linktitle) then
+        linktitle=args[1]..'_'..args[2]
+      end
+    end
+  else
+    LL = NGR2LL(args[1])
+    restargs = 2
+    if empty(linktitle) then
+      linktitle=args[1]
+    end
+  end
+  linktitle = trim(linktitle)
+  if not empty(LL.err) then
+    return linktitle ..warning(LL.err)
+  end
+  -- https://geohack.toolforge.org/geohack.php?pagename=Mount_Whitney&amp;params=36.578580925_N_118.29199495_W_type:mountain_region:US-CA_scale:100000_source:NGS
+  local url = ''
+  if not rawurl then
+  	url = url..'['
+  end
+  url = url..'https://geohack.toolforge.org/geohack.php?'
+  if not empty(pagename) then
+  	url = url..'pagename='..pagename..'&amp;'
+  end
+  LL.lat = LL.lat or 0
+  LL.long = LL.long or 0
+  LL.lat = ceil(LL.lat*1000000)/1000000
+  LL.long = ceil(LL.long*1000000)/1000000
+  url = url..'params='..mw.ustring.format('%.6f',LL.lat)..'_N_'
+  if LL.long &lt; 0 then
+  	url = url..mw.ustring.format('%.6f',-LL.long)..'_W'
+  else
+  	url = url..mw.ustring.format('%.6f',LL.long)..'_E'
+  end
+  for i = restargs,#args do
+  	url = url..'_'..args[i]
+  end
+  if not mw.ustring.find(input,"region") and LL.region then
+    url = url..'_region:'..LL.region
+  end
+  if not mw.ustring.find(input,"scale") and
+     not mw.ustring.find(input,"type") and
+     not mw.ustring.find(input,"dim") and LL.prec then
+     	url = url..'_dim:'..floor(50*LL.prec+0.5)..'m'
+  end
+  if not empty(namearg) then
+    url = url .. "&amp;title=" .. mw.uri.encode(namearg)
+  end
+  if not rawurl then
+	url = url..' '..linktitle..']'
+  end
+  return url
+end
+
+function oscoord._oscoord(args)
+	local output = '&lt;span class="plainlinks nourlexpansion" style="white-space: nowrap"&gt;' .. oscoord._main(args) .. '&lt;/span&gt;'
+	if namespace == 0 then
+		output = output .. '[[Category:Articles with OS grid coordinates]]'
+	end
+	return output
+end
+
+function oscoord.main(frame)
+	local args = getArgs(frame)
+	return oscoord._main(args)
+end
+
+function oscoord.oscoord(frame)
+	local args = getArgs(frame)
+	return oscoord._oscoord(args)
+end
+
+--[[
+ ******  LAT/LONG CONVERSION TO OS GRID REF FUNCTIONS *****
+ *  Uses the WGS-84 ellipsoid and only works for GB grid ref
+ *
+ *  See also:
+ *  http://www.posc.org/Epicentre.2_2/DataModel/ExamplesofUsage/eu_cs34h.html
+ *  http://kanadier.gps-info.de/d-utm-gitter.htm
+ *  http://www.gpsy.com/gpsinfo/geotoutm/
+ *  http://www.colorado.edu/geography/gcraft/notes/gps/gps_f.html
+ *  http://search.cpan.org/src/GRAHAMC/Geo-Coordinates-UTM-0.05/
+ *  UK Ordnance Survey grid (OSBG36): http://www.gps.gov.uk/guidecontents.asp
+ *  Swiss CH1903: http://www.gps.gov.uk/guidecontents.asp
+ *
+ *  ----------------------------------------------------------------------
+ *
+ *  Copyright 2005, Egil Kvaleberg &lt;egil@kvaleberg.no&gt;
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ 
+ Converted to Lua by functionr:Hike395 on 2023-12-15
+]]
+local function find_M ( lat_rad )
+	local e = OSGBglobe.ecc
+	local e2 = e*e
+	local e3 = e*e*e
+
+	return OSGBglobe.semimajor * ( ( 1 - e/4 - 3 * e2/64
+			      - 5 * e3/256
+			    ) * lat_rad
+			  - ( 3 * e/8 + 3 * e2/32
+			      + 45 * e3/1024
+			    ) * sin(2 * lat_rad)
+			  + ( 15 * e2/256 +
+			      45 * e3/1024
+			    ) * sin(4 * lat_rad)
+			  - ( 35 * e3/3072
+			    ) * sin(6 * lat_rad) )
+end
+
+--[[
+*  Convert latitude, longitude in decimal degrees to
+*  Transverse Mercator Easting and Northing based on a GB origin
+*
+*  return nil if problems
+]]
+local function LatLonOrigin2TM( latitude, longitude )
+	if longitude &lt; -180 or longitude &gt; 180 or latitude &lt; -80 or latitude &gt; 84 then
+		return nil
+	end
+
+	local longitude2 = longitude - floor((longitude + 180)/360) * 360
+
+	local lat_rad = deg2rad( latitude )
+
+	local e = OSGBglobe.ecc
+	local e_prime_sq = e / (1-e)
+
+	local v = OSGBglobe.semimajor / sqrt(1 - e * sin(lat_rad)*sin(lat_rad))
+	local tank = tan(lat_rad)
+	local T = tank*tank
+	local T2 = T*T
+	local C = e_prime_sq * pow( cos(lat_rad), 2)
+	local A = deg2rad( longitude2 -OSGBglobe.lon0 ) * cos(lat_rad)
+	local A2 = A*A
+	local A3 = A2*A
+	local A4 = A2*A2
+	local A5 = A3*A2
+	local A6 = A3*A3
+	local M = find_M( lat_rad )
+	local M0 = 0.0
+	if latitude_origin ~= 0 then
+		M0 = find_M(deg2rad( OSGBglobe.lat0 ))
+	end
+
+	local northing = OSGBglobe.n0 + OSGBglobe.scale *
+			    ( (M - M0) + v*tan(lat_rad) * 
+			      ( A2/2 
+				+ (5 - T + 9*C + 4*C*C) * A4/24
+				+ (61 - 58*T + T2
+				+ 600*C - 330*e_prime_sq) * A6/720 ))
+
+	local easting = OSGBglobe.e0 + OSGBglobe.scale * v *
+			   ( A 
+			     + (1-T+C)*A3/6
+			     + (5 - 18*T + T2 + 72*C 
+				- 58 * e_prime_sq)*A5/120 )
+
+	return {northing=northing,easting=easting}
+end
+
+--[[
+*  Convert latitude, longitude in decimal degrees to
+*  OSBG36 Easting and Northing
+]]
+local function LatLon2OSGB36( latlon, prec )
+	local tm = LatLonOrigin2TM(latlon.lat, latlon.lon)
+	if not tm then return '' end
+	if not tonumber(prec) then prec = 5 end
+	prec = floor(prec+0.5)
+	if prec &gt; 5 then prec = 5 end
+	if prec &lt; 1 then prec = 1 end
+
+	-- fix by Roger W Haworth
+	local grid_x = floor( tm.easting / 100000 )
+	local grid_y = floor( tm.northing / 100000 )
+	if grid_x &lt; 0 or grid_x &gt; 6 or grid_y &lt; 0 or grid_y &gt; 12 then return '' end
+	--               0000000001111111111222222
+	--               1234567890123456789012345
+	local letters = "ABCDEFGHJKLMNOPQRSTUVWXYZ"
+	
+	local indx1 = 18-floor(grid_y/5)*5+floor(grid_x/5)
+	local indx2 = 21-(grid_y%5)*5+grid_x%5
+	local c1 = mw.ustring.sub(letters,indx1,indx1)
+	local c2 = mw.ustring.sub(letters,indx2,indx2)
+
+	local easting = tm.easting%100000
+	local northing = tm.northing%100000
+	local grid = pow(10.0,5.0-prec)
+	easting = floor(easting/grid)
+	northing = floor(northing/grid)
+	local fmt = '%0'..prec..'d'
+	local e = mw.ustring.format(fmt, easting)
+	local n = mw.ustring.format(fmt, northing)
+
+	return c1..c2..e..n
+
+end
+
+function oscoord._WGS2OSGB(lat,lon,prec)
+	return LatLon2OSGB36(HelmertDatumShift(lat,lon,WGS2OSGBparam),prec)
+end
+
+function oscoord.WGS2OSGB(frame)
+	local args = getArgs(frame)
+	return args[1] and args[2] and oscoord._WGS2OSGB(args[1],args[2],args[3]) or ''
+end
+
+function oscoord.LL2OS(frame)
+	local args = getArgs(frame)
+	if not args[1] or not args[2] then return '' end
+	local gridRef = oscoord._WGS2OSGB(args[1],args[2],args.prec)
+	if not gridRef or #gridRef == 0 then return '' end
+	if args[3] then
+		gridRef = gridRef..'_'..args[3]
+	end
+	return oscoord._oscoord({gridRef,args.linktitle,name=args.name})
+end
+
+return oscoord</text>
+      <sha1>hc7e2e33cq7cus4ke3gxzpvnx2f8jce</sha1>
+    </revision>
+  </page>
+</mediawiki>

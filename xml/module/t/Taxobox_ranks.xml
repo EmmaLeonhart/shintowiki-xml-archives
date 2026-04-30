@@ -1,0 +1,792 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Taxobox ranks</title>
+    <ns>828</ns>
+    <id>151198</id>
+    <revision>
+      <id>3407031</id>
+      <timestamp>2026-03-12T20:03:15Z</timestamp>
+      <contributor>
+        <username>en&gt;Peter coxhead</username>
+        <id>0</id>
+      </contributor>
+      <comment>added "supergroup", rank order not checked</comment>
+      <origin>3407031</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="12689" sha1="tlwxacic077fywf6jlaywqv6eawka5j" xml:space="preserve">--[[*************************************************************************
+This module provides support to the automated taxobox system – the templates
+Automatic taxobox, Speciesbox, Subspeciesbox, Infraspeciesbox, etc.
+
+In particular it is part of the configuration of the system, defining the
+rank names that are recognized and the way they are displayed in English in
+taxoboxes and viewed taxonomy templates.
+*****************************************************************************]]
+require('strict')
+
+local TableRow = '|-\n'
+local TableEnd = '|}\n'
+local p = {} -- functions made public
+local l = {} -- internal functions, kept separate
+
+--*************************** CONFIGURATION *********************************
+
+--[[============================ ranks ======================================
+Set up a constant to hold the rank names and their English equivalents.
+If adding to this list, note that rank names containing spaces or - must be
+enclosed in [' '].
+=============================================================================]]
+local ranks =
+	{
+		--Special cases, alphabetic order
+		alliance = '&lt;i&gt;Alliance&lt;/i&gt;',
+		['basic shell type'] = '&lt;i&gt;Basic shell type&lt;/i&gt;',
+		branch = '&lt;i&gt;Branch&lt;/i&gt;',
+		clade = '&lt;i&gt;Clade&lt;/i&gt;',
+		cladus= '&lt;i&gt;Clade&lt;/i&gt;',
+		['form taxon'] = '&lt;i&gt;Form taxon&lt;/i&gt;',
+		grade = '&lt;i&gt;Grade&lt;/i&gt;',
+		gradus = '&lt;i&gt;Grade&lt;/i&gt;',
+		informal = '&lt;i&gt;Informal group&lt;/i&gt;',
+		['informal group'] = '&lt;i&gt;Informal group&lt;/i&gt;',
+		morphotype = '&lt;i&gt;Morphotype&lt;/i&gt;',
+		node = '&lt;i&gt;Node&lt;/i&gt;',
+		plesion = '&lt;i&gt;Plesion&lt;/i&gt;',
+		['plesion-group'] = '&lt;i&gt;Plesion-group&lt;/i&gt;',
+		['possible clade'] = '&lt;i&gt;Clade?&lt;/i&gt;',
+		['species complex'] = '&lt;i&gt;Species complex&lt;/i&gt;',
+		['species group'] = '&lt;i&gt;Species group&lt;/i&gt;',
+		['species subgroup'] = '&lt;i&gt;Species subgroup&lt;/i&gt;',
+		['stem group'] = '&lt;i&gt;Stem group&lt;/i&gt;',
+		supergroup = '&lt;i&gt;Supergroup&lt;/i&gt;',
+		['total group'] = '&lt;i&gt;Total group&lt;/i&gt;',
+		--Special virus ranks
+		realm = 'Realm',
+		serotype = 'Serotype',
+		strain = 'Strain',
+		virus = 'Virus',
+		['virus group'] = 'Group',
+		--Linnaean taxonomy, alphabetic order
+		classis = 'Class',
+		cohort = 'Cohort',
+		divisio = 'Division',
+		domain = 'Domain',
+		epifamilia = 'Epifamily',
+		familia = 'Family',
+		forma = 'Form',
+		genus = 'Genus',
+		grandordo = 'Grandorder',
+		['grandordo-mb'] = 'Grandorder', --McKenna &amp; Bell version
+		hyperfamilia = 'Hyperfamily',
+		infraclassis = 'Infraclass',
+		infralegio = 'Infralegion',
+		infralegion = 'Infralegion',
+		infraordo = 'Infraorder',
+		infraphylum = 'Infraphylum',
+		infraregnum = 'Infrakingdom',
+		infratribus = 'Infratribe',
+		legio = 'Legion',
+		legion = 'Legion',
+		magnordo = 'Magnorder',
+		micrordo = 'Microrder',
+		microphylum = 'Microphylum',
+		mirordo = 'Mirorder',
+		['mirordo-mb'] = 'Mirorder', --McKenna &amp; Bell version
+		nanordo = 'Nanorder',
+		nanophylum = 'Nanophylum',
+		ordo = 'Order',
+		parafamilia = 'Parafamily',
+		parvclassis = 'Parvclass',
+		parvordo = 'Parvorder',
+		phylum = 'Phylum',
+		regnum = 'Kingdom',
+		sectio = 'Section',
+		series = 'Series',
+		species = 'Species',
+		subclassis = 'Subclass',
+		subcohort = 'Subcohort',
+		subdivisio = 'Subdivision',
+		subfamilia = 'Subfamily',
+		subgenus = 'Subgenus',
+		sublegio = 'Sublegion',
+		sublegion = 'Sublegion',
+		subordo = 'Suborder',
+		subphylum = 'Subphylum',
+		subregnum = 'Subkingdom',
+		subsectio = 'Subsection',
+		subseries = 'Subseries',
+		subspecies = 'Subspecies',
+		subterclassis = 'Subterclass', --used in WoRMS
+		subtribus = 'Subtribe',
+		superclassis = 'Superclass',
+		supercohort = 'Supercohort',
+		superdivisio = 'Superdivision',
+		superdomain = 'Superdomain',
+		superfamilia = 'Superfamily',
+		superlegio = 'Superlegion',
+		superlegion = 'Superlegion',
+		superordo = 'Superorder',
+		superphylum = 'Superphylum',
+		superregnum = 'Superkingdom',
+		supersectio = 'Supersection',
+		supertribus = 'Supertribe',
+		tribus = 'Tribe',
+		varietas = 'Variety',
+		zoodivisio = 'Division',
+		zoosectio = 'Section',
+		zooseries = 'Series',
+		zoosubdivisio = 'Subdivision',
+		zoosubsectio = 'Subsection',
+		--trace fossil taxonomy, alphabetic order--&gt;',
+		ichnoclassis = 'Ichnoclass',
+		ichnocohort = 'Ichnocohort',
+		ichnodivisio = 'Ichnodivision',
+		ichnofamilia = 'Ichnofamily',
+		ichnogenus = 'Ichnogenus',
+		ichnograndordo = 'Ichnograndorder',
+		['ichnograndordo-mb'] = 'Ichnograndorder', --McKenna &amp; Bell version
+		ichnoinfraclassis = 'Ichnoinfraclass',
+		ichnoinfradivisio = 'Ichnoinfradivision',
+		ichnoinfraordo = 'Ichnoinfraorder',
+		ichnolegio = 'Ichnolegion',
+		ichnolegion = 'Ichnolegion',
+		ichnomagnordo = 'Ichnomagnorder',
+		ichnomicrordo = 'Ichnomicrorder',
+		ichnoordo = 'Ichnoorder',
+		ichnoparvordo = 'Ichnoparvorder',
+		ichnospecies = 'Ichnospecies',
+		['ichnostem-group'] = 'Ichnostem-Group',
+		ichnosubclassis = 'Ichnosubclass',
+		ichnosubdivisio = 'Ichnosubdivision',
+		ichnosubfamilia = 'Ichnosubfamily',
+		ichnosublegio = 'Ichnosublegion',
+		ichnosublegion = 'Ichnosublegion',
+		ichnosubordo = 'Ichnosuborder',
+		ichnosuperclassis = 'Ichnosuperclass',
+		ichnosupercohort = 'Ichnosupercohort',
+		ichnosuperfamilia = 'Ichnosuperfamily',
+		ichnosuperordo = 'Ichnosuperorder',
+		--fossilized egg taxonomy, alphabetic order
+		ooclassis = 'Ooclass',
+		oocohort = 'Oocohort',
+		oofamilia = 'Oofamily',
+		oogenus = 'Oogenus',
+		oomagnordo = 'Oomagnorder',
+		oordo = 'Oorder',
+		oospecies = 'Oospecies',
+		oosubclassis = 'Oosubclass',
+		oosubgenus = 'Oosubgenus',
+		oosubspecies = 'Oosubspecies',
+		oosupercohort = 'Oosupercohort',
+		oosuperordo = 'Oosuperorder',
+	}
+	
+--[[========================== rank values===================================
+Constant to set up a table of numerical values corresponding
+to 'Linnaean' ranks, with upper ranks having higher values. In a valid
+taxonomic hierarchy, a lower rank should never have a higher value than a
+higher rank. The actual numerical values are arbitrary so long as they are
+ordered.
+The ranks should be a subset of those in Template:Anglicise ranks.
+=============================================================================]]
+local rankValTable =
+	{
+		classis = 1400,
+		cohort = 1100,
+		divisio = 1500,
+		domain = 1700,
+		epifamilia =  802,
+		familia = 800,
+		forma = 100,
+		genus = 600,
+		grandordo = 1005,
+		['grandordo-mb'] = 1002,
+		hyperfamilia = 805;
+		infraclassis = 1397,
+		infralegio = 1197,
+		infralegion = 1197,
+		infraordo = 997,
+		infraphylum = 1497,
+		infraregnum = 1597,
+		infratribus = 697,
+		legio = 1200,
+		legion = 1200,
+		magnordo = 1006,
+		microphylum = 1495,
+		micrordo = 995,
+		mirordo = 1004,
+		['mirordo-mb'] = 1001,
+		nanophylum = 1494,
+		nanordo = 994,
+		ordo = 1000,
+		parafamilia = 800,
+		parvclassis = 1396; -- same as subterclassis
+		parvordo = 996,
+		phylum = 1500,
+		regnum = 1600,
+		sectio = 500,
+		--series = 400, used too inconsistently to check
+		species = 300,
+		subclassis = 1398,
+		subcohort = 1098,
+		subdivisio = 1498,
+		subfamilia = 798,
+		subgenus = 598,
+		sublegio = 1198,
+		sublegion = 1198,
+		subordo = 998,
+		subphylum = 1498,
+		subregnum = 1598,
+		subsectio = 498,
+		subspecies = 298,
+		subterclassis = 1396; -- same as parvclassis
+		subtribus = 698,
+		superclassis = 1403,
+		supercohort = 1103,
+		superdivisio = 1503,
+		superdomain = 1703,
+		superfamilia = 803,
+		superlegio = 1203,
+		superlegion = 1203,
+		superordo = 1003,
+		superphylum = 1503,
+		superregnum = 1603,
+		supersectio = 503,
+		supertribus = 703,
+		tribus = 700,
+		varietas = 200,
+		zoodivisio = 1300,
+		zoosectio = 900,
+		zoosubdivisio = 1298,
+		zoosubsectio = 898,
+	}
+
+--***************** Process ranks + English equivalents *********************
+
+--[[======================== angliciseRank ==================================
+Returns the English language equivalent of a rank name used in a taxonomy
+template.
+If the rank name is not in the table of ranks, then the first letter
+of the rank name is capitalized and used as the English name.
+If checked=yes, then the generated English name is highlighted in red. If
+called from a taxonomy template, the page is put in
+Category:Taxonomy templates using capitalized rank parameters
+=============================================================================]]
+function p.doAngliciseRank(rankName, check)
+	rankName = string.gsub(rankName, '_', ' ') -- replace all underscores by spaces
+	-- is rankName capitalized?
+	local testName = string.lower(string.sub(rankName,1,1)) .. string.sub(rankName,2)
+	local wasCapitalized = testName ~= rankName
+	if wasCapitalized then rankName = testName end -- try uncapitalized version
+	if string.sub(rankName, 1,8) == 'unranked' then return '(unranked)' end
+	-- now look for an English version of the rank name
+	local res = ranks[rankName]
+	local notFound = not res
+	if notFound then
+		--rankName is not in the table of recognized ranks; just capitalize rankName
+		res = string.upper(string.sub(rankName,1,1)) .. string.sub(rankName,2)
+	end
+	if check == 'no' then
+		return res
+	elseif notFound then
+		res = '&lt;span style="background-color:#F99"&gt;' .. res .. '&lt;/span&gt;' -- highlight returned English name
+	end
+	-- tracking caegories required only if called from a taxonomy template
+	local pageTitle =  mw.title.getCurrentTitle()
+	if pageTitle.nsText == 'Template' and pageTitle.rootText == 'Taxonomy' then
+		if notFound then res = res .. '[[Category:Taxonomy templates using unrecognized rank parameters]]'
+		elseif wasCapitalized then res = res .. '[[Category:Taxonomy templates using capitalized rank parameters]]'
+		end
+	end
+	return res
+end
+
+function p.angliciseRank(frame)
+	local rankName = frame.args[1]
+	local check = frame.args['check'] or 'no'
+	return p.doAngliciseRank(rankName, check)
+end
+
+--[[========================== showRanks ====================================
+Returns a wikitable showing all the recognized ranks, how they are shown in
+taxoboxes, whether they are automatically italicized, and whether they are
+checked for consistency of rank order.
+Usage: {{#invoke:Taxobox ranks|showRanks}}
+=============================================================================]]
+function p.showRanks(frame)
+	local res = '{| class="wikitable sortable"\n'
+	res = res ..'|+ Ranks recognized in taxonomy templates\n'
+	res = res .. '!style="text-align: left;"|Rank name in&lt;br/&gt;taxonomy&lt;br/&gt;template'
+	res = res .. '!!style="text-align: left;"|Shown in&lt;br/&gt;taxobox as'
+	res = res .. '!! style="text-align: left;" |Taxon name&lt;br/&gt;automatically&lt;br/&gt;italicized?'
+	res = res .. '!! style="text-align: left;" |Rank checked&lt;br/&gt;for consistent&lt;br/&gt;order?'
+	res = res .. '\n'
+	for k, t in pairs(ranks) do
+		res = res .. TableRow .. '|' .. k .. '||' .. t .. '||' .. frame:expandTemplate{ title = 'Is italic taxon', args = { k } } .. '||' .. l.hasRankVal(k) .. '\n'
+	end
+	return res .. TableEnd
+end
+
+--************************* Process rank values *****************************
+
+--[[========================= lookupRankVal =================================
+Function to look up the arbitrary numerical value of a rank in a rank value
+table. "Ichno" and "oo" ranks are not stored separately, so if present the
+prefix is removed.
+=============================================================================]]
+function p.lookupRankVal(rank)
+	local rankVal = rankValTable[rank]
+	if not rankVal then
+		-- may be an "ichno" or "oo" rank; try removing "ichno-" or "oo-"
+		local baseRank = mw.ustring.gsub(mw.ustring.gsub(rank, '^ichno', ''), '^oo', '')
+		if baseRank == 'rdo' then baseRank = 'ordo' end
+		-- if an "ichno" or "oo" rank, lower rank value slightly so it is ok below the base rank
+		rankVal = rankValTable[baseRank]
+		if rankVal then
+			rankVal = rankVal - 0.1
+		end
+	end
+	return rankVal
+end
+
+--[[=========================== hasRankVal =================================
+Utility function to determine whether the rank has a value in rank value
+table. Returns 'yes' or 'no'.
+=============================================================================]]
+function l.hasRankVal(rank)
+	if rank == '' then return 'no' end
+	local rankVal = p.lookupRankVal(rank)
+	if not rankVal then rankVal = 'no' else rankVal = 'yes' end
+	return rankVal
+end
+
+--[[========================== showRankTable ================================
+Returns a wikitable showing the ranks and their values as set up in the
+constant rankValTable.
+Usage: {{#invoke:Taxobox ranks|showRankTable}}
+=============================================================================]]
+function p.showRankTable(frame)
+	local res = '{| class="wikitable sortable"\n|+ Ranks checked in taxonomy templates\n! Rank !! Shown as !! Value\n'
+	for k, v in pairs(rankValTable) do
+		local rankShown = p.doAngliciseRank(k, 'no')
+		res = res .. TableRow .. '|' .. k .. '||' .. rankShown .. '||' .. v .. '\n'
+	end
+	return res .. TableEnd
+end
+
+return p</text>
+      <sha1>tlwxacic077fywf6jlaywqv6eawka5j</sha1>
+    </revision>
+    <revision>
+      <id>3407032</id>
+      <parentid>3407031</parentid>
+      <timestamp>2026-03-12T20:03:15Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3407031</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="12689" sha1="tlwxacic077fywf6jlaywqv6eawka5j" xml:space="preserve">--[[*************************************************************************
+This module provides support to the automated taxobox system – the templates
+Automatic taxobox, Speciesbox, Subspeciesbox, Infraspeciesbox, etc.
+
+In particular it is part of the configuration of the system, defining the
+rank names that are recognized and the way they are displayed in English in
+taxoboxes and viewed taxonomy templates.
+*****************************************************************************]]
+require('strict')
+
+local TableRow = '|-\n'
+local TableEnd = '|}\n'
+local p = {} -- functions made public
+local l = {} -- internal functions, kept separate
+
+--*************************** CONFIGURATION *********************************
+
+--[[============================ ranks ======================================
+Set up a constant to hold the rank names and their English equivalents.
+If adding to this list, note that rank names containing spaces or - must be
+enclosed in [' '].
+=============================================================================]]
+local ranks =
+	{
+		--Special cases, alphabetic order
+		alliance = '&lt;i&gt;Alliance&lt;/i&gt;',
+		['basic shell type'] = '&lt;i&gt;Basic shell type&lt;/i&gt;',
+		branch = '&lt;i&gt;Branch&lt;/i&gt;',
+		clade = '&lt;i&gt;Clade&lt;/i&gt;',
+		cladus= '&lt;i&gt;Clade&lt;/i&gt;',
+		['form taxon'] = '&lt;i&gt;Form taxon&lt;/i&gt;',
+		grade = '&lt;i&gt;Grade&lt;/i&gt;',
+		gradus = '&lt;i&gt;Grade&lt;/i&gt;',
+		informal = '&lt;i&gt;Informal group&lt;/i&gt;',
+		['informal group'] = '&lt;i&gt;Informal group&lt;/i&gt;',
+		morphotype = '&lt;i&gt;Morphotype&lt;/i&gt;',
+		node = '&lt;i&gt;Node&lt;/i&gt;',
+		plesion = '&lt;i&gt;Plesion&lt;/i&gt;',
+		['plesion-group'] = '&lt;i&gt;Plesion-group&lt;/i&gt;',
+		['possible clade'] = '&lt;i&gt;Clade?&lt;/i&gt;',
+		['species complex'] = '&lt;i&gt;Species complex&lt;/i&gt;',
+		['species group'] = '&lt;i&gt;Species group&lt;/i&gt;',
+		['species subgroup'] = '&lt;i&gt;Species subgroup&lt;/i&gt;',
+		['stem group'] = '&lt;i&gt;Stem group&lt;/i&gt;',
+		supergroup = '&lt;i&gt;Supergroup&lt;/i&gt;',
+		['total group'] = '&lt;i&gt;Total group&lt;/i&gt;',
+		--Special virus ranks
+		realm = 'Realm',
+		serotype = 'Serotype',
+		strain = 'Strain',
+		virus = 'Virus',
+		['virus group'] = 'Group',
+		--Linnaean taxonomy, alphabetic order
+		classis = 'Class',
+		cohort = 'Cohort',
+		divisio = 'Division',
+		domain = 'Domain',
+		epifamilia = 'Epifamily',
+		familia = 'Family',
+		forma = 'Form',
+		genus = 'Genus',
+		grandordo = 'Grandorder',
+		['grandordo-mb'] = 'Grandorder', --McKenna &amp; Bell version
+		hyperfamilia = 'Hyperfamily',
+		infraclassis = 'Infraclass',
+		infralegio = 'Infralegion',
+		infralegion = 'Infralegion',
+		infraordo = 'Infraorder',
+		infraphylum = 'Infraphylum',
+		infraregnum = 'Infrakingdom',
+		infratribus = 'Infratribe',
+		legio = 'Legion',
+		legion = 'Legion',
+		magnordo = 'Magnorder',
+		micrordo = 'Microrder',
+		microphylum = 'Microphylum',
+		mirordo = 'Mirorder',
+		['mirordo-mb'] = 'Mirorder', --McKenna &amp; Bell version
+		nanordo = 'Nanorder',
+		nanophylum = 'Nanophylum',
+		ordo = 'Order',
+		parafamilia = 'Parafamily',
+		parvclassis = 'Parvclass',
+		parvordo = 'Parvorder',
+		phylum = 'Phylum',
+		regnum = 'Kingdom',
+		sectio = 'Section',
+		series = 'Series',
+		species = 'Species',
+		subclassis = 'Subclass',
+		subcohort = 'Subcohort',
+		subdivisio = 'Subdivision',
+		subfamilia = 'Subfamily',
+		subgenus = 'Subgenus',
+		sublegio = 'Sublegion',
+		sublegion = 'Sublegion',
+		subordo = 'Suborder',
+		subphylum = 'Subphylum',
+		subregnum = 'Subkingdom',
+		subsectio = 'Subsection',
+		subseries = 'Subseries',
+		subspecies = 'Subspecies',
+		subterclassis = 'Subterclass', --used in WoRMS
+		subtribus = 'Subtribe',
+		superclassis = 'Superclass',
+		supercohort = 'Supercohort',
+		superdivisio = 'Superdivision',
+		superdomain = 'Superdomain',
+		superfamilia = 'Superfamily',
+		superlegio = 'Superlegion',
+		superlegion = 'Superlegion',
+		superordo = 'Superorder',
+		superphylum = 'Superphylum',
+		superregnum = 'Superkingdom',
+		supersectio = 'Supersection',
+		supertribus = 'Supertribe',
+		tribus = 'Tribe',
+		varietas = 'Variety',
+		zoodivisio = 'Division',
+		zoosectio = 'Section',
+		zooseries = 'Series',
+		zoosubdivisio = 'Subdivision',
+		zoosubsectio = 'Subsection',
+		--trace fossil taxonomy, alphabetic order--&gt;',
+		ichnoclassis = 'Ichnoclass',
+		ichnocohort = 'Ichnocohort',
+		ichnodivisio = 'Ichnodivision',
+		ichnofamilia = 'Ichnofamily',
+		ichnogenus = 'Ichnogenus',
+		ichnograndordo = 'Ichnograndorder',
+		['ichnograndordo-mb'] = 'Ichnograndorder', --McKenna &amp; Bell version
+		ichnoinfraclassis = 'Ichnoinfraclass',
+		ichnoinfradivisio = 'Ichnoinfradivision',
+		ichnoinfraordo = 'Ichnoinfraorder',
+		ichnolegio = 'Ichnolegion',
+		ichnolegion = 'Ichnolegion',
+		ichnomagnordo = 'Ichnomagnorder',
+		ichnomicrordo = 'Ichnomicrorder',
+		ichnoordo = 'Ichnoorder',
+		ichnoparvordo = 'Ichnoparvorder',
+		ichnospecies = 'Ichnospecies',
+		['ichnostem-group'] = 'Ichnostem-Group',
+		ichnosubclassis = 'Ichnosubclass',
+		ichnosubdivisio = 'Ichnosubdivision',
+		ichnosubfamilia = 'Ichnosubfamily',
+		ichnosublegio = 'Ichnosublegion',
+		ichnosublegion = 'Ichnosublegion',
+		ichnosubordo = 'Ichnosuborder',
+		ichnosuperclassis = 'Ichnosuperclass',
+		ichnosupercohort = 'Ichnosupercohort',
+		ichnosuperfamilia = 'Ichnosuperfamily',
+		ichnosuperordo = 'Ichnosuperorder',
+		--fossilized egg taxonomy, alphabetic order
+		ooclassis = 'Ooclass',
+		oocohort = 'Oocohort',
+		oofamilia = 'Oofamily',
+		oogenus = 'Oogenus',
+		oomagnordo = 'Oomagnorder',
+		oordo = 'Oorder',
+		oospecies = 'Oospecies',
+		oosubclassis = 'Oosubclass',
+		oosubgenus = 'Oosubgenus',
+		oosubspecies = 'Oosubspecies',
+		oosupercohort = 'Oosupercohort',
+		oosuperordo = 'Oosuperorder',
+	}
+	
+--[[========================== rank values===================================
+Constant to set up a table of numerical values corresponding
+to 'Linnaean' ranks, with upper ranks having higher values. In a valid
+taxonomic hierarchy, a lower rank should never have a higher value than a
+higher rank. The actual numerical values are arbitrary so long as they are
+ordered.
+The ranks should be a subset of those in Template:Anglicise ranks.
+=============================================================================]]
+local rankValTable =
+	{
+		classis = 1400,
+		cohort = 1100,
+		divisio = 1500,
+		domain = 1700,
+		epifamilia =  802,
+		familia = 800,
+		forma = 100,
+		genus = 600,
+		grandordo = 1005,
+		['grandordo-mb'] = 1002,
+		hyperfamilia = 805;
+		infraclassis = 1397,
+		infralegio = 1197,
+		infralegion = 1197,
+		infraordo = 997,
+		infraphylum = 1497,
+		infraregnum = 1597,
+		infratribus = 697,
+		legio = 1200,
+		legion = 1200,
+		magnordo = 1006,
+		microphylum = 1495,
+		micrordo = 995,
+		mirordo = 1004,
+		['mirordo-mb'] = 1001,
+		nanophylum = 1494,
+		nanordo = 994,
+		ordo = 1000,
+		parafamilia = 800,
+		parvclassis = 1396; -- same as subterclassis
+		parvordo = 996,
+		phylum = 1500,
+		regnum = 1600,
+		sectio = 500,
+		--series = 400, used too inconsistently to check
+		species = 300,
+		subclassis = 1398,
+		subcohort = 1098,
+		subdivisio = 1498,
+		subfamilia = 798,
+		subgenus = 598,
+		sublegio = 1198,
+		sublegion = 1198,
+		subordo = 998,
+		subphylum = 1498,
+		subregnum = 1598,
+		subsectio = 498,
+		subspecies = 298,
+		subterclassis = 1396; -- same as parvclassis
+		subtribus = 698,
+		superclassis = 1403,
+		supercohort = 1103,
+		superdivisio = 1503,
+		superdomain = 1703,
+		superfamilia = 803,
+		superlegio = 1203,
+		superlegion = 1203,
+		superordo = 1003,
+		superphylum = 1503,
+		superregnum = 1603,
+		supersectio = 503,
+		supertribus = 703,
+		tribus = 700,
+		varietas = 200,
+		zoodivisio = 1300,
+		zoosectio = 900,
+		zoosubdivisio = 1298,
+		zoosubsectio = 898,
+	}
+
+--***************** Process ranks + English equivalents *********************
+
+--[[======================== angliciseRank ==================================
+Returns the English language equivalent of a rank name used in a taxonomy
+template.
+If the rank name is not in the table of ranks, then the first letter
+of the rank name is capitalized and used as the English name.
+If checked=yes, then the generated English name is highlighted in red. If
+called from a taxonomy template, the page is put in
+Category:Taxonomy templates using capitalized rank parameters
+=============================================================================]]
+function p.doAngliciseRank(rankName, check)
+	rankName = string.gsub(rankName, '_', ' ') -- replace all underscores by spaces
+	-- is rankName capitalized?
+	local testName = string.lower(string.sub(rankName,1,1)) .. string.sub(rankName,2)
+	local wasCapitalized = testName ~= rankName
+	if wasCapitalized then rankName = testName end -- try uncapitalized version
+	if string.sub(rankName, 1,8) == 'unranked' then return '(unranked)' end
+	-- now look for an English version of the rank name
+	local res = ranks[rankName]
+	local notFound = not res
+	if notFound then
+		--rankName is not in the table of recognized ranks; just capitalize rankName
+		res = string.upper(string.sub(rankName,1,1)) .. string.sub(rankName,2)
+	end
+	if check == 'no' then
+		return res
+	elseif notFound then
+		res = '&lt;span style="background-color:#F99"&gt;' .. res .. '&lt;/span&gt;' -- highlight returned English name
+	end
+	-- tracking caegories required only if called from a taxonomy template
+	local pageTitle =  mw.title.getCurrentTitle()
+	if pageTitle.nsText == 'Template' and pageTitle.rootText == 'Taxonomy' then
+		if notFound then res = res .. '[[Category:Taxonomy templates using unrecognized rank parameters]]'
+		elseif wasCapitalized then res = res .. '[[Category:Taxonomy templates using capitalized rank parameters]]'
+		end
+	end
+	return res
+end
+
+function p.angliciseRank(frame)
+	local rankName = frame.args[1]
+	local check = frame.args['check'] or 'no'
+	return p.doAngliciseRank(rankName, check)
+end
+
+--[[========================== showRanks ====================================
+Returns a wikitable showing all the recognized ranks, how they are shown in
+taxoboxes, whether they are automatically italicized, and whether they are
+checked for consistency of rank order.
+Usage: {{#invoke:Taxobox ranks|showRanks}}
+=============================================================================]]
+function p.showRanks(frame)
+	local res = '{| class="wikitable sortable"\n'
+	res = res ..'|+ Ranks recognized in taxonomy templates\n'
+	res = res .. '!style="text-align: left;"|Rank name in&lt;br/&gt;taxonomy&lt;br/&gt;template'
+	res = res .. '!!style="text-align: left;"|Shown in&lt;br/&gt;taxobox as'
+	res = res .. '!! style="text-align: left;" |Taxon name&lt;br/&gt;automatically&lt;br/&gt;italicized?'
+	res = res .. '!! style="text-align: left;" |Rank checked&lt;br/&gt;for consistent&lt;br/&gt;order?'
+	res = res .. '\n'
+	for k, t in pairs(ranks) do
+		res = res .. TableRow .. '|' .. k .. '||' .. t .. '||' .. frame:expandTemplate{ title = 'Is italic taxon', args = { k } } .. '||' .. l.hasRankVal(k) .. '\n'
+	end
+	return res .. TableEnd
+end
+
+--************************* Process rank values *****************************
+
+--[[========================= lookupRankVal =================================
+Function to look up the arbitrary numerical value of a rank in a rank value
+table. "Ichno" and "oo" ranks are not stored separately, so if present the
+prefix is removed.
+=============================================================================]]
+function p.lookupRankVal(rank)
+	local rankVal = rankValTable[rank]
+	if not rankVal then
+		-- may be an "ichno" or "oo" rank; try removing "ichno-" or "oo-"
+		local baseRank = mw.ustring.gsub(mw.ustring.gsub(rank, '^ichno', ''), '^oo', '')
+		if baseRank == 'rdo' then baseRank = 'ordo' end
+		-- if an "ichno" or "oo" rank, lower rank value slightly so it is ok below the base rank
+		rankVal = rankValTable[baseRank]
+		if rankVal then
+			rankVal = rankVal - 0.1
+		end
+	end
+	return rankVal
+end
+
+--[[=========================== hasRankVal =================================
+Utility function to determine whether the rank has a value in rank value
+table. Returns 'yes' or 'no'.
+=============================================================================]]
+function l.hasRankVal(rank)
+	if rank == '' then return 'no' end
+	local rankVal = p.lookupRankVal(rank)
+	if not rankVal then rankVal = 'no' else rankVal = 'yes' end
+	return rankVal
+end
+
+--[[========================== showRankTable ================================
+Returns a wikitable showing the ranks and their values as set up in the
+constant rankValTable.
+Usage: {{#invoke:Taxobox ranks|showRankTable}}
+=============================================================================]]
+function p.showRankTable(frame)
+	local res = '{| class="wikitable sortable"\n|+ Ranks checked in taxonomy templates\n! Rank !! Shown as !! Value\n'
+	for k, v in pairs(rankValTable) do
+		local rankShown = p.doAngliciseRank(k, 'no')
+		res = res .. TableRow .. '|' .. k .. '||' .. rankShown .. '||' .. v .. '\n'
+	end
+	return res .. TableEnd
+end
+
+return p</text>
+      <sha1>tlwxacic077fywf6jlaywqv6eawka5j</sha1>
+    </revision>
+  </page>
+</mediawiki>

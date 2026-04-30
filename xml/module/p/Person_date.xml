@@ -1,0 +1,2229 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Person date</title>
+    <ns>828</ns>
+    <id>151205</id>
+    <revision>
+      <id>3407358</id>
+      <timestamp>2025-12-06T07:51:53Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <comment>no longer needed or supported</comment>
+      <origin>3407358</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="9137" sha1="cln3e50apsaohrqgilz1jf2s9se1zlq" xml:space="preserve">require("strict")
+
+local p = {}
+
+local TEMPLATES = {
+	birth_date = "Birth date",
+	birth_date_and_age = "Birth date and age",
+	birth_year = "Birth year",
+	birth_year_and_age = "Birth year and age",
+	death_date = "Death date",
+	death_date_text = "Death date text",
+	death_date_and_age = "Death date and age",
+	death_year = "Death year",
+	death_year_and_age = "Death year and age",
+}
+local invalid_date_category = ''
+local tracking_category = ''
+local Date = require('Module:Date')._Date
+local getArgs = require('Module:Arguments').getArgs
+
+if mw.title.getCurrentTitle():inffs(0, 828, 829) then
+	-- Category only in ffs: 0=article, 828=module &amp; 829=module talk (last 2 needed for testcases)
+	tracking_category = '[[Category:Pages where birth or death is being automatically determined]]'
+	invalid_date_category = '[[Category:Pages with invalid birth or death dates]]'
+end
+
+local function check_for_invalid_date(str)
+	return mw.ustring.match(str, '^%?') or mw.ustring.match(str, '^%d%d%?') or mw.ustring.match(str, '^[Uu]nk')
+end
+
+local function expand_template(template, args)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = args}
+end
+
+local function parse_date(str)
+	local date = Date(str)
+	if date then
+		return tostring(date.year), tostring(date.month), tostring(date.day)
+	end
+	-- TODO: Date has not been parsed. Need to work out what to do. For now, throw an error.
+	-- Example where this can occur: "birth_date = 22 December 1946" at [[Maurice Pasternak]].
+	-- There was a nonbreaking space after "22" whidh Date does not accept.
+	error('Module:Person_date parse_date invalid date: "' .. tostring(str) .. '"')
+end
+
+local function date_format(str)
+	if mw.ustring.match (str, '^%d+%s*%a+[%.]*%s*%d%d%d%d$') then
+		return 'df'
+	elseif mw.ustring.match(str, '^%a+[%.]*%s+%d+,%s*%d%d%d%d$') then
+		return 'mf'
+	else
+		return 'ERROR'
+	end
+
+end
+
+local function is_valid_month (str)
+	str = string.upper(mw.ustring.sub(str,1,1))..string.lower(mw.ustring.sub(str,2))
+
+	local months = {'Jan','Jan.','January','Feb','Feb.','February','Mar','March','Apr','Apr.','April','May','Jun','Jun.','June','Jul','Jul.','July','Aug','Aug.','August','Sep','Sept','Sep.','Sept.','September','Oct','Oct.','October','Nov','Nov','November','Dec','Dec.','December'}
+	for index, value in ipairs(months) do
+		if value == str then
+			return true
+		end
+	end
+	return false
+end
+
+local function is_month_year_only(str)
+	local month = mw.ustring.match(str, '^(%a+)[%.]*%s+%d%d%d%d$')
+	if month == nil then
+		return false
+	else
+		return is_valid_month(month)
+	end
+end
+
+local function is_valid_date(str)
+	local month = mw.ustring.match (str, '^%d+%s*(%a+)[%.]*%s*%d%d%d%d$') or mw.ustring.match(str, '^(%a+)[%.]*%s+%d+,%s*%d%d%d%d$')
+	if month == nil then
+		return false
+	else
+		return is_valid_month(month)
+	end
+end
+
+local function is_year_only(str)
+	return mw.ustring.match(str, '^%d%d%d%d$')
+end
+
+local function already_has_template(str)
+	str = mw.ustring.gsub(str, '&amp;[Nn][Bb][Ss][Pp];', ' ')
+	return mw.ustring.match(str, '&lt;span') or mw.ustring.match(str, '&lt;time') or mw.ustring.match(str,'%(aged%s*%d+') or mw.ustring.match(str,'%(age%s*%d+')
+end
+
+local function sanatize_date(str)
+	-- Sanatize leading &amp; trailing whitespace (this caused an issue before it was implemented)
+	str = mw.ustring.gsub(str,'^%s*','')
+	str = mw.ustring.gsub(str,'%s*$','')
+	-- Sanatize ordinals
+	str = mw.ustring.gsub(str, '(%d+)st([,%s])', '%1%2')
+	str = mw.ustring.gsub(str, '(%d+)rd([,%s])', '%1%2')
+	str = mw.ustring.gsub(str, '(%d+)th([,%s])', '%1%2')
+	str = mw.ustring.gsub(str, '(%d+)nd([,%s])', '%1%2')
+	return str
+end
+
+local function parse_birth(args)
+	local birth_date = args['birth_date'] or ''
+	local death_date = args['death_date'] or ''
+	local disap_date = args['disappeared_date'] or ''
+	local original = birth_date
+	
+	birth_date = sanatize_date(birth_date)
+	death_date = sanatize_date(death_date)
+	disap_date = sanatize_date(disap_date)
+
+	-- Check for bad inputs. This used to be covered by a switch statement in infoboxes
+	if check_for_invalid_date(birth_date) then
+		return original..invalid_date_category
+	end
+
+	if already_has_template(birth_date) then
+		return original
+	end
+
+	if is_valid_date(birth_date) then
+		local location = mw.ustring.find(birth_date, '%d%d%d%d')
+		local extra = mw.ustring.sub(birth_date, location+4) .. tracking_category
+		local date = mw.ustring.sub(birth_date, 1,location+3)
+		local year, month, day = parse_date(date)
+		local format = date_format(date)
+		if death_date == '' and disap_date == '' then
+			return expand_template(TEMPLATES.birth_date_and_age, {year, month, day, [format] = 'yes'}) .. extra
+		elseif is_year_only(death_date) or is_valid_date(death_date) or is_month_year_only(death_date) then
+			return expand_template(TEMPLATES.birth_date, {year, month, day, [format] = 'yes'}) .. extra
+		else
+			-- death_date is not a valid string (example: 'unknown')
+			return original
+		end
+	end
+	if is_month_year_only(birth_date) then
+
+		local year = Date('1 '..birth_date):text('%Y')
+		local month = Date('1 '..birth_date):text('%-m')
+		local location = mw.ustring.find(birth_date, '%d%d%d%d')
+		local date = mw.ustring.sub(birth_date, 1,location+3)
+		local extra = mw.ustring.sub(birth_date, location+4) .. tracking_category
+
+		if death_date == '' and disap_date == '' then
+			return expand_template(TEMPLATES.birth_year_and_age, {year, month}) .. extra
+		elseif is_year_only(death_date) or is_valid_date(death_date) or is_month_year_only(death_date) then
+			return expand_template(TEMPLATES.birth_year, {date}) .. extra
+		else
+			-- death_date is not a valid string (example: 'unknown')
+			return original
+		end
+
+	end
+	if is_year_only(birth_date) then
+		local date = mw.ustring.sub(birth_date, 1, 5)
+		local extra = mw.ustring.sub(birth_date, 5) .. tracking_category
+		if death_date == '' and disap_date == '' then
+			return expand_template(TEMPLATES.birth_year_and_age, {date}) .. extra
+		elseif is_year_only(death_date) or is_valid_date(death_date) then
+			return expand_template(TEMPLATES.birth_year, {date}) .. extra
+		else
+			-- death_date is not a valid string (example: 'unknown')
+			return original
+		end
+	end
+
+	return original
+end
+
+local function parse_death(args)
+	local birth_date = args['birth_date'] or ''
+	local death_date = args['death_date'] or ''
+	local original = death_date
+
+	birth_date = sanatize_date(birth_date)
+	death_date = sanatize_date(death_date)
+
+	-- Check for bad inputs. This used to be covered by a switch statement in infoboxes
+	if check_for_invalid_date(death_date) then
+		return original..invalid_date_category
+	end
+
+	if already_has_template(death_date) then
+		return original
+	end
+
+	if is_valid_date(death_date) or is_month_year_only(death_date) then
+		local location = mw.ustring.find(death_date, '%d%d%d%d')
+		local date = mw.ustring.sub(death_date, 1,location+3)
+		local extra = mw.ustring.sub(death_date, location+4) .. tracking_category
+		local format = date_format(date)
+
+		if birth_date == '' then
+			if is_month_year_only(death_date) then
+				return expand_template(TEMPLATES.death_date_text, {date}) .. extra
+			end
+			local year, month, day = parse_date(date)
+			return expand_template(TEMPLATES.death_date, {year, month, day, [format] = 'yes'}) .. extra
+		else
+			if is_year_only(birth_date) then
+				location =  mw.ustring.find(birth_date, '%d%d%d%d')
+				local bd = mw.ustring.sub(birth_date, 1,location+3)
+				if is_month_year_only(death_date) then
+					return expand_template(TEMPLATES.death_date_and_age, {date, bd}) .. extra
+				end
+
+				return expand_template(TEMPLATES.death_date_and_age, {date, bd, [format] = 'yes'}) .. extra
+			elseif is_valid_date(birth_date) or is_month_year_only(birth_date) then
+				location =  mw.ustring.find(birth_date, '%d%d%d%d')
+				local bd = mw.ustring.sub(birth_date, 1,location+3)
+
+				if (is_month_year_only(death_date)) then
+					return expand_template(TEMPLATES.death_date_and_age, {date, bd}) .. extra
+				end
+
+				return expand_template(TEMPLATES.death_date_and_age, {date, bd, [format] = 'yes'}) .. extra
+			end
+		end
+	end
+
+	if is_year_only(death_date) then
+		if birth_date == '' then
+			return  expand_template(TEMPLATES.death_year, {mw.ustring.sub(death_date, 1, 5)}) .. mw.ustring.sub(death_date, 5) .. tracking_category
+		else
+			if is_year_only(birth_date) then
+				return  expand_template(TEMPLATES.death_year_and_age, {mw.ustring.sub(death_date, 1, 5), mw.ustring.sub(birth_date, 1, 5)}) .. mw.ustring.sub(death_date, 5) .. tracking_category
+			else
+				if is_valid_date(birth_date) then
+					local location = mw.ustring.find(death_date, '%d%d%d%d')
+					local date = mw.ustring.sub(death_date, 1,location+3)
+					local extra = mw.ustring.sub(death_date, location+4) .. tracking_category
+
+					location =  mw.ustring.find(birth_date, '%d%d%d%d')
+					local bd = mw.ustring.sub(birth_date, 1,location+3)
+
+					return  expand_template(TEMPLATES.death_date_and_age, {date, bd}) .. extra
+				end
+			end
+		end
+	end
+
+	return original
+end
+
+function p.birth(frame)
+	return parse_birth(getArgs(frame, {parentFirst = true}))
+end
+
+function p.death(frame)
+	return parse_death(getArgs(frame, {parentFirst = true}))
+end
+
+return p</text>
+      <sha1>cln3e50apsaohrqgilz1jf2s9se1zlq</sha1>
+    </revision>
+    <revision>
+      <id>3646772</id>
+      <parentid>3407358</parentid>
+      <timestamp>2025-12-06T07:51:53Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <comment>no longer needed or supported</comment>
+      <origin>3646772</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="9151" sha1="qm4tcdz8g5vkfc018ay0tu8zlfditks" xml:space="preserve">require("strict")
+
+local p = {}
+
+local TEMPLATES = {
+	birth_date = "Birth date",
+	birth_date_and_age = "Birth date and age",
+	birth_year = "Birth year",
+	birth_year_and_age = "Birth year and age",
+	death_date = "Death date",
+	death_date_text = "Death date text",
+	death_date_and_age = "Death date and age",
+	death_year = "Death year",
+	death_year_and_age = "Death year and age",
+}
+local invalid_date_category = ''
+local tracking_category = ''
+local Date = require('Module:Date')._Date
+local getArgs = require('Module:Arguments').getArgs
+
+if mw.title.getCurrentTitle():inNamespaces(0, 828, 829) then
+	-- Category only in namespaces: 0=article, 828=module &amp; 829=module talk (last 2 needed for testcases)
+	tracking_category = '[[Category:Pages where birth or death is being automatically determined]]'
+	invalid_date_category = '[[Category:Pages with invalid birth or death dates]]'
+end
+
+local function check_for_invalid_date(str)
+	return mw.ustring.match(str, '^%?') or mw.ustring.match(str, '^%d%d%?') or mw.ustring.match(str, '^[Uu]nk')
+end
+
+local function expand_template(template, args)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = args}
+end
+
+local function parse_date(str)
+	local date = Date(str)
+	if date then
+		return tostring(date.year), tostring(date.month), tostring(date.day)
+	end
+	-- TODO: Date has not been parsed. Need to work out what to do. For now, throw an error.
+	-- Example where this can occur: "birth_date = 22 December 1946" at [[Maurice Pasternak]].
+	-- There was a nonbreaking space after "22" whidh Date does not accept.
+	error('Module:Person_date parse_date invalid date: "' .. tostring(str) .. '"')
+end
+
+local function date_format(str)
+	if mw.ustring.match (str, '^%d+%s*%a+[%.]*%s*%d%d%d%d$') then
+		return 'df'
+	elseif mw.ustring.match(str, '^%a+[%.]*%s+%d+,%s*%d%d%d%d$') then
+		return 'mf'
+	else
+		return 'ERROR'
+	end
+
+end
+
+local function is_valid_month (str)
+	str = string.upper(mw.ustring.sub(str,1,1))..string.lower(mw.ustring.sub(str,2))
+
+	local months = {'Jan','Jan.','January','Feb','Feb.','February','Mar','March','Apr','Apr.','April','May','Jun','Jun.','June','Jul','Jul.','July','Aug','Aug.','August','Sep','Sept','Sep.','Sept.','September','Oct','Oct.','October','Nov','Nov','November','Dec','Dec.','December'}
+	for index, value in ipairs(months) do
+		if value == str then
+			return true
+		end
+	end
+	return false
+end
+
+local function is_month_year_only(str)
+	local month = mw.ustring.match(str, '^(%a+)[%.]*%s+%d%d%d%d$')
+	if month == nil then
+		return false
+	else
+		return is_valid_month(month)
+	end
+end
+
+local function is_valid_date(str)
+	local month = mw.ustring.match (str, '^%d+%s*(%a+)[%.]*%s*%d%d%d%d$') or mw.ustring.match(str, '^(%a+)[%.]*%s+%d+,%s*%d%d%d%d$')
+	if month == nil then
+		return false
+	else
+		return is_valid_month(month)
+	end
+end
+
+local function is_year_only(str)
+	return mw.ustring.match(str, '^%d%d%d%d$')
+end
+
+local function already_has_template(str)
+	str = mw.ustring.gsub(str, '&amp;[Nn][Bb][Ss][Pp];', ' ')
+	return mw.ustring.match(str, '&lt;span') or mw.ustring.match(str, '&lt;time') or mw.ustring.match(str,'%(aged%s*%d+') or mw.ustring.match(str,'%(age%s*%d+')
+end
+
+local function sanatize_date(str)
+	-- Sanatize leading &amp; trailing whitespace (this caused an issue before it was implemented)
+	str = mw.ustring.gsub(str,'^%s*','')
+	str = mw.ustring.gsub(str,'%s*$','')
+	-- Sanatize ordinals
+	str = mw.ustring.gsub(str, '(%d+)st([,%s])', '%1%2')
+	str = mw.ustring.gsub(str, '(%d+)rd([,%s])', '%1%2')
+	str = mw.ustring.gsub(str, '(%d+)th([,%s])', '%1%2')
+	str = mw.ustring.gsub(str, '(%d+)nd([,%s])', '%1%2')
+	return str
+end
+
+local function parse_birth(args)
+	local birth_date = args['birth_date'] or ''
+	local death_date = args['death_date'] or ''
+	local disap_date = args['disappeared_date'] or ''
+	local original = birth_date
+	
+	birth_date = sanatize_date(birth_date)
+	death_date = sanatize_date(death_date)
+	disap_date = sanatize_date(disap_date)
+
+	-- Check for bad inputs. This used to be covered by a switch statement in infoboxes
+	if check_for_invalid_date(birth_date) then
+		return original..invalid_date_category
+	end
+
+	if already_has_template(birth_date) then
+		return original
+	end
+
+	if is_valid_date(birth_date) then
+		local location = mw.ustring.find(birth_date, '%d%d%d%d')
+		local extra = mw.ustring.sub(birth_date, location+4) .. tracking_category
+		local date = mw.ustring.sub(birth_date, 1,location+3)
+		local year, month, day = parse_date(date)
+		local format = date_format(date)
+		if death_date == '' and disap_date == '' then
+			return expand_template(TEMPLATES.birth_date_and_age, {year, month, day, [format] = 'yes'}) .. extra
+		elseif is_year_only(death_date) or is_valid_date(death_date) or is_month_year_only(death_date) then
+			return expand_template(TEMPLATES.birth_date, {year, month, day, [format] = 'yes'}) .. extra
+		else
+			-- death_date is not a valid string (example: 'unknown')
+			return original
+		end
+	end
+	if is_month_year_only(birth_date) then
+
+		local year = Date('1 '..birth_date):text('%Y')
+		local month = Date('1 '..birth_date):text('%-m')
+		local location = mw.ustring.find(birth_date, '%d%d%d%d')
+		local date = mw.ustring.sub(birth_date, 1,location+3)
+		local extra = mw.ustring.sub(birth_date, location+4) .. tracking_category
+
+		if death_date == '' and disap_date == '' then
+			return expand_template(TEMPLATES.birth_year_and_age, {year, month}) .. extra
+		elseif is_year_only(death_date) or is_valid_date(death_date) or is_month_year_only(death_date) then
+			return expand_template(TEMPLATES.birth_year, {date}) .. extra
+		else
+			-- death_date is not a valid string (example: 'unknown')
+			return original
+		end
+
+	end
+	if is_year_only(birth_date) then
+		local date = mw.ustring.sub(birth_date, 1, 5)
+		local extra = mw.ustring.sub(birth_date, 5) .. tracking_category
+		if death_date == '' and disap_date == '' then
+			return expand_template(TEMPLATES.birth_year_and_age, {date}) .. extra
+		elseif is_year_only(death_date) or is_valid_date(death_date) then
+			return expand_template(TEMPLATES.birth_year, {date}) .. extra
+		else
+			-- death_date is not a valid string (example: 'unknown')
+			return original
+		end
+	end
+
+	return original
+end
+
+local function parse_death(args)
+	local birth_date = args['birth_date'] or ''
+	local death_date = args['death_date'] or ''
+	local original = death_date
+
+	birth_date = sanatize_date(birth_date)
+	death_date = sanatize_date(death_date)
+
+	-- Check for bad inputs. This used to be covered by a switch statement in infoboxes
+	if check_for_invalid_date(death_date) then
+		return original..invalid_date_category
+	end
+
+	if already_has_template(death_date) then
+		return original
+	end
+
+	if is_valid_date(death_date) or is_month_year_only(death_date) then
+		local location = mw.ustring.find(death_date, '%d%d%d%d')
+		local date = mw.ustring.sub(death_date, 1,location+3)
+		local extra = mw.ustring.sub(death_date, location+4) .. tracking_category
+		local format = date_format(date)
+
+		if birth_date == '' then
+			if is_month_year_only(death_date) then
+				return expand_template(TEMPLATES.death_date_text, {date}) .. extra
+			end
+			local year, month, day = parse_date(date)
+			return expand_template(TEMPLATES.death_date, {year, month, day, [format] = 'yes'}) .. extra
+		else
+			if is_year_only(birth_date) then
+				location =  mw.ustring.find(birth_date, '%d%d%d%d')
+				local bd = mw.ustring.sub(birth_date, 1,location+3)
+				if is_month_year_only(death_date) then
+					return expand_template(TEMPLATES.death_date_and_age, {date, bd}) .. extra
+				end
+
+				return expand_template(TEMPLATES.death_date_and_age, {date, bd, [format] = 'yes'}) .. extra
+			elseif is_valid_date(birth_date) or is_month_year_only(birth_date) then
+				location =  mw.ustring.find(birth_date, '%d%d%d%d')
+				local bd = mw.ustring.sub(birth_date, 1,location+3)
+
+				if (is_month_year_only(death_date)) then
+					return expand_template(TEMPLATES.death_date_and_age, {date, bd}) .. extra
+				end
+
+				return expand_template(TEMPLATES.death_date_and_age, {date, bd, [format] = 'yes'}) .. extra
+			end
+		end
+	end
+
+	if is_year_only(death_date) then
+		if birth_date == '' then
+			return  expand_template(TEMPLATES.death_year, {mw.ustring.sub(death_date, 1, 5)}) .. mw.ustring.sub(death_date, 5) .. tracking_category
+		else
+			if is_year_only(birth_date) then
+				return  expand_template(TEMPLATES.death_year_and_age, {mw.ustring.sub(death_date, 1, 5), mw.ustring.sub(birth_date, 1, 5)}) .. mw.ustring.sub(death_date, 5) .. tracking_category
+			else
+				if is_valid_date(birth_date) then
+					local location = mw.ustring.find(death_date, '%d%d%d%d')
+					local date = mw.ustring.sub(death_date, 1,location+3)
+					local extra = mw.ustring.sub(death_date, location+4) .. tracking_category
+
+					location =  mw.ustring.find(birth_date, '%d%d%d%d')
+					local bd = mw.ustring.sub(birth_date, 1,location+3)
+
+					return  expand_template(TEMPLATES.death_date_and_age, {date, bd}) .. extra
+				end
+			end
+		end
+	end
+
+	return original
+end
+
+function p.birth(frame)
+	return parse_birth(getArgs(frame, {parentFirst = true}))
+end
+
+function p.death(frame)
+	return parse_death(getArgs(frame, {parentFirst = true}))
+end
+
+return p</text>
+      <sha1>qm4tcdz8g5vkfc018ay0tu8zlfditks</sha1>
+    </revision>
+    <revision>
+      <id>3407359</id>
+      <parentid>3407358</parentid>
+      <timestamp>2026-03-12T20:21:26Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3407358</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="9137" sha1="cln3e50apsaohrqgilz1jf2s9se1zlq" xml:space="preserve">require("strict")
+
+local p = {}
+
+local TEMPLATES = {
+	birth_date = "Birth date",
+	birth_date_and_age = "Birth date and age",
+	birth_year = "Birth year",
+	birth_year_and_age = "Birth year and age",
+	death_date = "Death date",
+	death_date_text = "Death date text",
+	death_date_and_age = "Death date and age",
+	death_year = "Death year",
+	death_year_and_age = "Death year and age",
+}
+local invalid_date_category = ''
+local tracking_category = ''
+local Date = require('Module:Date')._Date
+local getArgs = require('Module:Arguments').getArgs
+
+if mw.title.getCurrentTitle():inffs(0, 828, 829) then
+	-- Category only in ffs: 0=article, 828=module &amp; 829=module talk (last 2 needed for testcases)
+	tracking_category = '[[Category:Pages where birth or death is being automatically determined]]'
+	invalid_date_category = '[[Category:Pages with invalid birth or death dates]]'
+end
+
+local function check_for_invalid_date(str)
+	return mw.ustring.match(str, '^%?') or mw.ustring.match(str, '^%d%d%?') or mw.ustring.match(str, '^[Uu]nk')
+end
+
+local function expand_template(template, args)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = args}
+end
+
+local function parse_date(str)
+	local date = Date(str)
+	if date then
+		return tostring(date.year), tostring(date.month), tostring(date.day)
+	end
+	-- TODO: Date has not been parsed. Need to work out what to do. For now, throw an error.
+	-- Example where this can occur: "birth_date = 22 December 1946" at [[Maurice Pasternak]].
+	-- There was a nonbreaking space after "22" whidh Date does not accept.
+	error('Module:Person_date parse_date invalid date: "' .. tostring(str) .. '"')
+end
+
+local function date_format(str)
+	if mw.ustring.match (str, '^%d+%s*%a+[%.]*%s*%d%d%d%d$') then
+		return 'df'
+	elseif mw.ustring.match(str, '^%a+[%.]*%s+%d+,%s*%d%d%d%d$') then
+		return 'mf'
+	else
+		return 'ERROR'
+	end
+
+end
+
+local function is_valid_month (str)
+	str = string.upper(mw.ustring.sub(str,1,1))..string.lower(mw.ustring.sub(str,2))
+
+	local months = {'Jan','Jan.','January','Feb','Feb.','February','Mar','March','Apr','Apr.','April','May','Jun','Jun.','June','Jul','Jul.','July','Aug','Aug.','August','Sep','Sept','Sep.','Sept.','September','Oct','Oct.','October','Nov','Nov','November','Dec','Dec.','December'}
+	for index, value in ipairs(months) do
+		if value == str then
+			return true
+		end
+	end
+	return false
+end
+
+local function is_month_year_only(str)
+	local month = mw.ustring.match(str, '^(%a+)[%.]*%s+%d%d%d%d$')
+	if month == nil then
+		return false
+	else
+		return is_valid_month(month)
+	end
+end
+
+local function is_valid_date(str)
+	local month = mw.ustring.match (str, '^%d+%s*(%a+)[%.]*%s*%d%d%d%d$') or mw.ustring.match(str, '^(%a+)[%.]*%s+%d+,%s*%d%d%d%d$')
+	if month == nil then
+		return false
+	else
+		return is_valid_month(month)
+	end
+end
+
+local function is_year_only(str)
+	return mw.ustring.match(str, '^%d%d%d%d$')
+end
+
+local function already_has_template(str)
+	str = mw.ustring.gsub(str, '&amp;[Nn][Bb][Ss][Pp];', ' ')
+	return mw.ustring.match(str, '&lt;span') or mw.ustring.match(str, '&lt;time') or mw.ustring.match(str,'%(aged%s*%d+') or mw.ustring.match(str,'%(age%s*%d+')
+end
+
+local function sanatize_date(str)
+	-- Sanatize leading &amp; trailing whitespace (this caused an issue before it was implemented)
+	str = mw.ustring.gsub(str,'^%s*','')
+	str = mw.ustring.gsub(str,'%s*$','')
+	-- Sanatize ordinals
+	str = mw.ustring.gsub(str, '(%d+)st([,%s])', '%1%2')
+	str = mw.ustring.gsub(str, '(%d+)rd([,%s])', '%1%2')
+	str = mw.ustring.gsub(str, '(%d+)th([,%s])', '%1%2')
+	str = mw.ustring.gsub(str, '(%d+)nd([,%s])', '%1%2')
+	return str
+end
+
+local function parse_birth(args)
+	local birth_date = args['birth_date'] or ''
+	local death_date = args['death_date'] or ''
+	local disap_date = args['disappeared_date'] or ''
+	local original = birth_date
+	
+	birth_date = sanatize_date(birth_date)
+	death_date = sanatize_date(death_date)
+	disap_date = sanatize_date(disap_date)
+
+	-- Check for bad inputs. This used to be covered by a switch statement in infoboxes
+	if check_for_invalid_date(birth_date) then
+		return original..invalid_date_category
+	end
+
+	if already_has_template(birth_date) then
+		return original
+	end
+
+	if is_valid_date(birth_date) then
+		local location = mw.ustring.find(birth_date, '%d%d%d%d')
+		local extra = mw.ustring.sub(birth_date, location+4) .. tracking_category
+		local date = mw.ustring.sub(birth_date, 1,location+3)
+		local year, month, day = parse_date(date)
+		local format = date_format(date)
+		if death_date == '' and disap_date == '' then
+			return expand_template(TEMPLATES.birth_date_and_age, {year, month, day, [format] = 'yes'}) .. extra
+		elseif is_year_only(death_date) or is_valid_date(death_date) or is_month_year_only(death_date) then
+			return expand_template(TEMPLATES.birth_date, {year, month, day, [format] = 'yes'}) .. extra
+		else
+			-- death_date is not a valid string (example: 'unknown')
+			return original
+		end
+	end
+	if is_month_year_only(birth_date) then
+
+		local year = Date('1 '..birth_date):text('%Y')
+		local month = Date('1 '..birth_date):text('%-m')
+		local location = mw.ustring.find(birth_date, '%d%d%d%d')
+		local date = mw.ustring.sub(birth_date, 1,location+3)
+		local extra = mw.ustring.sub(birth_date, location+4) .. tracking_category
+
+		if death_date == '' and disap_date == '' then
+			return expand_template(TEMPLATES.birth_year_and_age, {year, month}) .. extra
+		elseif is_year_only(death_date) or is_valid_date(death_date) or is_month_year_only(death_date) then
+			return expand_template(TEMPLATES.birth_year, {date}) .. extra
+		else
+			-- death_date is not a valid string (example: 'unknown')
+			return original
+		end
+
+	end
+	if is_year_only(birth_date) then
+		local date = mw.ustring.sub(birth_date, 1, 5)
+		local extra = mw.ustring.sub(birth_date, 5) .. tracking_category
+		if death_date == '' and disap_date == '' then
+			return expand_template(TEMPLATES.birth_year_and_age, {date}) .. extra
+		elseif is_year_only(death_date) or is_valid_date(death_date) then
+			return expand_template(TEMPLATES.birth_year, {date}) .. extra
+		else
+			-- death_date is not a valid string (example: 'unknown')
+			return original
+		end
+	end
+
+	return original
+end
+
+local function parse_death(args)
+	local birth_date = args['birth_date'] or ''
+	local death_date = args['death_date'] or ''
+	local original = death_date
+
+	birth_date = sanatize_date(birth_date)
+	death_date = sanatize_date(death_date)
+
+	-- Check for bad inputs. This used to be covered by a switch statement in infoboxes
+	if check_for_invalid_date(death_date) then
+		return original..invalid_date_category
+	end
+
+	if already_has_template(death_date) then
+		return original
+	end
+
+	if is_valid_date(death_date) or is_month_year_only(death_date) then
+		local location = mw.ustring.find(death_date, '%d%d%d%d')
+		local date = mw.ustring.sub(death_date, 1,location+3)
+		local extra = mw.ustring.sub(death_date, location+4) .. tracking_category
+		local format = date_format(date)
+
+		if birth_date == '' then
+			if is_month_year_only(death_date) then
+				return expand_template(TEMPLATES.death_date_text, {date}) .. extra
+			end
+			local year, month, day = parse_date(date)
+			return expand_template(TEMPLATES.death_date, {year, month, day, [format] = 'yes'}) .. extra
+		else
+			if is_year_only(birth_date) then
+				location =  mw.ustring.find(birth_date, '%d%d%d%d')
+				local bd = mw.ustring.sub(birth_date, 1,location+3)
+				if is_month_year_only(death_date) then
+					return expand_template(TEMPLATES.death_date_and_age, {date, bd}) .. extra
+				end
+
+				return expand_template(TEMPLATES.death_date_and_age, {date, bd, [format] = 'yes'}) .. extra
+			elseif is_valid_date(birth_date) or is_month_year_only(birth_date) then
+				location =  mw.ustring.find(birth_date, '%d%d%d%d')
+				local bd = mw.ustring.sub(birth_date, 1,location+3)
+
+				if (is_month_year_only(death_date)) then
+					return expand_template(TEMPLATES.death_date_and_age, {date, bd}) .. extra
+				end
+
+				return expand_template(TEMPLATES.death_date_and_age, {date, bd, [format] = 'yes'}) .. extra
+			end
+		end
+	end
+
+	if is_year_only(death_date) then
+		if birth_date == '' then
+			return  expand_template(TEMPLATES.death_year, {mw.ustring.sub(death_date, 1, 5)}) .. mw.ustring.sub(death_date, 5) .. tracking_category
+		else
+			if is_year_only(birth_date) then
+				return  expand_template(TEMPLATES.death_year_and_age, {mw.ustring.sub(death_date, 1, 5), mw.ustring.sub(birth_date, 1, 5)}) .. mw.ustring.sub(death_date, 5) .. tracking_category
+			else
+				if is_valid_date(birth_date) then
+					local location = mw.ustring.find(death_date, '%d%d%d%d')
+					local date = mw.ustring.sub(death_date, 1,location+3)
+					local extra = mw.ustring.sub(death_date, location+4) .. tracking_category
+
+					location =  mw.ustring.find(birth_date, '%d%d%d%d')
+					local bd = mw.ustring.sub(birth_date, 1,location+3)
+
+					return  expand_template(TEMPLATES.death_date_and_age, {date, bd}) .. extra
+				end
+			end
+		end
+	end
+
+	return original
+end
+
+function p.birth(frame)
+	return parse_birth(getArgs(frame, {parentFirst = true}))
+end
+
+function p.death(frame)
+	return parse_death(getArgs(frame, {parentFirst = true}))
+end
+
+return p</text>
+      <sha1>cln3e50apsaohrqgilz1jf2s9se1zlq</sha1>
+    </revision>
+    <revision>
+      <id>3408256</id>
+      <parentid>3407359</parentid>
+      <timestamp>2026-03-12T20:30:50Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <comment>no longer needed or supported</comment>
+      <origin>3408256</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="9151" sha1="qm4tcdz8g5vkfc018ay0tu8zlfditks" xml:space="preserve">require("strict")
+
+local p = {}
+
+local TEMPLATES = {
+	birth_date = "Birth date",
+	birth_date_and_age = "Birth date and age",
+	birth_year = "Birth year",
+	birth_year_and_age = "Birth year and age",
+	death_date = "Death date",
+	death_date_text = "Death date text",
+	death_date_and_age = "Death date and age",
+	death_year = "Death year",
+	death_year_and_age = "Death year and age",
+}
+local invalid_date_category = ''
+local tracking_category = ''
+local Date = require('Module:Date')._Date
+local getArgs = require('Module:Arguments').getArgs
+
+if mw.title.getCurrentTitle():inNamespaces(0, 828, 829) then
+	-- Category only in namespaces: 0=article, 828=module &amp; 829=module talk (last 2 needed for testcases)
+	tracking_category = '[[Category:Pages where birth or death is being automatically determined]]'
+	invalid_date_category = '[[Category:Pages with invalid birth or death dates]]'
+end
+
+local function check_for_invalid_date(str)
+	return mw.ustring.match(str, '^%?') or mw.ustring.match(str, '^%d%d%?') or mw.ustring.match(str, '^[Uu]nk')
+end
+
+local function expand_template(template, args)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = args}
+end
+
+local function parse_date(str)
+	local date = Date(str)
+	if date then
+		return tostring(date.year), tostring(date.month), tostring(date.day)
+	end
+	-- TODO: Date has not been parsed. Need to work out what to do. For now, throw an error.
+	-- Example where this can occur: "birth_date = 22 December 1946" at [[Maurice Pasternak]].
+	-- There was a nonbreaking space after "22" whidh Date does not accept.
+	error('Module:Person_date parse_date invalid date: "' .. tostring(str) .. '"')
+end
+
+local function date_format(str)
+	if mw.ustring.match (str, '^%d+%s*%a+[%.]*%s*%d%d%d%d$') then
+		return 'df'
+	elseif mw.ustring.match(str, '^%a+[%.]*%s+%d+,%s*%d%d%d%d$') then
+		return 'mf'
+	else
+		return 'ERROR'
+	end
+
+end
+
+local function is_valid_month (str)
+	str = string.upper(mw.ustring.sub(str,1,1))..string.lower(mw.ustring.sub(str,2))
+
+	local months = {'Jan','Jan.','January','Feb','Feb.','February','Mar','March','Apr','Apr.','April','May','Jun','Jun.','June','Jul','Jul.','July','Aug','Aug.','August','Sep','Sept','Sep.','Sept.','September','Oct','Oct.','October','Nov','Nov','November','Dec','Dec.','December'}
+	for index, value in ipairs(months) do
+		if value == str then
+			return true
+		end
+	end
+	return false
+end
+
+local function is_month_year_only(str)
+	local month = mw.ustring.match(str, '^(%a+)[%.]*%s+%d%d%d%d$')
+	if month == nil then
+		return false
+	else
+		return is_valid_month(month)
+	end
+end
+
+local function is_valid_date(str)
+	local month = mw.ustring.match (str, '^%d+%s*(%a+)[%.]*%s*%d%d%d%d$') or mw.ustring.match(str, '^(%a+)[%.]*%s+%d+,%s*%d%d%d%d$')
+	if month == nil then
+		return false
+	else
+		return is_valid_month(month)
+	end
+end
+
+local function is_year_only(str)
+	return mw.ustring.match(str, '^%d%d%d%d$')
+end
+
+local function already_has_template(str)
+	str = mw.ustring.gsub(str, '&amp;[Nn][Bb][Ss][Pp];', ' ')
+	return mw.ustring.match(str, '&lt;span') or mw.ustring.match(str, '&lt;time') or mw.ustring.match(str,'%(aged%s*%d+') or mw.ustring.match(str,'%(age%s*%d+')
+end
+
+local function sanatize_date(str)
+	-- Sanatize leading &amp; trailing whitespace (this caused an issue before it was implemented)
+	str = mw.ustring.gsub(str,'^%s*','')
+	str = mw.ustring.gsub(str,'%s*$','')
+	-- Sanatize ordinals
+	str = mw.ustring.gsub(str, '(%d+)st([,%s])', '%1%2')
+	str = mw.ustring.gsub(str, '(%d+)rd([,%s])', '%1%2')
+	str = mw.ustring.gsub(str, '(%d+)th([,%s])', '%1%2')
+	str = mw.ustring.gsub(str, '(%d+)nd([,%s])', '%1%2')
+	return str
+end
+
+local function parse_birth(args)
+	local birth_date = args['birth_date'] or ''
+	local death_date = args['death_date'] or ''
+	local disap_date = args['disappeared_date'] or ''
+	local original = birth_date
+	
+	birth_date = sanatize_date(birth_date)
+	death_date = sanatize_date(death_date)
+	disap_date = sanatize_date(disap_date)
+
+	-- Check for bad inputs. This used to be covered by a switch statement in infoboxes
+	if check_for_invalid_date(birth_date) then
+		return original..invalid_date_category
+	end
+
+	if already_has_template(birth_date) then
+		return original
+	end
+
+	if is_valid_date(birth_date) then
+		local location = mw.ustring.find(birth_date, '%d%d%d%d')
+		local extra = mw.ustring.sub(birth_date, location+4) .. tracking_category
+		local date = mw.ustring.sub(birth_date, 1,location+3)
+		local year, month, day = parse_date(date)
+		local format = date_format(date)
+		if death_date == '' and disap_date == '' then
+			return expand_template(TEMPLATES.birth_date_and_age, {year, month, day, [format] = 'yes'}) .. extra
+		elseif is_year_only(death_date) or is_valid_date(death_date) or is_month_year_only(death_date) then
+			return expand_template(TEMPLATES.birth_date, {year, month, day, [format] = 'yes'}) .. extra
+		else
+			-- death_date is not a valid string (example: 'unknown')
+			return original
+		end
+	end
+	if is_month_year_only(birth_date) then
+
+		local year = Date('1 '..birth_date):text('%Y')
+		local month = Date('1 '..birth_date):text('%-m')
+		local location = mw.ustring.find(birth_date, '%d%d%d%d')
+		local date = mw.ustring.sub(birth_date, 1,location+3)
+		local extra = mw.ustring.sub(birth_date, location+4) .. tracking_category
+
+		if death_date == '' and disap_date == '' then
+			return expand_template(TEMPLATES.birth_year_and_age, {year, month}) .. extra
+		elseif is_year_only(death_date) or is_valid_date(death_date) or is_month_year_only(death_date) then
+			return expand_template(TEMPLATES.birth_year, {date}) .. extra
+		else
+			-- death_date is not a valid string (example: 'unknown')
+			return original
+		end
+
+	end
+	if is_year_only(birth_date) then
+		local date = mw.ustring.sub(birth_date, 1, 5)
+		local extra = mw.ustring.sub(birth_date, 5) .. tracking_category
+		if death_date == '' and disap_date == '' then
+			return expand_template(TEMPLATES.birth_year_and_age, {date}) .. extra
+		elseif is_year_only(death_date) or is_valid_date(death_date) then
+			return expand_template(TEMPLATES.birth_year, {date}) .. extra
+		else
+			-- death_date is not a valid string (example: 'unknown')
+			return original
+		end
+	end
+
+	return original
+end
+
+local function parse_death(args)
+	local birth_date = args['birth_date'] or ''
+	local death_date = args['death_date'] or ''
+	local original = death_date
+
+	birth_date = sanatize_date(birth_date)
+	death_date = sanatize_date(death_date)
+
+	-- Check for bad inputs. This used to be covered by a switch statement in infoboxes
+	if check_for_invalid_date(death_date) then
+		return original..invalid_date_category
+	end
+
+	if already_has_template(death_date) then
+		return original
+	end
+
+	if is_valid_date(death_date) or is_month_year_only(death_date) then
+		local location = mw.ustring.find(death_date, '%d%d%d%d')
+		local date = mw.ustring.sub(death_date, 1,location+3)
+		local extra = mw.ustring.sub(death_date, location+4) .. tracking_category
+		local format = date_format(date)
+
+		if birth_date == '' then
+			if is_month_year_only(death_date) then
+				return expand_template(TEMPLATES.death_date_text, {date}) .. extra
+			end
+			local year, month, day = parse_date(date)
+			return expand_template(TEMPLATES.death_date, {year, month, day, [format] = 'yes'}) .. extra
+		else
+			if is_year_only(birth_date) then
+				location =  mw.ustring.find(birth_date, '%d%d%d%d')
+				local bd = mw.ustring.sub(birth_date, 1,location+3)
+				if is_month_year_only(death_date) then
+					return expand_template(TEMPLATES.death_date_and_age, {date, bd}) .. extra
+				end
+
+				return expand_template(TEMPLATES.death_date_and_age, {date, bd, [format] = 'yes'}) .. extra
+			elseif is_valid_date(birth_date) or is_month_year_only(birth_date) then
+				location =  mw.ustring.find(birth_date, '%d%d%d%d')
+				local bd = mw.ustring.sub(birth_date, 1,location+3)
+
+				if (is_month_year_only(death_date)) then
+					return expand_template(TEMPLATES.death_date_and_age, {date, bd}) .. extra
+				end
+
+				return expand_template(TEMPLATES.death_date_and_age, {date, bd, [format] = 'yes'}) .. extra
+			end
+		end
+	end
+
+	if is_year_only(death_date) then
+		if birth_date == '' then
+			return  expand_template(TEMPLATES.death_year, {mw.ustring.sub(death_date, 1, 5)}) .. mw.ustring.sub(death_date, 5) .. tracking_category
+		else
+			if is_year_only(birth_date) then
+				return  expand_template(TEMPLATES.death_year_and_age, {mw.ustring.sub(death_date, 1, 5), mw.ustring.sub(birth_date, 1, 5)}) .. mw.ustring.sub(death_date, 5) .. tracking_category
+			else
+				if is_valid_date(birth_date) then
+					local location = mw.ustring.find(death_date, '%d%d%d%d')
+					local date = mw.ustring.sub(death_date, 1,location+3)
+					local extra = mw.ustring.sub(death_date, location+4) .. tracking_category
+
+					location =  mw.ustring.find(birth_date, '%d%d%d%d')
+					local bd = mw.ustring.sub(birth_date, 1,location+3)
+
+					return  expand_template(TEMPLATES.death_date_and_age, {date, bd}) .. extra
+				end
+			end
+		end
+	end
+
+	return original
+end
+
+function p.birth(frame)
+	return parse_birth(getArgs(frame, {parentFirst = true}))
+end
+
+function p.death(frame)
+	return parse_death(getArgs(frame, {parentFirst = true}))
+end
+
+return p</text>
+      <sha1>qm4tcdz8g5vkfc018ay0tu8zlfditks</sha1>
+    </revision>
+    <revision>
+      <id>3408257</id>
+      <parentid>3408256</parentid>
+      <timestamp>2026-03-12T20:30:50Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting</comment>
+      <origin>3408256</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="9151" sha1="qm4tcdz8g5vkfc018ay0tu8zlfditks" xml:space="preserve">require("strict")
+
+local p = {}
+
+local TEMPLATES = {
+	birth_date = "Birth date",
+	birth_date_and_age = "Birth date and age",
+	birth_year = "Birth year",
+	birth_year_and_age = "Birth year and age",
+	death_date = "Death date",
+	death_date_text = "Death date text",
+	death_date_and_age = "Death date and age",
+	death_year = "Death year",
+	death_year_and_age = "Death year and age",
+}
+local invalid_date_category = ''
+local tracking_category = ''
+local Date = require('Module:Date')._Date
+local getArgs = require('Module:Arguments').getArgs
+
+if mw.title.getCurrentTitle():inNamespaces(0, 828, 829) then
+	-- Category only in namespaces: 0=article, 828=module &amp; 829=module talk (last 2 needed for testcases)
+	tracking_category = '[[Category:Pages where birth or death is being automatically determined]]'
+	invalid_date_category = '[[Category:Pages with invalid birth or death dates]]'
+end
+
+local function check_for_invalid_date(str)
+	return mw.ustring.match(str, '^%?') or mw.ustring.match(str, '^%d%d%?') or mw.ustring.match(str, '^[Uu]nk')
+end
+
+local function expand_template(template, args)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = args}
+end
+
+local function parse_date(str)
+	local date = Date(str)
+	if date then
+		return tostring(date.year), tostring(date.month), tostring(date.day)
+	end
+	-- TODO: Date has not been parsed. Need to work out what to do. For now, throw an error.
+	-- Example where this can occur: "birth_date = 22 December 1946" at [[Maurice Pasternak]].
+	-- There was a nonbreaking space after "22" whidh Date does not accept.
+	error('Module:Person_date parse_date invalid date: "' .. tostring(str) .. '"')
+end
+
+local function date_format(str)
+	if mw.ustring.match (str, '^%d+%s*%a+[%.]*%s*%d%d%d%d$') then
+		return 'df'
+	elseif mw.ustring.match(str, '^%a+[%.]*%s+%d+,%s*%d%d%d%d$') then
+		return 'mf'
+	else
+		return 'ERROR'
+	end
+
+end
+
+local function is_valid_month (str)
+	str = string.upper(mw.ustring.sub(str,1,1))..string.lower(mw.ustring.sub(str,2))
+
+	local months = {'Jan','Jan.','January','Feb','Feb.','February','Mar','March','Apr','Apr.','April','May','Jun','Jun.','June','Jul','Jul.','July','Aug','Aug.','August','Sep','Sept','Sep.','Sept.','September','Oct','Oct.','October','Nov','Nov','November','Dec','Dec.','December'}
+	for index, value in ipairs(months) do
+		if value == str then
+			return true
+		end
+	end
+	return false
+end
+
+local function is_month_year_only(str)
+	local month = mw.ustring.match(str, '^(%a+)[%.]*%s+%d%d%d%d$')
+	if month == nil then
+		return false
+	else
+		return is_valid_month(month)
+	end
+end
+
+local function is_valid_date(str)
+	local month = mw.ustring.match (str, '^%d+%s*(%a+)[%.]*%s*%d%d%d%d$') or mw.ustring.match(str, '^(%a+)[%.]*%s+%d+,%s*%d%d%d%d$')
+	if month == nil then
+		return false
+	else
+		return is_valid_month(month)
+	end
+end
+
+local function is_year_only(str)
+	return mw.ustring.match(str, '^%d%d%d%d$')
+end
+
+local function already_has_template(str)
+	str = mw.ustring.gsub(str, '&amp;[Nn][Bb][Ss][Pp];', ' ')
+	return mw.ustring.match(str, '&lt;span') or mw.ustring.match(str, '&lt;time') or mw.ustring.match(str,'%(aged%s*%d+') or mw.ustring.match(str,'%(age%s*%d+')
+end
+
+local function sanatize_date(str)
+	-- Sanatize leading &amp; trailing whitespace (this caused an issue before it was implemented)
+	str = mw.ustring.gsub(str,'^%s*','')
+	str = mw.ustring.gsub(str,'%s*$','')
+	-- Sanatize ordinals
+	str = mw.ustring.gsub(str, '(%d+)st([,%s])', '%1%2')
+	str = mw.ustring.gsub(str, '(%d+)rd([,%s])', '%1%2')
+	str = mw.ustring.gsub(str, '(%d+)th([,%s])', '%1%2')
+	str = mw.ustring.gsub(str, '(%d+)nd([,%s])', '%1%2')
+	return str
+end
+
+local function parse_birth(args)
+	local birth_date = args['birth_date'] or ''
+	local death_date = args['death_date'] or ''
+	local disap_date = args['disappeared_date'] or ''
+	local original = birth_date
+	
+	birth_date = sanatize_date(birth_date)
+	death_date = sanatize_date(death_date)
+	disap_date = sanatize_date(disap_date)
+
+	-- Check for bad inputs. This used to be covered by a switch statement in infoboxes
+	if check_for_invalid_date(birth_date) then
+		return original..invalid_date_category
+	end
+
+	if already_has_template(birth_date) then
+		return original
+	end
+
+	if is_valid_date(birth_date) then
+		local location = mw.ustring.find(birth_date, '%d%d%d%d')
+		local extra = mw.ustring.sub(birth_date, location+4) .. tracking_category
+		local date = mw.ustring.sub(birth_date, 1,location+3)
+		local year, month, day = parse_date(date)
+		local format = date_format(date)
+		if death_date == '' and disap_date == '' then
+			return expand_template(TEMPLATES.birth_date_and_age, {year, month, day, [format] = 'yes'}) .. extra
+		elseif is_year_only(death_date) or is_valid_date(death_date) or is_month_year_only(death_date) then
+			return expand_template(TEMPLATES.birth_date, {year, month, day, [format] = 'yes'}) .. extra
+		else
+			-- death_date is not a valid string (example: 'unknown')
+			return original
+		end
+	end
+	if is_month_year_only(birth_date) then
+
+		local year = Date('1 '..birth_date):text('%Y')
+		local month = Date('1 '..birth_date):text('%-m')
+		local location = mw.ustring.find(birth_date, '%d%d%d%d')
+		local date = mw.ustring.sub(birth_date, 1,location+3)
+		local extra = mw.ustring.sub(birth_date, location+4) .. tracking_category
+
+		if death_date == '' and disap_date == '' then
+			return expand_template(TEMPLATES.birth_year_and_age, {year, month}) .. extra
+		elseif is_year_only(death_date) or is_valid_date(death_date) or is_month_year_only(death_date) then
+			return expand_template(TEMPLATES.birth_year, {date}) .. extra
+		else
+			-- death_date is not a valid string (example: 'unknown')
+			return original
+		end
+
+	end
+	if is_year_only(birth_date) then
+		local date = mw.ustring.sub(birth_date, 1, 5)
+		local extra = mw.ustring.sub(birth_date, 5) .. tracking_category
+		if death_date == '' and disap_date == '' then
+			return expand_template(TEMPLATES.birth_year_and_age, {date}) .. extra
+		elseif is_year_only(death_date) or is_valid_date(death_date) then
+			return expand_template(TEMPLATES.birth_year, {date}) .. extra
+		else
+			-- death_date is not a valid string (example: 'unknown')
+			return original
+		end
+	end
+
+	return original
+end
+
+local function parse_death(args)
+	local birth_date = args['birth_date'] or ''
+	local death_date = args['death_date'] or ''
+	local original = death_date
+
+	birth_date = sanatize_date(birth_date)
+	death_date = sanatize_date(death_date)
+
+	-- Check for bad inputs. This used to be covered by a switch statement in infoboxes
+	if check_for_invalid_date(death_date) then
+		return original..invalid_date_category
+	end
+
+	if already_has_template(death_date) then
+		return original
+	end
+
+	if is_valid_date(death_date) or is_month_year_only(death_date) then
+		local location = mw.ustring.find(death_date, '%d%d%d%d')
+		local date = mw.ustring.sub(death_date, 1,location+3)
+		local extra = mw.ustring.sub(death_date, location+4) .. tracking_category
+		local format = date_format(date)
+
+		if birth_date == '' then
+			if is_month_year_only(death_date) then
+				return expand_template(TEMPLATES.death_date_text, {date}) .. extra
+			end
+			local year, month, day = parse_date(date)
+			return expand_template(TEMPLATES.death_date, {year, month, day, [format] = 'yes'}) .. extra
+		else
+			if is_year_only(birth_date) then
+				location =  mw.ustring.find(birth_date, '%d%d%d%d')
+				local bd = mw.ustring.sub(birth_date, 1,location+3)
+				if is_month_year_only(death_date) then
+					return expand_template(TEMPLATES.death_date_and_age, {date, bd}) .. extra
+				end
+
+				return expand_template(TEMPLATES.death_date_and_age, {date, bd, [format] = 'yes'}) .. extra
+			elseif is_valid_date(birth_date) or is_month_year_only(birth_date) then
+				location =  mw.ustring.find(birth_date, '%d%d%d%d')
+				local bd = mw.ustring.sub(birth_date, 1,location+3)
+
+				if (is_month_year_only(death_date)) then
+					return expand_template(TEMPLATES.death_date_and_age, {date, bd}) .. extra
+				end
+
+				return expand_template(TEMPLATES.death_date_and_age, {date, bd, [format] = 'yes'}) .. extra
+			end
+		end
+	end
+
+	if is_year_only(death_date) then
+		if birth_date == '' then
+			return  expand_template(TEMPLATES.death_year, {mw.ustring.sub(death_date, 1, 5)}) .. mw.ustring.sub(death_date, 5) .. tracking_category
+		else
+			if is_year_only(birth_date) then
+				return  expand_template(TEMPLATES.death_year_and_age, {mw.ustring.sub(death_date, 1, 5), mw.ustring.sub(birth_date, 1, 5)}) .. mw.ustring.sub(death_date, 5) .. tracking_category
+			else
+				if is_valid_date(birth_date) then
+					local location = mw.ustring.find(death_date, '%d%d%d%d')
+					local date = mw.ustring.sub(death_date, 1,location+3)
+					local extra = mw.ustring.sub(death_date, location+4) .. tracking_category
+
+					location =  mw.ustring.find(birth_date, '%d%d%d%d')
+					local bd = mw.ustring.sub(birth_date, 1,location+3)
+
+					return  expand_template(TEMPLATES.death_date_and_age, {date, bd}) .. extra
+				end
+			end
+		end
+	end
+
+	return original
+end
+
+function p.birth(frame)
+	return parse_birth(getArgs(frame, {parentFirst = true}))
+end
+
+function p.death(frame)
+	return parse_death(getArgs(frame, {parentFirst = true}))
+end
+
+return p</text>
+      <sha1>qm4tcdz8g5vkfc018ay0tu8zlfditks</sha1>
+    </revision>
+    <revision>
+      <id>3646773</id>
+      <parentid>3408257</parentid>
+      <timestamp>2026-04-24T16:33:11Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting to fix error</comment>
+      <origin>3408256</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="9151" sha1="qm4tcdz8g5vkfc018ay0tu8zlfditks" xml:space="preserve">require("strict")
+
+local p = {}
+
+local TEMPLATES = {
+	birth_date = "Birth date",
+	birth_date_and_age = "Birth date and age",
+	birth_year = "Birth year",
+	birth_year_and_age = "Birth year and age",
+	death_date = "Death date",
+	death_date_text = "Death date text",
+	death_date_and_age = "Death date and age",
+	death_year = "Death year",
+	death_year_and_age = "Death year and age",
+}
+local invalid_date_category = ''
+local tracking_category = ''
+local Date = require('Module:Date')._Date
+local getArgs = require('Module:Arguments').getArgs
+
+if mw.title.getCurrentTitle():inNamespaces(0, 828, 829) then
+	-- Category only in namespaces: 0=article, 828=module &amp; 829=module talk (last 2 needed for testcases)
+	tracking_category = '[[Category:Pages where birth or death is being automatically determined]]'
+	invalid_date_category = '[[Category:Pages with invalid birth or death dates]]'
+end
+
+local function check_for_invalid_date(str)
+	return mw.ustring.match(str, '^%?') or mw.ustring.match(str, '^%d%d%?') or mw.ustring.match(str, '^[Uu]nk')
+end
+
+local function expand_template(template, args)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = args}
+end
+
+local function parse_date(str)
+	local date = Date(str)
+	if date then
+		return tostring(date.year), tostring(date.month), tostring(date.day)
+	end
+	-- TODO: Date has not been parsed. Need to work out what to do. For now, throw an error.
+	-- Example where this can occur: "birth_date = 22 December 1946" at [[Maurice Pasternak]].
+	-- There was a nonbreaking space after "22" whidh Date does not accept.
+	error('Module:Person_date parse_date invalid date: "' .. tostring(str) .. '"')
+end
+
+local function date_format(str)
+	if mw.ustring.match (str, '^%d+%s*%a+[%.]*%s*%d%d%d%d$') then
+		return 'df'
+	elseif mw.ustring.match(str, '^%a+[%.]*%s+%d+,%s*%d%d%d%d$') then
+		return 'mf'
+	else
+		return 'ERROR'
+	end
+
+end
+
+local function is_valid_month (str)
+	str = string.upper(mw.ustring.sub(str,1,1))..string.lower(mw.ustring.sub(str,2))
+
+	local months = {'Jan','Jan.','January','Feb','Feb.','February','Mar','March','Apr','Apr.','April','May','Jun','Jun.','June','Jul','Jul.','July','Aug','Aug.','August','Sep','Sept','Sep.','Sept.','September','Oct','Oct.','October','Nov','Nov','November','Dec','Dec.','December'}
+	for index, value in ipairs(months) do
+		if value == str then
+			return true
+		end
+	end
+	return false
+end
+
+local function is_month_year_only(str)
+	local month = mw.ustring.match(str, '^(%a+)[%.]*%s+%d%d%d%d$')
+	if month == nil then
+		return false
+	else
+		return is_valid_month(month)
+	end
+end
+
+local function is_valid_date(str)
+	local month = mw.ustring.match (str, '^%d+%s*(%a+)[%.]*%s*%d%d%d%d$') or mw.ustring.match(str, '^(%a+)[%.]*%s+%d+,%s*%d%d%d%d$')
+	if month == nil then
+		return false
+	else
+		return is_valid_month(month)
+	end
+end
+
+local function is_year_only(str)
+	return mw.ustring.match(str, '^%d%d%d%d$')
+end
+
+local function already_has_template(str)
+	str = mw.ustring.gsub(str, '&amp;[Nn][Bb][Ss][Pp];', ' ')
+	return mw.ustring.match(str, '&lt;span') or mw.ustring.match(str, '&lt;time') or mw.ustring.match(str,'%(aged%s*%d+') or mw.ustring.match(str,'%(age%s*%d+')
+end
+
+local function sanatize_date(str)
+	-- Sanatize leading &amp; trailing whitespace (this caused an issue before it was implemented)
+	str = mw.ustring.gsub(str,'^%s*','')
+	str = mw.ustring.gsub(str,'%s*$','')
+	-- Sanatize ordinals
+	str = mw.ustring.gsub(str, '(%d+)st([,%s])', '%1%2')
+	str = mw.ustring.gsub(str, '(%d+)rd([,%s])', '%1%2')
+	str = mw.ustring.gsub(str, '(%d+)th([,%s])', '%1%2')
+	str = mw.ustring.gsub(str, '(%d+)nd([,%s])', '%1%2')
+	return str
+end
+
+local function parse_birth(args)
+	local birth_date = args['birth_date'] or ''
+	local death_date = args['death_date'] or ''
+	local disap_date = args['disappeared_date'] or ''
+	local original = birth_date
+	
+	birth_date = sanatize_date(birth_date)
+	death_date = sanatize_date(death_date)
+	disap_date = sanatize_date(disap_date)
+
+	-- Check for bad inputs. This used to be covered by a switch statement in infoboxes
+	if check_for_invalid_date(birth_date) then
+		return original..invalid_date_category
+	end
+
+	if already_has_template(birth_date) then
+		return original
+	end
+
+	if is_valid_date(birth_date) then
+		local location = mw.ustring.find(birth_date, '%d%d%d%d')
+		local extra = mw.ustring.sub(birth_date, location+4) .. tracking_category
+		local date = mw.ustring.sub(birth_date, 1,location+3)
+		local year, month, day = parse_date(date)
+		local format = date_format(date)
+		if death_date == '' and disap_date == '' then
+			return expand_template(TEMPLATES.birth_date_and_age, {year, month, day, [format] = 'yes'}) .. extra
+		elseif is_year_only(death_date) or is_valid_date(death_date) or is_month_year_only(death_date) then
+			return expand_template(TEMPLATES.birth_date, {year, month, day, [format] = 'yes'}) .. extra
+		else
+			-- death_date is not a valid string (example: 'unknown')
+			return original
+		end
+	end
+	if is_month_year_only(birth_date) then
+
+		local year = Date('1 '..birth_date):text('%Y')
+		local month = Date('1 '..birth_date):text('%-m')
+		local location = mw.ustring.find(birth_date, '%d%d%d%d')
+		local date = mw.ustring.sub(birth_date, 1,location+3)
+		local extra = mw.ustring.sub(birth_date, location+4) .. tracking_category
+
+		if death_date == '' and disap_date == '' then
+			return expand_template(TEMPLATES.birth_year_and_age, {year, month}) .. extra
+		elseif is_year_only(death_date) or is_valid_date(death_date) or is_month_year_only(death_date) then
+			return expand_template(TEMPLATES.birth_year, {date}) .. extra
+		else
+			-- death_date is not a valid string (example: 'unknown')
+			return original
+		end
+
+	end
+	if is_year_only(birth_date) then
+		local date = mw.ustring.sub(birth_date, 1, 5)
+		local extra = mw.ustring.sub(birth_date, 5) .. tracking_category
+		if death_date == '' and disap_date == '' then
+			return expand_template(TEMPLATES.birth_year_and_age, {date}) .. extra
+		elseif is_year_only(death_date) or is_valid_date(death_date) then
+			return expand_template(TEMPLATES.birth_year, {date}) .. extra
+		else
+			-- death_date is not a valid string (example: 'unknown')
+			return original
+		end
+	end
+
+	return original
+end
+
+local function parse_death(args)
+	local birth_date = args['birth_date'] or ''
+	local death_date = args['death_date'] or ''
+	local original = death_date
+
+	birth_date = sanatize_date(birth_date)
+	death_date = sanatize_date(death_date)
+
+	-- Check for bad inputs. This used to be covered by a switch statement in infoboxes
+	if check_for_invalid_date(death_date) then
+		return original..invalid_date_category
+	end
+
+	if already_has_template(death_date) then
+		return original
+	end
+
+	if is_valid_date(death_date) or is_month_year_only(death_date) then
+		local location = mw.ustring.find(death_date, '%d%d%d%d')
+		local date = mw.ustring.sub(death_date, 1,location+3)
+		local extra = mw.ustring.sub(death_date, location+4) .. tracking_category
+		local format = date_format(date)
+
+		if birth_date == '' then
+			if is_month_year_only(death_date) then
+				return expand_template(TEMPLATES.death_date_text, {date}) .. extra
+			end
+			local year, month, day = parse_date(date)
+			return expand_template(TEMPLATES.death_date, {year, month, day, [format] = 'yes'}) .. extra
+		else
+			if is_year_only(birth_date) then
+				location =  mw.ustring.find(birth_date, '%d%d%d%d')
+				local bd = mw.ustring.sub(birth_date, 1,location+3)
+				if is_month_year_only(death_date) then
+					return expand_template(TEMPLATES.death_date_and_age, {date, bd}) .. extra
+				end
+
+				return expand_template(TEMPLATES.death_date_and_age, {date, bd, [format] = 'yes'}) .. extra
+			elseif is_valid_date(birth_date) or is_month_year_only(birth_date) then
+				location =  mw.ustring.find(birth_date, '%d%d%d%d')
+				local bd = mw.ustring.sub(birth_date, 1,location+3)
+
+				if (is_month_year_only(death_date)) then
+					return expand_template(TEMPLATES.death_date_and_age, {date, bd}) .. extra
+				end
+
+				return expand_template(TEMPLATES.death_date_and_age, {date, bd, [format] = 'yes'}) .. extra
+			end
+		end
+	end
+
+	if is_year_only(death_date) then
+		if birth_date == '' then
+			return  expand_template(TEMPLATES.death_year, {mw.ustring.sub(death_date, 1, 5)}) .. mw.ustring.sub(death_date, 5) .. tracking_category
+		else
+			if is_year_only(birth_date) then
+				return  expand_template(TEMPLATES.death_year_and_age, {mw.ustring.sub(death_date, 1, 5), mw.ustring.sub(birth_date, 1, 5)}) .. mw.ustring.sub(death_date, 5) .. tracking_category
+			else
+				if is_valid_date(birth_date) then
+					local location = mw.ustring.find(death_date, '%d%d%d%d')
+					local date = mw.ustring.sub(death_date, 1,location+3)
+					local extra = mw.ustring.sub(death_date, location+4) .. tracking_category
+
+					location =  mw.ustring.find(birth_date, '%d%d%d%d')
+					local bd = mw.ustring.sub(birth_date, 1,location+3)
+
+					return  expand_template(TEMPLATES.death_date_and_age, {date, bd}) .. extra
+				end
+			end
+		end
+	end
+
+	return original
+end
+
+function p.birth(frame)
+	return parse_birth(getArgs(frame, {parentFirst = true}))
+end
+
+function p.death(frame)
+	return parse_death(getArgs(frame, {parentFirst = true}))
+end
+
+return p</text>
+      <sha1>qm4tcdz8g5vkfc018ay0tu8zlfditks</sha1>
+    </revision>
+    <revision>
+      <id>3647077</id>
+      <parentid>3646773</parentid>
+      <timestamp>2026-04-24T16:34:24Z</timestamp>
+      <contributor>
+        <username>en&gt;Zackmann08</username>
+        <id>0</id>
+      </contributor>
+      <comment>no longer needed or supported</comment>
+      <origin>3408256</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="9151" sha1="qm4tcdz8g5vkfc018ay0tu8zlfditks" xml:space="preserve">require("strict")
+
+local p = {}
+
+local TEMPLATES = {
+	birth_date = "Birth date",
+	birth_date_and_age = "Birth date and age",
+	birth_year = "Birth year",
+	birth_year_and_age = "Birth year and age",
+	death_date = "Death date",
+	death_date_text = "Death date text",
+	death_date_and_age = "Death date and age",
+	death_year = "Death year",
+	death_year_and_age = "Death year and age",
+}
+local invalid_date_category = ''
+local tracking_category = ''
+local Date = require('Module:Date')._Date
+local getArgs = require('Module:Arguments').getArgs
+
+if mw.title.getCurrentTitle():inNamespaces(0, 828, 829) then
+	-- Category only in namespaces: 0=article, 828=module &amp; 829=module talk (last 2 needed for testcases)
+	tracking_category = '[[Category:Pages where birth or death is being automatically determined]]'
+	invalid_date_category = '[[Category:Pages with invalid birth or death dates]]'
+end
+
+local function check_for_invalid_date(str)
+	return mw.ustring.match(str, '^%?') or mw.ustring.match(str, '^%d%d%?') or mw.ustring.match(str, '^[Uu]nk')
+end
+
+local function expand_template(template, args)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = args}
+end
+
+local function parse_date(str)
+	local date = Date(str)
+	if date then
+		return tostring(date.year), tostring(date.month), tostring(date.day)
+	end
+	-- TODO: Date has not been parsed. Need to work out what to do. For now, throw an error.
+	-- Example where this can occur: "birth_date = 22 December 1946" at [[Maurice Pasternak]].
+	-- There was a nonbreaking space after "22" whidh Date does not accept.
+	error('Module:Person_date parse_date invalid date: "' .. tostring(str) .. '"')
+end
+
+local function date_format(str)
+	if mw.ustring.match (str, '^%d+%s*%a+[%.]*%s*%d%d%d%d$') then
+		return 'df'
+	elseif mw.ustring.match(str, '^%a+[%.]*%s+%d+,%s*%d%d%d%d$') then
+		return 'mf'
+	else
+		return 'ERROR'
+	end
+
+end
+
+local function is_valid_month (str)
+	str = string.upper(mw.ustring.sub(str,1,1))..string.lower(mw.ustring.sub(str,2))
+
+	local months = {'Jan','Jan.','January','Feb','Feb.','February','Mar','March','Apr','Apr.','April','May','Jun','Jun.','June','Jul','Jul.','July','Aug','Aug.','August','Sep','Sept','Sep.','Sept.','September','Oct','Oct.','October','Nov','Nov','November','Dec','Dec.','December'}
+	for index, value in ipairs(months) do
+		if value == str then
+			return true
+		end
+	end
+	return false
+end
+
+local function is_month_year_only(str)
+	local month = mw.ustring.match(str, '^(%a+)[%.]*%s+%d%d%d%d$')
+	if month == nil then
+		return false
+	else
+		return is_valid_month(month)
+	end
+end
+
+local function is_valid_date(str)
+	local month = mw.ustring.match (str, '^%d+%s*(%a+)[%.]*%s*%d%d%d%d$') or mw.ustring.match(str, '^(%a+)[%.]*%s+%d+,%s*%d%d%d%d$')
+	if month == nil then
+		return false
+	else
+		return is_valid_month(month)
+	end
+end
+
+local function is_year_only(str)
+	return mw.ustring.match(str, '^%d%d%d%d$')
+end
+
+local function already_has_template(str)
+	str = mw.ustring.gsub(str, '&amp;[Nn][Bb][Ss][Pp];', ' ')
+	return mw.ustring.match(str, '&lt;span') or mw.ustring.match(str, '&lt;time') or mw.ustring.match(str,'%(aged%s*%d+') or mw.ustring.match(str,'%(age%s*%d+')
+end
+
+local function sanatize_date(str)
+	-- Sanatize leading &amp; trailing whitespace (this caused an issue before it was implemented)
+	str = mw.ustring.gsub(str,'^%s*','')
+	str = mw.ustring.gsub(str,'%s*$','')
+	-- Sanatize ordinals
+	str = mw.ustring.gsub(str, '(%d+)st([,%s])', '%1%2')
+	str = mw.ustring.gsub(str, '(%d+)rd([,%s])', '%1%2')
+	str = mw.ustring.gsub(str, '(%d+)th([,%s])', '%1%2')
+	str = mw.ustring.gsub(str, '(%d+)nd([,%s])', '%1%2')
+	return str
+end
+
+local function parse_birth(args)
+	local birth_date = args['birth_date'] or ''
+	local death_date = args['death_date'] or ''
+	local disap_date = args['disappeared_date'] or ''
+	local original = birth_date
+	
+	birth_date = sanatize_date(birth_date)
+	death_date = sanatize_date(death_date)
+	disap_date = sanatize_date(disap_date)
+
+	-- Check for bad inputs. This used to be covered by a switch statement in infoboxes
+	if check_for_invalid_date(birth_date) then
+		return original..invalid_date_category
+	end
+
+	if already_has_template(birth_date) then
+		return original
+	end
+
+	if is_valid_date(birth_date) then
+		local location = mw.ustring.find(birth_date, '%d%d%d%d')
+		local extra = mw.ustring.sub(birth_date, location+4) .. tracking_category
+		local date = mw.ustring.sub(birth_date, 1,location+3)
+		local year, month, day = parse_date(date)
+		local format = date_format(date)
+		if death_date == '' and disap_date == '' then
+			return expand_template(TEMPLATES.birth_date_and_age, {year, month, day, [format] = 'yes'}) .. extra
+		elseif is_year_only(death_date) or is_valid_date(death_date) or is_month_year_only(death_date) then
+			return expand_template(TEMPLATES.birth_date, {year, month, day, [format] = 'yes'}) .. extra
+		else
+			-- death_date is not a valid string (example: 'unknown')
+			return original
+		end
+	end
+	if is_month_year_only(birth_date) then
+
+		local year = Date('1 '..birth_date):text('%Y')
+		local month = Date('1 '..birth_date):text('%-m')
+		local location = mw.ustring.find(birth_date, '%d%d%d%d')
+		local date = mw.ustring.sub(birth_date, 1,location+3)
+		local extra = mw.ustring.sub(birth_date, location+4) .. tracking_category
+
+		if death_date == '' and disap_date == '' then
+			return expand_template(TEMPLATES.birth_year_and_age, {year, month}) .. extra
+		elseif is_year_only(death_date) or is_valid_date(death_date) or is_month_year_only(death_date) then
+			return expand_template(TEMPLATES.birth_year, {date}) .. extra
+		else
+			-- death_date is not a valid string (example: 'unknown')
+			return original
+		end
+
+	end
+	if is_year_only(birth_date) then
+		local date = mw.ustring.sub(birth_date, 1, 5)
+		local extra = mw.ustring.sub(birth_date, 5) .. tracking_category
+		if death_date == '' and disap_date == '' then
+			return expand_template(TEMPLATES.birth_year_and_age, {date}) .. extra
+		elseif is_year_only(death_date) or is_valid_date(death_date) then
+			return expand_template(TEMPLATES.birth_year, {date}) .. extra
+		else
+			-- death_date is not a valid string (example: 'unknown')
+			return original
+		end
+	end
+
+	return original
+end
+
+local function parse_death(args)
+	local birth_date = args['birth_date'] or ''
+	local death_date = args['death_date'] or ''
+	local original = death_date
+
+	birth_date = sanatize_date(birth_date)
+	death_date = sanatize_date(death_date)
+
+	-- Check for bad inputs. This used to be covered by a switch statement in infoboxes
+	if check_for_invalid_date(death_date) then
+		return original..invalid_date_category
+	end
+
+	if already_has_template(death_date) then
+		return original
+	end
+
+	if is_valid_date(death_date) or is_month_year_only(death_date) then
+		local location = mw.ustring.find(death_date, '%d%d%d%d')
+		local date = mw.ustring.sub(death_date, 1,location+3)
+		local extra = mw.ustring.sub(death_date, location+4) .. tracking_category
+		local format = date_format(date)
+
+		if birth_date == '' then
+			if is_month_year_only(death_date) then
+				return expand_template(TEMPLATES.death_date_text, {date}) .. extra
+			end
+			local year, month, day = parse_date(date)
+			return expand_template(TEMPLATES.death_date, {year, month, day, [format] = 'yes'}) .. extra
+		else
+			if is_year_only(birth_date) then
+				location =  mw.ustring.find(birth_date, '%d%d%d%d')
+				local bd = mw.ustring.sub(birth_date, 1,location+3)
+				if is_month_year_only(death_date) then
+					return expand_template(TEMPLATES.death_date_and_age, {date, bd}) .. extra
+				end
+
+				return expand_template(TEMPLATES.death_date_and_age, {date, bd, [format] = 'yes'}) .. extra
+			elseif is_valid_date(birth_date) or is_month_year_only(birth_date) then
+				location =  mw.ustring.find(birth_date, '%d%d%d%d')
+				local bd = mw.ustring.sub(birth_date, 1,location+3)
+
+				if (is_month_year_only(death_date)) then
+					return expand_template(TEMPLATES.death_date_and_age, {date, bd}) .. extra
+				end
+
+				return expand_template(TEMPLATES.death_date_and_age, {date, bd, [format] = 'yes'}) .. extra
+			end
+		end
+	end
+
+	if is_year_only(death_date) then
+		if birth_date == '' then
+			return  expand_template(TEMPLATES.death_year, {mw.ustring.sub(death_date, 1, 5)}) .. mw.ustring.sub(death_date, 5) .. tracking_category
+		else
+			if is_year_only(birth_date) then
+				return  expand_template(TEMPLATES.death_year_and_age, {mw.ustring.sub(death_date, 1, 5), mw.ustring.sub(birth_date, 1, 5)}) .. mw.ustring.sub(death_date, 5) .. tracking_category
+			else
+				if is_valid_date(birth_date) then
+					local location = mw.ustring.find(death_date, '%d%d%d%d')
+					local date = mw.ustring.sub(death_date, 1,location+3)
+					local extra = mw.ustring.sub(death_date, location+4) .. tracking_category
+
+					location =  mw.ustring.find(birth_date, '%d%d%d%d')
+					local bd = mw.ustring.sub(birth_date, 1,location+3)
+
+					return  expand_template(TEMPLATES.death_date_and_age, {date, bd}) .. extra
+				end
+			end
+		end
+	end
+
+	return original
+end
+
+function p.birth(frame)
+	return parse_birth(getArgs(frame, {parentFirst = true}))
+end
+
+function p.death(frame)
+	return parse_death(getArgs(frame, {parentFirst = true}))
+end
+
+return p</text>
+      <sha1>qm4tcdz8g5vkfc018ay0tu8zlfditks</sha1>
+    </revision>
+    <revision>
+      <id>3647078</id>
+      <parentid>3647077</parentid>
+      <timestamp>2026-04-24T16:34:24Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: en</comment>
+      <origin>3408256</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="9151" sha1="qm4tcdz8g5vkfc018ay0tu8zlfditks" xml:space="preserve">require("strict")
+
+local p = {}
+
+local TEMPLATES = {
+	birth_date = "Birth date",
+	birth_date_and_age = "Birth date and age",
+	birth_year = "Birth year",
+	birth_year_and_age = "Birth year and age",
+	death_date = "Death date",
+	death_date_text = "Death date text",
+	death_date_and_age = "Death date and age",
+	death_year = "Death year",
+	death_year_and_age = "Death year and age",
+}
+local invalid_date_category = ''
+local tracking_category = ''
+local Date = require('Module:Date')._Date
+local getArgs = require('Module:Arguments').getArgs
+
+if mw.title.getCurrentTitle():inNamespaces(0, 828, 829) then
+	-- Category only in namespaces: 0=article, 828=module &amp; 829=module talk (last 2 needed for testcases)
+	tracking_category = '[[Category:Pages where birth or death is being automatically determined]]'
+	invalid_date_category = '[[Category:Pages with invalid birth or death dates]]'
+end
+
+local function check_for_invalid_date(str)
+	return mw.ustring.match(str, '^%?') or mw.ustring.match(str, '^%d%d%?') or mw.ustring.match(str, '^[Uu]nk')
+end
+
+local function expand_template(template, args)
+	return mw.getCurrentFrame():expandTemplate{title = template, args = args}
+end
+
+local function parse_date(str)
+	local date = Date(str)
+	if date then
+		return tostring(date.year), tostring(date.month), tostring(date.day)
+	end
+	-- TODO: Date has not been parsed. Need to work out what to do. For now, throw an error.
+	-- Example where this can occur: "birth_date = 22 December 1946" at [[Maurice Pasternak]].
+	-- There was a nonbreaking space after "22" whidh Date does not accept.
+	error('Module:Person_date parse_date invalid date: "' .. tostring(str) .. '"')
+end
+
+local function date_format(str)
+	if mw.ustring.match (str, '^%d+%s*%a+[%.]*%s*%d%d%d%d$') then
+		return 'df'
+	elseif mw.ustring.match(str, '^%a+[%.]*%s+%d+,%s*%d%d%d%d$') then
+		return 'mf'
+	else
+		return 'ERROR'
+	end
+
+end
+
+local function is_valid_month (str)
+	str = string.upper(mw.ustring.sub(str,1,1))..string.lower(mw.ustring.sub(str,2))
+
+	local months = {'Jan','Jan.','January','Feb','Feb.','February','Mar','March','Apr','Apr.','April','May','Jun','Jun.','June','Jul','Jul.','July','Aug','Aug.','August','Sep','Sept','Sep.','Sept.','September','Oct','Oct.','October','Nov','Nov','November','Dec','Dec.','December'}
+	for index, value in ipairs(months) do
+		if value == str then
+			return true
+		end
+	end
+	return false
+end
+
+local function is_month_year_only(str)
+	local month = mw.ustring.match(str, '^(%a+)[%.]*%s+%d%d%d%d$')
+	if month == nil then
+		return false
+	else
+		return is_valid_month(month)
+	end
+end
+
+local function is_valid_date(str)
+	local month = mw.ustring.match (str, '^%d+%s*(%a+)[%.]*%s*%d%d%d%d$') or mw.ustring.match(str, '^(%a+)[%.]*%s+%d+,%s*%d%d%d%d$')
+	if month == nil then
+		return false
+	else
+		return is_valid_month(month)
+	end
+end
+
+local function is_year_only(str)
+	return mw.ustring.match(str, '^%d%d%d%d$')
+end
+
+local function already_has_template(str)
+	str = mw.ustring.gsub(str, '&amp;[Nn][Bb][Ss][Pp];', ' ')
+	return mw.ustring.match(str, '&lt;span') or mw.ustring.match(str, '&lt;time') or mw.ustring.match(str,'%(aged%s*%d+') or mw.ustring.match(str,'%(age%s*%d+')
+end
+
+local function sanatize_date(str)
+	-- Sanatize leading &amp; trailing whitespace (this caused an issue before it was implemented)
+	str = mw.ustring.gsub(str,'^%s*','')
+	str = mw.ustring.gsub(str,'%s*$','')
+	-- Sanatize ordinals
+	str = mw.ustring.gsub(str, '(%d+)st([,%s])', '%1%2')
+	str = mw.ustring.gsub(str, '(%d+)rd([,%s])', '%1%2')
+	str = mw.ustring.gsub(str, '(%d+)th([,%s])', '%1%2')
+	str = mw.ustring.gsub(str, '(%d+)nd([,%s])', '%1%2')
+	return str
+end
+
+local function parse_birth(args)
+	local birth_date = args['birth_date'] or ''
+	local death_date = args['death_date'] or ''
+	local disap_date = args['disappeared_date'] or ''
+	local original = birth_date
+	
+	birth_date = sanatize_date(birth_date)
+	death_date = sanatize_date(death_date)
+	disap_date = sanatize_date(disap_date)
+
+	-- Check for bad inputs. This used to be covered by a switch statement in infoboxes
+	if check_for_invalid_date(birth_date) then
+		return original..invalid_date_category
+	end
+
+	if already_has_template(birth_date) then
+		return original
+	end
+
+	if is_valid_date(birth_date) then
+		local location = mw.ustring.find(birth_date, '%d%d%d%d')
+		local extra = mw.ustring.sub(birth_date, location+4) .. tracking_category
+		local date = mw.ustring.sub(birth_date, 1,location+3)
+		local year, month, day = parse_date(date)
+		local format = date_format(date)
+		if death_date == '' and disap_date == '' then
+			return expand_template(TEMPLATES.birth_date_and_age, {year, month, day, [format] = 'yes'}) .. extra
+		elseif is_year_only(death_date) or is_valid_date(death_date) or is_month_year_only(death_date) then
+			return expand_template(TEMPLATES.birth_date, {year, month, day, [format] = 'yes'}) .. extra
+		else
+			-- death_date is not a valid string (example: 'unknown')
+			return original
+		end
+	end
+	if is_month_year_only(birth_date) then
+
+		local year = Date('1 '..birth_date):text('%Y')
+		local month = Date('1 '..birth_date):text('%-m')
+		local location = mw.ustring.find(birth_date, '%d%d%d%d')
+		local date = mw.ustring.sub(birth_date, 1,location+3)
+		local extra = mw.ustring.sub(birth_date, location+4) .. tracking_category
+
+		if death_date == '' and disap_date == '' then
+			return expand_template(TEMPLATES.birth_year_and_age, {year, month}) .. extra
+		elseif is_year_only(death_date) or is_valid_date(death_date) or is_month_year_only(death_date) then
+			return expand_template(TEMPLATES.birth_year, {date}) .. extra
+		else
+			-- death_date is not a valid string (example: 'unknown')
+			return original
+		end
+
+	end
+	if is_year_only(birth_date) then
+		local date = mw.ustring.sub(birth_date, 1, 5)
+		local extra = mw.ustring.sub(birth_date, 5) .. tracking_category
+		if death_date == '' and disap_date == '' then
+			return expand_template(TEMPLATES.birth_year_and_age, {date}) .. extra
+		elseif is_year_only(death_date) or is_valid_date(death_date) then
+			return expand_template(TEMPLATES.birth_year, {date}) .. extra
+		else
+			-- death_date is not a valid string (example: 'unknown')
+			return original
+		end
+	end
+
+	return original
+end
+
+local function parse_death(args)
+	local birth_date = args['birth_date'] or ''
+	local death_date = args['death_date'] or ''
+	local original = death_date
+
+	birth_date = sanatize_date(birth_date)
+	death_date = sanatize_date(death_date)
+
+	-- Check for bad inputs. This used to be covered by a switch statement in infoboxes
+	if check_for_invalid_date(death_date) then
+		return original..invalid_date_category
+	end
+
+	if already_has_template(death_date) then
+		return original
+	end
+
+	if is_valid_date(death_date) or is_month_year_only(death_date) then
+		local location = mw.ustring.find(death_date, '%d%d%d%d')
+		local date = mw.ustring.sub(death_date, 1,location+3)
+		local extra = mw.ustring.sub(death_date, location+4) .. tracking_category
+		local format = date_format(date)
+
+		if birth_date == '' then
+			if is_month_year_only(death_date) then
+				return expand_template(TEMPLATES.death_date_text, {date}) .. extra
+			end
+			local year, month, day = parse_date(date)
+			return expand_template(TEMPLATES.death_date, {year, month, day, [format] = 'yes'}) .. extra
+		else
+			if is_year_only(birth_date) then
+				location =  mw.ustring.find(birth_date, '%d%d%d%d')
+				local bd = mw.ustring.sub(birth_date, 1,location+3)
+				if is_month_year_only(death_date) then
+					return expand_template(TEMPLATES.death_date_and_age, {date, bd}) .. extra
+				end
+
+				return expand_template(TEMPLATES.death_date_and_age, {date, bd, [format] = 'yes'}) .. extra
+			elseif is_valid_date(birth_date) or is_month_year_only(birth_date) then
+				location =  mw.ustring.find(birth_date, '%d%d%d%d')
+				local bd = mw.ustring.sub(birth_date, 1,location+3)
+
+				if (is_month_year_only(death_date)) then
+					return expand_template(TEMPLATES.death_date_and_age, {date, bd}) .. extra
+				end
+
+				return expand_template(TEMPLATES.death_date_and_age, {date, bd, [format] = 'yes'}) .. extra
+			end
+		end
+	end
+
+	if is_year_only(death_date) then
+		if birth_date == '' then
+			return  expand_template(TEMPLATES.death_year, {mw.ustring.sub(death_date, 1, 5)}) .. mw.ustring.sub(death_date, 5) .. tracking_category
+		else
+			if is_year_only(birth_date) then
+				return  expand_template(TEMPLATES.death_year_and_age, {mw.ustring.sub(death_date, 1, 5), mw.ustring.sub(birth_date, 1, 5)}) .. mw.ustring.sub(death_date, 5) .. tracking_category
+			else
+				if is_valid_date(birth_date) then
+					local location = mw.ustring.find(death_date, '%d%d%d%d')
+					local date = mw.ustring.sub(death_date, 1,location+3)
+					local extra = mw.ustring.sub(death_date, location+4) .. tracking_category
+
+					location =  mw.ustring.find(birth_date, '%d%d%d%d')
+					local bd = mw.ustring.sub(birth_date, 1,location+3)
+
+					return  expand_template(TEMPLATES.death_date_and_age, {date, bd}) .. extra
+				end
+			end
+		end
+	end
+
+	return original
+end
+
+function p.birth(frame)
+	return parse_birth(getArgs(frame, {parentFirst = true}))
+end
+
+function p.death(frame)
+	return parse_death(getArgs(frame, {parentFirst = true}))
+end
+
+return p</text>
+      <sha1>qm4tcdz8g5vkfc018ay0tu8zlfditks</sha1>
+    </revision>
+  </page>
+</mediawiki>

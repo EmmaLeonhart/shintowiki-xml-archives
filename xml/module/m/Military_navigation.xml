@@ -1,0 +1,462 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Military navigation</title>
+    <ns>828</ns>
+    <id>11471</id>
+    <revision>
+      <id>1047934</id>
+      <timestamp>2023-12-27T20:02:29Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Ahecht</username>
+        <id>0</id>
+      </contributor>
+      <comment>give frame priority over parent to avoid script errors</comment>
+      <origin>1047934</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3093" sha1="tmteafrc89bpmechdacriqgmwh9brg3" xml:space="preserve">local p = { }
+
+local Navbox = require('Module:Navbox')
+local Styles = require('Module:WPMILHIST Infobox style')
+
+local function isblank(s)
+	return (not s) or s == ''
+end
+local function ifnotblank(s,p,t)
+	return (s and s ~= '') and (p..s) or t
+end
+
+function p.main(frame)
+    local args = { }
+    local pargs = frame:getParent().args
+	local fargs = frame.args
+    local sargs = {}
+    local tcats = ''
+
+	-- process bodystyle and titlestyle
+	local style = fargs['style'] or pargs['style'] or ''
+	if style == 'wide' then
+		args['titlestyle'] = Styles['nav_box_wide_header']
+		args['bodystyle'] = Styles['nav_box_wide']
+	else
+		args['titlestyle'] = Styles['nav_box_header']
+		local border = fargs['border'] or pargs['border'] or ''
+		if border == 'child' or border == 'subgroup' then
+			args['bodystyle'] = Styles['nav_box_child']
+			tcats = tcats .. '[[Category:Pages using military navigation subgroups without wide style]]'
+		else
+			args['bodystyle'] = Styles['nav_box']
+		end
+	end
+	sargs['titlestyle'] = 1
+	sargs['bodystyle'] = 1
+
+	-- process groupstyle, abovestyle, belowstyle
+	args['groupstyle'] = Styles['nav_box_label'] .. (fargs['groupstyle'] or pargs['groupstyle'] or '')
+	sargs['groupstyle'] = 1
+	args['abovestyle'] = Styles['nav_box_label'] .. (fargs['abovestyle'] or pargs['abovestyle'] or '')
+	sargs['abovestyle'] = 1
+	args['belowstyle'] = Styles['nav_box_label'] .. (fargs['belowstyle'] or pargs['belowstyle'] or '')
+	sargs['belowstyle'] = 1
+	-- process oddstyle, evenstyle
+	args['oddstyle'] = ifnotblank((fargs['odd_color'] or pargs['odd_color']),'background:',nil)
+	args['evenstyle'] = ifnotblank((fargs['even_color'] or pargs['even_color']),'background:',nil)
+	sargs['oddstyle'] = 1
+	sargs['evenstyle'] = 1
+	-- process name and rawname
+	args['name'] = ifnotblank((fargs['name'] or pargs['name']),'',(fargs['rawname'] or pargs['rawname']))
+	if isblank(args['name']) then args['navbar'] = 'plain' end
+	sargs['name'] = 1
+	sargs['rawname'] = 1
+	
+    -- copy the remaining args, with frame args overriding parent args
+    for k, v in pairs(pargs) do
+        if v and v ~= '' and sargs[k] == nil then
+            args[k] = v
+        end
+    end
+    for k, v in pairs(fargs) do
+        if v and v ~= '' and sargs[k] == nil then
+            args[k] = v
+        end
+    end
+	-- add allow wrap
+	if args['title'] and style ~= 'wide' then
+		if not mw.ustring.match(args['title'], '&lt;span class="wrap"&gt;') then
+			-- probably a more efficient way to match 15 or more characters
+			local m = '[^%[%]&lt;&gt;|][^%[%]&lt;&gt;|][^%[%]&lt;&gt;|][^%[%]&lt;&gt;|][^%[%]&lt;&gt;|]'
+			m = m .. m .. m
+			args['title'] = mw.ustring.gsub(args['title'], 
+				'%[%[(' .. m .. '[^%[%]&lt;&gt;|]*)%]%]', 
+				'[[%1|&lt;span class="wrap"&gt;%1&lt;/span&gt;]]')
+			args['title'] = mw.ustring.gsub(args['title'], 
+				'%[%[([^%[%]&lt;&gt;|]*)|(' .. m .. '[^%[%]&lt;&gt;|]*)%]%]', 
+				'[[%1|&lt;span class="wrap"&gt;%2&lt;/span&gt;]]')
+		end
+	end
+	
+	-- add navbox-vertical for non-wide format
+	if style ~= 'wide' then
+		args['bodyclass'] = 'navbox-vertical' .. (args['bodyclass'] and (' ' .. args['bodyclass']) or '')
+	end
+	
+    return tcats .. Navbox._navbox(args)
+
+end  
+
+return p</text>
+      <sha1>tmteafrc89bpmechdacriqgmwh9brg3</sha1>
+    </revision>
+    <revision>
+      <id>11472</id>
+      <timestamp>2025-02-23T20:45:17Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported from [[:wikipedia:Module:Military_navigation]]</comment>
+      <origin>11472</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3093" sha1="tmteafrc89bpmechdacriqgmwh9brg3" xml:space="preserve">local p = { }
+
+local Navbox = require('Module:Navbox')
+local Styles = require('Module:WPMILHIST Infobox style')
+
+local function isblank(s)
+	return (not s) or s == ''
+end
+local function ifnotblank(s,p,t)
+	return (s and s ~= '') and (p..s) or t
+end
+
+function p.main(frame)
+    local args = { }
+    local pargs = frame:getParent().args
+	local fargs = frame.args
+    local sargs = {}
+    local tcats = ''
+
+	-- process bodystyle and titlestyle
+	local style = fargs['style'] or pargs['style'] or ''
+	if style == 'wide' then
+		args['titlestyle'] = Styles['nav_box_wide_header']
+		args['bodystyle'] = Styles['nav_box_wide']
+	else
+		args['titlestyle'] = Styles['nav_box_header']
+		local border = fargs['border'] or pargs['border'] or ''
+		if border == 'child' or border == 'subgroup' then
+			args['bodystyle'] = Styles['nav_box_child']
+			tcats = tcats .. '[[Category:Pages using military navigation subgroups without wide style]]'
+		else
+			args['bodystyle'] = Styles['nav_box']
+		end
+	end
+	sargs['titlestyle'] = 1
+	sargs['bodystyle'] = 1
+
+	-- process groupstyle, abovestyle, belowstyle
+	args['groupstyle'] = Styles['nav_box_label'] .. (fargs['groupstyle'] or pargs['groupstyle'] or '')
+	sargs['groupstyle'] = 1
+	args['abovestyle'] = Styles['nav_box_label'] .. (fargs['abovestyle'] or pargs['abovestyle'] or '')
+	sargs['abovestyle'] = 1
+	args['belowstyle'] = Styles['nav_box_label'] .. (fargs['belowstyle'] or pargs['belowstyle'] or '')
+	sargs['belowstyle'] = 1
+	-- process oddstyle, evenstyle
+	args['oddstyle'] = ifnotblank((fargs['odd_color'] or pargs['odd_color']),'background:',nil)
+	args['evenstyle'] = ifnotblank((fargs['even_color'] or pargs['even_color']),'background:',nil)
+	sargs['oddstyle'] = 1
+	sargs['evenstyle'] = 1
+	-- process name and rawname
+	args['name'] = ifnotblank((fargs['name'] or pargs['name']),'',(fargs['rawname'] or pargs['rawname']))
+	if isblank(args['name']) then args['navbar'] = 'plain' end
+	sargs['name'] = 1
+	sargs['rawname'] = 1
+	
+    -- copy the remaining args, with frame args overriding parent args
+    for k, v in pairs(pargs) do
+        if v and v ~= '' and sargs[k] == nil then
+            args[k] = v
+        end
+    end
+    for k, v in pairs(fargs) do
+        if v and v ~= '' and sargs[k] == nil then
+            args[k] = v
+        end
+    end
+	-- add allow wrap
+	if args['title'] and style ~= 'wide' then
+		if not mw.ustring.match(args['title'], '&lt;span class="wrap"&gt;') then
+			-- probably a more efficient way to match 15 or more characters
+			local m = '[^%[%]&lt;&gt;|][^%[%]&lt;&gt;|][^%[%]&lt;&gt;|][^%[%]&lt;&gt;|][^%[%]&lt;&gt;|]'
+			m = m .. m .. m
+			args['title'] = mw.ustring.gsub(args['title'], 
+				'%[%[(' .. m .. '[^%[%]&lt;&gt;|]*)%]%]', 
+				'[[%1|&lt;span class="wrap"&gt;%1&lt;/span&gt;]]')
+			args['title'] = mw.ustring.gsub(args['title'], 
+				'%[%[([^%[%]&lt;&gt;|]*)|(' .. m .. '[^%[%]&lt;&gt;|]*)%]%]', 
+				'[[%1|&lt;span class="wrap"&gt;%2&lt;/span&gt;]]')
+		end
+	end
+	
+	-- add navbox-vertical for non-wide format
+	if style ~= 'wide' then
+		args['bodyclass'] = 'navbox-vertical' .. (args['bodyclass'] and (' ' .. args['bodyclass']) or '')
+	end
+	
+    return tcats .. Navbox._navbox(args)
+
+end  
+
+return p</text>
+      <sha1>tmteafrc89bpmechdacriqgmwh9brg3</sha1>
+    </revision>
+    <revision>
+      <id>3516809</id>
+      <parentid>11472</parentid>
+      <timestamp>2026-03-17T17:43:20Z</timestamp>
+      <contributor>
+        <username>en&gt;Ahecht</username>
+        <id>0</id>
+      </contributor>
+      <comment>give frame priority over parent to avoid script errors</comment>
+      <origin>11472</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3093" sha1="tmteafrc89bpmechdacriqgmwh9brg3" xml:space="preserve">local p = { }
+
+local Navbox = require('Module:Navbox')
+local Styles = require('Module:WPMILHIST Infobox style')
+
+local function isblank(s)
+	return (not s) or s == ''
+end
+local function ifnotblank(s,p,t)
+	return (s and s ~= '') and (p..s) or t
+end
+
+function p.main(frame)
+    local args = { }
+    local pargs = frame:getParent().args
+	local fargs = frame.args
+    local sargs = {}
+    local tcats = ''
+
+	-- process bodystyle and titlestyle
+	local style = fargs['style'] or pargs['style'] or ''
+	if style == 'wide' then
+		args['titlestyle'] = Styles['nav_box_wide_header']
+		args['bodystyle'] = Styles['nav_box_wide']
+	else
+		args['titlestyle'] = Styles['nav_box_header']
+		local border = fargs['border'] or pargs['border'] or ''
+		if border == 'child' or border == 'subgroup' then
+			args['bodystyle'] = Styles['nav_box_child']
+			tcats = tcats .. '[[Category:Pages using military navigation subgroups without wide style]]'
+		else
+			args['bodystyle'] = Styles['nav_box']
+		end
+	end
+	sargs['titlestyle'] = 1
+	sargs['bodystyle'] = 1
+
+	-- process groupstyle, abovestyle, belowstyle
+	args['groupstyle'] = Styles['nav_box_label'] .. (fargs['groupstyle'] or pargs['groupstyle'] or '')
+	sargs['groupstyle'] = 1
+	args['abovestyle'] = Styles['nav_box_label'] .. (fargs['abovestyle'] or pargs['abovestyle'] or '')
+	sargs['abovestyle'] = 1
+	args['belowstyle'] = Styles['nav_box_label'] .. (fargs['belowstyle'] or pargs['belowstyle'] or '')
+	sargs['belowstyle'] = 1
+	-- process oddstyle, evenstyle
+	args['oddstyle'] = ifnotblank((fargs['odd_color'] or pargs['odd_color']),'background:',nil)
+	args['evenstyle'] = ifnotblank((fargs['even_color'] or pargs['even_color']),'background:',nil)
+	sargs['oddstyle'] = 1
+	sargs['evenstyle'] = 1
+	-- process name and rawname
+	args['name'] = ifnotblank((fargs['name'] or pargs['name']),'',(fargs['rawname'] or pargs['rawname']))
+	if isblank(args['name']) then args['navbar'] = 'plain' end
+	sargs['name'] = 1
+	sargs['rawname'] = 1
+	
+    -- copy the remaining args, with frame args overriding parent args
+    for k, v in pairs(pargs) do
+        if v and v ~= '' and sargs[k] == nil then
+            args[k] = v
+        end
+    end
+    for k, v in pairs(fargs) do
+        if v and v ~= '' and sargs[k] == nil then
+            args[k] = v
+        end
+    end
+	-- add allow wrap
+	if args['title'] and style ~= 'wide' then
+		if not mw.ustring.match(args['title'], '&lt;span class="wrap"&gt;') then
+			-- probably a more efficient way to match 15 or more characters
+			local m = '[^%[%]&lt;&gt;|][^%[%]&lt;&gt;|][^%[%]&lt;&gt;|][^%[%]&lt;&gt;|][^%[%]&lt;&gt;|]'
+			m = m .. m .. m
+			args['title'] = mw.ustring.gsub(args['title'], 
+				'%[%[(' .. m .. '[^%[%]&lt;&gt;|]*)%]%]', 
+				'[[%1|&lt;span class="wrap"&gt;%1&lt;/span&gt;]]')
+			args['title'] = mw.ustring.gsub(args['title'], 
+				'%[%[([^%[%]&lt;&gt;|]*)|(' .. m .. '[^%[%]&lt;&gt;|]*)%]%]', 
+				'[[%1|&lt;span class="wrap"&gt;%2&lt;/span&gt;]]')
+		end
+	end
+	
+	-- add navbox-vertical for non-wide format
+	if style ~= 'wide' then
+		args['bodyclass'] = 'navbox-vertical' .. (args['bodyclass'] and (' ' .. args['bodyclass']) or '')
+	end
+	
+    return tcats .. Navbox._navbox(args)
+
+end  
+
+return p</text>
+      <sha1>tmteafrc89bpmechdacriqgmwh9brg3</sha1>
+    </revision>
+    <revision>
+      <id>3516810</id>
+      <parentid>3516809</parentid>
+      <timestamp>2026-03-17T17:43:20Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Bot: reimport from enwiki to fix erroneous transclusions [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23208182735|commit triggered pipeline]]</comment>
+      <origin>11472</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3093" sha1="tmteafrc89bpmechdacriqgmwh9brg3" xml:space="preserve">local p = { }
+
+local Navbox = require('Module:Navbox')
+local Styles = require('Module:WPMILHIST Infobox style')
+
+local function isblank(s)
+	return (not s) or s == ''
+end
+local function ifnotblank(s,p,t)
+	return (s and s ~= '') and (p..s) or t
+end
+
+function p.main(frame)
+    local args = { }
+    local pargs = frame:getParent().args
+	local fargs = frame.args
+    local sargs = {}
+    local tcats = ''
+
+	-- process bodystyle and titlestyle
+	local style = fargs['style'] or pargs['style'] or ''
+	if style == 'wide' then
+		args['titlestyle'] = Styles['nav_box_wide_header']
+		args['bodystyle'] = Styles['nav_box_wide']
+	else
+		args['titlestyle'] = Styles['nav_box_header']
+		local border = fargs['border'] or pargs['border'] or ''
+		if border == 'child' or border == 'subgroup' then
+			args['bodystyle'] = Styles['nav_box_child']
+			tcats = tcats .. '[[Category:Pages using military navigation subgroups without wide style]]'
+		else
+			args['bodystyle'] = Styles['nav_box']
+		end
+	end
+	sargs['titlestyle'] = 1
+	sargs['bodystyle'] = 1
+
+	-- process groupstyle, abovestyle, belowstyle
+	args['groupstyle'] = Styles['nav_box_label'] .. (fargs['groupstyle'] or pargs['groupstyle'] or '')
+	sargs['groupstyle'] = 1
+	args['abovestyle'] = Styles['nav_box_label'] .. (fargs['abovestyle'] or pargs['abovestyle'] or '')
+	sargs['abovestyle'] = 1
+	args['belowstyle'] = Styles['nav_box_label'] .. (fargs['belowstyle'] or pargs['belowstyle'] or '')
+	sargs['belowstyle'] = 1
+	-- process oddstyle, evenstyle
+	args['oddstyle'] = ifnotblank((fargs['odd_color'] or pargs['odd_color']),'background:',nil)
+	args['evenstyle'] = ifnotblank((fargs['even_color'] or pargs['even_color']),'background:',nil)
+	sargs['oddstyle'] = 1
+	sargs['evenstyle'] = 1
+	-- process name and rawname
+	args['name'] = ifnotblank((fargs['name'] or pargs['name']),'',(fargs['rawname'] or pargs['rawname']))
+	if isblank(args['name']) then args['navbar'] = 'plain' end
+	sargs['name'] = 1
+	sargs['rawname'] = 1
+	
+    -- copy the remaining args, with frame args overriding parent args
+    for k, v in pairs(pargs) do
+        if v and v ~= '' and sargs[k] == nil then
+            args[k] = v
+        end
+    end
+    for k, v in pairs(fargs) do
+        if v and v ~= '' and sargs[k] == nil then
+            args[k] = v
+        end
+    end
+	-- add allow wrap
+	if args['title'] and style ~= 'wide' then
+		if not mw.ustring.match(args['title'], '&lt;span class="wrap"&gt;') then
+			-- probably a more efficient way to match 15 or more characters
+			local m = '[^%[%]&lt;&gt;|][^%[%]&lt;&gt;|][^%[%]&lt;&gt;|][^%[%]&lt;&gt;|][^%[%]&lt;&gt;|]'
+			m = m .. m .. m
+			args['title'] = mw.ustring.gsub(args['title'], 
+				'%[%[(' .. m .. '[^%[%]&lt;&gt;|]*)%]%]', 
+				'[[%1|&lt;span class="wrap"&gt;%1&lt;/span&gt;]]')
+			args['title'] = mw.ustring.gsub(args['title'], 
+				'%[%[([^%[%]&lt;&gt;|]*)|(' .. m .. '[^%[%]&lt;&gt;|]*)%]%]', 
+				'[[%1|&lt;span class="wrap"&gt;%2&lt;/span&gt;]]')
+		end
+	end
+	
+	-- add navbox-vertical for non-wide format
+	if style ~= 'wide' then
+		args['bodyclass'] = 'navbox-vertical' .. (args['bodyclass'] and (' ' .. args['bodyclass']) or '')
+	end
+	
+    return tcats .. Navbox._navbox(args)
+
+end  
+
+return p</text>
+      <sha1>tmteafrc89bpmechdacriqgmwh9brg3</sha1>
+    </revision>
+  </page>
+</mediawiki>

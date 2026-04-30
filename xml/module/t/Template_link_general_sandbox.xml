@@ -1,0 +1,939 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Template link general/sandbox</title>
+    <ns>828</ns>
+    <id>3321</id>
+    <revision>
+      <id>721433</id>
+      <timestamp>2024-11-30T04:59:35Z</timestamp>
+      <contributor>
+        <username>en&gt;Jonesey95</username>
+        <id>0</id>
+      </contributor>
+      <comment>clarify name of template</comment>
+      <origin>721433</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4364" sha1="9t0uu8s8oh03h2m02vrufciekdamuu3" xml:space="preserve">-- This implements [[Template:Template link general]] and various other templates in its family
+local getArgs = require('Module:Arguments').getArgs
+local p = {}
+
+-- Is a string non-empty?
+local function _ne(s) 
+	return s ~= nil and s ~= ""
+end
+
+local nw = mw.text.nowiki
+
+local function addTemplate(s)
+	local i, _ = s:find(':', 1, true)
+	if i == nil then
+		return 'Template:' .. s
+	end
+	local ns = s:sub(1, i - 1)
+	if ns == '' or mw.site.namespaces[ns] then
+		return s
+	else
+		return 'Template:' .. s
+	end
+end
+
+local function trimTemplate(s)
+	local needle = 'template:'
+	if s:sub(1, needle:len()):lower() == needle then
+		return s:sub(needle:len() + 1)	
+	else
+		return s
+	end
+end
+
+local function linkTitle(args)
+	if _ne(args.nolink) then
+		return args['1']
+	end
+	
+	local titleObj
+	local titlePart = '[['
+	if args['1'] then
+		-- This handles :Page and other NS
+		titleObj = mw.title.new(args['1'], 'Template')
+	else
+		titleObj = mw.title.getCurrentTitle()
+	end
+	
+	titlePart = titlePart .. (titleObj ~= nil and titleObj.fullText or
+				addTemplate(args['1']))
+	
+	local textPart = args.alttext
+	if not _ne(textPart) then
+		if titleObj ~= nil then
+			textPart = titleObj:inNamespace("Template") and args['1'] or titleObj.fullText
+		else
+			-- redlink
+			textPart = args['1']
+		end
+	end
+	
+	if _ne(args.subst) then
+		-- HACK: the ns thing above is probably broken
+		textPart = 'subst:' .. textPart
+	end
+	
+	if _ne(args.brace) then
+		textPart = nw('{{') .. textPart .. nw('}}')
+	elseif _ne(args.braceinside) then
+		textPart = nw('{') .. textPart .. nw('}')
+	end
+	
+	titlePart = titlePart .. '|' .. textPart .. ']]'
+	if _ne(args.braceinside) then
+		titlePart = nw('{') .. titlePart .. nw('}')
+	end
+	return titlePart
+end
+
+function p.main(frame)
+	local args = getArgs(frame, {
+		trim = true,
+		removeBlanks = false
+	})
+	return p._main(args)
+end
+
+function p._main(args)
+	local bold = _ne(args.bold) or _ne(args.boldlink) or _ne(args.boldname)
+	local italic = _ne(args.italic) or _ne(args.italics)
+	local dontBrace = _ne(args.brace) or _ne(args.braceinside)
+	local code = _ne(args.code) or _ne(args.tt)
+	local show_result = _ne(args._show_result)
+	local expand = _ne(args._expand)
+	
+	-- Build the link part
+	local titlePart = linkTitle(args)
+	if bold then titlePart = "'''" .. titlePart .. "'''" end
+	if _ne(args.nowrapname) then titlePart = '&lt;span class="nowrap"&gt;' .. titlePart .. '&lt;/span&gt;' end
+	
+	-- Build the arguments
+	local textPart = ""
+	local textPartBuffer = "&amp;#124;"
+	local codeArguments = {}
+	local codeArgumentsString = ""
+	local i = 2
+	local j = 1
+	while args[i] do
+		local val = args[i]
+		if val ~= "" then
+			if _ne(args.nowiki) then
+				-- Unstrip nowiki tags first because calling nw on something that already contains nowiki tags will
+				-- mangle the nowiki strip marker and result in literal UNIQ...QINU showing up
+				val = nw(mw.text.unstripNoWiki(val))
+			end
+			local k, v = string.match(val, "(.*)=(.*)")
+			if not k then
+				codeArguments[j] = val
+				j = j + 1
+			else
+				codeArguments[k] = v
+			end
+			codeArgumentsString = codeArgumentsString .. textPartBuffer .. val
+			if italic then
+				val = '&lt;span style="font-style:italic;"&gt;' .. val .. '&lt;/span&gt;'
+			end
+			textPart = textPart .. textPartBuffer .. val
+		end
+		i = i + 1
+	end
+
+	-- final wrap
+	local ret = titlePart .. textPart
+	if not dontBrace then ret = nw('{{') .. ret .. nw('}}') end
+	if _ne(args.a) then ret = nw('*') .. '&amp;nbsp;' .. ret end
+	if _ne(args.kbd) then ret = '&lt;kbd&gt;' .. ret .. '&lt;/kbd&gt;' end
+	if code then
+		ret = '&lt;code&gt;' .. ret .. '&lt;/code&gt;'
+	elseif _ne(args.plaincode) then
+		ret = '&lt;code style="border:none;"&gt;' .. ret .. '&lt;/code&gt;'
+	end
+	if _ne(args.nowrap) then ret = '&lt;span class="nowrap"&gt;' .. ret .. '&lt;/span&gt;' end
+	
+	--[[ Wrap as html?? 
+	local span = mw.html.create('span')
+	span:wikitext(ret)
+	--]]
+	if _ne(args.debug) then ret = ret .. '\n&lt;pre&gt;' .. mw.text.encode(mw.dumpObject(args)) .. '&lt;/pre&gt;' end
+
+	if show_result then
+		local result = mw.getCurrentFrame():expandTemplate{title = addTemplate(args[1]), args = codeArguments}
+		ret = ret .. " → " .. result
+	end
+
+	if expand then
+		local query = mw.text.encode('{{' .. addTemplate(args[1]) .. string.gsub(codeArgumentsString, textPartBuffer, "|") .. '}}')
+		local url = mw.uri.fullUrl('special:ExpandTemplates', 'wpInput=' .. query)
+		mw.log()
+		ret = ret .. " [" .. tostring(url) .. "]"
+	end
+
+	return ret
+end
+
+return p</text>
+      <sha1>9t0uu8s8oh03h2m02vrufciekdamuu3</sha1>
+    </revision>
+    <revision>
+      <id>721434</id>
+      <parentid>721433</parentid>
+      <timestamp>2024-12-08T07:14:51Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: importing wikipedia</comment>
+      <origin>721433</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4364" sha1="9t0uu8s8oh03h2m02vrufciekdamuu3" xml:space="preserve">-- This implements [[Template:Template link general]] and various other templates in its family
+local getArgs = require('Module:Arguments').getArgs
+local p = {}
+
+-- Is a string non-empty?
+local function _ne(s) 
+	return s ~= nil and s ~= ""
+end
+
+local nw = mw.text.nowiki
+
+local function addTemplate(s)
+	local i, _ = s:find(':', 1, true)
+	if i == nil then
+		return 'Template:' .. s
+	end
+	local ns = s:sub(1, i - 1)
+	if ns == '' or mw.site.namespaces[ns] then
+		return s
+	else
+		return 'Template:' .. s
+	end
+end
+
+local function trimTemplate(s)
+	local needle = 'template:'
+	if s:sub(1, needle:len()):lower() == needle then
+		return s:sub(needle:len() + 1)	
+	else
+		return s
+	end
+end
+
+local function linkTitle(args)
+	if _ne(args.nolink) then
+		return args['1']
+	end
+	
+	local titleObj
+	local titlePart = '[['
+	if args['1'] then
+		-- This handles :Page and other NS
+		titleObj = mw.title.new(args['1'], 'Template')
+	else
+		titleObj = mw.title.getCurrentTitle()
+	end
+	
+	titlePart = titlePart .. (titleObj ~= nil and titleObj.fullText or
+				addTemplate(args['1']))
+	
+	local textPart = args.alttext
+	if not _ne(textPart) then
+		if titleObj ~= nil then
+			textPart = titleObj:inNamespace("Template") and args['1'] or titleObj.fullText
+		else
+			-- redlink
+			textPart = args['1']
+		end
+	end
+	
+	if _ne(args.subst) then
+		-- HACK: the ns thing above is probably broken
+		textPart = 'subst:' .. textPart
+	end
+	
+	if _ne(args.brace) then
+		textPart = nw('{{') .. textPart .. nw('}}')
+	elseif _ne(args.braceinside) then
+		textPart = nw('{') .. textPart .. nw('}')
+	end
+	
+	titlePart = titlePart .. '|' .. textPart .. ']]'
+	if _ne(args.braceinside) then
+		titlePart = nw('{') .. titlePart .. nw('}')
+	end
+	return titlePart
+end
+
+function p.main(frame)
+	local args = getArgs(frame, {
+		trim = true,
+		removeBlanks = false
+	})
+	return p._main(args)
+end
+
+function p._main(args)
+	local bold = _ne(args.bold) or _ne(args.boldlink) or _ne(args.boldname)
+	local italic = _ne(args.italic) or _ne(args.italics)
+	local dontBrace = _ne(args.brace) or _ne(args.braceinside)
+	local code = _ne(args.code) or _ne(args.tt)
+	local show_result = _ne(args._show_result)
+	local expand = _ne(args._expand)
+	
+	-- Build the link part
+	local titlePart = linkTitle(args)
+	if bold then titlePart = "'''" .. titlePart .. "'''" end
+	if _ne(args.nowrapname) then titlePart = '&lt;span class="nowrap"&gt;' .. titlePart .. '&lt;/span&gt;' end
+	
+	-- Build the arguments
+	local textPart = ""
+	local textPartBuffer = "&amp;#124;"
+	local codeArguments = {}
+	local codeArgumentsString = ""
+	local i = 2
+	local j = 1
+	while args[i] do
+		local val = args[i]
+		if val ~= "" then
+			if _ne(args.nowiki) then
+				-- Unstrip nowiki tags first because calling nw on something that already contains nowiki tags will
+				-- mangle the nowiki strip marker and result in literal UNIQ...QINU showing up
+				val = nw(mw.text.unstripNoWiki(val))
+			end
+			local k, v = string.match(val, "(.*)=(.*)")
+			if not k then
+				codeArguments[j] = val
+				j = j + 1
+			else
+				codeArguments[k] = v
+			end
+			codeArgumentsString = codeArgumentsString .. textPartBuffer .. val
+			if italic then
+				val = '&lt;span style="font-style:italic;"&gt;' .. val .. '&lt;/span&gt;'
+			end
+			textPart = textPart .. textPartBuffer .. val
+		end
+		i = i + 1
+	end
+
+	-- final wrap
+	local ret = titlePart .. textPart
+	if not dontBrace then ret = nw('{{') .. ret .. nw('}}') end
+	if _ne(args.a) then ret = nw('*') .. '&amp;nbsp;' .. ret end
+	if _ne(args.kbd) then ret = '&lt;kbd&gt;' .. ret .. '&lt;/kbd&gt;' end
+	if code then
+		ret = '&lt;code&gt;' .. ret .. '&lt;/code&gt;'
+	elseif _ne(args.plaincode) then
+		ret = '&lt;code style="border:none;"&gt;' .. ret .. '&lt;/code&gt;'
+	end
+	if _ne(args.nowrap) then ret = '&lt;span class="nowrap"&gt;' .. ret .. '&lt;/span&gt;' end
+	
+	--[[ Wrap as html?? 
+	local span = mw.html.create('span')
+	span:wikitext(ret)
+	--]]
+	if _ne(args.debug) then ret = ret .. '\n&lt;pre&gt;' .. mw.text.encode(mw.dumpObject(args)) .. '&lt;/pre&gt;' end
+
+	if show_result then
+		local result = mw.getCurrentFrame():expandTemplate{title = addTemplate(args[1]), args = codeArguments}
+		ret = ret .. " → " .. result
+	end
+
+	if expand then
+		local query = mw.text.encode('{{' .. addTemplate(args[1]) .. string.gsub(codeArgumentsString, textPartBuffer, "|") .. '}}')
+		local url = mw.uri.fullUrl('special:ExpandTemplates', 'wpInput=' .. query)
+		mw.log()
+		ret = ret .. " [" .. tostring(url) .. "]"
+	end
+
+	return ret
+end
+
+return p</text>
+      <sha1>9t0uu8s8oh03h2m02vrufciekdamuu3</sha1>
+    </revision>
+    <revision>
+      <id>721435</id>
+      <parentid>721434</parentid>
+      <timestamp>2024-12-20T02:02:46Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Adding [[Category:pages from wikipedia]][[en:{{subst:PAGENAME}}]][[Category:pages from wikipedia]] using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>721435</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4457" sha1="7lpk9dsfkfdpbtj4ey4lmug38eg9kdl" xml:space="preserve">-- This implements [[Template:Template link general]] and various other templates in its family
+local getArgs = require('Module:Arguments').getArgs
+local p = {}
+
+-- Is a string non-empty?
+local function _ne(s) 
+	return s ~= nil and s ~= ""
+end
+
+local nw = mw.text.nowiki
+
+local function addTemplate(s)
+	local i, _ = s:find(':', 1, true)
+	if i == nil then
+		return 'Template:' .. s
+	end
+	local ns = s:sub(1, i - 1)
+	if ns == '' or mw.site.namespaces[ns] then
+		return s
+	else
+		return 'Template:' .. s
+	end
+end
+
+local function trimTemplate(s)
+	local needle = 'template:'
+	if s:sub(1, needle:len()):lower() == needle then
+		return s:sub(needle:len() + 1)	
+	else
+		return s
+	end
+end
+
+local function linkTitle(args)
+	if _ne(args.nolink) then
+		return args['1']
+	end
+	
+	local titleObj
+	local titlePart = '[['
+	if args['1'] then
+		-- This handles :Page and other NS
+		titleObj = mw.title.new(args['1'], 'Template')
+	else
+		titleObj = mw.title.getCurrentTitle()
+	end
+	
+	titlePart = titlePart .. (titleObj ~= nil and titleObj.fullText or
+				addTemplate(args['1']))
+	
+	local textPart = args.alttext
+	if not _ne(textPart) then
+		if titleObj ~= nil then
+			textPart = titleObj:inNamespace("Template") and args['1'] or titleObj.fullText
+		else
+			-- redlink
+			textPart = args['1']
+		end
+	end
+	
+	if _ne(args.subst) then
+		-- HACK: the ns thing above is probably broken
+		textPart = 'subst:' .. textPart
+	end
+	
+	if _ne(args.brace) then
+		textPart = nw('{{') .. textPart .. nw('}}')
+	elseif _ne(args.braceinside) then
+		textPart = nw('{') .. textPart .. nw('}')
+	end
+	
+	titlePart = titlePart .. '|' .. textPart .. ']]'
+	if _ne(args.braceinside) then
+		titlePart = nw('{') .. titlePart .. nw('}')
+	end
+	return titlePart
+end
+
+function p.main(frame)
+	local args = getArgs(frame, {
+		trim = true,
+		removeBlanks = false
+	})
+	return p._main(args)
+end
+
+function p._main(args)
+	local bold = _ne(args.bold) or _ne(args.boldlink) or _ne(args.boldname)
+	local italic = _ne(args.italic) or _ne(args.italics)
+	local dontBrace = _ne(args.brace) or _ne(args.braceinside)
+	local code = _ne(args.code) or _ne(args.tt)
+	local show_result = _ne(args._show_result)
+	local expand = _ne(args._expand)
+	
+	-- Build the link part
+	local titlePart = linkTitle(args)
+	if bold then titlePart = "'''" .. titlePart .. "'''" end
+	if _ne(args.nowrapname) then titlePart = '&lt;span class="nowrap"&gt;' .. titlePart .. '&lt;/span&gt;' end
+	
+	-- Build the arguments
+	local textPart = ""
+	local textPartBuffer = "&amp;#124;"
+	local codeArguments = {}
+	local codeArgumentsString = ""
+	local i = 2
+	local j = 1
+	while args[i] do
+		local val = args[i]
+		if val ~= "" then
+			if _ne(args.nowiki) then
+				-- Unstrip nowiki tags first because calling nw on something that already contains nowiki tags will
+				-- mangle the nowiki strip marker and result in literal UNIQ...QINU showing up
+				val = nw(mw.text.unstripNoWiki(val))
+			end
+			local k, v = string.match(val, "(.*)=(.*)")
+			if not k then
+				codeArguments[j] = val
+				j = j + 1
+			else
+				codeArguments[k] = v
+			end
+			codeArgumentsString = codeArgumentsString .. textPartBuffer .. val
+			if italic then
+				val = '&lt;span style="font-style:italic;"&gt;' .. val .. '&lt;/span&gt;'
+			end
+			textPart = textPart .. textPartBuffer .. val
+		end
+		i = i + 1
+	end
+
+	-- final wrap
+	local ret = titlePart .. textPart
+	if not dontBrace then ret = nw('{{') .. ret .. nw('}}') end
+	if _ne(args.a) then ret = nw('*') .. '&amp;nbsp;' .. ret end
+	if _ne(args.kbd) then ret = '&lt;kbd&gt;' .. ret .. '&lt;/kbd&gt;' end
+	if code then
+		ret = '&lt;code&gt;' .. ret .. '&lt;/code&gt;'
+	elseif _ne(args.plaincode) then
+		ret = '&lt;code style="border:none;"&gt;' .. ret .. '&lt;/code&gt;'
+	end
+	if _ne(args.nowrap) then ret = '&lt;span class="nowrap"&gt;' .. ret .. '&lt;/span&gt;' end
+	
+	--[[ Wrap as html?? 
+	local span = mw.html.create('span')
+	span:wikitext(ret)
+	--]]
+	if _ne(args.debug) then ret = ret .. '\n&lt;pre&gt;' .. mw.text.encode(mw.dumpObject(args)) .. '&lt;/pre&gt;' end
+
+	if show_result then
+		local result = mw.getCurrentFrame():expandTemplate{title = addTemplate(args[1]), args = codeArguments}
+		ret = ret .. " → " .. result
+	end
+
+	if expand then
+		local query = mw.text.encode('{{' .. addTemplate(args[1]) .. string.gsub(codeArgumentsString, textPartBuffer, "|") .. '}}')
+		local url = mw.uri.fullUrl('special:ExpandTemplates', 'wpInput=' .. query)
+		mw.log()
+		ret = ret .. " [" .. tostring(url) .. "]"
+	end
+
+	return ret
+end
+
+return p
+
+[[Category:pages from wikipedia]][[en:{{subst:PAGENAME}}]][[Category:pages from wikipedia]]</text>
+      <sha1>7lpk9dsfkfdpbtj4ey4lmug38eg9kdl</sha1>
+    </revision>
+    <revision>
+      <id>721436</id>
+      <parentid>721435</parentid>
+      <timestamp>2025-04-25T22:59:59Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "{subst:PAGENAME}" to "{{subst:PAGENAME}}"</comment>
+      <origin>721436</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4459" sha1="5al2ddqbnzjgg8k7l3n63p9pue73wuf" xml:space="preserve">-- This implements [[Template:Template link general]] and various other templates in its family
+local getArgs = require('Module:Arguments').getArgs
+local p = {}
+
+-- Is a string non-empty?
+local function _ne(s) 
+	return s ~= nil and s ~= ""
+end
+
+local nw = mw.text.nowiki
+
+local function addTemplate(s)
+	local i, _ = s:find(':', 1, true)
+	if i == nil then
+		return 'Template:' .. s
+	end
+	local ns = s:sub(1, i - 1)
+	if ns == '' or mw.site.namespaces[ns] then
+		return s
+	else
+		return 'Template:' .. s
+	end
+end
+
+local function trimTemplate(s)
+	local needle = 'template:'
+	if s:sub(1, needle:len()):lower() == needle then
+		return s:sub(needle:len() + 1)	
+	else
+		return s
+	end
+end
+
+local function linkTitle(args)
+	if _ne(args.nolink) then
+		return args['1']
+	end
+	
+	local titleObj
+	local titlePart = '[['
+	if args['1'] then
+		-- This handles :Page and other NS
+		titleObj = mw.title.new(args['1'], 'Template')
+	else
+		titleObj = mw.title.getCurrentTitle()
+	end
+	
+	titlePart = titlePart .. (titleObj ~= nil and titleObj.fullText or
+				addTemplate(args['1']))
+	
+	local textPart = args.alttext
+	if not _ne(textPart) then
+		if titleObj ~= nil then
+			textPart = titleObj:inNamespace("Template") and args['1'] or titleObj.fullText
+		else
+			-- redlink
+			textPart = args['1']
+		end
+	end
+	
+	if _ne(args.subst) then
+		-- HACK: the ns thing above is probably broken
+		textPart = 'subst:' .. textPart
+	end
+	
+	if _ne(args.brace) then
+		textPart = nw('{{') .. textPart .. nw('}}')
+	elseif _ne(args.braceinside) then
+		textPart = nw('{') .. textPart .. nw('}')
+	end
+	
+	titlePart = titlePart .. '|' .. textPart .. ']]'
+	if _ne(args.braceinside) then
+		titlePart = nw('{') .. titlePart .. nw('}')
+	end
+	return titlePart
+end
+
+function p.main(frame)
+	local args = getArgs(frame, {
+		trim = true,
+		removeBlanks = false
+	})
+	return p._main(args)
+end
+
+function p._main(args)
+	local bold = _ne(args.bold) or _ne(args.boldlink) or _ne(args.boldname)
+	local italic = _ne(args.italic) or _ne(args.italics)
+	local dontBrace = _ne(args.brace) or _ne(args.braceinside)
+	local code = _ne(args.code) or _ne(args.tt)
+	local show_result = _ne(args._show_result)
+	local expand = _ne(args._expand)
+	
+	-- Build the link part
+	local titlePart = linkTitle(args)
+	if bold then titlePart = "'''" .. titlePart .. "'''" end
+	if _ne(args.nowrapname) then titlePart = '&lt;span class="nowrap"&gt;' .. titlePart .. '&lt;/span&gt;' end
+	
+	-- Build the arguments
+	local textPart = ""
+	local textPartBuffer = "&amp;#124;"
+	local codeArguments = {}
+	local codeArgumentsString = ""
+	local i = 2
+	local j = 1
+	while args[i] do
+		local val = args[i]
+		if val ~= "" then
+			if _ne(args.nowiki) then
+				-- Unstrip nowiki tags first because calling nw on something that already contains nowiki tags will
+				-- mangle the nowiki strip marker and result in literal UNIQ...QINU showing up
+				val = nw(mw.text.unstripNoWiki(val))
+			end
+			local k, v = string.match(val, "(.*)=(.*)")
+			if not k then
+				codeArguments[j] = val
+				j = j + 1
+			else
+				codeArguments[k] = v
+			end
+			codeArgumentsString = codeArgumentsString .. textPartBuffer .. val
+			if italic then
+				val = '&lt;span style="font-style:italic;"&gt;' .. val .. '&lt;/span&gt;'
+			end
+			textPart = textPart .. textPartBuffer .. val
+		end
+		i = i + 1
+	end
+
+	-- final wrap
+	local ret = titlePart .. textPart
+	if not dontBrace then ret = nw('{{') .. ret .. nw('}}') end
+	if _ne(args.a) then ret = nw('*') .. '&amp;nbsp;' .. ret end
+	if _ne(args.kbd) then ret = '&lt;kbd&gt;' .. ret .. '&lt;/kbd&gt;' end
+	if code then
+		ret = '&lt;code&gt;' .. ret .. '&lt;/code&gt;'
+	elseif _ne(args.plaincode) then
+		ret = '&lt;code style="border:none;"&gt;' .. ret .. '&lt;/code&gt;'
+	end
+	if _ne(args.nowrap) then ret = '&lt;span class="nowrap"&gt;' .. ret .. '&lt;/span&gt;' end
+	
+	--[[ Wrap as html?? 
+	local span = mw.html.create('span')
+	span:wikitext(ret)
+	--]]
+	if _ne(args.debug) then ret = ret .. '\n&lt;pre&gt;' .. mw.text.encode(mw.dumpObject(args)) .. '&lt;/pre&gt;' end
+
+	if show_result then
+		local result = mw.getCurrentFrame():expandTemplate{title = addTemplate(args[1]), args = codeArguments}
+		ret = ret .. " → " .. result
+	end
+
+	if expand then
+		local query = mw.text.encode('{{' .. addTemplate(args[1]) .. string.gsub(codeArgumentsString, textPartBuffer, "|") .. '}}')
+		local url = mw.uri.fullUrl('special:ExpandTemplates', 'wpInput=' .. query)
+		mw.log()
+		ret = ret .. " [" .. tostring(url) .. "]"
+	end
+
+	return ret
+end
+
+return p
+
+[[Category:pages from wikipedia]][[en:{{{subst:PAGENAME}}}]][[Category:pages from wikipedia]]</text>
+      <sha1>5al2ddqbnzjgg8k7l3n63p9pue73wuf</sha1>
+    </revision>
+    <revision>
+      <id>3322</id>
+      <timestamp>2025-05-03T01:10:53Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Text replacement - "{{{subst:PAGENAME}}}" to "{{subst:PAGENAME}}"</comment>
+      <origin>3322</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4457" sha1="7lpk9dsfkfdpbtj4ey4lmug38eg9kdl" xml:space="preserve">-- This implements [[Template:Template link general]] and various other templates in its family
+local getArgs = require('Module:Arguments').getArgs
+local p = {}
+
+-- Is a string non-empty?
+local function _ne(s) 
+	return s ~= nil and s ~= ""
+end
+
+local nw = mw.text.nowiki
+
+local function addTemplate(s)
+	local i, _ = s:find(':', 1, true)
+	if i == nil then
+		return 'Template:' .. s
+	end
+	local ns = s:sub(1, i - 1)
+	if ns == '' or mw.site.namespaces[ns] then
+		return s
+	else
+		return 'Template:' .. s
+	end
+end
+
+local function trimTemplate(s)
+	local needle = 'template:'
+	if s:sub(1, needle:len()):lower() == needle then
+		return s:sub(needle:len() + 1)	
+	else
+		return s
+	end
+end
+
+local function linkTitle(args)
+	if _ne(args.nolink) then
+		return args['1']
+	end
+	
+	local titleObj
+	local titlePart = '[['
+	if args['1'] then
+		-- This handles :Page and other NS
+		titleObj = mw.title.new(args['1'], 'Template')
+	else
+		titleObj = mw.title.getCurrentTitle()
+	end
+	
+	titlePart = titlePart .. (titleObj ~= nil and titleObj.fullText or
+				addTemplate(args['1']))
+	
+	local textPart = args.alttext
+	if not _ne(textPart) then
+		if titleObj ~= nil then
+			textPart = titleObj:inNamespace("Template") and args['1'] or titleObj.fullText
+		else
+			-- redlink
+			textPart = args['1']
+		end
+	end
+	
+	if _ne(args.subst) then
+		-- HACK: the ns thing above is probably broken
+		textPart = 'subst:' .. textPart
+	end
+	
+	if _ne(args.brace) then
+		textPart = nw('{{') .. textPart .. nw('}}')
+	elseif _ne(args.braceinside) then
+		textPart = nw('{') .. textPart .. nw('}')
+	end
+	
+	titlePart = titlePart .. '|' .. textPart .. ']]'
+	if _ne(args.braceinside) then
+		titlePart = nw('{') .. titlePart .. nw('}')
+	end
+	return titlePart
+end
+
+function p.main(frame)
+	local args = getArgs(frame, {
+		trim = true,
+		removeBlanks = false
+	})
+	return p._main(args)
+end
+
+function p._main(args)
+	local bold = _ne(args.bold) or _ne(args.boldlink) or _ne(args.boldname)
+	local italic = _ne(args.italic) or _ne(args.italics)
+	local dontBrace = _ne(args.brace) or _ne(args.braceinside)
+	local code = _ne(args.code) or _ne(args.tt)
+	local show_result = _ne(args._show_result)
+	local expand = _ne(args._expand)
+	
+	-- Build the link part
+	local titlePart = linkTitle(args)
+	if bold then titlePart = "'''" .. titlePart .. "'''" end
+	if _ne(args.nowrapname) then titlePart = '&lt;span class="nowrap"&gt;' .. titlePart .. '&lt;/span&gt;' end
+	
+	-- Build the arguments
+	local textPart = ""
+	local textPartBuffer = "&amp;#124;"
+	local codeArguments = {}
+	local codeArgumentsString = ""
+	local i = 2
+	local j = 1
+	while args[i] do
+		local val = args[i]
+		if val ~= "" then
+			if _ne(args.nowiki) then
+				-- Unstrip nowiki tags first because calling nw on something that already contains nowiki tags will
+				-- mangle the nowiki strip marker and result in literal UNIQ...QINU showing up
+				val = nw(mw.text.unstripNoWiki(val))
+			end
+			local k, v = string.match(val, "(.*)=(.*)")
+			if not k then
+				codeArguments[j] = val
+				j = j + 1
+			else
+				codeArguments[k] = v
+			end
+			codeArgumentsString = codeArgumentsString .. textPartBuffer .. val
+			if italic then
+				val = '&lt;span style="font-style:italic;"&gt;' .. val .. '&lt;/span&gt;'
+			end
+			textPart = textPart .. textPartBuffer .. val
+		end
+		i = i + 1
+	end
+
+	-- final wrap
+	local ret = titlePart .. textPart
+	if not dontBrace then ret = nw('{{') .. ret .. nw('}}') end
+	if _ne(args.a) then ret = nw('*') .. '&amp;nbsp;' .. ret end
+	if _ne(args.kbd) then ret = '&lt;kbd&gt;' .. ret .. '&lt;/kbd&gt;' end
+	if code then
+		ret = '&lt;code&gt;' .. ret .. '&lt;/code&gt;'
+	elseif _ne(args.plaincode) then
+		ret = '&lt;code style="border:none;"&gt;' .. ret .. '&lt;/code&gt;'
+	end
+	if _ne(args.nowrap) then ret = '&lt;span class="nowrap"&gt;' .. ret .. '&lt;/span&gt;' end
+	
+	--[[ Wrap as html?? 
+	local span = mw.html.create('span')
+	span:wikitext(ret)
+	--]]
+	if _ne(args.debug) then ret = ret .. '\n&lt;pre&gt;' .. mw.text.encode(mw.dumpObject(args)) .. '&lt;/pre&gt;' end
+
+	if show_result then
+		local result = mw.getCurrentFrame():expandTemplate{title = addTemplate(args[1]), args = codeArguments}
+		ret = ret .. " → " .. result
+	end
+
+	if expand then
+		local query = mw.text.encode('{{' .. addTemplate(args[1]) .. string.gsub(codeArgumentsString, textPartBuffer, "|") .. '}}')
+		local url = mw.uri.fullUrl('special:ExpandTemplates', 'wpInput=' .. query)
+		mw.log()
+		ret = ret .. " [" .. tostring(url) .. "]"
+	end
+
+	return ret
+end
+
+return p
+
+[[Category:pages from wikipedia]][[en:{{subst:PAGENAME}}]][[Category:pages from wikipedia]]</text>
+      <sha1>7lpk9dsfkfdpbtj4ey4lmug38eg9kdl</sha1>
+    </revision>
+  </page>
+</mediawiki>

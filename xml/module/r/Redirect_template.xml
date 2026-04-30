@@ -1,0 +1,2224 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Redirect template</title>
+    <ns>828</ns>
+    <id>735</id>
+    <revision>
+      <id>521013</id>
+      <timestamp>2022-10-21T08:08:03Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;WOSlinker</username>
+        <id>0</id>
+      </contributor>
+      <comment>use require('strict') instead of require('Module:No globals')</comment>
+      <origin>521013</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3104" sha1="m1s0pucd2yrwmlwi34xyra3h6pdtls8" xml:space="preserve">require('strict')
+
+local p = {}
+
+-- key is beginning of arg name. value is table with namespace number and link
+-- alternatively, a function taking the namespace number and returning a validity
+-- can be used
+local namespaceCategories = {
+	all = { function() return true end },
+	main = { 0, '[[wp:mainspace|main]]' },
+	help = { 12, '[[wp:help namespace|help]]' },
+	portal = { 100, '[[wp:portal|portal]]' },
+	talk = { function(n) return n &gt; 0 and n%2 == 1 end, '[[Help:Talk pages|talk]]' },
+	template = { 10, '[[wp:template namespace|template]]' },
+	wikipedia = { 4, '[[wp:project namespace|Wikipedia project]]' },
+	category = { 14, '[[wp:categorization|category]]' },
+	user = { 2, '[[wp:user pages|user]]' },
+}
+
+-- remove whitespaces from beginning and end of args
+local function valueFunc(key, val)
+	if type(val) == 'string' then
+		val = val:match('^%s*(.-)%s*$')
+		if val == '' then
+			return nil
+		end
+	end
+	return val
+end
+
+local function getPrettyName(args)
+	for k in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			return string.format("'''[[:Category:%s|%s]]''': ", args[k .. ' category'], args.name)
+		end
+	end
+	return string.format("'''%s''': ", args.name)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = 'Template:Redirect template', valueFunc = valueFunc})
+	local namespace = mw.title.getCurrentTitle().namespace
+
+	--- XXX: this is a HORRIBLE HACK. kill it with fire as soon as https://bugzilla.wikimedia.org/show_bug.cgi?id=12974 is fixed
+	local beCompatibleWithBug12974 = args.info and (args.info:find('^[:;#*]', 1) == 1 or args.info:find('{|', 1, true) == 1) and '\n' or ' '
+	
+	local content = string.format('\n&lt;div class="rcat %s"&gt;\n*%sThis is a redirect%s%s.%s%s\n&lt;/div&gt;',
+		args.id and ('rcat-' .. string.gsub(args.id, ' ', '_')) or '',
+		args.name and getPrettyName(args) or '',
+		args.from and (' from ' .. args.from) or '',
+		args.to and (' to ' .. args.to) or '',
+		args.info and beCompatibleWithBug12974 or '',
+		args.info or ''
+	)
+	
+	for k,v in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			if type(v[1]) == 'function' and v[1](namespace) or v[1] == namespace then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args[k .. ' category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args[k .. ' category'])
+				end
+			elseif args['other category'] then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args['other category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args['other category'])
+				end
+			else
+				content = content .. frame:expandTemplate{title = 'Incorrect redirect template', args = {v[2]}}
+			end
+		end
+	end
+
+	if namespace == 0 then
+		local yesno = require('Module:Yesno')
+		if yesno(args.printworthy) == true then
+			return content .. '[[Category:Printworthy redirects]]'
+		elseif yesno(args.printworthy) == false then
+			return content .. '[[Category:Unprintworthy redirects]]'
+		end
+	end
+	return content
+end
+
+return p</text>
+      <sha1>m1s0pucd2yrwmlwi34xyra3h6pdtls8</sha1>
+    </revision>
+    <revision>
+      <id>521014</id>
+      <parentid>521013</parentid>
+      <timestamp>2024-06-28T09:53:24Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:Redirect_template]]</comment>
+      <origin>521013</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3104" sha1="m1s0pucd2yrwmlwi34xyra3h6pdtls8" xml:space="preserve">require('strict')
+
+local p = {}
+
+-- key is beginning of arg name. value is table with namespace number and link
+-- alternatively, a function taking the namespace number and returning a validity
+-- can be used
+local namespaceCategories = {
+	all = { function() return true end },
+	main = { 0, '[[wp:mainspace|main]]' },
+	help = { 12, '[[wp:help namespace|help]]' },
+	portal = { 100, '[[wp:portal|portal]]' },
+	talk = { function(n) return n &gt; 0 and n%2 == 1 end, '[[Help:Talk pages|talk]]' },
+	template = { 10, '[[wp:template namespace|template]]' },
+	wikipedia = { 4, '[[wp:project namespace|Wikipedia project]]' },
+	category = { 14, '[[wp:categorization|category]]' },
+	user = { 2, '[[wp:user pages|user]]' },
+}
+
+-- remove whitespaces from beginning and end of args
+local function valueFunc(key, val)
+	if type(val) == 'string' then
+		val = val:match('^%s*(.-)%s*$')
+		if val == '' then
+			return nil
+		end
+	end
+	return val
+end
+
+local function getPrettyName(args)
+	for k in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			return string.format("'''[[:Category:%s|%s]]''': ", args[k .. ' category'], args.name)
+		end
+	end
+	return string.format("'''%s''': ", args.name)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = 'Template:Redirect template', valueFunc = valueFunc})
+	local namespace = mw.title.getCurrentTitle().namespace
+
+	--- XXX: this is a HORRIBLE HACK. kill it with fire as soon as https://bugzilla.wikimedia.org/show_bug.cgi?id=12974 is fixed
+	local beCompatibleWithBug12974 = args.info and (args.info:find('^[:;#*]', 1) == 1 or args.info:find('{|', 1, true) == 1) and '\n' or ' '
+	
+	local content = string.format('\n&lt;div class="rcat %s"&gt;\n*%sThis is a redirect%s%s.%s%s\n&lt;/div&gt;',
+		args.id and ('rcat-' .. string.gsub(args.id, ' ', '_')) or '',
+		args.name and getPrettyName(args) or '',
+		args.from and (' from ' .. args.from) or '',
+		args.to and (' to ' .. args.to) or '',
+		args.info and beCompatibleWithBug12974 or '',
+		args.info or ''
+	)
+	
+	for k,v in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			if type(v[1]) == 'function' and v[1](namespace) or v[1] == namespace then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args[k .. ' category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args[k .. ' category'])
+				end
+			elseif args['other category'] then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args['other category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args['other category'])
+				end
+			else
+				content = content .. frame:expandTemplate{title = 'Incorrect redirect template', args = {v[2]}}
+			end
+		end
+	end
+
+	if namespace == 0 then
+		local yesno = require('Module:Yesno')
+		if yesno(args.printworthy) == true then
+			return content .. '[[Category:Printworthy redirects]]'
+		elseif yesno(args.printworthy) == false then
+			return content .. '[[Category:Unprintworthy redirects]]'
+		end
+	end
+	return content
+end
+
+return p</text>
+      <sha1>m1s0pucd2yrwmlwi34xyra3h6pdtls8</sha1>
+    </revision>
+    <revision>
+      <id>521015</id>
+      <parentid>521014</parentid>
+      <timestamp>2024-08-22T15:43:31Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Ahecht</username>
+        <id>0</id>
+      </contributor>
+      <comment>Sync from sandbox, add draft namespace</comment>
+      <origin>521015</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3250" sha1="st70b7nx9gq8upoveshz93h1coat7c9" xml:space="preserve">require('strict')
+
+local p = {}
+
+-- key is beginning of arg name. value is table with namespace number and link
+-- alternatively, a function taking the namespace number and returning a validity
+-- can be used
+local namespaceCategories = {
+	all = { function() return true end },
+	main = { 0, '[[wp:mainspace|main]]' },
+	help = { 12, '[[wp:help namespace|help]]' },
+	portal = { 100, '[[wp:portal|portal]]' },
+	talk = { function(n) return n &gt; 0 and n%2 == 1 end, '[[Help:Talk pages|talk]]' },
+	template = { 10, '[[wp:template namespace|template]]' },
+	wikipedia = { 4, '[[wp:project namespace|Wikipedia project]]' },
+	category = { 14, '[[wp:categorization|category]]' },
+	user = { 2, '[[wp:user pages|user]]' },
+	draft = { 118, '[[wp:drafts|draft]]' },
+}
+
+-- remove whitespaces from beginning and end of args
+local function valueFunc(key, val)
+	if type(val) == 'string' then
+		val = val:match('^%s*(.-)%s*$')
+		if val == '' then
+			return nil
+		end
+	end
+	return val
+end
+
+local function getPrettyName(args)
+	for k in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			return string.format("'''[[:Category:%s|%s]]''': ", args[k .. ' category'], args.name)
+		end
+	end
+	return string.format("'''%s''': ", args.name)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = 'Template:Redirect template', valueFunc = valueFunc})
+	local namespace = mw.title.getCurrentTitle().namespace
+
+	--- XXX: this is a HORRIBLE HACK. kill it with fire as soon as https://phabricator.wikimedia.org/T14974 is fixed
+	--- [[phab:T14974]] was previously known as [[bugzilla:12974]] https://bugzilla.wikimedia.org/show_bug.cgi?id=12974
+	local beCompatibleWithBug14974 = args.info and (args.info:find('^[:;#*]', 1) == 1 or args.info:find('{|', 1, true) == 1) and '\n' or ' '
+	
+	local content = string.format('\n&lt;div class="rcat %s"&gt;\n*%sThis is a redirect%s%s.%s%s\n&lt;/div&gt;',
+		args.id and ('rcat-' .. string.gsub(args.id, ' ', '_')) or '',
+		args.name and getPrettyName(args) or '',
+		args.from and (' from ' .. args.from) or '',
+		args.to and (' to ' .. args.to) or '',
+		args.info and beCompatibleWithBug14974 or '',
+		args.info or ''
+	)
+	
+	for k,v in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			if type(v[1]) == 'function' and v[1](namespace) or v[1] == namespace then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args[k .. ' category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args[k .. ' category'])
+				end
+			elseif args['other category'] then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args['other category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args['other category'])
+				end
+			else
+				content = content .. frame:expandTemplate{title = 'Incorrect redirect template', args = {v[2]}}
+			end
+		end
+	end
+
+	if namespace == 0 then
+		local yesno = require('Module:Yesno')
+		if yesno(args.printworthy) == true then
+			return content .. '[[Category:Printworthy redirects]]'
+		elseif yesno(args.printworthy) == false then
+			return content .. '[[Category:Unprintworthy redirects]]'
+		end
+	end
+	return content
+end
+
+return p</text>
+      <sha1>st70b7nx9gq8upoveshz93h1coat7c9</sha1>
+    </revision>
+    <revision>
+      <id>521016</id>
+      <parentid>521015</parentid>
+      <timestamp>2024-09-12T11:58:51Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:Redirect_template]]</comment>
+      <origin>521015</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3250" sha1="st70b7nx9gq8upoveshz93h1coat7c9" xml:space="preserve">require('strict')
+
+local p = {}
+
+-- key is beginning of arg name. value is table with namespace number and link
+-- alternatively, a function taking the namespace number and returning a validity
+-- can be used
+local namespaceCategories = {
+	all = { function() return true end },
+	main = { 0, '[[wp:mainspace|main]]' },
+	help = { 12, '[[wp:help namespace|help]]' },
+	portal = { 100, '[[wp:portal|portal]]' },
+	talk = { function(n) return n &gt; 0 and n%2 == 1 end, '[[Help:Talk pages|talk]]' },
+	template = { 10, '[[wp:template namespace|template]]' },
+	wikipedia = { 4, '[[wp:project namespace|Wikipedia project]]' },
+	category = { 14, '[[wp:categorization|category]]' },
+	user = { 2, '[[wp:user pages|user]]' },
+	draft = { 118, '[[wp:drafts|draft]]' },
+}
+
+-- remove whitespaces from beginning and end of args
+local function valueFunc(key, val)
+	if type(val) == 'string' then
+		val = val:match('^%s*(.-)%s*$')
+		if val == '' then
+			return nil
+		end
+	end
+	return val
+end
+
+local function getPrettyName(args)
+	for k in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			return string.format("'''[[:Category:%s|%s]]''': ", args[k .. ' category'], args.name)
+		end
+	end
+	return string.format("'''%s''': ", args.name)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = 'Template:Redirect template', valueFunc = valueFunc})
+	local namespace = mw.title.getCurrentTitle().namespace
+
+	--- XXX: this is a HORRIBLE HACK. kill it with fire as soon as https://phabricator.wikimedia.org/T14974 is fixed
+	--- [[phab:T14974]] was previously known as [[bugzilla:12974]] https://bugzilla.wikimedia.org/show_bug.cgi?id=12974
+	local beCompatibleWithBug14974 = args.info and (args.info:find('^[:;#*]', 1) == 1 or args.info:find('{|', 1, true) == 1) and '\n' or ' '
+	
+	local content = string.format('\n&lt;div class="rcat %s"&gt;\n*%sThis is a redirect%s%s.%s%s\n&lt;/div&gt;',
+		args.id and ('rcat-' .. string.gsub(args.id, ' ', '_')) or '',
+		args.name and getPrettyName(args) or '',
+		args.from and (' from ' .. args.from) or '',
+		args.to and (' to ' .. args.to) or '',
+		args.info and beCompatibleWithBug14974 or '',
+		args.info or ''
+	)
+	
+	for k,v in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			if type(v[1]) == 'function' and v[1](namespace) or v[1] == namespace then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args[k .. ' category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args[k .. ' category'])
+				end
+			elseif args['other category'] then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args['other category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args['other category'])
+				end
+			else
+				content = content .. frame:expandTemplate{title = 'Incorrect redirect template', args = {v[2]}}
+			end
+		end
+	end
+
+	if namespace == 0 then
+		local yesno = require('Module:Yesno')
+		if yesno(args.printworthy) == true then
+			return content .. '[[Category:Printworthy redirects]]'
+		elseif yesno(args.printworthy) == false then
+			return content .. '[[Category:Unprintworthy redirects]]'
+		end
+	end
+	return content
+end
+
+return p</text>
+      <sha1>st70b7nx9gq8upoveshz93h1coat7c9</sha1>
+    </revision>
+    <revision>
+      <id>521017</id>
+      <parentid>521016</parentid>
+      <timestamp>2025-04-27T22:10:47Z</timestamp>
+      <contributor>
+        <username>Ahecht</username>
+        <id>54</id>
+      </contributor>
+      <comment>Sync from sandbox, add draft namespace</comment>
+      <origin>521015</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3250" sha1="st70b7nx9gq8upoveshz93h1coat7c9" xml:space="preserve">require('strict')
+
+local p = {}
+
+-- key is beginning of arg name. value is table with namespace number and link
+-- alternatively, a function taking the namespace number and returning a validity
+-- can be used
+local namespaceCategories = {
+	all = { function() return true end },
+	main = { 0, '[[wp:mainspace|main]]' },
+	help = { 12, '[[wp:help namespace|help]]' },
+	portal = { 100, '[[wp:portal|portal]]' },
+	talk = { function(n) return n &gt; 0 and n%2 == 1 end, '[[Help:Talk pages|talk]]' },
+	template = { 10, '[[wp:template namespace|template]]' },
+	wikipedia = { 4, '[[wp:project namespace|Wikipedia project]]' },
+	category = { 14, '[[wp:categorization|category]]' },
+	user = { 2, '[[wp:user pages|user]]' },
+	draft = { 118, '[[wp:drafts|draft]]' },
+}
+
+-- remove whitespaces from beginning and end of args
+local function valueFunc(key, val)
+	if type(val) == 'string' then
+		val = val:match('^%s*(.-)%s*$')
+		if val == '' then
+			return nil
+		end
+	end
+	return val
+end
+
+local function getPrettyName(args)
+	for k in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			return string.format("'''[[:Category:%s|%s]]''': ", args[k .. ' category'], args.name)
+		end
+	end
+	return string.format("'''%s''': ", args.name)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = 'Template:Redirect template', valueFunc = valueFunc})
+	local namespace = mw.title.getCurrentTitle().namespace
+
+	--- XXX: this is a HORRIBLE HACK. kill it with fire as soon as https://phabricator.wikimedia.org/T14974 is fixed
+	--- [[phab:T14974]] was previously known as [[bugzilla:12974]] https://bugzilla.wikimedia.org/show_bug.cgi?id=12974
+	local beCompatibleWithBug14974 = args.info and (args.info:find('^[:;#*]', 1) == 1 or args.info:find('{|', 1, true) == 1) and '\n' or ' '
+	
+	local content = string.format('\n&lt;div class="rcat %s"&gt;\n*%sThis is a redirect%s%s.%s%s\n&lt;/div&gt;',
+		args.id and ('rcat-' .. string.gsub(args.id, ' ', '_')) or '',
+		args.name and getPrettyName(args) or '',
+		args.from and (' from ' .. args.from) or '',
+		args.to and (' to ' .. args.to) or '',
+		args.info and beCompatibleWithBug14974 or '',
+		args.info or ''
+	)
+	
+	for k,v in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			if type(v[1]) == 'function' and v[1](namespace) or v[1] == namespace then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args[k .. ' category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args[k .. ' category'])
+				end
+			elseif args['other category'] then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args['other category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args['other category'])
+				end
+			else
+				content = content .. frame:expandTemplate{title = 'Incorrect redirect template', args = {v[2]}}
+			end
+		end
+	end
+
+	if namespace == 0 then
+		local yesno = require('Module:Yesno')
+		if yesno(args.printworthy) == true then
+			return content .. '[[Category:Printworthy redirects]]'
+		elseif yesno(args.printworthy) == false then
+			return content .. '[[Category:Unprintworthy redirects]]'
+		end
+	end
+	return content
+end
+
+return p</text>
+      <sha1>st70b7nx9gq8upoveshz93h1coat7c9</sha1>
+    </revision>
+    <revision>
+      <id>521018</id>
+      <parentid>521017</parentid>
+      <timestamp>2025-04-27T22:10:48Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: chat is this real</comment>
+      <origin>521015</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3250" sha1="st70b7nx9gq8upoveshz93h1coat7c9" xml:space="preserve">require('strict')
+
+local p = {}
+
+-- key is beginning of arg name. value is table with namespace number and link
+-- alternatively, a function taking the namespace number and returning a validity
+-- can be used
+local namespaceCategories = {
+	all = { function() return true end },
+	main = { 0, '[[wp:mainspace|main]]' },
+	help = { 12, '[[wp:help namespace|help]]' },
+	portal = { 100, '[[wp:portal|portal]]' },
+	talk = { function(n) return n &gt; 0 and n%2 == 1 end, '[[Help:Talk pages|talk]]' },
+	template = { 10, '[[wp:template namespace|template]]' },
+	wikipedia = { 4, '[[wp:project namespace|Wikipedia project]]' },
+	category = { 14, '[[wp:categorization|category]]' },
+	user = { 2, '[[wp:user pages|user]]' },
+	draft = { 118, '[[wp:drafts|draft]]' },
+}
+
+-- remove whitespaces from beginning and end of args
+local function valueFunc(key, val)
+	if type(val) == 'string' then
+		val = val:match('^%s*(.-)%s*$')
+		if val == '' then
+			return nil
+		end
+	end
+	return val
+end
+
+local function getPrettyName(args)
+	for k in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			return string.format("'''[[:Category:%s|%s]]''': ", args[k .. ' category'], args.name)
+		end
+	end
+	return string.format("'''%s''': ", args.name)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = 'Template:Redirect template', valueFunc = valueFunc})
+	local namespace = mw.title.getCurrentTitle().namespace
+
+	--- XXX: this is a HORRIBLE HACK. kill it with fire as soon as https://phabricator.wikimedia.org/T14974 is fixed
+	--- [[phab:T14974]] was previously known as [[bugzilla:12974]] https://bugzilla.wikimedia.org/show_bug.cgi?id=12974
+	local beCompatibleWithBug14974 = args.info and (args.info:find('^[:;#*]', 1) == 1 or args.info:find('{|', 1, true) == 1) and '\n' or ' '
+	
+	local content = string.format('\n&lt;div class="rcat %s"&gt;\n*%sThis is a redirect%s%s.%s%s\n&lt;/div&gt;',
+		args.id and ('rcat-' .. string.gsub(args.id, ' ', '_')) or '',
+		args.name and getPrettyName(args) or '',
+		args.from and (' from ' .. args.from) or '',
+		args.to and (' to ' .. args.to) or '',
+		args.info and beCompatibleWithBug14974 or '',
+		args.info or ''
+	)
+	
+	for k,v in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			if type(v[1]) == 'function' and v[1](namespace) or v[1] == namespace then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args[k .. ' category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args[k .. ' category'])
+				end
+			elseif args['other category'] then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args['other category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args['other category'])
+				end
+			else
+				content = content .. frame:expandTemplate{title = 'Incorrect redirect template', args = {v[2]}}
+			end
+		end
+	end
+
+	if namespace == 0 then
+		local yesno = require('Module:Yesno')
+		if yesno(args.printworthy) == true then
+			return content .. '[[Category:Printworthy redirects]]'
+		elseif yesno(args.printworthy) == false then
+			return content .. '[[Category:Unprintworthy redirects]]'
+		end
+	end
+	return content
+end
+
+return p</text>
+      <sha1>st70b7nx9gq8upoveshz93h1coat7c9</sha1>
+    </revision>
+    <revision>
+      <id>521019</id>
+      <parentid>521018</parentid>
+      <timestamp>2025-04-27T22:12:15Z</timestamp>
+      <contributor>
+        <username>Ahecht</username>
+        <id>54</id>
+      </contributor>
+      <comment>Sync from sandbox, add draft namespace</comment>
+      <origin>521015</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3250" sha1="st70b7nx9gq8upoveshz93h1coat7c9" xml:space="preserve">require('strict')
+
+local p = {}
+
+-- key is beginning of arg name. value is table with namespace number and link
+-- alternatively, a function taking the namespace number and returning a validity
+-- can be used
+local namespaceCategories = {
+	all = { function() return true end },
+	main = { 0, '[[wp:mainspace|main]]' },
+	help = { 12, '[[wp:help namespace|help]]' },
+	portal = { 100, '[[wp:portal|portal]]' },
+	talk = { function(n) return n &gt; 0 and n%2 == 1 end, '[[Help:Talk pages|talk]]' },
+	template = { 10, '[[wp:template namespace|template]]' },
+	wikipedia = { 4, '[[wp:project namespace|Wikipedia project]]' },
+	category = { 14, '[[wp:categorization|category]]' },
+	user = { 2, '[[wp:user pages|user]]' },
+	draft = { 118, '[[wp:drafts|draft]]' },
+}
+
+-- remove whitespaces from beginning and end of args
+local function valueFunc(key, val)
+	if type(val) == 'string' then
+		val = val:match('^%s*(.-)%s*$')
+		if val == '' then
+			return nil
+		end
+	end
+	return val
+end
+
+local function getPrettyName(args)
+	for k in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			return string.format("'''[[:Category:%s|%s]]''': ", args[k .. ' category'], args.name)
+		end
+	end
+	return string.format("'''%s''': ", args.name)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = 'Template:Redirect template', valueFunc = valueFunc})
+	local namespace = mw.title.getCurrentTitle().namespace
+
+	--- XXX: this is a HORRIBLE HACK. kill it with fire as soon as https://phabricator.wikimedia.org/T14974 is fixed
+	--- [[phab:T14974]] was previously known as [[bugzilla:12974]] https://bugzilla.wikimedia.org/show_bug.cgi?id=12974
+	local beCompatibleWithBug14974 = args.info and (args.info:find('^[:;#*]', 1) == 1 or args.info:find('{|', 1, true) == 1) and '\n' or ' '
+	
+	local content = string.format('\n&lt;div class="rcat %s"&gt;\n*%sThis is a redirect%s%s.%s%s\n&lt;/div&gt;',
+		args.id and ('rcat-' .. string.gsub(args.id, ' ', '_')) or '',
+		args.name and getPrettyName(args) or '',
+		args.from and (' from ' .. args.from) or '',
+		args.to and (' to ' .. args.to) or '',
+		args.info and beCompatibleWithBug14974 or '',
+		args.info or ''
+	)
+	
+	for k,v in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			if type(v[1]) == 'function' and v[1](namespace) or v[1] == namespace then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args[k .. ' category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args[k .. ' category'])
+				end
+			elseif args['other category'] then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args['other category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args['other category'])
+				end
+			else
+				content = content .. frame:expandTemplate{title = 'Incorrect redirect template', args = {v[2]}}
+			end
+		end
+	end
+
+	if namespace == 0 then
+		local yesno = require('Module:Yesno')
+		if yesno(args.printworthy) == true then
+			return content .. '[[Category:Printworthy redirects]]'
+		elseif yesno(args.printworthy) == false then
+			return content .. '[[Category:Unprintworthy redirects]]'
+		end
+	end
+	return content
+end
+
+return p</text>
+      <sha1>st70b7nx9gq8upoveshz93h1coat7c9</sha1>
+    </revision>
+    <revision>
+      <id>521020</id>
+      <parentid>521019</parentid>
+      <timestamp>2025-04-27T22:12:16Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: chat is this real</comment>
+      <origin>521015</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3250" sha1="st70b7nx9gq8upoveshz93h1coat7c9" xml:space="preserve">require('strict')
+
+local p = {}
+
+-- key is beginning of arg name. value is table with namespace number and link
+-- alternatively, a function taking the namespace number and returning a validity
+-- can be used
+local namespaceCategories = {
+	all = { function() return true end },
+	main = { 0, '[[wp:mainspace|main]]' },
+	help = { 12, '[[wp:help namespace|help]]' },
+	portal = { 100, '[[wp:portal|portal]]' },
+	talk = { function(n) return n &gt; 0 and n%2 == 1 end, '[[Help:Talk pages|talk]]' },
+	template = { 10, '[[wp:template namespace|template]]' },
+	wikipedia = { 4, '[[wp:project namespace|Wikipedia project]]' },
+	category = { 14, '[[wp:categorization|category]]' },
+	user = { 2, '[[wp:user pages|user]]' },
+	draft = { 118, '[[wp:drafts|draft]]' },
+}
+
+-- remove whitespaces from beginning and end of args
+local function valueFunc(key, val)
+	if type(val) == 'string' then
+		val = val:match('^%s*(.-)%s*$')
+		if val == '' then
+			return nil
+		end
+	end
+	return val
+end
+
+local function getPrettyName(args)
+	for k in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			return string.format("'''[[:Category:%s|%s]]''': ", args[k .. ' category'], args.name)
+		end
+	end
+	return string.format("'''%s''': ", args.name)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = 'Template:Redirect template', valueFunc = valueFunc})
+	local namespace = mw.title.getCurrentTitle().namespace
+
+	--- XXX: this is a HORRIBLE HACK. kill it with fire as soon as https://phabricator.wikimedia.org/T14974 is fixed
+	--- [[phab:T14974]] was previously known as [[bugzilla:12974]] https://bugzilla.wikimedia.org/show_bug.cgi?id=12974
+	local beCompatibleWithBug14974 = args.info and (args.info:find('^[:;#*]', 1) == 1 or args.info:find('{|', 1, true) == 1) and '\n' or ' '
+	
+	local content = string.format('\n&lt;div class="rcat %s"&gt;\n*%sThis is a redirect%s%s.%s%s\n&lt;/div&gt;',
+		args.id and ('rcat-' .. string.gsub(args.id, ' ', '_')) or '',
+		args.name and getPrettyName(args) or '',
+		args.from and (' from ' .. args.from) or '',
+		args.to and (' to ' .. args.to) or '',
+		args.info and beCompatibleWithBug14974 or '',
+		args.info or ''
+	)
+	
+	for k,v in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			if type(v[1]) == 'function' and v[1](namespace) or v[1] == namespace then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args[k .. ' category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args[k .. ' category'])
+				end
+			elseif args['other category'] then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args['other category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args['other category'])
+				end
+			else
+				content = content .. frame:expandTemplate{title = 'Incorrect redirect template', args = {v[2]}}
+			end
+		end
+	end
+
+	if namespace == 0 then
+		local yesno = require('Module:Yesno')
+		if yesno(args.printworthy) == true then
+			return content .. '[[Category:Printworthy redirects]]'
+		elseif yesno(args.printworthy) == false then
+			return content .. '[[Category:Unprintworthy redirects]]'
+		end
+	end
+	return content
+end
+
+return p</text>
+      <sha1>st70b7nx9gq8upoveshz93h1coat7c9</sha1>
+    </revision>
+    <revision>
+      <id>521021</id>
+      <parentid>521020</parentid>
+      <timestamp>2025-04-27T22:13:09Z</timestamp>
+      <contributor>
+        <username>Ahecht</username>
+        <id>54</id>
+      </contributor>
+      <comment>Sync from sandbox, add draft namespace</comment>
+      <origin>521015</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3250" sha1="st70b7nx9gq8upoveshz93h1coat7c9" xml:space="preserve">require('strict')
+
+local p = {}
+
+-- key is beginning of arg name. value is table with namespace number and link
+-- alternatively, a function taking the namespace number and returning a validity
+-- can be used
+local namespaceCategories = {
+	all = { function() return true end },
+	main = { 0, '[[wp:mainspace|main]]' },
+	help = { 12, '[[wp:help namespace|help]]' },
+	portal = { 100, '[[wp:portal|portal]]' },
+	talk = { function(n) return n &gt; 0 and n%2 == 1 end, '[[Help:Talk pages|talk]]' },
+	template = { 10, '[[wp:template namespace|template]]' },
+	wikipedia = { 4, '[[wp:project namespace|Wikipedia project]]' },
+	category = { 14, '[[wp:categorization|category]]' },
+	user = { 2, '[[wp:user pages|user]]' },
+	draft = { 118, '[[wp:drafts|draft]]' },
+}
+
+-- remove whitespaces from beginning and end of args
+local function valueFunc(key, val)
+	if type(val) == 'string' then
+		val = val:match('^%s*(.-)%s*$')
+		if val == '' then
+			return nil
+		end
+	end
+	return val
+end
+
+local function getPrettyName(args)
+	for k in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			return string.format("'''[[:Category:%s|%s]]''': ", args[k .. ' category'], args.name)
+		end
+	end
+	return string.format("'''%s''': ", args.name)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = 'Template:Redirect template', valueFunc = valueFunc})
+	local namespace = mw.title.getCurrentTitle().namespace
+
+	--- XXX: this is a HORRIBLE HACK. kill it with fire as soon as https://phabricator.wikimedia.org/T14974 is fixed
+	--- [[phab:T14974]] was previously known as [[bugzilla:12974]] https://bugzilla.wikimedia.org/show_bug.cgi?id=12974
+	local beCompatibleWithBug14974 = args.info and (args.info:find('^[:;#*]', 1) == 1 or args.info:find('{|', 1, true) == 1) and '\n' or ' '
+	
+	local content = string.format('\n&lt;div class="rcat %s"&gt;\n*%sThis is a redirect%s%s.%s%s\n&lt;/div&gt;',
+		args.id and ('rcat-' .. string.gsub(args.id, ' ', '_')) or '',
+		args.name and getPrettyName(args) or '',
+		args.from and (' from ' .. args.from) or '',
+		args.to and (' to ' .. args.to) or '',
+		args.info and beCompatibleWithBug14974 or '',
+		args.info or ''
+	)
+	
+	for k,v in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			if type(v[1]) == 'function' and v[1](namespace) or v[1] == namespace then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args[k .. ' category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args[k .. ' category'])
+				end
+			elseif args['other category'] then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args['other category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args['other category'])
+				end
+			else
+				content = content .. frame:expandTemplate{title = 'Incorrect redirect template', args = {v[2]}}
+			end
+		end
+	end
+
+	if namespace == 0 then
+		local yesno = require('Module:Yesno')
+		if yesno(args.printworthy) == true then
+			return content .. '[[Category:Printworthy redirects]]'
+		elseif yesno(args.printworthy) == false then
+			return content .. '[[Category:Unprintworthy redirects]]'
+		end
+	end
+	return content
+end
+
+return p</text>
+      <sha1>st70b7nx9gq8upoveshz93h1coat7c9</sha1>
+    </revision>
+    <revision>
+      <id>521022</id>
+      <parentid>521021</parentid>
+      <timestamp>2025-04-27T22:13:10Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: chat is this real</comment>
+      <origin>521015</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3250" sha1="st70b7nx9gq8upoveshz93h1coat7c9" xml:space="preserve">require('strict')
+
+local p = {}
+
+-- key is beginning of arg name. value is table with namespace number and link
+-- alternatively, a function taking the namespace number and returning a validity
+-- can be used
+local namespaceCategories = {
+	all = { function() return true end },
+	main = { 0, '[[wp:mainspace|main]]' },
+	help = { 12, '[[wp:help namespace|help]]' },
+	portal = { 100, '[[wp:portal|portal]]' },
+	talk = { function(n) return n &gt; 0 and n%2 == 1 end, '[[Help:Talk pages|talk]]' },
+	template = { 10, '[[wp:template namespace|template]]' },
+	wikipedia = { 4, '[[wp:project namespace|Wikipedia project]]' },
+	category = { 14, '[[wp:categorization|category]]' },
+	user = { 2, '[[wp:user pages|user]]' },
+	draft = { 118, '[[wp:drafts|draft]]' },
+}
+
+-- remove whitespaces from beginning and end of args
+local function valueFunc(key, val)
+	if type(val) == 'string' then
+		val = val:match('^%s*(.-)%s*$')
+		if val == '' then
+			return nil
+		end
+	end
+	return val
+end
+
+local function getPrettyName(args)
+	for k in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			return string.format("'''[[:Category:%s|%s]]''': ", args[k .. ' category'], args.name)
+		end
+	end
+	return string.format("'''%s''': ", args.name)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = 'Template:Redirect template', valueFunc = valueFunc})
+	local namespace = mw.title.getCurrentTitle().namespace
+
+	--- XXX: this is a HORRIBLE HACK. kill it with fire as soon as https://phabricator.wikimedia.org/T14974 is fixed
+	--- [[phab:T14974]] was previously known as [[bugzilla:12974]] https://bugzilla.wikimedia.org/show_bug.cgi?id=12974
+	local beCompatibleWithBug14974 = args.info and (args.info:find('^[:;#*]', 1) == 1 or args.info:find('{|', 1, true) == 1) and '\n' or ' '
+	
+	local content = string.format('\n&lt;div class="rcat %s"&gt;\n*%sThis is a redirect%s%s.%s%s\n&lt;/div&gt;',
+		args.id and ('rcat-' .. string.gsub(args.id, ' ', '_')) or '',
+		args.name and getPrettyName(args) or '',
+		args.from and (' from ' .. args.from) or '',
+		args.to and (' to ' .. args.to) or '',
+		args.info and beCompatibleWithBug14974 or '',
+		args.info or ''
+	)
+	
+	for k,v in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			if type(v[1]) == 'function' and v[1](namespace) or v[1] == namespace then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args[k .. ' category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args[k .. ' category'])
+				end
+			elseif args['other category'] then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args['other category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args['other category'])
+				end
+			else
+				content = content .. frame:expandTemplate{title = 'Incorrect redirect template', args = {v[2]}}
+			end
+		end
+	end
+
+	if namespace == 0 then
+		local yesno = require('Module:Yesno')
+		if yesno(args.printworthy) == true then
+			return content .. '[[Category:Printworthy redirects]]'
+		elseif yesno(args.printworthy) == false then
+			return content .. '[[Category:Unprintworthy redirects]]'
+		end
+	end
+	return content
+end
+
+return p</text>
+      <sha1>st70b7nx9gq8upoveshz93h1coat7c9</sha1>
+    </revision>
+    <revision>
+      <id>521023</id>
+      <parentid>521022</parentid>
+      <timestamp>2025-04-27T22:16:51Z</timestamp>
+      <contributor>
+        <username>Ahecht</username>
+        <id>54</id>
+      </contributor>
+      <comment>Sync from sandbox, add draft namespace</comment>
+      <origin>521015</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3250" sha1="st70b7nx9gq8upoveshz93h1coat7c9" xml:space="preserve">require('strict')
+
+local p = {}
+
+-- key is beginning of arg name. value is table with namespace number and link
+-- alternatively, a function taking the namespace number and returning a validity
+-- can be used
+local namespaceCategories = {
+	all = { function() return true end },
+	main = { 0, '[[wp:mainspace|main]]' },
+	help = { 12, '[[wp:help namespace|help]]' },
+	portal = { 100, '[[wp:portal|portal]]' },
+	talk = { function(n) return n &gt; 0 and n%2 == 1 end, '[[Help:Talk pages|talk]]' },
+	template = { 10, '[[wp:template namespace|template]]' },
+	wikipedia = { 4, '[[wp:project namespace|Wikipedia project]]' },
+	category = { 14, '[[wp:categorization|category]]' },
+	user = { 2, '[[wp:user pages|user]]' },
+	draft = { 118, '[[wp:drafts|draft]]' },
+}
+
+-- remove whitespaces from beginning and end of args
+local function valueFunc(key, val)
+	if type(val) == 'string' then
+		val = val:match('^%s*(.-)%s*$')
+		if val == '' then
+			return nil
+		end
+	end
+	return val
+end
+
+local function getPrettyName(args)
+	for k in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			return string.format("'''[[:Category:%s|%s]]''': ", args[k .. ' category'], args.name)
+		end
+	end
+	return string.format("'''%s''': ", args.name)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = 'Template:Redirect template', valueFunc = valueFunc})
+	local namespace = mw.title.getCurrentTitle().namespace
+
+	--- XXX: this is a HORRIBLE HACK. kill it with fire as soon as https://phabricator.wikimedia.org/T14974 is fixed
+	--- [[phab:T14974]] was previously known as [[bugzilla:12974]] https://bugzilla.wikimedia.org/show_bug.cgi?id=12974
+	local beCompatibleWithBug14974 = args.info and (args.info:find('^[:;#*]', 1) == 1 or args.info:find('{|', 1, true) == 1) and '\n' or ' '
+	
+	local content = string.format('\n&lt;div class="rcat %s"&gt;\n*%sThis is a redirect%s%s.%s%s\n&lt;/div&gt;',
+		args.id and ('rcat-' .. string.gsub(args.id, ' ', '_')) or '',
+		args.name and getPrettyName(args) or '',
+		args.from and (' from ' .. args.from) or '',
+		args.to and (' to ' .. args.to) or '',
+		args.info and beCompatibleWithBug14974 or '',
+		args.info or ''
+	)
+	
+	for k,v in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			if type(v[1]) == 'function' and v[1](namespace) or v[1] == namespace then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args[k .. ' category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args[k .. ' category'])
+				end
+			elseif args['other category'] then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args['other category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args['other category'])
+				end
+			else
+				content = content .. frame:expandTemplate{title = 'Incorrect redirect template', args = {v[2]}}
+			end
+		end
+	end
+
+	if namespace == 0 then
+		local yesno = require('Module:Yesno')
+		if yesno(args.printworthy) == true then
+			return content .. '[[Category:Printworthy redirects]]'
+		elseif yesno(args.printworthy) == false then
+			return content .. '[[Category:Unprintworthy redirects]]'
+		end
+	end
+	return content
+end
+
+return p</text>
+      <sha1>st70b7nx9gq8upoveshz93h1coat7c9</sha1>
+    </revision>
+    <revision>
+      <id>521024</id>
+      <parentid>521023</parentid>
+      <timestamp>2025-08-11T23:33:36Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Pppery</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Redirect template]]" ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>521024</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3294" sha1="7vajdchxsgtfzfo0bbnl18pwnlasddx" xml:space="preserve">require('strict')
+
+local p = {}
+
+-- key is beginning of arg name. value is table with namespace number and link
+-- alternatively, a function taking the namespace number and returning a validity
+-- can be used
+local namespaceCategories = {
+	all = { function() return true end },
+	main = { 0, '[[WP:Mainspace|main]]' },
+	help = { 12, '[[WP:Help namespace|help]]' },
+	portal = { 100, '[[WP:Portal|portal]]' },
+	mos = { 126, '[[WP:MOS namespace|MOS]]' },
+	talk = { function(n) return n &gt; 0 and n%2 == 1 end, '[[Help:Talk pages|talk]]' },
+	template = { 10, '[[WP:Template namespace|template]]' },
+	wikipedia = { 4, '[[WP:Project namespace|Wikipedia project]]' },
+	category = { 14, '[[WP:Categorization|category]]' },
+	user = { 2, '[[WP:User pages|user]]' },
+	draft = { 118, '[[WP:Drafts|draft]]' },
+}
+
+-- remove whitespaces from beginning and end of args
+local function valueFunc(key, val)
+	if type(val) == 'string' then
+		val = val:match('^%s*(.-)%s*$')
+		if val == '' then
+			return nil
+		end
+	end
+	return val
+end
+
+local function getPrettyName(args)
+	for k in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			return string.format("'''[[:Category:%s|%s]]''': ", args[k .. ' category'], args.name)
+		end
+	end
+	return string.format("'''%s''': ", args.name)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = 'Template:Redirect template', valueFunc = valueFunc})
+	local namespace = mw.title.getCurrentTitle().namespace
+
+	--- XXX: this is a HORRIBLE HACK. kill it with fire as soon as https://phabricator.wikimedia.org/T14974 is fixed
+	--- [[phab:T14974]] was previously known as [[bugzilla:12974]] https://bugzilla.wikimedia.org/show_bug.cgi?id=12974
+	local beCompatibleWithBug14974 = args.info and (args.info:find('^[:;#*]', 1) == 1 or args.info:find('{|', 1, true) == 1) and '\n' or ' '
+	
+	local content = string.format('\n&lt;div class="rcat %s"&gt;\n*%sThis is a redirect%s%s.%s%s\n&lt;/div&gt;',
+		args.id and ('rcat-' .. string.gsub(args.id, ' ', '_')) or '',
+		args.name and getPrettyName(args) or '',
+		args.from and (' from ' .. args.from) or '',
+		args.to and (' to ' .. args.to) or '',
+		args.info and beCompatibleWithBug14974 or '',
+		args.info or ''
+	)
+	
+	for k,v in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			if type(v[1]) == 'function' and v[1](namespace) or v[1] == namespace then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args[k .. ' category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args[k .. ' category'])
+				end
+			elseif args['other category'] then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args['other category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args['other category'])
+				end
+			else
+				content = content .. frame:expandTemplate{title = 'Incorrect redirect template', args = {v[2]}}
+			end
+		end
+	end
+
+	if namespace == 0 then
+		local yesno = require('Module:Yesno')
+		if yesno(args.printworthy) == true then
+			return content .. '[[Category:Printworthy redirects]]'
+		elseif yesno(args.printworthy) == false then
+			return content .. '[[Category:Unprintworthy redirects]]'
+		end
+	end
+	return content
+end
+
+return p</text>
+      <sha1>7vajdchxsgtfzfo0bbnl18pwnlasddx</sha1>
+    </revision>
+    <revision>
+      <id>736</id>
+      <timestamp>2025-11-03T22:19:11Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 1 revision imported from [[:wikipedia:Module:Redirect_template]]</comment>
+      <origin>736</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3294" sha1="7vajdchxsgtfzfo0bbnl18pwnlasddx" xml:space="preserve">require('strict')
+
+local p = {}
+
+-- key is beginning of arg name. value is table with namespace number and link
+-- alternatively, a function taking the namespace number and returning a validity
+-- can be used
+local namespaceCategories = {
+	all = { function() return true end },
+	main = { 0, '[[WP:Mainspace|main]]' },
+	help = { 12, '[[WP:Help namespace|help]]' },
+	portal = { 100, '[[WP:Portal|portal]]' },
+	mos = { 126, '[[WP:MOS namespace|MOS]]' },
+	talk = { function(n) return n &gt; 0 and n%2 == 1 end, '[[Help:Talk pages|talk]]' },
+	template = { 10, '[[WP:Template namespace|template]]' },
+	wikipedia = { 4, '[[WP:Project namespace|Wikipedia project]]' },
+	category = { 14, '[[WP:Categorization|category]]' },
+	user = { 2, '[[WP:User pages|user]]' },
+	draft = { 118, '[[WP:Drafts|draft]]' },
+}
+
+-- remove whitespaces from beginning and end of args
+local function valueFunc(key, val)
+	if type(val) == 'string' then
+		val = val:match('^%s*(.-)%s*$')
+		if val == '' then
+			return nil
+		end
+	end
+	return val
+end
+
+local function getPrettyName(args)
+	for k in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			return string.format("'''[[:Category:%s|%s]]''': ", args[k .. ' category'], args.name)
+		end
+	end
+	return string.format("'''%s''': ", args.name)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = 'Template:Redirect template', valueFunc = valueFunc})
+	local namespace = mw.title.getCurrentTitle().namespace
+
+	--- XXX: this is a HORRIBLE HACK. kill it with fire as soon as https://phabricator.wikimedia.org/T14974 is fixed
+	--- [[phab:T14974]] was previously known as [[bugzilla:12974]] https://bugzilla.wikimedia.org/show_bug.cgi?id=12974
+	local beCompatibleWithBug14974 = args.info and (args.info:find('^[:;#*]', 1) == 1 or args.info:find('{|', 1, true) == 1) and '\n' or ' '
+	
+	local content = string.format('\n&lt;div class="rcat %s"&gt;\n*%sThis is a redirect%s%s.%s%s\n&lt;/div&gt;',
+		args.id and ('rcat-' .. string.gsub(args.id, ' ', '_')) or '',
+		args.name and getPrettyName(args) or '',
+		args.from and (' from ' .. args.from) or '',
+		args.to and (' to ' .. args.to) or '',
+		args.info and beCompatibleWithBug14974 or '',
+		args.info or ''
+	)
+	
+	for k,v in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			if type(v[1]) == 'function' and v[1](namespace) or v[1] == namespace then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args[k .. ' category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args[k .. ' category'])
+				end
+			elseif args['other category'] then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args['other category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args['other category'])
+				end
+			else
+				content = content .. frame:expandTemplate{title = 'Incorrect redirect template', args = {v[2]}}
+			end
+		end
+	end
+
+	if namespace == 0 then
+		local yesno = require('Module:Yesno')
+		if yesno(args.printworthy) == true then
+			return content .. '[[Category:Printworthy redirects]]'
+		elseif yesno(args.printworthy) == false then
+			return content .. '[[Category:Unprintworthy redirects]]'
+		end
+	end
+	return content
+end
+
+return p</text>
+      <sha1>7vajdchxsgtfzfo0bbnl18pwnlasddx</sha1>
+    </revision>
+    <revision>
+      <id>3303442</id>
+      <parentid>736</parentid>
+      <timestamp>2026-02-26T20:10:01Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Redirect template]]" ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>736</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3294" sha1="7vajdchxsgtfzfo0bbnl18pwnlasddx" xml:space="preserve">require('strict')
+
+local p = {}
+
+-- key is beginning of arg name. value is table with namespace number and link
+-- alternatively, a function taking the namespace number and returning a validity
+-- can be used
+local namespaceCategories = {
+	all = { function() return true end },
+	main = { 0, '[[WP:Mainspace|main]]' },
+	help = { 12, '[[WP:Help namespace|help]]' },
+	portal = { 100, '[[WP:Portal|portal]]' },
+	mos = { 126, '[[WP:MOS namespace|MOS]]' },
+	talk = { function(n) return n &gt; 0 and n%2 == 1 end, '[[Help:Talk pages|talk]]' },
+	template = { 10, '[[WP:Template namespace|template]]' },
+	wikipedia = { 4, '[[WP:Project namespace|Wikipedia project]]' },
+	category = { 14, '[[WP:Categorization|category]]' },
+	user = { 2, '[[WP:User pages|user]]' },
+	draft = { 118, '[[WP:Drafts|draft]]' },
+}
+
+-- remove whitespaces from beginning and end of args
+local function valueFunc(key, val)
+	if type(val) == 'string' then
+		val = val:match('^%s*(.-)%s*$')
+		if val == '' then
+			return nil
+		end
+	end
+	return val
+end
+
+local function getPrettyName(args)
+	for k in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			return string.format("'''[[:Category:%s|%s]]''': ", args[k .. ' category'], args.name)
+		end
+	end
+	return string.format("'''%s''': ", args.name)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = 'Template:Redirect template', valueFunc = valueFunc})
+	local namespace = mw.title.getCurrentTitle().namespace
+
+	--- XXX: this is a HORRIBLE HACK. kill it with fire as soon as https://phabricator.wikimedia.org/T14974 is fixed
+	--- [[phab:T14974]] was previously known as [[bugzilla:12974]] https://bugzilla.wikimedia.org/show_bug.cgi?id=12974
+	local beCompatibleWithBug14974 = args.info and (args.info:find('^[:;#*]', 1) == 1 or args.info:find('{|', 1, true) == 1) and '\n' or ' '
+	
+	local content = string.format('\n&lt;div class="rcat %s"&gt;\n*%sThis is a redirect%s%s.%s%s\n&lt;/div&gt;',
+		args.id and ('rcat-' .. string.gsub(args.id, ' ', '_')) or '',
+		args.name and getPrettyName(args) or '',
+		args.from and (' from ' .. args.from) or '',
+		args.to and (' to ' .. args.to) or '',
+		args.info and beCompatibleWithBug14974 or '',
+		args.info or ''
+	)
+	
+	for k,v in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			if type(v[1]) == 'function' and v[1](namespace) or v[1] == namespace then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args[k .. ' category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args[k .. ' category'])
+				end
+			elseif args['other category'] then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args['other category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args['other category'])
+				end
+			else
+				content = content .. frame:expandTemplate{title = 'Incorrect redirect template', args = {v[2]}}
+			end
+		end
+	end
+
+	if namespace == 0 then
+		local yesno = require('Module:Yesno')
+		if yesno(args.printworthy) == true then
+			return content .. '[[Category:Printworthy redirects]]'
+		elseif yesno(args.printworthy) == false then
+			return content .. '[[Category:Unprintworthy redirects]]'
+		end
+	end
+	return content
+end
+
+return p</text>
+      <sha1>7vajdchxsgtfzfo0bbnl18pwnlasddx</sha1>
+    </revision>
+    <revision>
+      <id>3303443</id>
+      <parentid>3303442</parentid>
+      <timestamp>2026-02-26T20:10:02Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: reimporting these to fix older errors</comment>
+      <origin>736</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3294" sha1="7vajdchxsgtfzfo0bbnl18pwnlasddx" xml:space="preserve">require('strict')
+
+local p = {}
+
+-- key is beginning of arg name. value is table with namespace number and link
+-- alternatively, a function taking the namespace number and returning a validity
+-- can be used
+local namespaceCategories = {
+	all = { function() return true end },
+	main = { 0, '[[WP:Mainspace|main]]' },
+	help = { 12, '[[WP:Help namespace|help]]' },
+	portal = { 100, '[[WP:Portal|portal]]' },
+	mos = { 126, '[[WP:MOS namespace|MOS]]' },
+	talk = { function(n) return n &gt; 0 and n%2 == 1 end, '[[Help:Talk pages|talk]]' },
+	template = { 10, '[[WP:Template namespace|template]]' },
+	wikipedia = { 4, '[[WP:Project namespace|Wikipedia project]]' },
+	category = { 14, '[[WP:Categorization|category]]' },
+	user = { 2, '[[WP:User pages|user]]' },
+	draft = { 118, '[[WP:Drafts|draft]]' },
+}
+
+-- remove whitespaces from beginning and end of args
+local function valueFunc(key, val)
+	if type(val) == 'string' then
+		val = val:match('^%s*(.-)%s*$')
+		if val == '' then
+			return nil
+		end
+	end
+	return val
+end
+
+local function getPrettyName(args)
+	for k in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			return string.format("'''[[:Category:%s|%s]]''': ", args[k .. ' category'], args.name)
+		end
+	end
+	return string.format("'''%s''': ", args.name)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = 'Template:Redirect template', valueFunc = valueFunc})
+	local namespace = mw.title.getCurrentTitle().namespace
+
+	--- XXX: this is a HORRIBLE HACK. kill it with fire as soon as https://phabricator.wikimedia.org/T14974 is fixed
+	--- [[phab:T14974]] was previously known as [[bugzilla:12974]] https://bugzilla.wikimedia.org/show_bug.cgi?id=12974
+	local beCompatibleWithBug14974 = args.info and (args.info:find('^[:;#*]', 1) == 1 or args.info:find('{|', 1, true) == 1) and '\n' or ' '
+	
+	local content = string.format('\n&lt;div class="rcat %s"&gt;\n*%sThis is a redirect%s%s.%s%s\n&lt;/div&gt;',
+		args.id and ('rcat-' .. string.gsub(args.id, ' ', '_')) or '',
+		args.name and getPrettyName(args) or '',
+		args.from and (' from ' .. args.from) or '',
+		args.to and (' to ' .. args.to) or '',
+		args.info and beCompatibleWithBug14974 or '',
+		args.info or ''
+	)
+	
+	for k,v in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			if type(v[1]) == 'function' and v[1](namespace) or v[1] == namespace then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args[k .. ' category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args[k .. ' category'])
+				end
+			elseif args['other category'] then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args['other category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args['other category'])
+				end
+			else
+				content = content .. frame:expandTemplate{title = 'Incorrect redirect template', args = {v[2]}}
+			end
+		end
+	end
+
+	if namespace == 0 then
+		local yesno = require('Module:Yesno')
+		if yesno(args.printworthy) == true then
+			return content .. '[[Category:Printworthy redirects]]'
+		elseif yesno(args.printworthy) == false then
+			return content .. '[[Category:Unprintworthy redirects]]'
+		end
+	end
+	return content
+end
+
+return p</text>
+      <sha1>7vajdchxsgtfzfo0bbnl18pwnlasddx</sha1>
+    </revision>
+    <revision>
+      <id>3439242</id>
+      <parentid>3303443</parentid>
+      <timestamp>2026-03-13T15:58:12Z</timestamp>
+      <contributor>
+        <username>en&gt;Pppery</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Redirect template]]" ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>736</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3294" sha1="7vajdchxsgtfzfo0bbnl18pwnlasddx" xml:space="preserve">require('strict')
+
+local p = {}
+
+-- key is beginning of arg name. value is table with namespace number and link
+-- alternatively, a function taking the namespace number and returning a validity
+-- can be used
+local namespaceCategories = {
+	all = { function() return true end },
+	main = { 0, '[[WP:Mainspace|main]]' },
+	help = { 12, '[[WP:Help namespace|help]]' },
+	portal = { 100, '[[WP:Portal|portal]]' },
+	mos = { 126, '[[WP:MOS namespace|MOS]]' },
+	talk = { function(n) return n &gt; 0 and n%2 == 1 end, '[[Help:Talk pages|talk]]' },
+	template = { 10, '[[WP:Template namespace|template]]' },
+	wikipedia = { 4, '[[WP:Project namespace|Wikipedia project]]' },
+	category = { 14, '[[WP:Categorization|category]]' },
+	user = { 2, '[[WP:User pages|user]]' },
+	draft = { 118, '[[WP:Drafts|draft]]' },
+}
+
+-- remove whitespaces from beginning and end of args
+local function valueFunc(key, val)
+	if type(val) == 'string' then
+		val = val:match('^%s*(.-)%s*$')
+		if val == '' then
+			return nil
+		end
+	end
+	return val
+end
+
+local function getPrettyName(args)
+	for k in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			return string.format("'''[[:Category:%s|%s]]''': ", args[k .. ' category'], args.name)
+		end
+	end
+	return string.format("'''%s''': ", args.name)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = 'Template:Redirect template', valueFunc = valueFunc})
+	local namespace = mw.title.getCurrentTitle().namespace
+
+	--- XXX: this is a HORRIBLE HACK. kill it with fire as soon as https://phabricator.wikimedia.org/T14974 is fixed
+	--- [[phab:T14974]] was previously known as [[bugzilla:12974]] https://bugzilla.wikimedia.org/show_bug.cgi?id=12974
+	local beCompatibleWithBug14974 = args.info and (args.info:find('^[:;#*]', 1) == 1 or args.info:find('{|', 1, true) == 1) and '\n' or ' '
+	
+	local content = string.format('\n&lt;div class="rcat %s"&gt;\n*%sThis is a redirect%s%s.%s%s\n&lt;/div&gt;',
+		args.id and ('rcat-' .. string.gsub(args.id, ' ', '_')) or '',
+		args.name and getPrettyName(args) or '',
+		args.from and (' from ' .. args.from) or '',
+		args.to and (' to ' .. args.to) or '',
+		args.info and beCompatibleWithBug14974 or '',
+		args.info or ''
+	)
+	
+	for k,v in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			if type(v[1]) == 'function' and v[1](namespace) or v[1] == namespace then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args[k .. ' category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args[k .. ' category'])
+				end
+			elseif args['other category'] then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args['other category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args['other category'])
+				end
+			else
+				content = content .. frame:expandTemplate{title = 'Incorrect redirect template', args = {v[2]}}
+			end
+		end
+	end
+
+	if namespace == 0 then
+		local yesno = require('Module:Yesno')
+		if yesno(args.printworthy) == true then
+			return content .. '[[Category:Printworthy redirects]]'
+		elseif yesno(args.printworthy) == false then
+			return content .. '[[Category:Unprintworthy redirects]]'
+		end
+	end
+	return content
+end
+
+return p</text>
+      <sha1>7vajdchxsgtfzfo0bbnl18pwnlasddx</sha1>
+    </revision>
+    <revision>
+      <id>3439243</id>
+      <parentid>3439242</parentid>
+      <timestamp>2026-03-13T15:58:12Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Bot: reimport from enwiki to fix erroneous transclusions [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23052491609|manual triggered pipeline]]</comment>
+      <origin>736</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3294" sha1="7vajdchxsgtfzfo0bbnl18pwnlasddx" xml:space="preserve">require('strict')
+
+local p = {}
+
+-- key is beginning of arg name. value is table with namespace number and link
+-- alternatively, a function taking the namespace number and returning a validity
+-- can be used
+local namespaceCategories = {
+	all = { function() return true end },
+	main = { 0, '[[WP:Mainspace|main]]' },
+	help = { 12, '[[WP:Help namespace|help]]' },
+	portal = { 100, '[[WP:Portal|portal]]' },
+	mos = { 126, '[[WP:MOS namespace|MOS]]' },
+	talk = { function(n) return n &gt; 0 and n%2 == 1 end, '[[Help:Talk pages|talk]]' },
+	template = { 10, '[[WP:Template namespace|template]]' },
+	wikipedia = { 4, '[[WP:Project namespace|Wikipedia project]]' },
+	category = { 14, '[[WP:Categorization|category]]' },
+	user = { 2, '[[WP:User pages|user]]' },
+	draft = { 118, '[[WP:Drafts|draft]]' },
+}
+
+-- remove whitespaces from beginning and end of args
+local function valueFunc(key, val)
+	if type(val) == 'string' then
+		val = val:match('^%s*(.-)%s*$')
+		if val == '' then
+			return nil
+		end
+	end
+	return val
+end
+
+local function getPrettyName(args)
+	for k in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			return string.format("'''[[:Category:%s|%s]]''': ", args[k .. ' category'], args.name)
+		end
+	end
+	return string.format("'''%s''': ", args.name)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = 'Template:Redirect template', valueFunc = valueFunc})
+	local namespace = mw.title.getCurrentTitle().namespace
+
+	--- XXX: this is a HORRIBLE HACK. kill it with fire as soon as https://phabricator.wikimedia.org/T14974 is fixed
+	--- [[phab:T14974]] was previously known as [[bugzilla:12974]] https://bugzilla.wikimedia.org/show_bug.cgi?id=12974
+	local beCompatibleWithBug14974 = args.info and (args.info:find('^[:;#*]', 1) == 1 or args.info:find('{|', 1, true) == 1) and '\n' or ' '
+	
+	local content = string.format('\n&lt;div class="rcat %s"&gt;\n*%sThis is a redirect%s%s.%s%s\n&lt;/div&gt;',
+		args.id and ('rcat-' .. string.gsub(args.id, ' ', '_')) or '',
+		args.name and getPrettyName(args) or '',
+		args.from and (' from ' .. args.from) or '',
+		args.to and (' to ' .. args.to) or '',
+		args.info and beCompatibleWithBug14974 or '',
+		args.info or ''
+	)
+	
+	for k,v in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			if type(v[1]) == 'function' and v[1](namespace) or v[1] == namespace then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args[k .. ' category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args[k .. ' category'])
+				end
+			elseif args['other category'] then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args['other category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args['other category'])
+				end
+			else
+				content = content .. frame:expandTemplate{title = 'Incorrect redirect template', args = {v[2]}}
+			end
+		end
+	end
+
+	if namespace == 0 then
+		local yesno = require('Module:Yesno')
+		if yesno(args.printworthy) == true then
+			return content .. '[[Category:Printworthy redirects]]'
+		elseif yesno(args.printworthy) == false then
+			return content .. '[[Category:Unprintworthy redirects]]'
+		end
+	end
+	return content
+end
+
+return p</text>
+      <sha1>7vajdchxsgtfzfo0bbnl18pwnlasddx</sha1>
+    </revision>
+    <revision>
+      <id>3449537</id>
+      <parentid>3439243</parentid>
+      <timestamp>2026-03-13T19:47:02Z</timestamp>
+      <contributor>
+        <username>en&gt;Pppery</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Redirect template]]" ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>736</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3294" sha1="7vajdchxsgtfzfo0bbnl18pwnlasddx" xml:space="preserve">require('strict')
+
+local p = {}
+
+-- key is beginning of arg name. value is table with namespace number and link
+-- alternatively, a function taking the namespace number and returning a validity
+-- can be used
+local namespaceCategories = {
+	all = { function() return true end },
+	main = { 0, '[[WP:Mainspace|main]]' },
+	help = { 12, '[[WP:Help namespace|help]]' },
+	portal = { 100, '[[WP:Portal|portal]]' },
+	mos = { 126, '[[WP:MOS namespace|MOS]]' },
+	talk = { function(n) return n &gt; 0 and n%2 == 1 end, '[[Help:Talk pages|talk]]' },
+	template = { 10, '[[WP:Template namespace|template]]' },
+	wikipedia = { 4, '[[WP:Project namespace|Wikipedia project]]' },
+	category = { 14, '[[WP:Categorization|category]]' },
+	user = { 2, '[[WP:User pages|user]]' },
+	draft = { 118, '[[WP:Drafts|draft]]' },
+}
+
+-- remove whitespaces from beginning and end of args
+local function valueFunc(key, val)
+	if type(val) == 'string' then
+		val = val:match('^%s*(.-)%s*$')
+		if val == '' then
+			return nil
+		end
+	end
+	return val
+end
+
+local function getPrettyName(args)
+	for k in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			return string.format("'''[[:Category:%s|%s]]''': ", args[k .. ' category'], args.name)
+		end
+	end
+	return string.format("'''%s''': ", args.name)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = 'Template:Redirect template', valueFunc = valueFunc})
+	local namespace = mw.title.getCurrentTitle().namespace
+
+	--- XXX: this is a HORRIBLE HACK. kill it with fire as soon as https://phabricator.wikimedia.org/T14974 is fixed
+	--- [[phab:T14974]] was previously known as [[bugzilla:12974]] https://bugzilla.wikimedia.org/show_bug.cgi?id=12974
+	local beCompatibleWithBug14974 = args.info and (args.info:find('^[:;#*]', 1) == 1 or args.info:find('{|', 1, true) == 1) and '\n' or ' '
+	
+	local content = string.format('\n&lt;div class="rcat %s"&gt;\n*%sThis is a redirect%s%s.%s%s\n&lt;/div&gt;',
+		args.id and ('rcat-' .. string.gsub(args.id, ' ', '_')) or '',
+		args.name and getPrettyName(args) or '',
+		args.from and (' from ' .. args.from) or '',
+		args.to and (' to ' .. args.to) or '',
+		args.info and beCompatibleWithBug14974 or '',
+		args.info or ''
+	)
+	
+	for k,v in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			if type(v[1]) == 'function' and v[1](namespace) or v[1] == namespace then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args[k .. ' category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args[k .. ' category'])
+				end
+			elseif args['other category'] then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args['other category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args['other category'])
+				end
+			else
+				content = content .. frame:expandTemplate{title = 'Incorrect redirect template', args = {v[2]}}
+			end
+		end
+	end
+
+	if namespace == 0 then
+		local yesno = require('Module:Yesno')
+		if yesno(args.printworthy) == true then
+			return content .. '[[Category:Printworthy redirects]]'
+		elseif yesno(args.printworthy) == false then
+			return content .. '[[Category:Unprintworthy redirects]]'
+		end
+	end
+	return content
+end
+
+return p</text>
+      <sha1>7vajdchxsgtfzfo0bbnl18pwnlasddx</sha1>
+    </revision>
+    <revision>
+      <id>3449538</id>
+      <parentid>3449537</parentid>
+      <timestamp>2026-03-13T19:47:02Z</timestamp>
+      <contributor>
+        <username>EmmaBot</username>
+        <id>703</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Bot: reimport from enwiki to fix erroneous transclusions [[github:EmmaLeonhart/shintowiki-scripts/actions/runs/23053570201|commit triggered pipeline]]</comment>
+      <origin>736</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3294" sha1="7vajdchxsgtfzfo0bbnl18pwnlasddx" xml:space="preserve">require('strict')
+
+local p = {}
+
+-- key is beginning of arg name. value is table with namespace number and link
+-- alternatively, a function taking the namespace number and returning a validity
+-- can be used
+local namespaceCategories = {
+	all = { function() return true end },
+	main = { 0, '[[WP:Mainspace|main]]' },
+	help = { 12, '[[WP:Help namespace|help]]' },
+	portal = { 100, '[[WP:Portal|portal]]' },
+	mos = { 126, '[[WP:MOS namespace|MOS]]' },
+	talk = { function(n) return n &gt; 0 and n%2 == 1 end, '[[Help:Talk pages|talk]]' },
+	template = { 10, '[[WP:Template namespace|template]]' },
+	wikipedia = { 4, '[[WP:Project namespace|Wikipedia project]]' },
+	category = { 14, '[[WP:Categorization|category]]' },
+	user = { 2, '[[WP:User pages|user]]' },
+	draft = { 118, '[[WP:Drafts|draft]]' },
+}
+
+-- remove whitespaces from beginning and end of args
+local function valueFunc(key, val)
+	if type(val) == 'string' then
+		val = val:match('^%s*(.-)%s*$')
+		if val == '' then
+			return nil
+		end
+	end
+	return val
+end
+
+local function getPrettyName(args)
+	for k in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			return string.format("'''[[:Category:%s|%s]]''': ", args[k .. ' category'], args.name)
+		end
+	end
+	return string.format("'''%s''': ", args.name)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = 'Template:Redirect template', valueFunc = valueFunc})
+	local namespace = mw.title.getCurrentTitle().namespace
+
+	--- XXX: this is a HORRIBLE HACK. kill it with fire as soon as https://phabricator.wikimedia.org/T14974 is fixed
+	--- [[phab:T14974]] was previously known as [[bugzilla:12974]] https://bugzilla.wikimedia.org/show_bug.cgi?id=12974
+	local beCompatibleWithBug14974 = args.info and (args.info:find('^[:;#*]', 1) == 1 or args.info:find('{|', 1, true) == 1) and '\n' or ' '
+	
+	local content = string.format('\n&lt;div class="rcat %s"&gt;\n*%sThis is a redirect%s%s.%s%s\n&lt;/div&gt;',
+		args.id and ('rcat-' .. string.gsub(args.id, ' ', '_')) or '',
+		args.name and getPrettyName(args) or '',
+		args.from and (' from ' .. args.from) or '',
+		args.to and (' to ' .. args.to) or '',
+		args.info and beCompatibleWithBug14974 or '',
+		args.info or ''
+	)
+	
+	for k,v in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			if type(v[1]) == 'function' and v[1](namespace) or v[1] == namespace then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args[k .. ' category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args[k .. ' category'])
+				end
+			elseif args['other category'] then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args['other category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args['other category'])
+				end
+			else
+				content = content .. frame:expandTemplate{title = 'Incorrect redirect template', args = {v[2]}}
+			end
+		end
+	end
+
+	if namespace == 0 then
+		local yesno = require('Module:Yesno')
+		if yesno(args.printworthy) == true then
+			return content .. '[[Category:Printworthy redirects]]'
+		elseif yesno(args.printworthy) == false then
+			return content .. '[[Category:Unprintworthy redirects]]'
+		end
+	end
+	return content
+end
+
+return p</text>
+      <sha1>7vajdchxsgtfzfo0bbnl18pwnlasddx</sha1>
+    </revision>
+    <revision>
+      <id>3677427</id>
+      <parentid>3449538</parentid>
+      <timestamp>2026-04-28T03:23:29Z</timestamp>
+      <contributor>
+        <username>Pppery</username>
+        <id>55</id>
+      </contributor>
+      <minor/>
+      <comment>Changed protection settings for "[[Module:Redirect template]]" ([Edit=Require administrator access] (indefinite) [Move=Require administrator access] (indefinite))</comment>
+      <origin>736</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3294" sha1="7vajdchxsgtfzfo0bbnl18pwnlasddx" xml:space="preserve">require('strict')
+
+local p = {}
+
+-- key is beginning of arg name. value is table with namespace number and link
+-- alternatively, a function taking the namespace number and returning a validity
+-- can be used
+local namespaceCategories = {
+	all = { function() return true end },
+	main = { 0, '[[WP:Mainspace|main]]' },
+	help = { 12, '[[WP:Help namespace|help]]' },
+	portal = { 100, '[[WP:Portal|portal]]' },
+	mos = { 126, '[[WP:MOS namespace|MOS]]' },
+	talk = { function(n) return n &gt; 0 and n%2 == 1 end, '[[Help:Talk pages|talk]]' },
+	template = { 10, '[[WP:Template namespace|template]]' },
+	wikipedia = { 4, '[[WP:Project namespace|Wikipedia project]]' },
+	category = { 14, '[[WP:Categorization|category]]' },
+	user = { 2, '[[WP:User pages|user]]' },
+	draft = { 118, '[[WP:Drafts|draft]]' },
+}
+
+-- remove whitespaces from beginning and end of args
+local function valueFunc(key, val)
+	if type(val) == 'string' then
+		val = val:match('^%s*(.-)%s*$')
+		if val == '' then
+			return nil
+		end
+	end
+	return val
+end
+
+local function getPrettyName(args)
+	for k in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			return string.format("'''[[:Category:%s|%s]]''': ", args[k .. ' category'], args.name)
+		end
+	end
+	return string.format("'''%s''': ", args.name)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = 'Template:Redirect template', valueFunc = valueFunc})
+	local namespace = mw.title.getCurrentTitle().namespace
+
+	--- XXX: this is a HORRIBLE HACK. kill it with fire as soon as https://phabricator.wikimedia.org/T14974 is fixed
+	--- [[phab:T14974]] was previously known as [[bugzilla:12974]] https://bugzilla.wikimedia.org/show_bug.cgi?id=12974
+	local beCompatibleWithBug14974 = args.info and (args.info:find('^[:;#*]', 1) == 1 or args.info:find('{|', 1, true) == 1) and '\n' or ' '
+	
+	local content = string.format('\n&lt;div class="rcat %s"&gt;\n*%sThis is a redirect%s%s.%s%s\n&lt;/div&gt;',
+		args.id and ('rcat-' .. string.gsub(args.id, ' ', '_')) or '',
+		args.name and getPrettyName(args) or '',
+		args.from and (' from ' .. args.from) or '',
+		args.to and (' to ' .. args.to) or '',
+		args.info and beCompatibleWithBug14974 or '',
+		args.info or ''
+	)
+	
+	for k,v in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			if type(v[1]) == 'function' and v[1](namespace) or v[1] == namespace then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args[k .. ' category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args[k .. ' category'])
+				end
+			elseif args['other category'] then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args['other category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args['other category'])
+				end
+			else
+				content = content .. frame:expandTemplate{title = 'Incorrect redirect template', args = {v[2]}}
+			end
+		end
+	end
+
+	if namespace == 0 then
+		local yesno = require('Module:Yesno')
+		if yesno(args.printworthy) == true then
+			return content .. '[[Category:Printworthy redirects]]'
+		elseif yesno(args.printworthy) == false then
+			return content .. '[[Category:Unprintworthy redirects]]'
+		end
+	end
+	return content
+end
+
+return p</text>
+      <sha1>7vajdchxsgtfzfo0bbnl18pwnlasddx</sha1>
+    </revision>
+    <revision>
+      <id>3677428</id>
+      <parentid>3677427</parentid>
+      <timestamp>2026-04-28T03:23:29Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting for the right thing</comment>
+      <origin>736</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3294" sha1="7vajdchxsgtfzfo0bbnl18pwnlasddx" xml:space="preserve">require('strict')
+
+local p = {}
+
+-- key is beginning of arg name. value is table with namespace number and link
+-- alternatively, a function taking the namespace number and returning a validity
+-- can be used
+local namespaceCategories = {
+	all = { function() return true end },
+	main = { 0, '[[WP:Mainspace|main]]' },
+	help = { 12, '[[WP:Help namespace|help]]' },
+	portal = { 100, '[[WP:Portal|portal]]' },
+	mos = { 126, '[[WP:MOS namespace|MOS]]' },
+	talk = { function(n) return n &gt; 0 and n%2 == 1 end, '[[Help:Talk pages|talk]]' },
+	template = { 10, '[[WP:Template namespace|template]]' },
+	wikipedia = { 4, '[[WP:Project namespace|Wikipedia project]]' },
+	category = { 14, '[[WP:Categorization|category]]' },
+	user = { 2, '[[WP:User pages|user]]' },
+	draft = { 118, '[[WP:Drafts|draft]]' },
+}
+
+-- remove whitespaces from beginning and end of args
+local function valueFunc(key, val)
+	if type(val) == 'string' then
+		val = val:match('^%s*(.-)%s*$')
+		if val == '' then
+			return nil
+		end
+	end
+	return val
+end
+
+local function getPrettyName(args)
+	for k in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			return string.format("'''[[:Category:%s|%s]]''': ", args[k .. ' category'], args.name)
+		end
+	end
+	return string.format("'''%s''': ", args.name)
+end
+
+function p.main(frame)
+	local args = require('Module:Arguments').getArgs(frame, {wrappers = 'Template:Redirect template', valueFunc = valueFunc})
+	local namespace = mw.title.getCurrentTitle().namespace
+
+	--- XXX: this is a HORRIBLE HACK. kill it with fire as soon as https://phabricator.wikimedia.org/T14974 is fixed
+	--- [[phab:T14974]] was previously known as [[bugzilla:12974]] https://bugzilla.wikimedia.org/show_bug.cgi?id=12974
+	local beCompatibleWithBug14974 = args.info and (args.info:find('^[:;#*]', 1) == 1 or args.info:find('{|', 1, true) == 1) and '\n' or ' '
+	
+	local content = string.format('\n&lt;div class="rcat %s"&gt;\n*%sThis is a redirect%s%s.%s%s\n&lt;/div&gt;',
+		args.id and ('rcat-' .. string.gsub(args.id, ' ', '_')) or '',
+		args.name and getPrettyName(args) or '',
+		args.from and (' from ' .. args.from) or '',
+		args.to and (' to ' .. args.to) or '',
+		args.info and beCompatibleWithBug14974 or '',
+		args.info or ''
+	)
+	
+	for k,v in pairs(namespaceCategories) do
+		if args[k .. ' category'] then
+			if type(v[1]) == 'function' and v[1](namespace) or v[1] == namespace then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args[k .. ' category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args[k .. ' category'])
+				end
+			elseif args['other category'] then
+				if args.sortkey then
+					content = content .. string.format('[[Category:%s|%s]]', args['other category'], args.sortkey)
+					else
+						content = content .. string.format('[[Category:%s]]', args['other category'])
+				end
+			else
+				content = content .. frame:expandTemplate{title = 'Incorrect redirect template', args = {v[2]}}
+			end
+		end
+	end
+
+	if namespace == 0 then
+		local yesno = require('Module:Yesno')
+		if yesno(args.printworthy) == true then
+			return content .. '[[Category:Printworthy redirects]]'
+		elseif yesno(args.printworthy) == false then
+			return content .. '[[Category:Unprintworthy redirects]]'
+		end
+	end
+	return content
+end
+
+return p</text>
+      <sha1>7vajdchxsgtfzfo0bbnl18pwnlasddx</sha1>
+    </revision>
+  </page>
+</mediawiki>

@@ -1,0 +1,1462 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Other uses</title>
+    <ns>828</ns>
+    <id>6331</id>
+    <revision>
+      <id>844717</id>
+      <timestamp>2016-04-05T02:06:32Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Nihiltres</username>
+        <id>0</id>
+      </contributor>
+      <comment>Created module</comment>
+      <origin>844717</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1968" sha1="mcdsjl3ecl3uqeixvgf5c5u00uwiljx" xml:space="preserve">local mHatnote = require('Module:Hatnote')
+local mArguments --initialize lazily
+local mTableTools --initialize lazily
+local libraryUtil = require('libraryUtil')
+local checkType = libraryUtil.checkType
+
+local p = {}
+
+--Produces standard {{other uses}} implementation
+function p.otheruses(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local args = mTableTools.compressSparseArray(mArguments.getArgs(frame))
+	local title = frame:getParent():getTitle()
+	return p._otheruses(args, {title=title})
+end
+
+--Main generator
+--Two parameters, args and options, each tables:
+--  * args: can be empty or nil, in which case the defaults kick in.
+--    Otherwise assumed to be a table of unbracketed page strings, no table gaps
+--  * options: must not be nil; it must have in a "defaultPage" or "title" option,
+--    since this function doesn't use a frame object to do the defaulting itself.
+--    Summary of options available:
+--      * defaultPage: sets full default "other uses" target; overrides title and disambiguator
+--      * title: sets title assumed that gets the suffix added
+--      * disambiguator: sets default text appearing in parens, defaults to "disambiguation"
+--      * otherText: allows setting more "other" options, defaults to "uses"
+function p._otheruses(args, options)
+	checkType('_otheruses', 1, args, 'table', true)
+	if not args then args = {} end
+	checkType('_otheruses', 2, options, 'table')
+	if not (options.defaultPage or options.title) then
+		error('No default title data provided in "_otheruses" options table', 2)
+	end
+	if #args == 0 then
+		args = {
+			options.defaultPage or
+			(options.title .. '  (' .. (options.disambiguator or 'disambiguation') .. ')')
+		}
+	end
+	local forOther = 'For other ' .. (options.otherText or 'uses') .. ', '
+	local see = 'see ' .. mw.text.listToText(mHatnote.formatPages(unpack(args))) .. "."
+	local text = forOther .. see
+	
+	return mHatnote._hatnote(text)
+end
+
+return p</text>
+      <sha1>mcdsjl3ecl3uqeixvgf5c5u00uwiljx</sha1>
+    </revision>
+    <revision>
+      <id>844718</id>
+      <parentid>844717</parentid>
+      <timestamp>2016-04-05T02:16:53Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Nihiltres</username>
+        <id>0</id>
+      </contributor>
+      <comment>Actual method for getting current title :/</comment>
+      <origin>844718</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1966" sha1="d7e1n6jfs1cutjnr4dofy5kmj8t35pi" xml:space="preserve">local mHatnote = require('Module:Hatnote')
+local mArguments --initialize lazily
+local mTableTools --initialize lazily
+local libraryUtil = require('libraryUtil')
+local checkType = libraryUtil.checkType
+
+local p = {}
+
+--Produces standard {{other uses}} implementation
+function p.otheruses(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local args = mTableTools.compressSparseArray(mArguments.getArgs(frame))
+	local title = mw.title.getCurrentTitle()
+	return p._otheruses(args, {title=title})
+end
+
+--Main generator
+--Two parameters, args and options, each tables:
+--  * args: can be empty or nil, in which case the defaults kick in.
+--    Otherwise assumed to be a table of unbracketed page strings, no table gaps
+--  * options: must not be nil; it must have in a "defaultPage" or "title" option,
+--    since this function doesn't use a frame object to do the defaulting itself.
+--    Summary of options available:
+--      * defaultPage: sets full default "other uses" target; overrides title and disambiguator
+--      * title: sets title assumed that gets the suffix added
+--      * disambiguator: sets default text appearing in parens, defaults to "disambiguation"
+--      * otherText: allows setting more "other" options, defaults to "uses"
+function p._otheruses(args, options)
+	checkType('_otheruses', 1, args, 'table', true)
+	if not args then args = {} end
+	checkType('_otheruses', 2, options, 'table')
+	if not (options.defaultPage or options.title) then
+		error('No default title data provided in "_otheruses" options table', 2)
+	end
+	if #args == 0 then
+		args = {
+			options.defaultPage or
+			(options.title .. '  (' .. (options.disambiguator or 'disambiguation') .. ')')
+		}
+	end
+	local forOther = 'For other ' .. (options.otherText or 'uses') .. ', '
+	local see = 'see ' .. mw.text.listToText(mHatnote.formatPages(unpack(args))) .. "."
+	local text = forOther .. see
+	
+	return mHatnote._hatnote(text)
+end
+
+return p</text>
+      <sha1>d7e1n6jfs1cutjnr4dofy5kmj8t35pi</sha1>
+    </revision>
+    <revision>
+      <id>844719</id>
+      <parentid>844718</parentid>
+      <timestamp>2016-04-05T02:18:22Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Nihiltres</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>…And get title text, not title object, by not just skimming the docs :P</comment>
+      <origin>844719</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1971" sha1="c3jmxl1vkw6gnvz0jeb9h8kdt1q0eok" xml:space="preserve">local mHatnote = require('Module:Hatnote')
+local mArguments --initialize lazily
+local mTableTools --initialize lazily
+local libraryUtil = require('libraryUtil')
+local checkType = libraryUtil.checkType
+
+local p = {}
+
+--Produces standard {{other uses}} implementation
+function p.otheruses(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local args = mTableTools.compressSparseArray(mArguments.getArgs(frame))
+	local title = mw.title.getCurrentTitle().text
+	return p._otheruses(args, {title=title})
+end
+
+--Main generator
+--Two parameters, args and options, each tables:
+--  * args: can be empty or nil, in which case the defaults kick in.
+--    Otherwise assumed to be a table of unbracketed page strings, no table gaps
+--  * options: must not be nil; it must have in a "defaultPage" or "title" option,
+--    since this function doesn't use a frame object to do the defaulting itself.
+--    Summary of options available:
+--      * defaultPage: sets full default "other uses" target; overrides title and disambiguator
+--      * title: sets title assumed that gets the suffix added
+--      * disambiguator: sets default text appearing in parens, defaults to "disambiguation"
+--      * otherText: allows setting more "other" options, defaults to "uses"
+function p._otheruses(args, options)
+	checkType('_otheruses', 1, args, 'table', true)
+	if not args then args = {} end
+	checkType('_otheruses', 2, options, 'table')
+	if not (options.defaultPage or options.title) then
+		error('No default title data provided in "_otheruses" options table', 2)
+	end
+	if #args == 0 then
+		args = {
+			options.defaultPage or
+			(options.title .. '  (' .. (options.disambiguator or 'disambiguation') .. ')')
+		}
+	end
+	local forOther = 'For other ' .. (options.otherText or 'uses') .. ', '
+	local see = 'see ' .. mw.text.listToText(mHatnote.formatPages(unpack(args))) .. "."
+	local text = forOther .. see
+	
+	return mHatnote._hatnote(text)
+end
+
+return p</text>
+      <sha1>c3jmxl1vkw6gnvz0jeb9h8kdt1q0eok</sha1>
+    </revision>
+    <revision>
+      <id>844720</id>
+      <parentid>844719</parentid>
+      <timestamp>2016-04-06T18:48:33Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Nihiltres</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:Other uses]]": [[WP:High-risk templates|High-risk Lua module]] ([Edit=Allow only template editors and admins] (indefinite) [Move=Allow only template editors and admins] (indefinite))</comment>
+      <origin>844719</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1971" sha1="c3jmxl1vkw6gnvz0jeb9h8kdt1q0eok" xml:space="preserve">local mHatnote = require('Module:Hatnote')
+local mArguments --initialize lazily
+local mTableTools --initialize lazily
+local libraryUtil = require('libraryUtil')
+local checkType = libraryUtil.checkType
+
+local p = {}
+
+--Produces standard {{other uses}} implementation
+function p.otheruses(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local args = mTableTools.compressSparseArray(mArguments.getArgs(frame))
+	local title = mw.title.getCurrentTitle().text
+	return p._otheruses(args, {title=title})
+end
+
+--Main generator
+--Two parameters, args and options, each tables:
+--  * args: can be empty or nil, in which case the defaults kick in.
+--    Otherwise assumed to be a table of unbracketed page strings, no table gaps
+--  * options: must not be nil; it must have in a "defaultPage" or "title" option,
+--    since this function doesn't use a frame object to do the defaulting itself.
+--    Summary of options available:
+--      * defaultPage: sets full default "other uses" target; overrides title and disambiguator
+--      * title: sets title assumed that gets the suffix added
+--      * disambiguator: sets default text appearing in parens, defaults to "disambiguation"
+--      * otherText: allows setting more "other" options, defaults to "uses"
+function p._otheruses(args, options)
+	checkType('_otheruses', 1, args, 'table', true)
+	if not args then args = {} end
+	checkType('_otheruses', 2, options, 'table')
+	if not (options.defaultPage or options.title) then
+		error('No default title data provided in "_otheruses" options table', 2)
+	end
+	if #args == 0 then
+		args = {
+			options.defaultPage or
+			(options.title .. '  (' .. (options.disambiguator or 'disambiguation') .. ')')
+		}
+	end
+	local forOther = 'For other ' .. (options.otherText or 'uses') .. ', '
+	local see = 'see ' .. mw.text.listToText(mHatnote.formatPages(unpack(args))) .. "."
+	local text = forOther .. see
+	
+	return mHatnote._hatnote(text)
+end
+
+return p</text>
+      <sha1>c3jmxl1vkw6gnvz0jeb9h8kdt1q0eok</sha1>
+    </revision>
+    <revision>
+      <id>844721</id>
+      <parentid>844720</parentid>
+      <timestamp>2016-05-05T16:42:06Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Nihiltres</username>
+        <id>0</id>
+      </contributor>
+      <comment>Removed long comment block redundant to docs, simplified a default's form, and restructured a string concatenation as a better string.format</comment>
+      <origin>844721</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1395" sha1="clfime21x9is8fg9q999vru2rgi6ped" xml:space="preserve">local mHatnote = require('Module:Hatnote')
+local mArguments --initialize lazily
+local mTableTools --initialize lazily
+local libraryUtil = require('libraryUtil')
+local checkType = libraryUtil.checkType
+local p = {}
+
+-- Produces standard {{other uses}} implementation
+function p.otheruses(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local args = mTableTools.compressSparseArray(mArguments.getArgs(frame))
+	local title = mw.title.getCurrentTitle().text
+	return p._otheruses(args, {title=title})
+end
+
+-- Main generator
+function p._otheruses(args, options)
+	--Type-checks and defaults
+	checkType('_otheruses', 1, args, 'table', true)
+	args = args or {}
+	checkType('_otheruses', 2, options, 'table')
+	if not (options.defaultPage or options.title) then
+		error('No default title data provided in "_otheruses" options table', 2)
+	end
+	if #args == 0 then
+		args = {
+			options.defaultPage or
+			(options.title .. '  (' .. (options.disambiguator or 'disambiguation') .. ')')
+		}
+	end
+	--should switch to using _forSee from [[Module:Hatnote list]] once that's out of alpha
+	local text = string.format(
+		'For other %s, see %s.',
+		(options.otherText or 'uses'),
+		--should switch to using andList from [[Module:Hatnote list]] once that's out of alpha
+		mw.text.listToText(mHatnote.formatPages(unpack(args)))
+	)
+	return mHatnote._hatnote(text)
+end
+
+return p</text>
+      <sha1>clfime21x9is8fg9q999vru2rgi6ped</sha1>
+    </revision>
+    <revision>
+      <id>844722</id>
+      <parentid>844721</parentid>
+      <timestamp>2016-05-05T17:20:00Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Nihiltres</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Applied new mHatnote.disambiguate() helper instead of manual string concatenation</comment>
+      <origin>844722</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1353" sha1="dqltd51a3gd8378atbkr4pcwi77g5t8" xml:space="preserve">local mHatnote = require('Module:Hatnote')
+local mArguments --initialize lazily
+local mTableTools --initialize lazily
+local libraryUtil = require('libraryUtil')
+local checkType = libraryUtil.checkType
+local p = {}
+
+-- Produces standard {{other uses}} implementation
+function p.otheruses(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local args = mTableTools.compressSparseArray(mArguments.getArgs(frame))
+	local title = mw.title.getCurrentTitle().text
+	return p._otheruses(args, {title=title})
+end
+
+-- Main generator
+function p._otheruses(args, options)
+	--Type-checks and defaults
+	checkType('_otheruses', 1, args, 'table', true)
+	args = args or {}
+	checkType('_otheruses', 2, options, 'table')
+	if not (options.defaultPage or options.title) then
+		error('No default title data provided in "_otheruses" options table', 2)
+	end
+	if #args == 0 then
+		args = {
+			options.defaultPage or
+			mHatnote.disambiguate(options.title)
+		}
+	end
+	--should switch to using _forSee from [[Module:Hatnote list]] once that's out of alpha
+	local text = string.format(
+		'For other %s, see %s.',
+		(options.otherText or 'uses'),
+		--should switch to using andList from [[Module:Hatnote list]] once that's out of alpha
+		mw.text.listToText(mHatnote.formatPages(unpack(args)))
+	)
+	return mHatnote._hatnote(text)
+end
+
+return p</text>
+      <sha1>dqltd51a3gd8378atbkr4pcwi77g5t8</sha1>
+    </revision>
+    <revision>
+      <id>844723</id>
+      <parentid>844722</parentid>
+      <timestamp>2016-05-11T20:10:42Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Nihiltres</username>
+        <id>0</id>
+      </contributor>
+      <comment>Updated from sandbox, plus a comment. Applies [[Module:Hatnote list]] to generate and format text</comment>
+      <origin>844723</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1263" sha1="g167lg0jy76d68jowrvrg7jcfichs5a" xml:space="preserve">local mHatnote = require('Module:Hatnote')
+local mHatlist = require('Module:Hatnote list')
+local mArguments --initialize lazily
+local mTableTools --initialize lazily
+local libraryUtil = require('libraryUtil')
+local checkType = libraryUtil.checkType
+local p = {}
+
+-- Produces standard {{other uses}} implementation
+function p.otheruses(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local args = mTableTools.compressSparseArray(mArguments.getArgs(frame))
+	local title = mw.title.getCurrentTitle().text
+	return p._otheruses(args, {title=title})
+end
+
+-- Main generator
+function p._otheruses(args, options)
+	--Type-checks and defaults
+	checkType('_otheruses', 1, args, 'table', true)
+	args = args or {}
+	checkType('_otheruses', 2, options, 'table')
+	if not (options.defaultPage or options.title) then
+		error('No default title data provided in "_otheruses" options table', 2)
+	end
+	if #args == 0 then
+		args = {
+			options.defaultPage or
+			mHatnote.disambiguate(options.title, options.disambiguator)
+		}
+	end
+	--Generate and return hatnote
+	local text = mHatlist.forSeeTableToString({{
+		use = options.otherText and "other " .. options.otherText or nil,
+		pages = args
+	}})
+	return mHatnote._hatnote(text)
+end
+
+return p</text>
+      <sha1>g167lg0jy76d68jowrvrg7jcfichs5a</sha1>
+    </revision>
+    <revision>
+      <id>844724</id>
+      <parentid>844723</parentid>
+      <timestamp>2016-05-15T17:48:03Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Nihiltres</username>
+        <id>0</id>
+      </contributor>
+      <comment>Fixed bug: non-empty, non-sequence args table causes #args==0; solved by testing table.maxn(args)==0 *and* using table.insert instead of assignment, just in case</comment>
+      <origin>844724</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1299" sha1="f757a9zb00lsfcehmrwnb703fs4dbmb" xml:space="preserve">local mHatnote = require('Module:Hatnote')
+local mHatlist = require('Module:Hatnote list')
+local mArguments --initialize lazily
+local mTableTools --initialize lazily
+local libraryUtil = require('libraryUtil')
+local checkType = libraryUtil.checkType
+local p = {}
+
+-- Produces standard {{other uses}} implementation
+function p.otheruses(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local args = mTableTools.compressSparseArray(mArguments.getArgs(frame))
+	local title = mw.title.getCurrentTitle().text
+	return p._otheruses(args, {title=title})
+end
+
+-- Main generator
+function p._otheruses(args, options)
+	--Type-checks and defaults
+	checkType('_otheruses', 1, args, 'table', true)
+	args = args or {}
+	checkType('_otheruses', 2, options, 'table')
+	if not (options.defaultPage or options.title) then
+		error('No default title data provided in "_otheruses" options table', 2)
+	end
+	if #args == 0 and table.maxn(args) == 0 then
+		table.insert(args,
+			options.defaultPage or
+			mHatnote.disambiguate(options.title, options.disambiguator)
+		)
+	end
+	--Generate and return hatnote
+	local text = mHatlist.forSeeTableToString({{
+		use = options.otherText and "other " .. options.otherText or nil,
+		pages = args
+	}})
+	return mHatnote._hatnote(text)
+end
+
+return p</text>
+      <sha1>f757a9zb00lsfcehmrwnb703fs4dbmb</sha1>
+    </revision>
+    <revision>
+      <id>844725</id>
+      <parentid>844724</parentid>
+      <timestamp>2016-05-15T18:05:50Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Nihiltres</username>
+        <id>0</id>
+      </contributor>
+      <comment>Even more defensive approach to checking for empty table: iterate over the table and toggle a variable any numeric index is present</comment>
+      <origin>844725</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1377" sha1="i27eesmj3lf5qe4yz3me7a5msrjr8e6" xml:space="preserve">local mHatnote = require('Module:Hatnote')
+local mHatlist = require('Module:Hatnote list')
+local mArguments --initialize lazily
+local mTableTools --initialize lazily
+local libraryUtil = require('libraryUtil')
+local checkType = libraryUtil.checkType
+local p = {}
+
+-- Produces standard {{other uses}} implementation
+function p.otheruses(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local args = mTableTools.compressSparseArray(mArguments.getArgs(frame))
+	local title = mw.title.getCurrentTitle().text
+	return p._otheruses(args, {title=title})
+end
+
+-- Main generator
+function p._otheruses(args, options)
+	--Type-checks and defaults
+	checkType('_otheruses', 1, args, 'table', true)
+	args = args or {}
+	checkType('_otheruses', 2, options, 'table')
+	if not (options.defaultPage or options.title) then
+		error('No default title data provided in "_otheruses" options table', 2)
+	end
+	local emptyArgs = true
+	for k, v in pairs(args) do
+		if type(k) == 'number' then emptyArgs = false break end
+	end
+	if emptyArgs then
+		args = {
+			options.defaultPage or
+			mHatnote.disambiguate(options.title, options.disambiguator)
+		}
+	end
+	--Generate and return hatnote
+	local text = mHatlist.forSeeTableToString({{
+		use = options.otherText and "other " .. options.otherText or nil,
+		pages = args
+	}})
+	return mHatnote._hatnote(text)
+end
+
+return p</text>
+      <sha1>i27eesmj3lf5qe4yz3me7a5msrjr8e6</sha1>
+    </revision>
+    <revision>
+      <id>844726</id>
+      <parentid>844725</parentid>
+      <timestamp>2016-12-13T14:50:54Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Nihiltres</username>
+        <id>0</id>
+      </contributor>
+      <comment>"mw.title.getCurrentTitle().text" → "mw.title.getCurrentTitle().prefixedText" to add support for other namespaces per talk</comment>
+      <origin>844726</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1385" sha1="no4aabrtflxh34nb54mlwdconpvvw0a" xml:space="preserve">local mHatnote = require('Module:Hatnote')
+local mHatlist = require('Module:Hatnote list')
+local mArguments --initialize lazily
+local mTableTools --initialize lazily
+local libraryUtil = require('libraryUtil')
+local checkType = libraryUtil.checkType
+local p = {}
+
+-- Produces standard {{other uses}} implementation
+function p.otheruses(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local args = mTableTools.compressSparseArray(mArguments.getArgs(frame))
+	local title = mw.title.getCurrentTitle().prefixedText
+	return p._otheruses(args, {title=title})
+end
+
+-- Main generator
+function p._otheruses(args, options)
+	--Type-checks and defaults
+	checkType('_otheruses', 1, args, 'table', true)
+	args = args or {}
+	checkType('_otheruses', 2, options, 'table')
+	if not (options.defaultPage or options.title) then
+		error('No default title data provided in "_otheruses" options table', 2)
+	end
+	local emptyArgs = true
+	for k, v in pairs(args) do
+		if type(k) == 'number' then emptyArgs = false break end
+	end
+	if emptyArgs then
+		args = {
+			options.defaultPage or
+			mHatnote.disambiguate(options.title, options.disambiguator)
+		}
+	end
+	--Generate and return hatnote
+	local text = mHatlist.forSeeTableToString({{
+		use = options.otherText and "other " .. options.otherText or nil,
+		pages = args
+	}})
+	return mHatnote._hatnote(text)
+end
+
+return p</text>
+      <sha1>no4aabrtflxh34nb54mlwdconpvvw0a</sha1>
+    </revision>
+    <revision>
+      <id>844727</id>
+      <parentid>844726</parentid>
+      <timestamp>2017-02-28T20:24:16Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Nihiltres</username>
+        <id>0</id>
+      </contributor>
+      <comment>Updated from sandbox; adds otherX function for directly implementing custom templates</comment>
+      <origin>844727</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1823" sha1="49vpdma4jsliyix8r12i3a6o55zad2p" xml:space="preserve">local mHatnote = require('Module:Hatnote')
+local mHatlist = require('Module:Hatnote list')
+local mArguments --initialize lazily
+local mTableTools --initialize lazily
+local libraryUtil = require('libraryUtil')
+local checkType = libraryUtil.checkType
+local p = {}
+
+-- Produces standard {{other uses}} implementation
+function p.otheruses(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local args = mTableTools.compressSparseArray(mArguments.getArgs(frame))
+	local title = mw.title.getCurrentTitle().prefixedText
+	return p._otheruses(args, {title=title})
+end
+
+--Implements "other [x]" templates with otherText supplied at invocation
+function p.otherX(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local x = frame.args[1]
+	local args = mTableTools.compressSparseArray(
+		mArguments.getArgs(frame, {parentOnly = true})
+	)
+	local options = {
+		title = mw.title.getCurrentTitle().prefixedText,
+		otherText = x
+	}
+	return p._otheruses(args, options)
+end
+
+-- Main generator
+function p._otheruses(args, options)
+	--Type-checks and defaults
+	checkType('_otheruses', 1, args, 'table', true)
+	args = args or {}
+	checkType('_otheruses', 2, options, 'table')
+	if not (options.defaultPage or options.title) then
+		error('No default title data provided in "_otheruses" options table', 2)
+	end
+	local emptyArgs = true
+	for k, v in pairs(args) do
+		if type(k) == 'number' then emptyArgs = false break end
+	end
+	if emptyArgs then
+		args = {
+			options.defaultPage or
+			mHatnote.disambiguate(options.title, options.disambiguator)
+		}
+	end
+	--Generate and return hatnote
+	local text = mHatlist.forSeeTableToString({{
+		use = options.otherText and "other " .. options.otherText or nil,
+		pages = args
+	}})
+	return mHatnote._hatnote(text)
+end
+
+return p</text>
+      <sha1>49vpdma4jsliyix8r12i3a6o55zad2p</sha1>
+    </revision>
+    <revision>
+      <id>844728</id>
+      <parentid>844727</parentid>
+      <timestamp>2019-06-19T03:17:25Z</timestamp>
+      <contributor>
+        <username>DannyS712</username>
+        <id>122</id>
+      </contributor>
+      <comment>merging [[Module:Other uses2]], per tfd</comment>
+      <origin>844728</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="2016" sha1="84x5jhetrd6pyz99cb4507hr43tiv02" xml:space="preserve">local mHatnote = require('Module:Hatnote')
+local mHatlist = require('Module:Hatnote list')
+local mArguments --initialize lazily
+local mTableTools --initialize lazily
+local libraryUtil = require('libraryUtil')
+local checkType = libraryUtil.checkType
+local p = {}
+
+-- Produces standard {{other uses}} implementation
+function p.otheruses(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local args = mTableTools.compressSparseArray(mArguments.getArgs(frame))
+	local title = mw.title.getCurrentTitle().prefixedText
+	return p._otheruses(args, {title=title})
+end
+
+-- Produces standard {{other uses2}} implementation
+function p.otheruses2(frame)
+	return p._otheruses({}, {title = (frame:getParent().args[1] or mw.title.getCurrentTitle().prefixedText)})
+end
+
+--Implements "other [x]" templates with otherText supplied at invocation
+function p.otherX(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local x = frame.args[1]
+	local args = mTableTools.compressSparseArray(
+		mArguments.getArgs(frame, {parentOnly = true})
+	)
+	local options = {
+		title = mw.title.getCurrentTitle().prefixedText,
+		otherText = x
+	}
+	return p._otheruses(args, options)
+end
+
+-- Main generator
+function p._otheruses(args, options)
+	--Type-checks and defaults
+	checkType('_otheruses', 1, args, 'table', true)
+	args = args or {}
+	checkType('_otheruses', 2, options, 'table')
+	if not (options.defaultPage or options.title) then
+		error('No default title data provided in "_otheruses" options table', 2)
+	end
+	local emptyArgs = true
+	for k, v in pairs(args) do
+		if type(k) == 'number' then emptyArgs = false break end
+	end
+	if emptyArgs then
+		args = {
+			options.defaultPage or
+			mHatnote.disambiguate(options.title, options.disambiguator)
+		}
+	end
+	--Generate and return hatnote
+	local text = mHatlist.forSeeTableToString({{
+		use = options.otherText and "other " .. options.otherText or nil,
+		pages = args
+	}})
+	return mHatnote._hatnote(text)
+end
+
+return p</text>
+      <sha1>84x5jhetrd6pyz99cb4507hr43tiv02</sha1>
+    </revision>
+    <revision>
+      <id>844709</id>
+      <timestamp>2020-06-01T23:06:08Z</timestamp>
+      <contributor>
+        <username>wikipedia&gt;Nihiltres</username>
+        <id>0</id>
+      </contributor>
+      <comment>Removed p.otheruses2 function per its template's deletion</comment>
+      <origin>844709</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1823" sha1="49vpdma4jsliyix8r12i3a6o55zad2p" xml:space="preserve">local mHatnote = require('Module:Hatnote')
+local mHatlist = require('Module:Hatnote list')
+local mArguments --initialize lazily
+local mTableTools --initialize lazily
+local libraryUtil = require('libraryUtil')
+local checkType = libraryUtil.checkType
+local p = {}
+
+-- Produces standard {{other uses}} implementation
+function p.otheruses(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local args = mTableTools.compressSparseArray(mArguments.getArgs(frame))
+	local title = mw.title.getCurrentTitle().prefixedText
+	return p._otheruses(args, {title=title})
+end
+
+--Implements "other [x]" templates with otherText supplied at invocation
+function p.otherX(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local x = frame.args[1]
+	local args = mTableTools.compressSparseArray(
+		mArguments.getArgs(frame, {parentOnly = true})
+	)
+	local options = {
+		title = mw.title.getCurrentTitle().prefixedText,
+		otherText = x
+	}
+	return p._otheruses(args, options)
+end
+
+-- Main generator
+function p._otheruses(args, options)
+	--Type-checks and defaults
+	checkType('_otheruses', 1, args, 'table', true)
+	args = args or {}
+	checkType('_otheruses', 2, options, 'table')
+	if not (options.defaultPage or options.title) then
+		error('No default title data provided in "_otheruses" options table', 2)
+	end
+	local emptyArgs = true
+	for k, v in pairs(args) do
+		if type(k) == 'number' then emptyArgs = false break end
+	end
+	if emptyArgs then
+		args = {
+			options.defaultPage or
+			mHatnote.disambiguate(options.title, options.disambiguator)
+		}
+	end
+	--Generate and return hatnote
+	local text = mHatlist.forSeeTableToString({{
+		use = options.otherText and "other " .. options.otherText or nil,
+		pages = args
+	}})
+	return mHatnote._hatnote(text)
+end
+
+return p</text>
+      <sha1>49vpdma4jsliyix8r12i3a6o55zad2p</sha1>
+    </revision>
+    <revision>
+      <id>844711</id>
+      <parentid>844709</parentid>
+      <timestamp>2022-01-03T23:40:22Z</timestamp>
+      <contributor>
+        <username>simple&gt;MeritedElm63160</username>
+        <id>0</id>
+      </contributor>
+      <comment>Credits to: en.wikipedia.org</comment>
+      <origin>844709</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1823" sha1="49vpdma4jsliyix8r12i3a6o55zad2p" xml:space="preserve">local mHatnote = require('Module:Hatnote')
+local mHatlist = require('Module:Hatnote list')
+local mArguments --initialize lazily
+local mTableTools --initialize lazily
+local libraryUtil = require('libraryUtil')
+local checkType = libraryUtil.checkType
+local p = {}
+
+-- Produces standard {{other uses}} implementation
+function p.otheruses(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local args = mTableTools.compressSparseArray(mArguments.getArgs(frame))
+	local title = mw.title.getCurrentTitle().prefixedText
+	return p._otheruses(args, {title=title})
+end
+
+--Implements "other [x]" templates with otherText supplied at invocation
+function p.otherX(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local x = frame.args[1]
+	local args = mTableTools.compressSparseArray(
+		mArguments.getArgs(frame, {parentOnly = true})
+	)
+	local options = {
+		title = mw.title.getCurrentTitle().prefixedText,
+		otherText = x
+	}
+	return p._otheruses(args, options)
+end
+
+-- Main generator
+function p._otheruses(args, options)
+	--Type-checks and defaults
+	checkType('_otheruses', 1, args, 'table', true)
+	args = args or {}
+	checkType('_otheruses', 2, options, 'table')
+	if not (options.defaultPage or options.title) then
+		error('No default title data provided in "_otheruses" options table', 2)
+	end
+	local emptyArgs = true
+	for k, v in pairs(args) do
+		if type(k) == 'number' then emptyArgs = false break end
+	end
+	if emptyArgs then
+		args = {
+			options.defaultPage or
+			mHatnote.disambiguate(options.title, options.disambiguator)
+		}
+	end
+	--Generate and return hatnote
+	local text = mHatlist.forSeeTableToString({{
+		use = options.otherText and "other " .. options.otherText or nil,
+		pages = args
+	}})
+	return mHatnote._hatnote(text)
+end
+
+return p</text>
+      <sha1>49vpdma4jsliyix8r12i3a6o55zad2p</sha1>
+    </revision>
+    <revision>
+      <id>844710</id>
+      <parentid>844709</parentid>
+      <timestamp>2024-12-31T21:26:25Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported from [[:wikipedia:Module:Other_uses]]</comment>
+      <origin>844709</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1823" sha1="49vpdma4jsliyix8r12i3a6o55zad2p" xml:space="preserve">local mHatnote = require('Module:Hatnote')
+local mHatlist = require('Module:Hatnote list')
+local mArguments --initialize lazily
+local mTableTools --initialize lazily
+local libraryUtil = require('libraryUtil')
+local checkType = libraryUtil.checkType
+local p = {}
+
+-- Produces standard {{other uses}} implementation
+function p.otheruses(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local args = mTableTools.compressSparseArray(mArguments.getArgs(frame))
+	local title = mw.title.getCurrentTitle().prefixedText
+	return p._otheruses(args, {title=title})
+end
+
+--Implements "other [x]" templates with otherText supplied at invocation
+function p.otherX(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local x = frame.args[1]
+	local args = mTableTools.compressSparseArray(
+		mArguments.getArgs(frame, {parentOnly = true})
+	)
+	local options = {
+		title = mw.title.getCurrentTitle().prefixedText,
+		otherText = x
+	}
+	return p._otheruses(args, options)
+end
+
+-- Main generator
+function p._otheruses(args, options)
+	--Type-checks and defaults
+	checkType('_otheruses', 1, args, 'table', true)
+	args = args or {}
+	checkType('_otheruses', 2, options, 'table')
+	if not (options.defaultPage or options.title) then
+		error('No default title data provided in "_otheruses" options table', 2)
+	end
+	local emptyArgs = true
+	for k, v in pairs(args) do
+		if type(k) == 'number' then emptyArgs = false break end
+	end
+	if emptyArgs then
+		args = {
+			options.defaultPage or
+			mHatnote.disambiguate(options.title, options.disambiguator)
+		}
+	end
+	--Generate and return hatnote
+	local text = mHatlist.forSeeTableToString({{
+		use = options.otherText and "other " .. options.otherText or nil,
+		pages = args
+	}})
+	return mHatnote._hatnote(text)
+end
+
+return p</text>
+      <sha1>49vpdma4jsliyix8r12i3a6o55zad2p</sha1>
+    </revision>
+    <revision>
+      <id>844712</id>
+      <parentid>844710</parentid>
+      <timestamp>2025-01-09T00:01:25Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: importing templates</comment>
+      <origin>844709</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1823" sha1="49vpdma4jsliyix8r12i3a6o55zad2p" xml:space="preserve">local mHatnote = require('Module:Hatnote')
+local mHatlist = require('Module:Hatnote list')
+local mArguments --initialize lazily
+local mTableTools --initialize lazily
+local libraryUtil = require('libraryUtil')
+local checkType = libraryUtil.checkType
+local p = {}
+
+-- Produces standard {{other uses}} implementation
+function p.otheruses(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local args = mTableTools.compressSparseArray(mArguments.getArgs(frame))
+	local title = mw.title.getCurrentTitle().prefixedText
+	return p._otheruses(args, {title=title})
+end
+
+--Implements "other [x]" templates with otherText supplied at invocation
+function p.otherX(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local x = frame.args[1]
+	local args = mTableTools.compressSparseArray(
+		mArguments.getArgs(frame, {parentOnly = true})
+	)
+	local options = {
+		title = mw.title.getCurrentTitle().prefixedText,
+		otherText = x
+	}
+	return p._otheruses(args, options)
+end
+
+-- Main generator
+function p._otheruses(args, options)
+	--Type-checks and defaults
+	checkType('_otheruses', 1, args, 'table', true)
+	args = args or {}
+	checkType('_otheruses', 2, options, 'table')
+	if not (options.defaultPage or options.title) then
+		error('No default title data provided in "_otheruses" options table', 2)
+	end
+	local emptyArgs = true
+	for k, v in pairs(args) do
+		if type(k) == 'number' then emptyArgs = false break end
+	end
+	if emptyArgs then
+		args = {
+			options.defaultPage or
+			mHatnote.disambiguate(options.title, options.disambiguator)
+		}
+	end
+	--Generate and return hatnote
+	local text = mHatlist.forSeeTableToString({{
+		use = options.otherText and "other " .. options.otherText or nil,
+		pages = args
+	}})
+	return mHatnote._hatnote(text)
+end
+
+return p</text>
+      <sha1>49vpdma4jsliyix8r12i3a6o55zad2p</sha1>
+    </revision>
+    <revision>
+      <id>844713</id>
+      <parentid>844712</parentid>
+      <timestamp>2025-01-26T19:32:37Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Adding [[Category:refreshing imported pages]] on using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>844713</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1863" sha1="eowgkc7f7b6p4vq60jf2ooi66sn98zi" xml:space="preserve">local mHatnote = require('Module:Hatnote')
+local mHatlist = require('Module:Hatnote list')
+local mArguments --initialize lazily
+local mTableTools --initialize lazily
+local libraryUtil = require('libraryUtil')
+local checkType = libraryUtil.checkType
+local p = {}
+
+-- Produces standard {{other uses}} implementation
+function p.otheruses(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local args = mTableTools.compressSparseArray(mArguments.getArgs(frame))
+	local title = mw.title.getCurrentTitle().prefixedText
+	return p._otheruses(args, {title=title})
+end
+
+--Implements "other [x]" templates with otherText supplied at invocation
+function p.otherX(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local x = frame.args[1]
+	local args = mTableTools.compressSparseArray(
+		mArguments.getArgs(frame, {parentOnly = true})
+	)
+	local options = {
+		title = mw.title.getCurrentTitle().prefixedText,
+		otherText = x
+	}
+	return p._otheruses(args, options)
+end
+
+-- Main generator
+function p._otheruses(args, options)
+	--Type-checks and defaults
+	checkType('_otheruses', 1, args, 'table', true)
+	args = args or {}
+	checkType('_otheruses', 2, options, 'table')
+	if not (options.defaultPage or options.title) then
+		error('No default title data provided in "_otheruses" options table', 2)
+	end
+	local emptyArgs = true
+	for k, v in pairs(args) do
+		if type(k) == 'number' then emptyArgs = false break end
+	end
+	if emptyArgs then
+		args = {
+			options.defaultPage or
+			mHatnote.disambiguate(options.title, options.disambiguator)
+		}
+	end
+	--Generate and return hatnote
+	local text = mHatlist.forSeeTableToString({{
+		use = options.otherText and "other " .. options.otherText or nil,
+		pages = args
+	}})
+	return mHatnote._hatnote(text)
+end
+
+return p
+
+[[Category:refreshing imported pages]]</text>
+      <sha1>eowgkc7f7b6p4vq60jf2ooi66sn98zi</sha1>
+    </revision>
+    <revision>
+      <id>844714</id>
+      <parentid>844713</parentid>
+      <timestamp>2025-01-27T05:25:09Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Reverted edits by [[Special:Contributions/Immanuelle|Immanuelle]] ([[User talk:Immanuelle|talk]]) to last revision by [[User:simple&gt;MeritedElm63160|simple&gt;MeritedElm63160]]</comment>
+      <origin>844714</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1823" sha1="49vpdma4jsliyix8r12i3a6o55zad2p" xml:space="preserve">local mHatnote = require('Module:Hatnote')
+local mHatlist = require('Module:Hatnote list')
+local mArguments --initialize lazily
+local mTableTools --initialize lazily
+local libraryUtil = require('libraryUtil')
+local checkType = libraryUtil.checkType
+local p = {}
+
+-- Produces standard {{other uses}} implementation
+function p.otheruses(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local args = mTableTools.compressSparseArray(mArguments.getArgs(frame))
+	local title = mw.title.getCurrentTitle().prefixedText
+	return p._otheruses(args, {title=title})
+end
+
+--Implements "other [x]" templates with otherText supplied at invocation
+function p.otherX(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local x = frame.args[1]
+	local args = mTableTools.compressSparseArray(
+		mArguments.getArgs(frame, {parentOnly = true})
+	)
+	local options = {
+		title = mw.title.getCurrentTitle().prefixedText,
+		otherText = x
+	}
+	return p._otheruses(args, options)
+end
+
+-- Main generator
+function p._otheruses(args, options)
+	--Type-checks and defaults
+	checkType('_otheruses', 1, args, 'table', true)
+	args = args or {}
+	checkType('_otheruses', 2, options, 'table')
+	if not (options.defaultPage or options.title) then
+		error('No default title data provided in "_otheruses" options table', 2)
+	end
+	local emptyArgs = true
+	for k, v in pairs(args) do
+		if type(k) == 'number' then emptyArgs = false break end
+	end
+	if emptyArgs then
+		args = {
+			options.defaultPage or
+			mHatnote.disambiguate(options.title, options.disambiguator)
+		}
+	end
+	--Generate and return hatnote
+	local text = mHatlist.forSeeTableToString({{
+		use = options.otherText and "other " .. options.otherText or nil,
+		pages = args
+	}})
+	return mHatnote._hatnote(text)
+end
+
+return p</text>
+      <sha1>49vpdma4jsliyix8r12i3a6o55zad2p</sha1>
+    </revision>
+    <revision>
+      <id>844715</id>
+      <parentid>844714</parentid>
+      <timestamp>2025-01-27T13:07:48Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Adding [[Category:refreshing redirects 1-27]] on using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>844715</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1863" sha1="c6wfufnm42ejdf1cy43mb6h6iqoq3dm" xml:space="preserve">local mHatnote = require('Module:Hatnote')
+local mHatlist = require('Module:Hatnote list')
+local mArguments --initialize lazily
+local mTableTools --initialize lazily
+local libraryUtil = require('libraryUtil')
+local checkType = libraryUtil.checkType
+local p = {}
+
+-- Produces standard {{other uses}} implementation
+function p.otheruses(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local args = mTableTools.compressSparseArray(mArguments.getArgs(frame))
+	local title = mw.title.getCurrentTitle().prefixedText
+	return p._otheruses(args, {title=title})
+end
+
+--Implements "other [x]" templates with otherText supplied at invocation
+function p.otherX(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local x = frame.args[1]
+	local args = mTableTools.compressSparseArray(
+		mArguments.getArgs(frame, {parentOnly = true})
+	)
+	local options = {
+		title = mw.title.getCurrentTitle().prefixedText,
+		otherText = x
+	}
+	return p._otheruses(args, options)
+end
+
+-- Main generator
+function p._otheruses(args, options)
+	--Type-checks and defaults
+	checkType('_otheruses', 1, args, 'table', true)
+	args = args or {}
+	checkType('_otheruses', 2, options, 'table')
+	if not (options.defaultPage or options.title) then
+		error('No default title data provided in "_otheruses" options table', 2)
+	end
+	local emptyArgs = true
+	for k, v in pairs(args) do
+		if type(k) == 'number' then emptyArgs = false break end
+	end
+	if emptyArgs then
+		args = {
+			options.defaultPage or
+			mHatnote.disambiguate(options.title, options.disambiguator)
+		}
+	end
+	--Generate and return hatnote
+	local text = mHatlist.forSeeTableToString({{
+		use = options.otherText and "other " .. options.otherText or nil,
+		pages = args
+	}})
+	return mHatnote._hatnote(text)
+end
+
+return p
+
+[[Category:refreshing redirects 1-27]]</text>
+      <sha1>c6wfufnm42ejdf1cy43mb6h6iqoq3dm</sha1>
+    </revision>
+    <revision>
+      <id>844716</id>
+      <parentid>844715</parentid>
+      <timestamp>2025-01-28T13:39:50Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Reverted edits by [[Special:Contributions/Immanuelle|Immanuelle]] ([[User talk:Immanuelle|talk]]) to last revision by [[User:simple&gt;MeritedElm63160|simple&gt;MeritedElm63160]]</comment>
+      <origin>844716</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1823" sha1="49vpdma4jsliyix8r12i3a6o55zad2p" xml:space="preserve">local mHatnote = require('Module:Hatnote')
+local mHatlist = require('Module:Hatnote list')
+local mArguments --initialize lazily
+local mTableTools --initialize lazily
+local libraryUtil = require('libraryUtil')
+local checkType = libraryUtil.checkType
+local p = {}
+
+-- Produces standard {{other uses}} implementation
+function p.otheruses(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local args = mTableTools.compressSparseArray(mArguments.getArgs(frame))
+	local title = mw.title.getCurrentTitle().prefixedText
+	return p._otheruses(args, {title=title})
+end
+
+--Implements "other [x]" templates with otherText supplied at invocation
+function p.otherX(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local x = frame.args[1]
+	local args = mTableTools.compressSparseArray(
+		mArguments.getArgs(frame, {parentOnly = true})
+	)
+	local options = {
+		title = mw.title.getCurrentTitle().prefixedText,
+		otherText = x
+	}
+	return p._otheruses(args, options)
+end
+
+-- Main generator
+function p._otheruses(args, options)
+	--Type-checks and defaults
+	checkType('_otheruses', 1, args, 'table', true)
+	args = args or {}
+	checkType('_otheruses', 2, options, 'table')
+	if not (options.defaultPage or options.title) then
+		error('No default title data provided in "_otheruses" options table', 2)
+	end
+	local emptyArgs = true
+	for k, v in pairs(args) do
+		if type(k) == 'number' then emptyArgs = false break end
+	end
+	if emptyArgs then
+		args = {
+			options.defaultPage or
+			mHatnote.disambiguate(options.title, options.disambiguator)
+		}
+	end
+	--Generate and return hatnote
+	local text = mHatlist.forSeeTableToString({{
+		use = options.otherText and "other " .. options.otherText or nil,
+		pages = args
+	}})
+	return mHatnote._hatnote(text)
+end
+
+return p</text>
+      <sha1>49vpdma4jsliyix8r12i3a6o55zad2p</sha1>
+    </revision>
+    <revision>
+      <id>6332</id>
+      <timestamp>2025-03-12T23:59:56Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was 12 revisions imported from [[:wikipedia:Module:Other_uses]]: importing because this actually has redlinks for a lot of the articles</comment>
+      <origin>6332</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="1823" sha1="49vpdma4jsliyix8r12i3a6o55zad2p" xml:space="preserve">local mHatnote = require('Module:Hatnote')
+local mHatlist = require('Module:Hatnote list')
+local mArguments --initialize lazily
+local mTableTools --initialize lazily
+local libraryUtil = require('libraryUtil')
+local checkType = libraryUtil.checkType
+local p = {}
+
+-- Produces standard {{other uses}} implementation
+function p.otheruses(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local args = mTableTools.compressSparseArray(mArguments.getArgs(frame))
+	local title = mw.title.getCurrentTitle().prefixedText
+	return p._otheruses(args, {title=title})
+end
+
+--Implements "other [x]" templates with otherText supplied at invocation
+function p.otherX(frame)
+	mArguments = require('Module:Arguments')
+	mTableTools = require('Module:TableTools')
+	local x = frame.args[1]
+	local args = mTableTools.compressSparseArray(
+		mArguments.getArgs(frame, {parentOnly = true})
+	)
+	local options = {
+		title = mw.title.getCurrentTitle().prefixedText,
+		otherText = x
+	}
+	return p._otheruses(args, options)
+end
+
+-- Main generator
+function p._otheruses(args, options)
+	--Type-checks and defaults
+	checkType('_otheruses', 1, args, 'table', true)
+	args = args or {}
+	checkType('_otheruses', 2, options, 'table')
+	if not (options.defaultPage or options.title) then
+		error('No default title data provided in "_otheruses" options table', 2)
+	end
+	local emptyArgs = true
+	for k, v in pairs(args) do
+		if type(k) == 'number' then emptyArgs = false break end
+	end
+	if emptyArgs then
+		args = {
+			options.defaultPage or
+			mHatnote.disambiguate(options.title, options.disambiguator)
+		}
+	end
+	--Generate and return hatnote
+	local text = mHatlist.forSeeTableToString({{
+		use = options.otherText and "other " .. options.otherText or nil,
+		pages = args
+	}})
+	return mHatnote._hatnote(text)
+end
+
+return p</text>
+      <sha1>49vpdma4jsliyix8r12i3a6o55zad2p</sha1>
+    </revision>
+  </page>
+</mediawiki>

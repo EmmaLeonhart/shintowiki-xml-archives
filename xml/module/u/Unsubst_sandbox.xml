@@ -1,0 +1,1924 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Unsubst/sandbox</title>
+    <ns>828</ns>
+    <id>5957</id>
+    <revision>
+      <id>832593</id>
+      <timestamp>2021-08-20T17:39:37Z</timestamp>
+      <contributor>
+        <username>en&gt;Trappist the monk</username>
+        <id>0</id>
+      </contributor>
+      <origin>832593</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3948" sha1="eu3d3ip0gtd6n65iz4vmtpogb62rxdi" xml:space="preserve">local checkType = require('libraryUtil').checkType
+
+local p = {}
+
+local BODY_PARAM = '$B'
+
+local specialParams = {
+	['$params'] = 'parameter list',
+	['$aliases'] = 'parameter aliases',
+	['$flags'] = 'flags',
+	['$B'] = 'template content',
+	['$template-name'] = 'template invocation name override',
+}
+
+function p.main(frame, body)
+	-- If we are substing, this function returns a template invocation, and if
+	-- not, it returns the template body. The template body can be specified in
+	-- the body parameter, or in the template parameter defined in the
+	-- BODY_PARAM variable. This function can be called from Lua or from
+	-- #invoke.
+
+	-- Return the template body if we aren't substing.
+	if not mw.isSubsting() then
+		if body ~= nil then
+			return body
+		elseif frame.args[BODY_PARAM] ~= nil then
+			return frame.args[BODY_PARAM]
+		else
+			error(string.format(
+				"no template content specified (use parameter '%s' from #invoke)",
+				BODY_PARAM
+			), 2)
+		end
+	end
+
+	-- Sanity check for the frame object.
+	if type(frame) ~= 'table'
+		or type(frame.getParent) ~= 'function'
+		or not frame:getParent()
+	then
+		error(
+			"argument #1 to 'main' must be a frame object with a parent " ..
+			"frame available",
+			2
+		)
+	end
+
+	-- Find the invocation name.
+	local mTemplateInvocation = require('Module:Template invocation')
+	local name
+
+	if frame.args['$template-name'] and '' ~= frame.args['$template-name'] then
+		name = frame.args['$template-name']										-- override whatever the template name is with this name
+	else
+		name = mTemplateInvocation.name(frame:getParent():getTitle())
+	end
+
+	-- Combine passed args with passed defaults
+	local args = {}
+	if string.find( ','..(frame.args['$flags'] or '')..',', ',%s*override%s*,' ) then
+		for k, v in pairs( frame:getParent().args ) do
+			args[k] = v
+		end
+		for k, v in pairs( frame.args ) do
+			if not specialParams[k] then
+				if v == '__DATE__' then
+					v = mw.getContentLanguage():formatDate( 'F Y' )
+				end
+				args[k] = v
+			end
+		end
+	else
+		for k, v in pairs( frame.args ) do
+			if not specialParams[k] then
+				if v == '__DATE__' then
+					v = mw.getContentLanguage():formatDate( 'F Y' )
+				end
+				args[k] = v
+			end
+		end
+		for k, v in pairs( frame:getParent().args ) do
+			args[k] = v
+		end
+	end
+
+	-- Trim parameters, if not specified otherwise
+	if not string.find( ','..(frame.args['$flags'] or '')..',', ',%s*keep%-whitespace%s*,' ) then
+		for k, v in pairs( args ) do args[k] = mw.ustring.match(v, '^%s*(.*)%s*$') or '' end
+	end
+
+	-- Pull information from parameter aliases
+	local aliases = {}
+	if frame.args['$aliases'] then
+		local list = mw.text.split( frame.args['$aliases'], '%s*,%s*' )
+		for k, v in ipairs( list ) do
+			local tmp = mw.text.split( v, '%s*&gt;%s*' )
+			aliases[tonumber(mw.ustring.match(tmp[1], '^[1-9][0-9]*$')) or tmp[1]] = ((tonumber(mw.ustring.match(tmp[2], '^[1-9][0-9]*$'))) or tmp[2])
+		end
+	end
+	for k, v in pairs( aliases ) do
+		if args[k] and ( not args[v] or args[v] == '' ) then
+			args[v] = args[k]
+		end
+		args[k] = nil
+	end
+
+	-- Remove empty parameters, if specified
+	if string.find( ','..(frame.args['$flags'] or '')..',', ',%s*remove%-empty%s*,' ) then
+		local tmp = 0
+		for k, v in ipairs( args ) do
+			if v ~= '' or ( args[k+1] and args[k+1] ~= '' ) or ( args[k+2] and args[k+2] ~= '' ) then
+				tmp = k
+			else
+				break
+			end
+		end
+		for k, v in pairs( args ) do
+			if v == '' then
+				if not (type(k) == 'number' and k &lt; tmp) then args[k] = nil end
+			end
+		end
+	end
+
+	-- Order parameters
+	if frame.args['$params'] then
+		local params, tmp = mw.text.split( frame.args['$params'], '%s*,%s*' ), {}
+		for k, v in ipairs(params) do
+			v = tonumber(mw.ustring.match(v, '^[1-9][0-9]*$')) or v
+			if args[v] then tmp[v], args[v] = args[v], nil end
+		end
+		for k, v in pairs(args) do tmp[k], args[k] = args[k], nil end
+		args = tmp
+	end
+
+	return mTemplateInvocation.invocation(name, args)
+end
+
+p[''] = p.main -- For backwards compatibility
+
+return p</text>
+      <sha1>eu3d3ip0gtd6n65iz4vmtpogb62rxdi</sha1>
+    </revision>
+    <revision>
+      <id>832594</id>
+      <parentid>832593</parentid>
+      <timestamp>2024-12-31T06:41:33Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: Mass importing wikipedia categories, not taking histories because these are unused ones and it is kind of obvious where they came from</comment>
+      <origin>832593</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="3948" sha1="eu3d3ip0gtd6n65iz4vmtpogb62rxdi" xml:space="preserve">local checkType = require('libraryUtil').checkType
+
+local p = {}
+
+local BODY_PARAM = '$B'
+
+local specialParams = {
+	['$params'] = 'parameter list',
+	['$aliases'] = 'parameter aliases',
+	['$flags'] = 'flags',
+	['$B'] = 'template content',
+	['$template-name'] = 'template invocation name override',
+}
+
+function p.main(frame, body)
+	-- If we are substing, this function returns a template invocation, and if
+	-- not, it returns the template body. The template body can be specified in
+	-- the body parameter, or in the template parameter defined in the
+	-- BODY_PARAM variable. This function can be called from Lua or from
+	-- #invoke.
+
+	-- Return the template body if we aren't substing.
+	if not mw.isSubsting() then
+		if body ~= nil then
+			return body
+		elseif frame.args[BODY_PARAM] ~= nil then
+			return frame.args[BODY_PARAM]
+		else
+			error(string.format(
+				"no template content specified (use parameter '%s' from #invoke)",
+				BODY_PARAM
+			), 2)
+		end
+	end
+
+	-- Sanity check for the frame object.
+	if type(frame) ~= 'table'
+		or type(frame.getParent) ~= 'function'
+		or not frame:getParent()
+	then
+		error(
+			"argument #1 to 'main' must be a frame object with a parent " ..
+			"frame available",
+			2
+		)
+	end
+
+	-- Find the invocation name.
+	local mTemplateInvocation = require('Module:Template invocation')
+	local name
+
+	if frame.args['$template-name'] and '' ~= frame.args['$template-name'] then
+		name = frame.args['$template-name']										-- override whatever the template name is with this name
+	else
+		name = mTemplateInvocation.name(frame:getParent():getTitle())
+	end
+
+	-- Combine passed args with passed defaults
+	local args = {}
+	if string.find( ','..(frame.args['$flags'] or '')..',', ',%s*override%s*,' ) then
+		for k, v in pairs( frame:getParent().args ) do
+			args[k] = v
+		end
+		for k, v in pairs( frame.args ) do
+			if not specialParams[k] then
+				if v == '__DATE__' then
+					v = mw.getContentLanguage():formatDate( 'F Y' )
+				end
+				args[k] = v
+			end
+		end
+	else
+		for k, v in pairs( frame.args ) do
+			if not specialParams[k] then
+				if v == '__DATE__' then
+					v = mw.getContentLanguage():formatDate( 'F Y' )
+				end
+				args[k] = v
+			end
+		end
+		for k, v in pairs( frame:getParent().args ) do
+			args[k] = v
+		end
+	end
+
+	-- Trim parameters, if not specified otherwise
+	if not string.find( ','..(frame.args['$flags'] or '')..',', ',%s*keep%-whitespace%s*,' ) then
+		for k, v in pairs( args ) do args[k] = mw.ustring.match(v, '^%s*(.*)%s*$') or '' end
+	end
+
+	-- Pull information from parameter aliases
+	local aliases = {}
+	if frame.args['$aliases'] then
+		local list = mw.text.split( frame.args['$aliases'], '%s*,%s*' )
+		for k, v in ipairs( list ) do
+			local tmp = mw.text.split( v, '%s*&gt;%s*' )
+			aliases[tonumber(mw.ustring.match(tmp[1], '^[1-9][0-9]*$')) or tmp[1]] = ((tonumber(mw.ustring.match(tmp[2], '^[1-9][0-9]*$'))) or tmp[2])
+		end
+	end
+	for k, v in pairs( aliases ) do
+		if args[k] and ( not args[v] or args[v] == '' ) then
+			args[v] = args[k]
+		end
+		args[k] = nil
+	end
+
+	-- Remove empty parameters, if specified
+	if string.find( ','..(frame.args['$flags'] or '')..',', ',%s*remove%-empty%s*,' ) then
+		local tmp = 0
+		for k, v in ipairs( args ) do
+			if v ~= '' or ( args[k+1] and args[k+1] ~= '' ) or ( args[k+2] and args[k+2] ~= '' ) then
+				tmp = k
+			else
+				break
+			end
+		end
+		for k, v in pairs( args ) do
+			if v == '' then
+				if not (type(k) == 'number' and k &lt; tmp) then args[k] = nil end
+			end
+		end
+	end
+
+	-- Order parameters
+	if frame.args['$params'] then
+		local params, tmp = mw.text.split( frame.args['$params'], '%s*,%s*' ), {}
+		for k, v in ipairs(params) do
+			v = tonumber(mw.ustring.match(v, '^[1-9][0-9]*$')) or v
+			if args[v] then tmp[v], args[v] = args[v], nil end
+		end
+		for k, v in pairs(args) do tmp[k], args[k] = args[k], nil end
+		args = tmp
+	end
+
+	return mTemplateInvocation.invocation(name, args)
+end
+
+p[''] = p.main -- For backwards compatibility
+
+return p</text>
+      <sha1>eu3d3ip0gtd6n65iz4vmtpogb62rxdi</sha1>
+    </revision>
+    <revision>
+      <id>832595</id>
+      <parentid>832594</parentid>
+      <timestamp>2025-01-28T01:15:38Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Adding [[Category:second attempt at refreshing on January 27 2024]][[Category:{{subst:FULLPAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]] on using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>832595</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4105" sha1="j52of7qvfbhm06hmxgv73iuefp0rd82" xml:space="preserve">local checkType = require('libraryUtil').checkType
+
+local p = {}
+
+local BODY_PARAM = '$B'
+
+local specialParams = {
+	['$params'] = 'parameter list',
+	['$aliases'] = 'parameter aliases',
+	['$flags'] = 'flags',
+	['$B'] = 'template content',
+	['$template-name'] = 'template invocation name override',
+}
+
+function p.main(frame, body)
+	-- If we are substing, this function returns a template invocation, and if
+	-- not, it returns the template body. The template body can be specified in
+	-- the body parameter, or in the template parameter defined in the
+	-- BODY_PARAM variable. This function can be called from Lua or from
+	-- #invoke.
+
+	-- Return the template body if we aren't substing.
+	if not mw.isSubsting() then
+		if body ~= nil then
+			return body
+		elseif frame.args[BODY_PARAM] ~= nil then
+			return frame.args[BODY_PARAM]
+		else
+			error(string.format(
+				"no template content specified (use parameter '%s' from #invoke)",
+				BODY_PARAM
+			), 2)
+		end
+	end
+
+	-- Sanity check for the frame object.
+	if type(frame) ~= 'table'
+		or type(frame.getParent) ~= 'function'
+		or not frame:getParent()
+	then
+		error(
+			"argument #1 to 'main' must be a frame object with a parent " ..
+			"frame available",
+			2
+		)
+	end
+
+	-- Find the invocation name.
+	local mTemplateInvocation = require('Module:Template invocation')
+	local name
+
+	if frame.args['$template-name'] and '' ~= frame.args['$template-name'] then
+		name = frame.args['$template-name']										-- override whatever the template name is with this name
+	else
+		name = mTemplateInvocation.name(frame:getParent():getTitle())
+	end
+
+	-- Combine passed args with passed defaults
+	local args = {}
+	if string.find( ','..(frame.args['$flags'] or '')..',', ',%s*override%s*,' ) then
+		for k, v in pairs( frame:getParent().args ) do
+			args[k] = v
+		end
+		for k, v in pairs( frame.args ) do
+			if not specialParams[k] then
+				if v == '__DATE__' then
+					v = mw.getContentLanguage():formatDate( 'F Y' )
+				end
+				args[k] = v
+			end
+		end
+	else
+		for k, v in pairs( frame.args ) do
+			if not specialParams[k] then
+				if v == '__DATE__' then
+					v = mw.getContentLanguage():formatDate( 'F Y' )
+				end
+				args[k] = v
+			end
+		end
+		for k, v in pairs( frame:getParent().args ) do
+			args[k] = v
+		end
+	end
+
+	-- Trim parameters, if not specified otherwise
+	if not string.find( ','..(frame.args['$flags'] or '')..',', ',%s*keep%-whitespace%s*,' ) then
+		for k, v in pairs( args ) do args[k] = mw.ustring.match(v, '^%s*(.*)%s*$') or '' end
+	end
+
+	-- Pull information from parameter aliases
+	local aliases = {}
+	if frame.args['$aliases'] then
+		local list = mw.text.split( frame.args['$aliases'], '%s*,%s*' )
+		for k, v in ipairs( list ) do
+			local tmp = mw.text.split( v, '%s*&gt;%s*' )
+			aliases[tonumber(mw.ustring.match(tmp[1], '^[1-9][0-9]*$')) or tmp[1]] = ((tonumber(mw.ustring.match(tmp[2], '^[1-9][0-9]*$'))) or tmp[2])
+		end
+	end
+	for k, v in pairs( aliases ) do
+		if args[k] and ( not args[v] or args[v] == '' ) then
+			args[v] = args[k]
+		end
+		args[k] = nil
+	end
+
+	-- Remove empty parameters, if specified
+	if string.find( ','..(frame.args['$flags'] or '')..',', ',%s*remove%-empty%s*,' ) then
+		local tmp = 0
+		for k, v in ipairs( args ) do
+			if v ~= '' or ( args[k+1] and args[k+1] ~= '' ) or ( args[k+2] and args[k+2] ~= '' ) then
+				tmp = k
+			else
+				break
+			end
+		end
+		for k, v in pairs( args ) do
+			if v == '' then
+				if not (type(k) == 'number' and k &lt; tmp) then args[k] = nil end
+			end
+		end
+	end
+
+	-- Order parameters
+	if frame.args['$params'] then
+		local params, tmp = mw.text.split( frame.args['$params'], '%s*,%s*' ), {}
+		for k, v in ipairs(params) do
+			v = tonumber(mw.ustring.match(v, '^[1-9][0-9]*$')) or v
+			if args[v] then tmp[v], args[v] = args[v], nil end
+		end
+		for k, v in pairs(args) do tmp[k], args[k] = args[k], nil end
+		args = tmp
+	end
+
+	return mTemplateInvocation.invocation(name, args)
+end
+
+p[''] = p.main -- For backwards compatibility
+
+return p
+
+[[Category:second attempt at refreshing on January 27 2024]][[Category:{{subst:FULLPAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]]</text>
+      <sha1>j52of7qvfbhm06hmxgv73iuefp0rd82</sha1>
+    </revision>
+    <revision>
+      <id>832596</id>
+      <parentid>832595</parentid>
+      <timestamp>2025-02-19T03:35:27Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Copying from [[Category:Automatic wikipedia redirects]] to [[Category:pages tagged as Automatic wikipedia redirects in namespace {{subst:NAMESPACE}}]][[Category:qq]] on using [[c:Help:Cat-a-lot|Cat-a-lot]]</comment>
+      <origin>832596</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4212" sha1="qlgho6sldupu771lkthsleyanuliqhl" xml:space="preserve">local checkType = require('libraryUtil').checkType
+
+local p = {}
+
+local BODY_PARAM = '$B'
+
+local specialParams = {
+	['$params'] = 'parameter list',
+	['$aliases'] = 'parameter aliases',
+	['$flags'] = 'flags',
+	['$B'] = 'template content',
+	['$template-name'] = 'template invocation name override',
+}
+
+function p.main(frame, body)
+	-- If we are substing, this function returns a template invocation, and if
+	-- not, it returns the template body. The template body can be specified in
+	-- the body parameter, or in the template parameter defined in the
+	-- BODY_PARAM variable. This function can be called from Lua or from
+	-- #invoke.
+
+	-- Return the template body if we aren't substing.
+	if not mw.isSubsting() then
+		if body ~= nil then
+			return body
+		elseif frame.args[BODY_PARAM] ~= nil then
+			return frame.args[BODY_PARAM]
+		else
+			error(string.format(
+				"no template content specified (use parameter '%s' from #invoke)",
+				BODY_PARAM
+			), 2)
+		end
+	end
+
+	-- Sanity check for the frame object.
+	if type(frame) ~= 'table'
+		or type(frame.getParent) ~= 'function'
+		or not frame:getParent()
+	then
+		error(
+			"argument #1 to 'main' must be a frame object with a parent " ..
+			"frame available",
+			2
+		)
+	end
+
+	-- Find the invocation name.
+	local mTemplateInvocation = require('Module:Template invocation')
+	local name
+
+	if frame.args['$template-name'] and '' ~= frame.args['$template-name'] then
+		name = frame.args['$template-name']										-- override whatever the template name is with this name
+	else
+		name = mTemplateInvocation.name(frame:getParent():getTitle())
+	end
+
+	-- Combine passed args with passed defaults
+	local args = {}
+	if string.find( ','..(frame.args['$flags'] or '')..',', ',%s*override%s*,' ) then
+		for k, v in pairs( frame:getParent().args ) do
+			args[k] = v
+		end
+		for k, v in pairs( frame.args ) do
+			if not specialParams[k] then
+				if v == '__DATE__' then
+					v = mw.getContentLanguage():formatDate( 'F Y' )
+				end
+				args[k] = v
+			end
+		end
+	else
+		for k, v in pairs( frame.args ) do
+			if not specialParams[k] then
+				if v == '__DATE__' then
+					v = mw.getContentLanguage():formatDate( 'F Y' )
+				end
+				args[k] = v
+			end
+		end
+		for k, v in pairs( frame:getParent().args ) do
+			args[k] = v
+		end
+	end
+
+	-- Trim parameters, if not specified otherwise
+	if not string.find( ','..(frame.args['$flags'] or '')..',', ',%s*keep%-whitespace%s*,' ) then
+		for k, v in pairs( args ) do args[k] = mw.ustring.match(v, '^%s*(.*)%s*$') or '' end
+	end
+
+	-- Pull information from parameter aliases
+	local aliases = {}
+	if frame.args['$aliases'] then
+		local list = mw.text.split( frame.args['$aliases'], '%s*,%s*' )
+		for k, v in ipairs( list ) do
+			local tmp = mw.text.split( v, '%s*&gt;%s*' )
+			aliases[tonumber(mw.ustring.match(tmp[1], '^[1-9][0-9]*$')) or tmp[1]] = ((tonumber(mw.ustring.match(tmp[2], '^[1-9][0-9]*$'))) or tmp[2])
+		end
+	end
+	for k, v in pairs( aliases ) do
+		if args[k] and ( not args[v] or args[v] == '' ) then
+			args[v] = args[k]
+		end
+		args[k] = nil
+	end
+
+	-- Remove empty parameters, if specified
+	if string.find( ','..(frame.args['$flags'] or '')..',', ',%s*remove%-empty%s*,' ) then
+		local tmp = 0
+		for k, v in ipairs( args ) do
+			if v ~= '' or ( args[k+1] and args[k+1] ~= '' ) or ( args[k+2] and args[k+2] ~= '' ) then
+				tmp = k
+			else
+				break
+			end
+		end
+		for k, v in pairs( args ) do
+			if v == '' then
+				if not (type(k) == 'number' and k &lt; tmp) then args[k] = nil end
+			end
+		end
+	end
+
+	-- Order parameters
+	if frame.args['$params'] then
+		local params, tmp = mw.text.split( frame.args['$params'], '%s*,%s*' ), {}
+		for k, v in ipairs(params) do
+			v = tonumber(mw.ustring.match(v, '^[1-9][0-9]*$')) or v
+			if args[v] then tmp[v], args[v] = args[v], nil end
+		end
+		for k, v in pairs(args) do tmp[k], args[k] = args[k], nil end
+		args = tmp
+	end
+
+	return mTemplateInvocation.invocation(name, args)
+end
+
+p[''] = p.main -- For backwards compatibility
+
+return p
+
+[[Category:second attempt at refreshing on January 27 2024]][[Category:{{subst:FULLPAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]]
+[[Category:pages tagged as Automatic wikipedia redirects in namespace {{subst:NAMESPACE}}]][[Category:qq]]</text>
+      <sha1>qlgho6sldupu771lkthsleyanuliqhl</sha1>
+    </revision>
+    <revision>
+      <id>832597</id>
+      <parentid>832596</parentid>
+      <timestamp>2025-03-13T21:23:19Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "Category:{" to "Category:"</comment>
+      <origin>832597</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4211" sha1="6tffivbz02yjcgdlljriqxvfxhmrfue" xml:space="preserve">local checkType = require('libraryUtil').checkType
+
+local p = {}
+
+local BODY_PARAM = '$B'
+
+local specialParams = {
+	['$params'] = 'parameter list',
+	['$aliases'] = 'parameter aliases',
+	['$flags'] = 'flags',
+	['$B'] = 'template content',
+	['$template-name'] = 'template invocation name override',
+}
+
+function p.main(frame, body)
+	-- If we are substing, this function returns a template invocation, and if
+	-- not, it returns the template body. The template body can be specified in
+	-- the body parameter, or in the template parameter defined in the
+	-- BODY_PARAM variable. This function can be called from Lua or from
+	-- #invoke.
+
+	-- Return the template body if we aren't substing.
+	if not mw.isSubsting() then
+		if body ~= nil then
+			return body
+		elseif frame.args[BODY_PARAM] ~= nil then
+			return frame.args[BODY_PARAM]
+		else
+			error(string.format(
+				"no template content specified (use parameter '%s' from #invoke)",
+				BODY_PARAM
+			), 2)
+		end
+	end
+
+	-- Sanity check for the frame object.
+	if type(frame) ~= 'table'
+		or type(frame.getParent) ~= 'function'
+		or not frame:getParent()
+	then
+		error(
+			"argument #1 to 'main' must be a frame object with a parent " ..
+			"frame available",
+			2
+		)
+	end
+
+	-- Find the invocation name.
+	local mTemplateInvocation = require('Module:Template invocation')
+	local name
+
+	if frame.args['$template-name'] and '' ~= frame.args['$template-name'] then
+		name = frame.args['$template-name']										-- override whatever the template name is with this name
+	else
+		name = mTemplateInvocation.name(frame:getParent():getTitle())
+	end
+
+	-- Combine passed args with passed defaults
+	local args = {}
+	if string.find( ','..(frame.args['$flags'] or '')..',', ',%s*override%s*,' ) then
+		for k, v in pairs( frame:getParent().args ) do
+			args[k] = v
+		end
+		for k, v in pairs( frame.args ) do
+			if not specialParams[k] then
+				if v == '__DATE__' then
+					v = mw.getContentLanguage():formatDate( 'F Y' )
+				end
+				args[k] = v
+			end
+		end
+	else
+		for k, v in pairs( frame.args ) do
+			if not specialParams[k] then
+				if v == '__DATE__' then
+					v = mw.getContentLanguage():formatDate( 'F Y' )
+				end
+				args[k] = v
+			end
+		end
+		for k, v in pairs( frame:getParent().args ) do
+			args[k] = v
+		end
+	end
+
+	-- Trim parameters, if not specified otherwise
+	if not string.find( ','..(frame.args['$flags'] or '')..',', ',%s*keep%-whitespace%s*,' ) then
+		for k, v in pairs( args ) do args[k] = mw.ustring.match(v, '^%s*(.*)%s*$') or '' end
+	end
+
+	-- Pull information from parameter aliases
+	local aliases = {}
+	if frame.args['$aliases'] then
+		local list = mw.text.split( frame.args['$aliases'], '%s*,%s*' )
+		for k, v in ipairs( list ) do
+			local tmp = mw.text.split( v, '%s*&gt;%s*' )
+			aliases[tonumber(mw.ustring.match(tmp[1], '^[1-9][0-9]*$')) or tmp[1]] = ((tonumber(mw.ustring.match(tmp[2], '^[1-9][0-9]*$'))) or tmp[2])
+		end
+	end
+	for k, v in pairs( aliases ) do
+		if args[k] and ( not args[v] or args[v] == '' ) then
+			args[v] = args[k]
+		end
+		args[k] = nil
+	end
+
+	-- Remove empty parameters, if specified
+	if string.find( ','..(frame.args['$flags'] or '')..',', ',%s*remove%-empty%s*,' ) then
+		local tmp = 0
+		for k, v in ipairs( args ) do
+			if v ~= '' or ( args[k+1] and args[k+1] ~= '' ) or ( args[k+2] and args[k+2] ~= '' ) then
+				tmp = k
+			else
+				break
+			end
+		end
+		for k, v in pairs( args ) do
+			if v == '' then
+				if not (type(k) == 'number' and k &lt; tmp) then args[k] = nil end
+			end
+		end
+	end
+
+	-- Order parameters
+	if frame.args['$params'] then
+		local params, tmp = mw.text.split( frame.args['$params'], '%s*,%s*' ), {}
+		for k, v in ipairs(params) do
+			v = tonumber(mw.ustring.match(v, '^[1-9][0-9]*$')) or v
+			if args[v] then tmp[v], args[v] = args[v], nil end
+		end
+		for k, v in pairs(args) do tmp[k], args[k] = args[k], nil end
+		args = tmp
+	end
+
+	return mTemplateInvocation.invocation(name, args)
+end
+
+p[''] = p.main -- For backwards compatibility
+
+return p
+
+[[Category:second attempt at refreshing on January 27 2024]][[Category:{subst:FULLPAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]]
+[[Category:pages tagged as Automatic wikipedia redirects in namespace {{subst:NAMESPACE}}]][[Category:qq]]</text>
+      <sha1>6tffivbz02yjcgdlljriqxvfxhmrfue</sha1>
+    </revision>
+    <revision>
+      <id>832598</id>
+      <parentid>832597</parentid>
+      <timestamp>2025-03-13T21:23:49Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "Category:{" to "Category:"</comment>
+      <origin>832598</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4210" sha1="gcandhvp6cjluhxzas07040bu1wlbot" xml:space="preserve">local checkType = require('libraryUtil').checkType
+
+local p = {}
+
+local BODY_PARAM = '$B'
+
+local specialParams = {
+	['$params'] = 'parameter list',
+	['$aliases'] = 'parameter aliases',
+	['$flags'] = 'flags',
+	['$B'] = 'template content',
+	['$template-name'] = 'template invocation name override',
+}
+
+function p.main(frame, body)
+	-- If we are substing, this function returns a template invocation, and if
+	-- not, it returns the template body. The template body can be specified in
+	-- the body parameter, or in the template parameter defined in the
+	-- BODY_PARAM variable. This function can be called from Lua or from
+	-- #invoke.
+
+	-- Return the template body if we aren't substing.
+	if not mw.isSubsting() then
+		if body ~= nil then
+			return body
+		elseif frame.args[BODY_PARAM] ~= nil then
+			return frame.args[BODY_PARAM]
+		else
+			error(string.format(
+				"no template content specified (use parameter '%s' from #invoke)",
+				BODY_PARAM
+			), 2)
+		end
+	end
+
+	-- Sanity check for the frame object.
+	if type(frame) ~= 'table'
+		or type(frame.getParent) ~= 'function'
+		or not frame:getParent()
+	then
+		error(
+			"argument #1 to 'main' must be a frame object with a parent " ..
+			"frame available",
+			2
+		)
+	end
+
+	-- Find the invocation name.
+	local mTemplateInvocation = require('Module:Template invocation')
+	local name
+
+	if frame.args['$template-name'] and '' ~= frame.args['$template-name'] then
+		name = frame.args['$template-name']										-- override whatever the template name is with this name
+	else
+		name = mTemplateInvocation.name(frame:getParent():getTitle())
+	end
+
+	-- Combine passed args with passed defaults
+	local args = {}
+	if string.find( ','..(frame.args['$flags'] or '')..',', ',%s*override%s*,' ) then
+		for k, v in pairs( frame:getParent().args ) do
+			args[k] = v
+		end
+		for k, v in pairs( frame.args ) do
+			if not specialParams[k] then
+				if v == '__DATE__' then
+					v = mw.getContentLanguage():formatDate( 'F Y' )
+				end
+				args[k] = v
+			end
+		end
+	else
+		for k, v in pairs( frame.args ) do
+			if not specialParams[k] then
+				if v == '__DATE__' then
+					v = mw.getContentLanguage():formatDate( 'F Y' )
+				end
+				args[k] = v
+			end
+		end
+		for k, v in pairs( frame:getParent().args ) do
+			args[k] = v
+		end
+	end
+
+	-- Trim parameters, if not specified otherwise
+	if not string.find( ','..(frame.args['$flags'] or '')..',', ',%s*keep%-whitespace%s*,' ) then
+		for k, v in pairs( args ) do args[k] = mw.ustring.match(v, '^%s*(.*)%s*$') or '' end
+	end
+
+	-- Pull information from parameter aliases
+	local aliases = {}
+	if frame.args['$aliases'] then
+		local list = mw.text.split( frame.args['$aliases'], '%s*,%s*' )
+		for k, v in ipairs( list ) do
+			local tmp = mw.text.split( v, '%s*&gt;%s*' )
+			aliases[tonumber(mw.ustring.match(tmp[1], '^[1-9][0-9]*$')) or tmp[1]] = ((tonumber(mw.ustring.match(tmp[2], '^[1-9][0-9]*$'))) or tmp[2])
+		end
+	end
+	for k, v in pairs( aliases ) do
+		if args[k] and ( not args[v] or args[v] == '' ) then
+			args[v] = args[k]
+		end
+		args[k] = nil
+	end
+
+	-- Remove empty parameters, if specified
+	if string.find( ','..(frame.args['$flags'] or '')..',', ',%s*remove%-empty%s*,' ) then
+		local tmp = 0
+		for k, v in ipairs( args ) do
+			if v ~= '' or ( args[k+1] and args[k+1] ~= '' ) or ( args[k+2] and args[k+2] ~= '' ) then
+				tmp = k
+			else
+				break
+			end
+		end
+		for k, v in pairs( args ) do
+			if v == '' then
+				if not (type(k) == 'number' and k &lt; tmp) then args[k] = nil end
+			end
+		end
+	end
+
+	-- Order parameters
+	if frame.args['$params'] then
+		local params, tmp = mw.text.split( frame.args['$params'], '%s*,%s*' ), {}
+		for k, v in ipairs(params) do
+			v = tonumber(mw.ustring.match(v, '^[1-9][0-9]*$')) or v
+			if args[v] then tmp[v], args[v] = args[v], nil end
+		end
+		for k, v in pairs(args) do tmp[k], args[k] = args[k], nil end
+		args = tmp
+	end
+
+	return mTemplateInvocation.invocation(name, args)
+end
+
+p[''] = p.main -- For backwards compatibility
+
+return p
+
+[[Category:second attempt at refreshing on January 27 2024]][[Category:subst:FULLPAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]]
+[[Category:pages tagged as Automatic wikipedia redirects in namespace {{subst:NAMESPACE}}]][[Category:qq]]</text>
+      <sha1>gcandhvp6cjluhxzas07040bu1wlbot</sha1>
+    </revision>
+    <revision>
+      <id>832599</id>
+      <parentid>832598</parentid>
+      <timestamp>2025-03-20T00:03:16Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "qq" to "11"</comment>
+      <origin>832599</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4210" sha1="sv0p6ybkmmvfd2sxa6ukh4mb8uffp67" xml:space="preserve">local checkType = require('libraryUtil').checkType
+
+local p = {}
+
+local BODY_PARAM = '$B'
+
+local specialParams = {
+	['$params'] = 'parameter list',
+	['$aliases'] = 'parameter aliases',
+	['$flags'] = 'flags',
+	['$B'] = 'template content',
+	['$template-name'] = 'template invocation name override',
+}
+
+function p.main(frame, body)
+	-- If we are substing, this function returns a template invocation, and if
+	-- not, it returns the template body. The template body can be specified in
+	-- the body parameter, or in the template parameter defined in the
+	-- BODY_PARAM variable. This function can be called from Lua or from
+	-- #invoke.
+
+	-- Return the template body if we aren't substing.
+	if not mw.isSubsting() then
+		if body ~= nil then
+			return body
+		elseif frame.args[BODY_PARAM] ~= nil then
+			return frame.args[BODY_PARAM]
+		else
+			error(string.format(
+				"no template content specified (use parameter '%s' from #invoke)",
+				BODY_PARAM
+			), 2)
+		end
+	end
+
+	-- Sanity check for the frame object.
+	if type(frame) ~= 'table'
+		or type(frame.getParent) ~= 'function'
+		or not frame:getParent()
+	then
+		error(
+			"argument #1 to 'main' must be a frame object with a parent " ..
+			"frame available",
+			2
+		)
+	end
+
+	-- Find the invocation name.
+	local mTemplateInvocation = require('Module:Template invocation')
+	local name
+
+	if frame.args['$template-name'] and '' ~= frame.args['$template-name'] then
+		name = frame.args['$template-name']										-- override whatever the template name is with this name
+	else
+		name = mTemplateInvocation.name(frame:getParent():getTitle())
+	end
+
+	-- Combine passed args with passed defaults
+	local args = {}
+	if string.find( ','..(frame.args['$flags'] or '')..',', ',%s*override%s*,' ) then
+		for k, v in pairs( frame:getParent().args ) do
+			args[k] = v
+		end
+		for k, v in pairs( frame.args ) do
+			if not specialParams[k] then
+				if v == '__DATE__' then
+					v = mw.getContentLanguage():formatDate( 'F Y' )
+				end
+				args[k] = v
+			end
+		end
+	else
+		for k, v in pairs( frame.args ) do
+			if not specialParams[k] then
+				if v == '__DATE__' then
+					v = mw.getContentLanguage():formatDate( 'F Y' )
+				end
+				args[k] = v
+			end
+		end
+		for k, v in pairs( frame:getParent().args ) do
+			args[k] = v
+		end
+	end
+
+	-- Trim parameters, if not specified otherwise
+	if not string.find( ','..(frame.args['$flags'] or '')..',', ',%s*keep%-whitespace%s*,' ) then
+		for k, v in pairs( args ) do args[k] = mw.ustring.match(v, '^%s*(.*)%s*$') or '' end
+	end
+
+	-- Pull information from parameter aliases
+	local aliases = {}
+	if frame.args['$aliases'] then
+		local list = mw.text.split( frame.args['$aliases'], '%s*,%s*' )
+		for k, v in ipairs( list ) do
+			local tmp = mw.text.split( v, '%s*&gt;%s*' )
+			aliases[tonumber(mw.ustring.match(tmp[1], '^[1-9][0-9]*$')) or tmp[1]] = ((tonumber(mw.ustring.match(tmp[2], '^[1-9][0-9]*$'))) or tmp[2])
+		end
+	end
+	for k, v in pairs( aliases ) do
+		if args[k] and ( not args[v] or args[v] == '' ) then
+			args[v] = args[k]
+		end
+		args[k] = nil
+	end
+
+	-- Remove empty parameters, if specified
+	if string.find( ','..(frame.args['$flags'] or '')..',', ',%s*remove%-empty%s*,' ) then
+		local tmp = 0
+		for k, v in ipairs( args ) do
+			if v ~= '' or ( args[k+1] and args[k+1] ~= '' ) or ( args[k+2] and args[k+2] ~= '' ) then
+				tmp = k
+			else
+				break
+			end
+		end
+		for k, v in pairs( args ) do
+			if v == '' then
+				if not (type(k) == 'number' and k &lt; tmp) then args[k] = nil end
+			end
+		end
+	end
+
+	-- Order parameters
+	if frame.args['$params'] then
+		local params, tmp = mw.text.split( frame.args['$params'], '%s*,%s*' ), {}
+		for k, v in ipairs(params) do
+			v = tonumber(mw.ustring.match(v, '^[1-9][0-9]*$')) or v
+			if args[v] then tmp[v], args[v] = args[v], nil end
+		end
+		for k, v in pairs(args) do tmp[k], args[k] = args[k], nil end
+		args = tmp
+	end
+
+	return mTemplateInvocation.invocation(name, args)
+end
+
+p[''] = p.main -- For backwards compatibility
+
+return p
+
+[[Category:second attempt at refreshing on January 27 2024]][[Category:subst:FULLPAGENAME}}]][[Category:second attempt at refreshing on January 27 2024]]
+[[Category:pages tagged as Automatic wikipedia redirects in namespace {{subst:NAMESPACE}}]][[Category:11]]</text>
+      <sha1>sv0p6ybkmmvfd2sxa6ukh4mb8uffp67</sha1>
+    </revision>
+    <revision>
+      <id>832600</id>
+      <parentid>832599</parentid>
+      <timestamp>2025-04-06T02:27:28Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "[[Category:subst:FULLPAGENAME}}]]" to ""</comment>
+      <origin>832600</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4177" sha1="5nqneoo45dd42zg3fcf04jopjs19ibe" xml:space="preserve">local checkType = require('libraryUtil').checkType
+
+local p = {}
+
+local BODY_PARAM = '$B'
+
+local specialParams = {
+	['$params'] = 'parameter list',
+	['$aliases'] = 'parameter aliases',
+	['$flags'] = 'flags',
+	['$B'] = 'template content',
+	['$template-name'] = 'template invocation name override',
+}
+
+function p.main(frame, body)
+	-- If we are substing, this function returns a template invocation, and if
+	-- not, it returns the template body. The template body can be specified in
+	-- the body parameter, or in the template parameter defined in the
+	-- BODY_PARAM variable. This function can be called from Lua or from
+	-- #invoke.
+
+	-- Return the template body if we aren't substing.
+	if not mw.isSubsting() then
+		if body ~= nil then
+			return body
+		elseif frame.args[BODY_PARAM] ~= nil then
+			return frame.args[BODY_PARAM]
+		else
+			error(string.format(
+				"no template content specified (use parameter '%s' from #invoke)",
+				BODY_PARAM
+			), 2)
+		end
+	end
+
+	-- Sanity check for the frame object.
+	if type(frame) ~= 'table'
+		or type(frame.getParent) ~= 'function'
+		or not frame:getParent()
+	then
+		error(
+			"argument #1 to 'main' must be a frame object with a parent " ..
+			"frame available",
+			2
+		)
+	end
+
+	-- Find the invocation name.
+	local mTemplateInvocation = require('Module:Template invocation')
+	local name
+
+	if frame.args['$template-name'] and '' ~= frame.args['$template-name'] then
+		name = frame.args['$template-name']										-- override whatever the template name is with this name
+	else
+		name = mTemplateInvocation.name(frame:getParent():getTitle())
+	end
+
+	-- Combine passed args with passed defaults
+	local args = {}
+	if string.find( ','..(frame.args['$flags'] or '')..',', ',%s*override%s*,' ) then
+		for k, v in pairs( frame:getParent().args ) do
+			args[k] = v
+		end
+		for k, v in pairs( frame.args ) do
+			if not specialParams[k] then
+				if v == '__DATE__' then
+					v = mw.getContentLanguage():formatDate( 'F Y' )
+				end
+				args[k] = v
+			end
+		end
+	else
+		for k, v in pairs( frame.args ) do
+			if not specialParams[k] then
+				if v == '__DATE__' then
+					v = mw.getContentLanguage():formatDate( 'F Y' )
+				end
+				args[k] = v
+			end
+		end
+		for k, v in pairs( frame:getParent().args ) do
+			args[k] = v
+		end
+	end
+
+	-- Trim parameters, if not specified otherwise
+	if not string.find( ','..(frame.args['$flags'] or '')..',', ',%s*keep%-whitespace%s*,' ) then
+		for k, v in pairs( args ) do args[k] = mw.ustring.match(v, '^%s*(.*)%s*$') or '' end
+	end
+
+	-- Pull information from parameter aliases
+	local aliases = {}
+	if frame.args['$aliases'] then
+		local list = mw.text.split( frame.args['$aliases'], '%s*,%s*' )
+		for k, v in ipairs( list ) do
+			local tmp = mw.text.split( v, '%s*&gt;%s*' )
+			aliases[tonumber(mw.ustring.match(tmp[1], '^[1-9][0-9]*$')) or tmp[1]] = ((tonumber(mw.ustring.match(tmp[2], '^[1-9][0-9]*$'))) or tmp[2])
+		end
+	end
+	for k, v in pairs( aliases ) do
+		if args[k] and ( not args[v] or args[v] == '' ) then
+			args[v] = args[k]
+		end
+		args[k] = nil
+	end
+
+	-- Remove empty parameters, if specified
+	if string.find( ','..(frame.args['$flags'] or '')..',', ',%s*remove%-empty%s*,' ) then
+		local tmp = 0
+		for k, v in ipairs( args ) do
+			if v ~= '' or ( args[k+1] and args[k+1] ~= '' ) or ( args[k+2] and args[k+2] ~= '' ) then
+				tmp = k
+			else
+				break
+			end
+		end
+		for k, v in pairs( args ) do
+			if v == '' then
+				if not (type(k) == 'number' and k &lt; tmp) then args[k] = nil end
+			end
+		end
+	end
+
+	-- Order parameters
+	if frame.args['$params'] then
+		local params, tmp = mw.text.split( frame.args['$params'], '%s*,%s*' ), {}
+		for k, v in ipairs(params) do
+			v = tonumber(mw.ustring.match(v, '^[1-9][0-9]*$')) or v
+			if args[v] then tmp[v], args[v] = args[v], nil end
+		end
+		for k, v in pairs(args) do tmp[k], args[k] = args[k], nil end
+		args = tmp
+	end
+
+	return mTemplateInvocation.invocation(name, args)
+end
+
+p[''] = p.main -- For backwards compatibility
+
+return p
+
+[[Category:second attempt at refreshing on January 27 2024]][[Category:second attempt at refreshing on January 27 2024]]
+[[Category:pages tagged as Automatic wikipedia redirects in namespace {{subst:NAMESPACE}}]][[Category:11]]</text>
+      <sha1>5nqneoo45dd42zg3fcf04jopjs19ibe</sha1>
+    </revision>
+    <revision>
+      <id>832601</id>
+      <parentid>832600</parentid>
+      <timestamp>2025-04-24T05:35:41Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "second attempt at refreshing on January 27 2024" to "qq"</comment>
+      <origin>832601</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4087" sha1="j10xtc83b5dxs2jgi7z8mkm3ndmktpq" xml:space="preserve">local checkType = require('libraryUtil').checkType
+
+local p = {}
+
+local BODY_PARAM = '$B'
+
+local specialParams = {
+	['$params'] = 'parameter list',
+	['$aliases'] = 'parameter aliases',
+	['$flags'] = 'flags',
+	['$B'] = 'template content',
+	['$template-name'] = 'template invocation name override',
+}
+
+function p.main(frame, body)
+	-- If we are substing, this function returns a template invocation, and if
+	-- not, it returns the template body. The template body can be specified in
+	-- the body parameter, or in the template parameter defined in the
+	-- BODY_PARAM variable. This function can be called from Lua or from
+	-- #invoke.
+
+	-- Return the template body if we aren't substing.
+	if not mw.isSubsting() then
+		if body ~= nil then
+			return body
+		elseif frame.args[BODY_PARAM] ~= nil then
+			return frame.args[BODY_PARAM]
+		else
+			error(string.format(
+				"no template content specified (use parameter '%s' from #invoke)",
+				BODY_PARAM
+			), 2)
+		end
+	end
+
+	-- Sanity check for the frame object.
+	if type(frame) ~= 'table'
+		or type(frame.getParent) ~= 'function'
+		or not frame:getParent()
+	then
+		error(
+			"argument #1 to 'main' must be a frame object with a parent " ..
+			"frame available",
+			2
+		)
+	end
+
+	-- Find the invocation name.
+	local mTemplateInvocation = require('Module:Template invocation')
+	local name
+
+	if frame.args['$template-name'] and '' ~= frame.args['$template-name'] then
+		name = frame.args['$template-name']										-- override whatever the template name is with this name
+	else
+		name = mTemplateInvocation.name(frame:getParent():getTitle())
+	end
+
+	-- Combine passed args with passed defaults
+	local args = {}
+	if string.find( ','..(frame.args['$flags'] or '')..',', ',%s*override%s*,' ) then
+		for k, v in pairs( frame:getParent().args ) do
+			args[k] = v
+		end
+		for k, v in pairs( frame.args ) do
+			if not specialParams[k] then
+				if v == '__DATE__' then
+					v = mw.getContentLanguage():formatDate( 'F Y' )
+				end
+				args[k] = v
+			end
+		end
+	else
+		for k, v in pairs( frame.args ) do
+			if not specialParams[k] then
+				if v == '__DATE__' then
+					v = mw.getContentLanguage():formatDate( 'F Y' )
+				end
+				args[k] = v
+			end
+		end
+		for k, v in pairs( frame:getParent().args ) do
+			args[k] = v
+		end
+	end
+
+	-- Trim parameters, if not specified otherwise
+	if not string.find( ','..(frame.args['$flags'] or '')..',', ',%s*keep%-whitespace%s*,' ) then
+		for k, v in pairs( args ) do args[k] = mw.ustring.match(v, '^%s*(.*)%s*$') or '' end
+	end
+
+	-- Pull information from parameter aliases
+	local aliases = {}
+	if frame.args['$aliases'] then
+		local list = mw.text.split( frame.args['$aliases'], '%s*,%s*' )
+		for k, v in ipairs( list ) do
+			local tmp = mw.text.split( v, '%s*&gt;%s*' )
+			aliases[tonumber(mw.ustring.match(tmp[1], '^[1-9][0-9]*$')) or tmp[1]] = ((tonumber(mw.ustring.match(tmp[2], '^[1-9][0-9]*$'))) or tmp[2])
+		end
+	end
+	for k, v in pairs( aliases ) do
+		if args[k] and ( not args[v] or args[v] == '' ) then
+			args[v] = args[k]
+		end
+		args[k] = nil
+	end
+
+	-- Remove empty parameters, if specified
+	if string.find( ','..(frame.args['$flags'] or '')..',', ',%s*remove%-empty%s*,' ) then
+		local tmp = 0
+		for k, v in ipairs( args ) do
+			if v ~= '' or ( args[k+1] and args[k+1] ~= '' ) or ( args[k+2] and args[k+2] ~= '' ) then
+				tmp = k
+			else
+				break
+			end
+		end
+		for k, v in pairs( args ) do
+			if v == '' then
+				if not (type(k) == 'number' and k &lt; tmp) then args[k] = nil end
+			end
+		end
+	end
+
+	-- Order parameters
+	if frame.args['$params'] then
+		local params, tmp = mw.text.split( frame.args['$params'], '%s*,%s*' ), {}
+		for k, v in ipairs(params) do
+			v = tonumber(mw.ustring.match(v, '^[1-9][0-9]*$')) or v
+			if args[v] then tmp[v], args[v] = args[v], nil end
+		end
+		for k, v in pairs(args) do tmp[k], args[k] = args[k], nil end
+		args = tmp
+	end
+
+	return mTemplateInvocation.invocation(name, args)
+end
+
+p[''] = p.main -- For backwards compatibility
+
+return p
+
+[[Category:qq]][[Category:qq]]
+[[Category:pages tagged as Automatic wikipedia redirects in namespace {{subst:NAMESPACE}}]][[Category:11]]</text>
+      <sha1>j10xtc83b5dxs2jgi7z8mkm3ndmktpq</sha1>
+    </revision>
+    <revision>
+      <id>832602</id>
+      <parentid>832601</parentid>
+      <timestamp>2025-04-29T10:46:20Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "[[Category:11]]" to ""</comment>
+      <origin>832602</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4072" sha1="8is6cnk62z5c09638rtye5b0rvf4819" xml:space="preserve">local checkType = require('libraryUtil').checkType
+
+local p = {}
+
+local BODY_PARAM = '$B'
+
+local specialParams = {
+	['$params'] = 'parameter list',
+	['$aliases'] = 'parameter aliases',
+	['$flags'] = 'flags',
+	['$B'] = 'template content',
+	['$template-name'] = 'template invocation name override',
+}
+
+function p.main(frame, body)
+	-- If we are substing, this function returns a template invocation, and if
+	-- not, it returns the template body. The template body can be specified in
+	-- the body parameter, or in the template parameter defined in the
+	-- BODY_PARAM variable. This function can be called from Lua or from
+	-- #invoke.
+
+	-- Return the template body if we aren't substing.
+	if not mw.isSubsting() then
+		if body ~= nil then
+			return body
+		elseif frame.args[BODY_PARAM] ~= nil then
+			return frame.args[BODY_PARAM]
+		else
+			error(string.format(
+				"no template content specified (use parameter '%s' from #invoke)",
+				BODY_PARAM
+			), 2)
+		end
+	end
+
+	-- Sanity check for the frame object.
+	if type(frame) ~= 'table'
+		or type(frame.getParent) ~= 'function'
+		or not frame:getParent()
+	then
+		error(
+			"argument #1 to 'main' must be a frame object with a parent " ..
+			"frame available",
+			2
+		)
+	end
+
+	-- Find the invocation name.
+	local mTemplateInvocation = require('Module:Template invocation')
+	local name
+
+	if frame.args['$template-name'] and '' ~= frame.args['$template-name'] then
+		name = frame.args['$template-name']										-- override whatever the template name is with this name
+	else
+		name = mTemplateInvocation.name(frame:getParent():getTitle())
+	end
+
+	-- Combine passed args with passed defaults
+	local args = {}
+	if string.find( ','..(frame.args['$flags'] or '')..',', ',%s*override%s*,' ) then
+		for k, v in pairs( frame:getParent().args ) do
+			args[k] = v
+		end
+		for k, v in pairs( frame.args ) do
+			if not specialParams[k] then
+				if v == '__DATE__' then
+					v = mw.getContentLanguage():formatDate( 'F Y' )
+				end
+				args[k] = v
+			end
+		end
+	else
+		for k, v in pairs( frame.args ) do
+			if not specialParams[k] then
+				if v == '__DATE__' then
+					v = mw.getContentLanguage():formatDate( 'F Y' )
+				end
+				args[k] = v
+			end
+		end
+		for k, v in pairs( frame:getParent().args ) do
+			args[k] = v
+		end
+	end
+
+	-- Trim parameters, if not specified otherwise
+	if not string.find( ','..(frame.args['$flags'] or '')..',', ',%s*keep%-whitespace%s*,' ) then
+		for k, v in pairs( args ) do args[k] = mw.ustring.match(v, '^%s*(.*)%s*$') or '' end
+	end
+
+	-- Pull information from parameter aliases
+	local aliases = {}
+	if frame.args['$aliases'] then
+		local list = mw.text.split( frame.args['$aliases'], '%s*,%s*' )
+		for k, v in ipairs( list ) do
+			local tmp = mw.text.split( v, '%s*&gt;%s*' )
+			aliases[tonumber(mw.ustring.match(tmp[1], '^[1-9][0-9]*$')) or tmp[1]] = ((tonumber(mw.ustring.match(tmp[2], '^[1-9][0-9]*$'))) or tmp[2])
+		end
+	end
+	for k, v in pairs( aliases ) do
+		if args[k] and ( not args[v] or args[v] == '' ) then
+			args[v] = args[k]
+		end
+		args[k] = nil
+	end
+
+	-- Remove empty parameters, if specified
+	if string.find( ','..(frame.args['$flags'] or '')..',', ',%s*remove%-empty%s*,' ) then
+		local tmp = 0
+		for k, v in ipairs( args ) do
+			if v ~= '' or ( args[k+1] and args[k+1] ~= '' ) or ( args[k+2] and args[k+2] ~= '' ) then
+				tmp = k
+			else
+				break
+			end
+		end
+		for k, v in pairs( args ) do
+			if v == '' then
+				if not (type(k) == 'number' and k &lt; tmp) then args[k] = nil end
+			end
+		end
+	end
+
+	-- Order parameters
+	if frame.args['$params'] then
+		local params, tmp = mw.text.split( frame.args['$params'], '%s*,%s*' ), {}
+		for k, v in ipairs(params) do
+			v = tonumber(mw.ustring.match(v, '^[1-9][0-9]*$')) or v
+			if args[v] then tmp[v], args[v] = args[v], nil end
+		end
+		for k, v in pairs(args) do tmp[k], args[k] = args[k], nil end
+		args = tmp
+	end
+
+	return mTemplateInvocation.invocation(name, args)
+end
+
+p[''] = p.main -- For backwards compatibility
+
+return p
+
+[[Category:qq]][[Category:qq]]
+[[Category:pages tagged as Automatic wikipedia redirects in namespace {{subst:NAMESPACE}}]]</text>
+      <sha1>8is6cnk62z5c09638rtye5b0rvf4819</sha1>
+    </revision>
+    <revision>
+      <id>832603</id>
+      <parentid>832602</parentid>
+      <timestamp>2025-04-29T10:47:14Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>Text replacement - "[[Category:qq]]" to ""</comment>
+      <origin>832603</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4042" sha1="8vaptn8xurqct1hp5hcajydnalp64zm" xml:space="preserve">local checkType = require('libraryUtil').checkType
+
+local p = {}
+
+local BODY_PARAM = '$B'
+
+local specialParams = {
+	['$params'] = 'parameter list',
+	['$aliases'] = 'parameter aliases',
+	['$flags'] = 'flags',
+	['$B'] = 'template content',
+	['$template-name'] = 'template invocation name override',
+}
+
+function p.main(frame, body)
+	-- If we are substing, this function returns a template invocation, and if
+	-- not, it returns the template body. The template body can be specified in
+	-- the body parameter, or in the template parameter defined in the
+	-- BODY_PARAM variable. This function can be called from Lua or from
+	-- #invoke.
+
+	-- Return the template body if we aren't substing.
+	if not mw.isSubsting() then
+		if body ~= nil then
+			return body
+		elseif frame.args[BODY_PARAM] ~= nil then
+			return frame.args[BODY_PARAM]
+		else
+			error(string.format(
+				"no template content specified (use parameter '%s' from #invoke)",
+				BODY_PARAM
+			), 2)
+		end
+	end
+
+	-- Sanity check for the frame object.
+	if type(frame) ~= 'table'
+		or type(frame.getParent) ~= 'function'
+		or not frame:getParent()
+	then
+		error(
+			"argument #1 to 'main' must be a frame object with a parent " ..
+			"frame available",
+			2
+		)
+	end
+
+	-- Find the invocation name.
+	local mTemplateInvocation = require('Module:Template invocation')
+	local name
+
+	if frame.args['$template-name'] and '' ~= frame.args['$template-name'] then
+		name = frame.args['$template-name']										-- override whatever the template name is with this name
+	else
+		name = mTemplateInvocation.name(frame:getParent():getTitle())
+	end
+
+	-- Combine passed args with passed defaults
+	local args = {}
+	if string.find( ','..(frame.args['$flags'] or '')..',', ',%s*override%s*,' ) then
+		for k, v in pairs( frame:getParent().args ) do
+			args[k] = v
+		end
+		for k, v in pairs( frame.args ) do
+			if not specialParams[k] then
+				if v == '__DATE__' then
+					v = mw.getContentLanguage():formatDate( 'F Y' )
+				end
+				args[k] = v
+			end
+		end
+	else
+		for k, v in pairs( frame.args ) do
+			if not specialParams[k] then
+				if v == '__DATE__' then
+					v = mw.getContentLanguage():formatDate( 'F Y' )
+				end
+				args[k] = v
+			end
+		end
+		for k, v in pairs( frame:getParent().args ) do
+			args[k] = v
+		end
+	end
+
+	-- Trim parameters, if not specified otherwise
+	if not string.find( ','..(frame.args['$flags'] or '')..',', ',%s*keep%-whitespace%s*,' ) then
+		for k, v in pairs( args ) do args[k] = mw.ustring.match(v, '^%s*(.*)%s*$') or '' end
+	end
+
+	-- Pull information from parameter aliases
+	local aliases = {}
+	if frame.args['$aliases'] then
+		local list = mw.text.split( frame.args['$aliases'], '%s*,%s*' )
+		for k, v in ipairs( list ) do
+			local tmp = mw.text.split( v, '%s*&gt;%s*' )
+			aliases[tonumber(mw.ustring.match(tmp[1], '^[1-9][0-9]*$')) or tmp[1]] = ((tonumber(mw.ustring.match(tmp[2], '^[1-9][0-9]*$'))) or tmp[2])
+		end
+	end
+	for k, v in pairs( aliases ) do
+		if args[k] and ( not args[v] or args[v] == '' ) then
+			args[v] = args[k]
+		end
+		args[k] = nil
+	end
+
+	-- Remove empty parameters, if specified
+	if string.find( ','..(frame.args['$flags'] or '')..',', ',%s*remove%-empty%s*,' ) then
+		local tmp = 0
+		for k, v in ipairs( args ) do
+			if v ~= '' or ( args[k+1] and args[k+1] ~= '' ) or ( args[k+2] and args[k+2] ~= '' ) then
+				tmp = k
+			else
+				break
+			end
+		end
+		for k, v in pairs( args ) do
+			if v == '' then
+				if not (type(k) == 'number' and k &lt; tmp) then args[k] = nil end
+			end
+		end
+	end
+
+	-- Order parameters
+	if frame.args['$params'] then
+		local params, tmp = mw.text.split( frame.args['$params'], '%s*,%s*' ), {}
+		for k, v in ipairs(params) do
+			v = tonumber(mw.ustring.match(v, '^[1-9][0-9]*$')) or v
+			if args[v] then tmp[v], args[v] = args[v], nil end
+		end
+		for k, v in pairs(args) do tmp[k], args[k] = args[k], nil end
+		args = tmp
+	end
+
+	return mTemplateInvocation.invocation(name, args)
+end
+
+p[''] = p.main -- For backwards compatibility
+
+return p
+
+
+[[Category:pages tagged as Automatic wikipedia redirects in namespace {{subst:NAMESPACE}}]]</text>
+      <sha1>8vaptn8xurqct1hp5hcajydnalp64zm</sha1>
+    </revision>
+    <revision>
+      <id>5958</id>
+      <timestamp>2025-11-22T14:38:08Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Text replacement - "↵↵↵" to "
+"</comment>
+      <origin>5958</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="4040" sha1="090javrvr0zeuxkjvc3q0hitfb7ahyp" xml:space="preserve">local checkType = require('libraryUtil').checkType
+
+local p = {}
+
+local BODY_PARAM = '$B'
+
+local specialParams = {
+	['$params'] = 'parameter list',
+	['$aliases'] = 'parameter aliases',
+	['$flags'] = 'flags',
+	['$B'] = 'template content',
+	['$template-name'] = 'template invocation name override',
+}
+
+function p.main(frame, body)
+	-- If we are substing, this function returns a template invocation, and if
+	-- not, it returns the template body. The template body can be specified in
+	-- the body parameter, or in the template parameter defined in the
+	-- BODY_PARAM variable. This function can be called from Lua or from
+	-- #invoke.
+
+	-- Return the template body if we aren't substing.
+	if not mw.isSubsting() then
+		if body ~= nil then
+			return body
+		elseif frame.args[BODY_PARAM] ~= nil then
+			return frame.args[BODY_PARAM]
+		else
+			error(string.format(
+				"no template content specified (use parameter '%s' from #invoke)",
+				BODY_PARAM
+			), 2)
+		end
+	end
+
+	-- Sanity check for the frame object.
+	if type(frame) ~= 'table'
+		or type(frame.getParent) ~= 'function'
+		or not frame:getParent()
+	then
+		error(
+			"argument #1 to 'main' must be a frame object with a parent " ..
+			"frame available",
+			2
+		)
+	end
+
+	-- Find the invocation name.
+	local mTemplateInvocation = require('Module:Template invocation')
+	local name
+
+	if frame.args['$template-name'] and '' ~= frame.args['$template-name'] then
+		name = frame.args['$template-name']										-- override whatever the template name is with this name
+	else
+		name = mTemplateInvocation.name(frame:getParent():getTitle())
+	end
+
+	-- Combine passed args with passed defaults
+	local args = {}
+	if string.find( ','..(frame.args['$flags'] or '')..',', ',%s*override%s*,' ) then
+		for k, v in pairs( frame:getParent().args ) do
+			args[k] = v
+		end
+		for k, v in pairs( frame.args ) do
+			if not specialParams[k] then
+				if v == '__DATE__' then
+					v = mw.getContentLanguage():formatDate( 'F Y' )
+				end
+				args[k] = v
+			end
+		end
+	else
+		for k, v in pairs( frame.args ) do
+			if not specialParams[k] then
+				if v == '__DATE__' then
+					v = mw.getContentLanguage():formatDate( 'F Y' )
+				end
+				args[k] = v
+			end
+		end
+		for k, v in pairs( frame:getParent().args ) do
+			args[k] = v
+		end
+	end
+
+	-- Trim parameters, if not specified otherwise
+	if not string.find( ','..(frame.args['$flags'] or '')..',', ',%s*keep%-whitespace%s*,' ) then
+		for k, v in pairs( args ) do args[k] = mw.ustring.match(v, '^%s*(.*)%s*$') or '' end
+	end
+
+	-- Pull information from parameter aliases
+	local aliases = {}
+	if frame.args['$aliases'] then
+		local list = mw.text.split( frame.args['$aliases'], '%s*,%s*' )
+		for k, v in ipairs( list ) do
+			local tmp = mw.text.split( v, '%s*&gt;%s*' )
+			aliases[tonumber(mw.ustring.match(tmp[1], '^[1-9][0-9]*$')) or tmp[1]] = ((tonumber(mw.ustring.match(tmp[2], '^[1-9][0-9]*$'))) or tmp[2])
+		end
+	end
+	for k, v in pairs( aliases ) do
+		if args[k] and ( not args[v] or args[v] == '' ) then
+			args[v] = args[k]
+		end
+		args[k] = nil
+	end
+
+	-- Remove empty parameters, if specified
+	if string.find( ','..(frame.args['$flags'] or '')..',', ',%s*remove%-empty%s*,' ) then
+		local tmp = 0
+		for k, v in ipairs( args ) do
+			if v ~= '' or ( args[k+1] and args[k+1] ~= '' ) or ( args[k+2] and args[k+2] ~= '' ) then
+				tmp = k
+			else
+				break
+			end
+		end
+		for k, v in pairs( args ) do
+			if v == '' then
+				if not (type(k) == 'number' and k &lt; tmp) then args[k] = nil end
+			end
+		end
+	end
+
+	-- Order parameters
+	if frame.args['$params'] then
+		local params, tmp = mw.text.split( frame.args['$params'], '%s*,%s*' ), {}
+		for k, v in ipairs(params) do
+			v = tonumber(mw.ustring.match(v, '^[1-9][0-9]*$')) or v
+			if args[v] then tmp[v], args[v] = args[v], nil end
+		end
+		for k, v in pairs(args) do tmp[k], args[k] = args[k], nil end
+		args = tmp
+	end
+
+	return mTemplateInvocation.invocation(name, args)
+end
+
+p[''] = p.main -- For backwards compatibility
+
+return p
+[[Category:pages tagged as Automatic wikipedia redirects in namespace {{subst:NAMESPACE}}]]</text>
+      <sha1>090javrvr0zeuxkjvc3q0hitfb7ahyp</sha1>
+    </revision>
+  </page>
+</mediawiki>

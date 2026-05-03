@@ -1,0 +1,1121 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Module:Sensitive IP addresses/API</title>
+    <ns>828</ns>
+    <id>185709</id>
+    <revision>
+      <id>3700100</id>
+      <timestamp>2026-05-03T00:24:35Z</timestamp>
+      <contributor>
+        <username>en&gt;Mr. Stradivarius</username>
+        <id>0</id>
+      </contributor>
+      <minor/>
+      <comment>Protected "[[Module:Sensitive IP addresses/API]]": [[WP:High-risk templates|High-risk Lua module]]: used in the MediaWiki interface, e.g. [[MediaWiki:Blockiptext]] via [[Template:Sensitive IP addresses]] ([Edit=Require administrator access] (indefinite...</comment>
+      <origin>3700100</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="14763" sha1="c4r7sohn3065xuks34lmtxtr8pbydi9" xml:space="preserve">-- This module provides functions for handling sensitive IP addresses.
+
+-- Load modules
+local mIP = require('Module:IP')
+local IPAddress = mIP.IPAddress
+local Subnet = mIP.Subnet
+local IPv4Collection = mIP.IPv4Collection
+local IPv6Collection = mIP.IPv6Collection
+
+-- Lazily load the jf-JSON module
+local JSON
+
+-------------------------------------------------------------------------------
+-- Helper functions
+-------------------------------------------------------------------------------
+
+local function deepCopy(val)
+	-- Make a deep copy of a value, but don't worry about self-references or
+	-- metatables as mw.clone does. If a table in val has a self-reference,
+	-- you will get an infinite loop, so don't do that.
+	if type(val) == 'table' then
+		local ret = {}
+		for k, v in pairs(val) do
+			ret[k] = deepCopy(v)
+		end
+		return ret
+	else
+		return val
+	end
+end
+
+local function deepCopyInto(source, dest)
+	-- Do a deep copy of a source table into a destination table, ignoring
+	-- self-references and metatables. If a table in source has a self-reference
+	-- you will get an infinite loop.
+	for k, v in pairs(source) do
+		if type(v) == 'table' then
+			dest[k] = {}
+			deepCopyInto(v, dest[k])
+		else
+			dest[k] = v
+		end
+	end
+end
+
+local function removeDuplicates(t)
+	-- Return a copy of an array with duplicate values removed.
+	local keys, ret = {}, {}
+	for i, v in ipairs(t) do
+		if not keys[v] then
+			table.insert(ret, v)
+			keys[v] = true
+		end
+	end
+	return ret
+end
+
+-------------------------------------------------------------------------------
+-- SensitiveEntity class
+-- A country or organization for which blocks must be handled with care.
+-- Media organizations may inspect block messages for IP addresses and ranges
+-- belonging to these entities and those messages may end up in the press.
+-------------------------------------------------------------------------------
+
+local SensitiveEntity = {}
+SensitiveEntity.__index = SensitiveEntity
+
+SensitiveEntity.reasons = {
+	-- The reasons that an entity may be sensitive. Used to verify data in
+	-- Module:Sensitive IP addresses/list.
+	political = true,
+	technical = true,
+}
+
+do
+	-- Private methods
+	local function addRanges(self, key, collectionConstructor, ranges)
+		if ranges and ranges[1] then
+			self[key] = collectionConstructor()
+			for i, range in ipairs(ranges) do
+				self[key]:addSubnet(Subnet.new(range))
+			end
+		end
+	end
+
+	-- Constructor
+	function SensitiveEntity.new(data)
+		local self = setmetatable({}, SensitiveEntity)
+
+		-- Set data
+		self.data = data
+		addRanges(self, 'v4Collection', IPv4Collection.new, data.ipv4Ranges)
+		addRanges(self, 'v6Collection', IPv6Collection.new, data.ipv6Ranges)
+
+		return self
+	end
+end
+
+function SensitiveEntity:matchesIPOrRange(str)
+	-- Returns true, matchObj, queryObj if there is a match for the IP address
+	-- string or CIDR range str in the sensitive entity. Returns false
+	-- otherwise. matchObj is the Subnet object that was matched, and queryObj
+	-- is the IPAddress or Subnet object corresponding to the input string.
+
+	-- Get the IPAddress or Subnet object for str
+	local isIP, isSubnet, obj
+	isIP, obj = pcall(IPAddress.new, str)
+	if isIP and not obj then
+		isIP = false
+	end
+
+	if not isIP then
+		isSubnet, obj = pcall(Subnet.new, str)
+		if not isSubnet or not obj then
+			error(string.format(
+				"'%s' is not a valid IP address or CIDR string",
+				str
+			), 2)
+		end
+	end
+
+	-- Try matching the object to the appropriate collection
+	local function isInCollection(collection, obj, isIP)
+		if isIP then
+			if collection then
+				local isMatch, matchObj = collection:containsIP(obj)
+				return isMatch, matchObj, obj
+			else
+				return false
+			end
+		else
+			if collection then
+				local isMatch, matchObj = collection:overlapsSubnet(obj)
+				return isMatch, matchObj, obj
+			else
+				return false
+			end
+		end
+	end
+
+	if obj:isIPv4() then
+		return isInCollection(self.v4Collection, obj, isIP)
+	else
+		return isInCollection(self.v6Collection, obj, isIP)
+	end
+end
+
+-------------------------------------------------------------------------------
+-- Sensitive IP API
+-------------------------------------------------------------------------------
+
+-- This API is used by external tools and gadgets, so it should be kept
+-- backwards-compatible. Clients query the API with a query table, and the
+-- API returns a response table. The response table is available as a Lua table
+-- for other Lua modules, and as JSON for external clients.
+
+-- Example query tables:
+--
+-- Query IP addresses and ranges:
+-- {
+-- 	test = {'1.2.3.4', '4.5.6.0/24', '2001:db8::ff00:12:3456', '2001:db8::ff00:12:0/112'},
+-- }
+--
+-- Query specific entities:
+-- {
+-- 	entities = {'ussenate', 'ushr'}
+-- }
+--
+-- Query all entities:
+-- {
+-- 	entities = {'all'}
+-- }
+--
+-- Query all entities and format the result as a JSON string:
+-- {
+-- 	entities = {'all'},
+--  format = 'json'
+-- }
+--
+-- Combined query:
+-- {
+-- 	test = {'1.2.3.4', '4.5.6.0/24', '2001:db8::ff00:12:3456', '2001:db8::ff00:12:0/112'},
+-- 	entities = {'ussenate', 'ushr'}
+-- }
+
+-- Example response:
+--
+-- {
+--     sensitiveips = {
+--         matches = {
+--             {
+--                 ip = '1.2.3.4',
+--                 type = 'ip',
+--                 ['ip-version'] = 'IPv4',
+--                 ['matches-range'] = '1.2.3.0/24',
+--                 ['entity-id'] = 'entityid'
+--             },
+--             {
+--                 range = '4.5.6.0/24',
+--                 type = 'range',
+--                 ['ip-version'] = 'IPv4',
+--                 ['matches-range'] = '4.5.0.0/16',
+--                 ['entity-id'] = 'entityid'
+--             }
+--         },
+--         ['matched-ranges'] = {
+--             ['1.2.3.0/24'] = {
+--                 range = '1.2.3.0/24',
+--                 ['ip-version'] = 'IPv4',
+--                 ['entity-id'] = 'entityid'
+--             },
+--             ['4.5.0.0/16'] = {
+--                 range = '4.5.0.0/16',
+--                 ['ip-version'] = 'IPv4',
+--                 ['entity-id'] = 'entityid'
+--             }
+--         },
+--         entities = {
+--             ['entityid'] = {
+--                 id = 'entityid',
+--                 name = 'The entity name',
+--                 description = 'A description of the entity',
+--                 ['ipv4-ranges'] = {
+--                     '1.2.3.0/24',
+--                     '4.5.0.0/16'
+--                     '6.7.0.0/16'
+--                 },
+--                 ['ipv6-ranges'] = {
+--                     '2001:db8::ff00:12:0/112'
+--                 },
+--                 notes = 'Notes about the entity or its ranges'
+--             }
+--         }
+--         ['entity-ids'] = {
+--             'entityid'
+--         }
+--     }
+-- }
+--
+-- Response with errors:
+--
+-- {
+--     error = {
+--         code = 'example-error',
+--         info = 'There was an error',
+--         ['*'] = 'See https://en.wikipedia.org/wiki/Module:Sensitive_IP_addresses for API usage'
+--     }
+-- }
+
+local function query(options)
+	-- Make entity objects
+	local entities, entityIndexes = {}, {}
+	local data = mw.loadData('Module:Sensitive IP addresses/list')
+	for i, entityData in ipairs(data) do
+		entities[entityData.id] = SensitiveEntity.new(entityData)
+		entityIndexes[entityData.id] = i -- Keep track of the original order
+	end
+
+	local function makeError(code, info, format)
+		local ret = {['error'] = {
+			code = code,
+			info = info,
+			['*'] = 'See https://en.wikipedia.org/wiki/Module:Sensitive_IP_addresses/API for API usage',
+		}}
+		if format == 'json' then
+			return mw.text.jsonEncode(ret)
+		else
+			return ret
+		end
+	end
+
+	-- Construct result
+	local result = {
+		matches = {},
+		['matched-ranges'] = {},
+		entities = {},
+		['entity-ids'] = {}
+	}
+
+	if type(options) ~= 'table' then
+		return makeError(
+			'sipa-options-type-error',
+			string.format(
+				"type error in argument #1 of 'query' (expected table, received %s)",
+				type(options)
+			)
+		)
+	elseif not options.test and not options.entities then
+		return makeError(
+			'sipa-blank-options',
+			"the options table didn't contain a 'test' or an 'entities' key",
+			options.format
+		)
+	end
+
+	if options.test then
+		if type(options.test) ~= 'table' then
+			return makeError(
+				'sipa-test-type-error',
+				string.format(
+					"'test' options key was type %s (expected table)",
+					type(options.test)
+				),
+				options.format
+			)
+		end
+
+		for i, testString in ipairs(options.test) do
+			if type(testString) ~= 'string' then
+				return makeError(
+					'sipa-test-string-type-error',
+					string.format(
+						"type error in item #%d in the 'test' array (expected string, received %s)",
+						i,
+						type(testString)
+					),
+					options.format
+				)
+			end
+
+			for k, entity in pairs(entities) do
+				-- Try to match the range with the current sensitive entity.
+				local success, isMatch, matchObj, queryObj = pcall(
+					entity.matchesIPOrRange,
+					entity,
+					testString
+				)
+				if not success then
+					-- The string was invalid.
+					return makeError(
+						'sipa-invalid-test-string',
+						string.format(
+							"test string #%d '%s' was not a valid IP address or CIDR string",
+							i,
+							testString
+						),
+						options.format
+					)
+				end
+				if isMatch then
+					-- The string was a sensitive IP address or subnet.
+
+					-- Add match data
+					local match = {}
+					-- Quick and dirty hack to find if queryObj is an IPAddress object.
+					local isIP = queryObj.getNextIP ~= nil and queryObj.isInSubnet ~= nil
+					if isIP then
+						match.type = 'ip'
+						match.ip = tostring(queryObj)
+					else
+						match.type = 'range'
+						match.range = tostring(queryObj)
+					end
+					match['ip-version'] = queryObj:getVersion()
+					match['matches-range'] = matchObj:getCIDR()
+					match['entity-id'] = entity.data.id
+					table.insert(result.matches, match)
+
+					-- Add the matched range data.
+					result['matched-ranges'][match['matches-range']] = {
+						range = match['matches-range'],
+						['ip-version'] = match['ip-version'],
+						['entity-id'] = match['entity-id'],
+					}
+
+					-- Add the entity data for the entity we matched.
+					result.entities[match['entity-id']] = deepCopy(
+						entities[match['entity-id']].data
+					)
+
+					-- Add the entity ID for the entity we matched.
+					table.insert(result['entity-ids'], match['entity-id'])
+				end
+			end
+		end
+	end
+
+	-- Add entity data requested explicitly.
+	if options.entities then
+		if type(options.entities) ~= 'table' then
+			return makeError(
+				'sipa-entities-type-error',
+				string.format(
+					"'entities' options key was type %s (expected table)",
+					type(options.test)
+				),
+				options.format
+			)
+		end
+
+		-- Check the type of all the entity strings, and check if 'all' has
+		-- been specified.
+		local isAll = false
+		for i, entityString in ipairs(options.entities) do
+			if type(entityString) ~= 'string' then
+				return makeError(
+					'sipa-entity-string-type-error',
+					string.format(
+						"type error in item #%d in the 'entities' array (expected string, received %s)",
+						i,
+						type(entityString)
+					),
+					options.format
+				)
+			end
+			if entityString == 'all' then
+				isAll = true
+			end
+		end
+
+		if isAll then
+			-- Add all the entity data.
+			-- As the final result will contain all the entity data, we can
+			-- just create the entities and entity-ids subtables from scratch
+			-- without worrying about what any existing values might be.
+			result.entities = {}
+			result['entity-ids'] = {}
+			for i, entityData in ipairs(data) do
+				result.entities[entityData.id] = deepCopy(entityData)
+				result['entity-ids'][i] = entityData.id
+			end
+		else
+			-- Add data for the entities specified.
+			-- Insert the entity and entity-id subtables if they aren't already
+			-- present.
+			for i, entityString in ipairs(options.entities) do
+				if entities[entityString] then
+					result.entities[entityString] = deepCopy(
+						entities[entityString].data
+					)
+					table.insert(result['entity-ids'], entityString)
+				end
+			end
+			result['entity-ids'] = removeDuplicates(result['entity-ids'])
+			table.sort(result['entity-ids'], function(s1, s2)
+				return entityIndexes[s1] &lt; entityIndexes[s2]
+			end)
+		end
+	end
+
+	-- Add any missing reason fields from entities.
+	for id, entityData in pairs(result.entities) do
+		entityData.reason = entityData.reason or 'political'
+	end
+
+	-- Wrap the result in an outer layer like the MediaWiki Action API does.
+	result = {sensitiveips = result}
+
+	if options.format == 'json' then
+		-- Load jf-JSON
+		JSON = JSON or require('Module:jf-JSON')
+		JSON.strictTypes = true -- Necessary for correct blank-object encoding
+		-- Decode a skeleton result JSON string. This ensures that blank objects
+		-- are re-encoded as blank objects and not as blank arrays.
+		local jsonResult = JSON:decode([[{"sensitiveips": {
+			"matches": [],
+			"matched-ranges": {},
+			"entities": {},
+			"entity-ids": []
+		}}]])
+		for i, key in ipairs{'matches', 'matched-ranges', 'entities', 'entity-ids'} do
+			deepCopyInto(result.sensitiveips[key], jsonResult.sensitiveips[key])
+		end
+		return JSON:encode(jsonResult)
+	elseif options.format == nil or options.format == 'lua' then
+		return result
+	elseif type(options.format) ~= 'string' then
+		return makeError(
+			'sipa-format-type-error',
+			string.format(
+				"'format' options key was type %s (expected string or nil)",
+				type(options.format)
+			)
+		)
+	else
+		return makeError(
+			'sipa-invalid-format',
+			string.format(
+				"invalid format '%s' (expected 'json' or 'lua')",
+				type(options.format)
+			)
+		)
+	end
+end
+
+--------------------------------------------------------------------------------
+-- Exports
+--------------------------------------------------------------------------------
+
+local p = {}
+
+function p._isValidSensitivityReason(s)
+	-- Return true if s is a valid sensitivity reason; otherwise return false.
+	return s ~= nil and SensitiveEntity.reasons[s] ~= nil
+end
+
+function p._getSensitivityReasons(separator, conjunction)
+	-- Return an string of valid sensitivity reasons, ordered alphabetically.
+	-- The reasons are separated by an optional separator; if conjunction is
+	-- specified it is used instead of the last separator, as in
+	-- mw.text.listToText.
+
+	-- Get an array of valid sensitivity reasons.
+	local reasons = {}
+	for reason in pairs(SensitiveEntity.reasons) do
+		reasons[#reasons + 1] = reason
+	end
+	table.sort(reasons)
+
+	-- Convert arguments if we are being called from wikitext.
+	if type(separator) == 'table' and type(separator.getParent) == 'function' then
+		-- separator is a frame object
+		local frame = separator
+		separator = frame.args[1]
+		conjunction = frame.args[2]
+	end
+
+	-- Return a formatted string
+	return mw.text.listToText(reasons, separator, conjunction)
+end
+
+-- Export the API query function
+p.query = query
+
+return p</text>
+      <sha1>c4r7sohn3065xuks34lmtxtr8pbydi9</sha1>
+    </revision>
+    <revision>
+      <id>3700101</id>
+      <parentid>3700100</parentid>
+      <timestamp>2026-05-03T00:24:35Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: overwriting with templates included</comment>
+      <origin>3700100</origin>
+      <model>Scribunto</model>
+      <format>text/plain</format>
+      <text bytes="14763" sha1="c4r7sohn3065xuks34lmtxtr8pbydi9" xml:space="preserve">-- This module provides functions for handling sensitive IP addresses.
+
+-- Load modules
+local mIP = require('Module:IP')
+local IPAddress = mIP.IPAddress
+local Subnet = mIP.Subnet
+local IPv4Collection = mIP.IPv4Collection
+local IPv6Collection = mIP.IPv6Collection
+
+-- Lazily load the jf-JSON module
+local JSON
+
+-------------------------------------------------------------------------------
+-- Helper functions
+-------------------------------------------------------------------------------
+
+local function deepCopy(val)
+	-- Make a deep copy of a value, but don't worry about self-references or
+	-- metatables as mw.clone does. If a table in val has a self-reference,
+	-- you will get an infinite loop, so don't do that.
+	if type(val) == 'table' then
+		local ret = {}
+		for k, v in pairs(val) do
+			ret[k] = deepCopy(v)
+		end
+		return ret
+	else
+		return val
+	end
+end
+
+local function deepCopyInto(source, dest)
+	-- Do a deep copy of a source table into a destination table, ignoring
+	-- self-references and metatables. If a table in source has a self-reference
+	-- you will get an infinite loop.
+	for k, v in pairs(source) do
+		if type(v) == 'table' then
+			dest[k] = {}
+			deepCopyInto(v, dest[k])
+		else
+			dest[k] = v
+		end
+	end
+end
+
+local function removeDuplicates(t)
+	-- Return a copy of an array with duplicate values removed.
+	local keys, ret = {}, {}
+	for i, v in ipairs(t) do
+		if not keys[v] then
+			table.insert(ret, v)
+			keys[v] = true
+		end
+	end
+	return ret
+end
+
+-------------------------------------------------------------------------------
+-- SensitiveEntity class
+-- A country or organization for which blocks must be handled with care.
+-- Media organizations may inspect block messages for IP addresses and ranges
+-- belonging to these entities and those messages may end up in the press.
+-------------------------------------------------------------------------------
+
+local SensitiveEntity = {}
+SensitiveEntity.__index = SensitiveEntity
+
+SensitiveEntity.reasons = {
+	-- The reasons that an entity may be sensitive. Used to verify data in
+	-- Module:Sensitive IP addresses/list.
+	political = true,
+	technical = true,
+}
+
+do
+	-- Private methods
+	local function addRanges(self, key, collectionConstructor, ranges)
+		if ranges and ranges[1] then
+			self[key] = collectionConstructor()
+			for i, range in ipairs(ranges) do
+				self[key]:addSubnet(Subnet.new(range))
+			end
+		end
+	end
+
+	-- Constructor
+	function SensitiveEntity.new(data)
+		local self = setmetatable({}, SensitiveEntity)
+
+		-- Set data
+		self.data = data
+		addRanges(self, 'v4Collection', IPv4Collection.new, data.ipv4Ranges)
+		addRanges(self, 'v6Collection', IPv6Collection.new, data.ipv6Ranges)
+
+		return self
+	end
+end
+
+function SensitiveEntity:matchesIPOrRange(str)
+	-- Returns true, matchObj, queryObj if there is a match for the IP address
+	-- string or CIDR range str in the sensitive entity. Returns false
+	-- otherwise. matchObj is the Subnet object that was matched, and queryObj
+	-- is the IPAddress or Subnet object corresponding to the input string.
+
+	-- Get the IPAddress or Subnet object for str
+	local isIP, isSubnet, obj
+	isIP, obj = pcall(IPAddress.new, str)
+	if isIP and not obj then
+		isIP = false
+	end
+
+	if not isIP then
+		isSubnet, obj = pcall(Subnet.new, str)
+		if not isSubnet or not obj then
+			error(string.format(
+				"'%s' is not a valid IP address or CIDR string",
+				str
+			), 2)
+		end
+	end
+
+	-- Try matching the object to the appropriate collection
+	local function isInCollection(collection, obj, isIP)
+		if isIP then
+			if collection then
+				local isMatch, matchObj = collection:containsIP(obj)
+				return isMatch, matchObj, obj
+			else
+				return false
+			end
+		else
+			if collection then
+				local isMatch, matchObj = collection:overlapsSubnet(obj)
+				return isMatch, matchObj, obj
+			else
+				return false
+			end
+		end
+	end
+
+	if obj:isIPv4() then
+		return isInCollection(self.v4Collection, obj, isIP)
+	else
+		return isInCollection(self.v6Collection, obj, isIP)
+	end
+end
+
+-------------------------------------------------------------------------------
+-- Sensitive IP API
+-------------------------------------------------------------------------------
+
+-- This API is used by external tools and gadgets, so it should be kept
+-- backwards-compatible. Clients query the API with a query table, and the
+-- API returns a response table. The response table is available as a Lua table
+-- for other Lua modules, and as JSON for external clients.
+
+-- Example query tables:
+--
+-- Query IP addresses and ranges:
+-- {
+-- 	test = {'1.2.3.4', '4.5.6.0/24', '2001:db8::ff00:12:3456', '2001:db8::ff00:12:0/112'},
+-- }
+--
+-- Query specific entities:
+-- {
+-- 	entities = {'ussenate', 'ushr'}
+-- }
+--
+-- Query all entities:
+-- {
+-- 	entities = {'all'}
+-- }
+--
+-- Query all entities and format the result as a JSON string:
+-- {
+-- 	entities = {'all'},
+--  format = 'json'
+-- }
+--
+-- Combined query:
+-- {
+-- 	test = {'1.2.3.4', '4.5.6.0/24', '2001:db8::ff00:12:3456', '2001:db8::ff00:12:0/112'},
+-- 	entities = {'ussenate', 'ushr'}
+-- }
+
+-- Example response:
+--
+-- {
+--     sensitiveips = {
+--         matches = {
+--             {
+--                 ip = '1.2.3.4',
+--                 type = 'ip',
+--                 ['ip-version'] = 'IPv4',
+--                 ['matches-range'] = '1.2.3.0/24',
+--                 ['entity-id'] = 'entityid'
+--             },
+--             {
+--                 range = '4.5.6.0/24',
+--                 type = 'range',
+--                 ['ip-version'] = 'IPv4',
+--                 ['matches-range'] = '4.5.0.0/16',
+--                 ['entity-id'] = 'entityid'
+--             }
+--         },
+--         ['matched-ranges'] = {
+--             ['1.2.3.0/24'] = {
+--                 range = '1.2.3.0/24',
+--                 ['ip-version'] = 'IPv4',
+--                 ['entity-id'] = 'entityid'
+--             },
+--             ['4.5.0.0/16'] = {
+--                 range = '4.5.0.0/16',
+--                 ['ip-version'] = 'IPv4',
+--                 ['entity-id'] = 'entityid'
+--             }
+--         },
+--         entities = {
+--             ['entityid'] = {
+--                 id = 'entityid',
+--                 name = 'The entity name',
+--                 description = 'A description of the entity',
+--                 ['ipv4-ranges'] = {
+--                     '1.2.3.0/24',
+--                     '4.5.0.0/16'
+--                     '6.7.0.0/16'
+--                 },
+--                 ['ipv6-ranges'] = {
+--                     '2001:db8::ff00:12:0/112'
+--                 },
+--                 notes = 'Notes about the entity or its ranges'
+--             }
+--         }
+--         ['entity-ids'] = {
+--             'entityid'
+--         }
+--     }
+-- }
+--
+-- Response with errors:
+--
+-- {
+--     error = {
+--         code = 'example-error',
+--         info = 'There was an error',
+--         ['*'] = 'See https://en.wikipedia.org/wiki/Module:Sensitive_IP_addresses for API usage'
+--     }
+-- }
+
+local function query(options)
+	-- Make entity objects
+	local entities, entityIndexes = {}, {}
+	local data = mw.loadData('Module:Sensitive IP addresses/list')
+	for i, entityData in ipairs(data) do
+		entities[entityData.id] = SensitiveEntity.new(entityData)
+		entityIndexes[entityData.id] = i -- Keep track of the original order
+	end
+
+	local function makeError(code, info, format)
+		local ret = {['error'] = {
+			code = code,
+			info = info,
+			['*'] = 'See https://en.wikipedia.org/wiki/Module:Sensitive_IP_addresses/API for API usage',
+		}}
+		if format == 'json' then
+			return mw.text.jsonEncode(ret)
+		else
+			return ret
+		end
+	end
+
+	-- Construct result
+	local result = {
+		matches = {},
+		['matched-ranges'] = {},
+		entities = {},
+		['entity-ids'] = {}
+	}
+
+	if type(options) ~= 'table' then
+		return makeError(
+			'sipa-options-type-error',
+			string.format(
+				"type error in argument #1 of 'query' (expected table, received %s)",
+				type(options)
+			)
+		)
+	elseif not options.test and not options.entities then
+		return makeError(
+			'sipa-blank-options',
+			"the options table didn't contain a 'test' or an 'entities' key",
+			options.format
+		)
+	end
+
+	if options.test then
+		if type(options.test) ~= 'table' then
+			return makeError(
+				'sipa-test-type-error',
+				string.format(
+					"'test' options key was type %s (expected table)",
+					type(options.test)
+				),
+				options.format
+			)
+		end
+
+		for i, testString in ipairs(options.test) do
+			if type(testString) ~= 'string' then
+				return makeError(
+					'sipa-test-string-type-error',
+					string.format(
+						"type error in item #%d in the 'test' array (expected string, received %s)",
+						i,
+						type(testString)
+					),
+					options.format
+				)
+			end
+
+			for k, entity in pairs(entities) do
+				-- Try to match the range with the current sensitive entity.
+				local success, isMatch, matchObj, queryObj = pcall(
+					entity.matchesIPOrRange,
+					entity,
+					testString
+				)
+				if not success then
+					-- The string was invalid.
+					return makeError(
+						'sipa-invalid-test-string',
+						string.format(
+							"test string #%d '%s' was not a valid IP address or CIDR string",
+							i,
+							testString
+						),
+						options.format
+					)
+				end
+				if isMatch then
+					-- The string was a sensitive IP address or subnet.
+
+					-- Add match data
+					local match = {}
+					-- Quick and dirty hack to find if queryObj is an IPAddress object.
+					local isIP = queryObj.getNextIP ~= nil and queryObj.isInSubnet ~= nil
+					if isIP then
+						match.type = 'ip'
+						match.ip = tostring(queryObj)
+					else
+						match.type = 'range'
+						match.range = tostring(queryObj)
+					end
+					match['ip-version'] = queryObj:getVersion()
+					match['matches-range'] = matchObj:getCIDR()
+					match['entity-id'] = entity.data.id
+					table.insert(result.matches, match)
+
+					-- Add the matched range data.
+					result['matched-ranges'][match['matches-range']] = {
+						range = match['matches-range'],
+						['ip-version'] = match['ip-version'],
+						['entity-id'] = match['entity-id'],
+					}
+
+					-- Add the entity data for the entity we matched.
+					result.entities[match['entity-id']] = deepCopy(
+						entities[match['entity-id']].data
+					)
+
+					-- Add the entity ID for the entity we matched.
+					table.insert(result['entity-ids'], match['entity-id'])
+				end
+			end
+		end
+	end
+
+	-- Add entity data requested explicitly.
+	if options.entities then
+		if type(options.entities) ~= 'table' then
+			return makeError(
+				'sipa-entities-type-error',
+				string.format(
+					"'entities' options key was type %s (expected table)",
+					type(options.test)
+				),
+				options.format
+			)
+		end
+
+		-- Check the type of all the entity strings, and check if 'all' has
+		-- been specified.
+		local isAll = false
+		for i, entityString in ipairs(options.entities) do
+			if type(entityString) ~= 'string' then
+				return makeError(
+					'sipa-entity-string-type-error',
+					string.format(
+						"type error in item #%d in the 'entities' array (expected string, received %s)",
+						i,
+						type(entityString)
+					),
+					options.format
+				)
+			end
+			if entityString == 'all' then
+				isAll = true
+			end
+		end
+
+		if isAll then
+			-- Add all the entity data.
+			-- As the final result will contain all the entity data, we can
+			-- just create the entities and entity-ids subtables from scratch
+			-- without worrying about what any existing values might be.
+			result.entities = {}
+			result['entity-ids'] = {}
+			for i, entityData in ipairs(data) do
+				result.entities[entityData.id] = deepCopy(entityData)
+				result['entity-ids'][i] = entityData.id
+			end
+		else
+			-- Add data for the entities specified.
+			-- Insert the entity and entity-id subtables if they aren't already
+			-- present.
+			for i, entityString in ipairs(options.entities) do
+				if entities[entityString] then
+					result.entities[entityString] = deepCopy(
+						entities[entityString].data
+					)
+					table.insert(result['entity-ids'], entityString)
+				end
+			end
+			result['entity-ids'] = removeDuplicates(result['entity-ids'])
+			table.sort(result['entity-ids'], function(s1, s2)
+				return entityIndexes[s1] &lt; entityIndexes[s2]
+			end)
+		end
+	end
+
+	-- Add any missing reason fields from entities.
+	for id, entityData in pairs(result.entities) do
+		entityData.reason = entityData.reason or 'political'
+	end
+
+	-- Wrap the result in an outer layer like the MediaWiki Action API does.
+	result = {sensitiveips = result}
+
+	if options.format == 'json' then
+		-- Load jf-JSON
+		JSON = JSON or require('Module:jf-JSON')
+		JSON.strictTypes = true -- Necessary for correct blank-object encoding
+		-- Decode a skeleton result JSON string. This ensures that blank objects
+		-- are re-encoded as blank objects and not as blank arrays.
+		local jsonResult = JSON:decode([[{"sensitiveips": {
+			"matches": [],
+			"matched-ranges": {},
+			"entities": {},
+			"entity-ids": []
+		}}]])
+		for i, key in ipairs{'matches', 'matched-ranges', 'entities', 'entity-ids'} do
+			deepCopyInto(result.sensitiveips[key], jsonResult.sensitiveips[key])
+		end
+		return JSON:encode(jsonResult)
+	elseif options.format == nil or options.format == 'lua' then
+		return result
+	elseif type(options.format) ~= 'string' then
+		return makeError(
+			'sipa-format-type-error',
+			string.format(
+				"'format' options key was type %s (expected string or nil)",
+				type(options.format)
+			)
+		)
+	else
+		return makeError(
+			'sipa-invalid-format',
+			string.format(
+				"invalid format '%s' (expected 'json' or 'lua')",
+				type(options.format)
+			)
+		)
+	end
+end
+
+--------------------------------------------------------------------------------
+-- Exports
+--------------------------------------------------------------------------------
+
+local p = {}
+
+function p._isValidSensitivityReason(s)
+	-- Return true if s is a valid sensitivity reason; otherwise return false.
+	return s ~= nil and SensitiveEntity.reasons[s] ~= nil
+end
+
+function p._getSensitivityReasons(separator, conjunction)
+	-- Return an string of valid sensitivity reasons, ordered alphabetically.
+	-- The reasons are separated by an optional separator; if conjunction is
+	-- specified it is used instead of the last separator, as in
+	-- mw.text.listToText.
+
+	-- Get an array of valid sensitivity reasons.
+	local reasons = {}
+	for reason in pairs(SensitiveEntity.reasons) do
+		reasons[#reasons + 1] = reason
+	end
+	table.sort(reasons)
+
+	-- Convert arguments if we are being called from wikitext.
+	if type(separator) == 'table' and type(separator.getParent) == 'function' then
+		-- separator is a frame object
+		local frame = separator
+		separator = frame.args[1]
+		conjunction = frame.args[2]
+	end
+
+	-- Return a formatted string
+	return mw.text.listToText(reasons, separator, conjunction)
+end
+
+-- Export the API query function
+p.query = query
+
+return p</text>
+      <sha1>c4r7sohn3065xuks34lmtxtr8pbydi9</sha1>
+    </revision>
+  </page>
+</mediawiki>

@@ -1,0 +1,721 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.11/ http://www.mediawiki.org/xml/export-0.11.xsd" version="0.11" xml:lang="en">
+  <siteinfo>
+    <sitename>Shinto Wiki</sitename>
+    <dbname>shintowiki</dbname>
+    <base>https://shinto.miraheze.org/wiki/Main_Page</base>
+    <generator>MediaWiki 1.45.3</generator>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Project</namespace>
+      <namespace key="5" case="first-letter">Project talk</namespace>
+      <namespace key="6" case="first-letter">File</namespace>
+      <namespace key="7" case="first-letter">File talk</namespace>
+      <namespace key="8" case="first-letter">MediaWiki</namespace>
+      <namespace key="9" case="first-letter">MediaWiki talk</namespace>
+      <namespace key="10" case="first-letter">Template</namespace>
+      <namespace key="11" case="first-letter">Template talk</namespace>
+      <namespace key="12" case="first-letter">Help</namespace>
+      <namespace key="13" case="first-letter">Help talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+      <namespace key="420" case="first-letter">GeoJson</namespace>
+      <namespace key="421" case="first-letter">GeoJson talk</namespace>
+      <namespace key="828" case="first-letter">Module</namespace>
+      <namespace key="829" case="first-letter">Module talk</namespace>
+      <namespace key="860" case="first-letter">Item</namespace>
+      <namespace key="861" case="first-letter">Item talk</namespace>
+      <namespace key="862" case="first-letter">Property</namespace>
+      <namespace key="863" case="first-letter">Property talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Help:Labeled section transclusion</title>
+    <ns>12</ns>
+    <id>4846</id>
+    <revision>
+      <id>777925</id>
+      <timestamp>2024-09-06T13:01:59Z</timestamp>
+      <contributor>
+        <username>en&gt;Waddie96</username>
+        <id>0</id>
+      </contributor>
+      <comment>add   Further information: Help:Transclusion § Selective transclusion</comment>
+      <origin>777925</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="13687" sha1="eaw6q4yv999wg32rlgkk1k6mrbti60s" xml:space="preserve">{{Short description|Wikipedia help page}}{{Hatnote|This is a MediaWiki extension and parser function, see [[mw:Extension:Labeled Section Transclusion]]}}{{Further|Help:Transclusion#Selective transclusion}}{{Wikipedia how-to|H:LST|WP:LST}} 
+
+'''Labeled Section Transclusion''' ([[mw:Extension:Labeled Section Transclusion|LST]]) is a [[Wikipedia:Parser function|parser function]] that provides two ways for designating a "section" of a page for [[Wikipedia:transclusion|transclusion]]. The first method identifies the section by using the [[Wikipedia:Page name|page name]] and a ''heading'' (the [[Help:Section|section]] title as it appears in the source page). The second method allows the selection of an arbitrary "section" for transclusion, but this approach requires adding specific [[Wikipedia:Markup|markup]] to ''label'' the desired section beforehand.
+
+Three functions can transclude a section from a given page name.
+* &lt;kbd&gt;{&lt;nowiki /&gt;{#section''':'''''page&amp;nbsp;name''|'''''label'''''}}&lt;/kbd&gt; (a labeled section)
+* &lt;kbd&gt;{&lt;nowiki /&gt;{#section'''-x:'''''page&amp;nbsp;name''|'''''label'''''}}&lt;/kbd&gt; (all except that labeled section)
+* &lt;kbd&gt;{&lt;nowiki /&gt;{#section'''-h:'''''page&amp;nbsp;name''|'''''heading'''''}}&lt;/kbd&gt; (a normal section)
+
+Note that there are also equivalent names for these functions, the base names being &lt;code&gt;#lst&lt;/code&gt;, &lt;code&gt;#lstx&lt;/code&gt;, and &lt;code&gt;#lsth&lt;/code&gt;.
+
+To prepare an arbitrary "section" for a labeled section transclusion, mark it with ''begin'' and ''end'' attributes inside {{tag|section|s}} tags that contain your '''''label''''':
+:{{xtag|section|single|params=begin=''label''}} and {{xtag|section|single|params=end=''label''}} 
+
+Compared to LST transclusion, [[WP:Transclusion#Partial transclusion|partial transclusion]] markup cannot be ''labeled'', and thus the source page cannot have one set of its sections transcluded to one page while having also a different set for another page.  A page marked up with partial transclusion tags only, will always transclude the same.  But LST and partial transclusion can work together on the same page.
+
+These LST functions take additional parameters, as explained below. {{section link||Example pages}} provides search links for the articles that currently employ LST so you can see how they are using it.
+
+== Functions summary ==
+
+This section summarizes the three parser functions in the Labeled Section Transclusion extension.
+
+{{break}}
+Syntax: {&lt;nowiki /&gt;{'''function''': ''fullpagename'' | ''section'' | ''range''/''change''}}
+{| class="wikitable"
+!colspan=2| Parameter!!Parsing entity it identifies
+|-
+|'''1'''
+|[[wp:Fullpagename|Fullpagename]]
+|'''Source page'''. The only required argument. Type it in, or use [[help:magic words#Variables|variables like {&lt;nowiki /&gt;{FULLPAGENAME}}]], (but not [[help:link#Subpage links|subpage linking with &lt;kbd&gt;../&lt;/kbd&gt;]]).
+|-
+|'''2'''
+| Section
+| '''''Label''''' ("labeled section"), or '''''heading''''' (section title), to transclude. Optional parameter. If a label, it must have been added and saved first.  
+|-
+|'''3'''
+|Range|| '''Final section''' in a contiguous series of headings or labels to transclude. Optional. 
+* &lt;kbd&gt;#section&lt;/kbd&gt; transcludes the final section.  
+* &lt;kbd&gt;#section-h&lt;/kbd&gt; does not transclude the final section. 
+* &lt;kbd&gt;#section-x&lt;/kbd&gt; does not take a range.
+|-
+|'''3'''
+|Change|| '''Replacement wikitext.''' Only &lt;kbd&gt;#lstx&lt;/kbd&gt; can rewrite a labeled section during transclusion. Optional.
+|}
+
+It is not possible to pass [[Help:Template#Parameters|template parameters]] to the transcluded section or page but the code of the page can use [[Help:Magic words|magic words]] like &lt;code&gt;&lt;nowiki&gt;{{PAGENAME}}&lt;/nowiki&gt;&lt;/code&gt; to test where it is and behave differently.
+
+{{break}}
+
+{| class="wikitable"
+|+ style="text-align: left;" |Behaviors
+|-
+! width=6em| Parser Function !! Alias !! Description
+|-
+| &lt;kbd&gt;#lst&lt;/kbd&gt; || &lt;kbd&gt;#section&lt;/kbd&gt; || Transclude a ''label'' found inside {{tag|section|s}} tags. Honors transclusion tags. Default is entire page. If the label is not found, transclude nothing.
+|-
+| &lt;kbd&gt;#lstx&lt;/kbd&gt; || &lt;kbd&gt;#section-x&lt;/kbd&gt; || Transclude entire page, but ''exclude'' a label. Blind to headings.  Honors transclusion tags. Default is entire page.  If the label is not found, transclude entire page.
+|-
+| &lt;kbd&gt;#lsth&lt;/kbd&gt; || &lt;kbd&gt;#section-h&lt;/kbd&gt; || Transclude a ''heading'' (section title).  Blind to labels. ''Does not'' honor transclusion tags.{{sup|&amp;dagger;}} Defaults to the lead section.   If the heading is not found, transclude nothing.
+|}
+:&amp;dagger;{{spaces|2}}&lt;kbd&gt;#section-h&lt;/kbd&gt; makes its target look the same as its source. On the ''source'' page 
+:*&amp;lt;noinclude&gt; displays its content
+:*&amp;lt;onlyinclude&gt; displays its content
+:*&amp;lt;[[wp:transclusion#Markup|includeonly]]&lt;nowiki /&gt;&gt; ''does not'' display its content
+:So &lt;kbd&gt;#section-h&lt;/kbd&gt; must not render {{tag|includeonly|o}} content on the ''target'' page.
+
+{{break}}
+
+LST {{xtag|section|s}} tags behavior:
+* The ''end'' tag is not required.  When only a ''begin'' tag is found, it goes to the end of the page.
+* The same label can mark several ''begin/end'' sections. A range is then everything from the first ''begin'' to last ''end''. 
+* Different labels can overlap.  They can also nest.
+* Cannot be placed by a transclusion, but instead must be present on the page as saved in the database. See {{section link||No template}} below. 
+
+LST transclusion options:
+* It can be [[help:preview|preview]]ed. 
+* The target page can be the source page ''itself''.
+* It can be substituted.  See {{section link||Substitution}} below.
+
+Standard syntax applies:
+* Generous whitespace is allowed: &lt;kbd&gt;{{nowrap|{&lt;nowiki /&gt;{ {{spaces|1}}#lst:{{spaces|2}}''namespace'':{{spaces|2}}''pagename''{{spaces|2}}{{!}}{{spaces|2}}''section''{{spaces|2}}}}}}&lt;/kbd&gt;
+* An unspaced : colon follows the parser function name.
+* In tags no spaces around the = sign of the label (attribute): &lt;kbd&gt;begin=''label''&lt;/kbd&gt; 
+* In tags space is optional before the / slash: &lt;kbd&gt;&amp;lt;section end=''label'' /&gt;&lt;/kbd&gt;
+
+Common usage errors.
+* {{font color|red|Template loop detected:}} preview transcluding a transclusion in the saved version?
+* Cite errors.  You must have the full definition of a [[WP:REFNAME|named reference]] on any page that this ''[[Help:List-defined references|List-defined reference]]'' (&lt;refname="X"/&gt;) is needed.
+* To render transcluding footnotes, you must [[WP:Citing sources#How to create the list of citations|tag where they go on the page]].
+
+==Markup==
+No markup of the source page is needed if only section titles are used to specify the transclusion.  This is the case with &lt;kbd&gt;#section-h&lt;/kbd&gt;.  
+
+For labeling a section for LST transclusion use the following markup. 
+
+===Section marking===
+Markup your section boundaries in the source page using two, singular, {{xtag|section|s}} tags; for example, to label a section "chapter1":
+
+ {{tag|section|s|params=begin=chapter1}}this is a chapter{{tag|section|s|params=end=chapter1}}
+
+Note this is not normal opening-tag, closing-tag HTML. In HTML {{tag|section}} is invalid. This parser tag, {{tag|section|s}}, is incompatible with an HTML element because MediaWiki markup employs a unique parser tag, added just for the Labeled Section Transclusion extension. 
+
+===Section transclusion===
+Use the parser function &lt;code&gt;#section&lt;/code&gt; to transclude the section. For example, to transclude section labeled ''chapter1'' from a page called ''articleX'':
+
+&lt;syntaxhighlight lang="text"&gt;{{#section:ArticleX|chapter1}}&lt;/syntaxhighlight &gt;
+
+===Transclude the page but exclude the section===
+To transclude a page, but exclude a specified section, use the &lt;code&gt;#section-x&lt;/code&gt; parser function:
+
+ &lt;nowiki&gt;{{#&lt;/nowiki&gt;section-x:''fullpagename''|''label''}}
+
+or
+
+ &lt;nowiki&gt;{{#&lt;/nowiki&gt;section-x:''fullpagename''|''heading''}}
+
+Optionally, you may add replacement text to the excluded section.
+
+ &lt;nowiki&gt;{{#&lt;/nowiki&gt;section-x:''fullpagename''|''label''|''replacement text''}}
+
+Example:
+&lt;syntaxhighlight lang="wikitext"&gt;{{#section-x:articleX|chapter1|See chapter 1 in [[articleX]].}}&lt;/syntaxhighlight&gt;
+
+The replacement text will appear in the area where the section is skipped (excluded).
+
+===Dealing with stray whitespace===
+By default, &lt;code&gt;#section&lt;/code&gt; will include all the whitespace in the section, which can lead to issues if you're trying to transclude the section into a different article. To solve this, make use of the fact that the {{pf|if}} parser function trims its inputs, e.g.
+
+&lt;syntaxhighlight lang="text"&gt;{{#if:1|{{#section:ArticleX|chapter1}}}}&lt;/syntaxhighlight&gt;
+
+This will get rid of both leading and trailing whitespace, and the article will render as intended. Because you are nesting templates, it will double the [[WP:PEIS|post-expand include size]] of the excerpt, which can present a problem on longer pages, so you may wish to edit the source page to wrap the content you want to include, without the whitespace, in {{tag|onlyinclude}} tags instead. You can also use the {{tl|trim}} template instead of {{pf|if|1}}, but because it is just a wrapper for the {{pf|if|1}} technique above, it results in a tripling of the post-expand include size.
+
+==Other functions==
+===Discontiguous sections===
+It is possible to have multiple sections with the same name; in this case, every section with that name will be included/excluded. This is especially useful to mark various discussions.
+
+===Section ranges===
+These functions can transclude the whole page, so they have the two, optional argument to specify behaviours: 1) a name-tagged section or heading-title, 2) a range of such named section-tags or section titles, and 3) replacement content for a named section. 
+*&lt;code&gt;&lt;nowiki&gt;{{#section:articleX|chapter1|chapter3}}&lt;/nowiki&gt;&lt;/code&gt; includes everything from the beginning of chapter 1 to the end of chapter 3. This allows using empty marker pairs to mark one end of the section, possibly in a template.
+*&lt;code&gt;&lt;nowiki&gt;{{#section-h:articleX|chapter1|chapter3}}&lt;/nowiki&gt;&lt;/code&gt; includes content of chapter1, heading and content of chapter 2.
+*&lt;code&gt;&lt;nowiki&gt;{{#section-x:articleX|chapter1|chapter3}}&lt;/nowiki&gt;&lt;/code&gt; replaces chapter1 heading and content with the word "chapter3".
+
+===Substitution===
+Instead of transcluding every time, to "transclude" once (to copy), use [[help:substitution|substitution]]:
+: &lt;kbd&gt;{&lt;nowiki /&gt;{subst:&lt;nowiki /&gt;#section...}}&lt;/kbd&gt;
+
+For example to archive old [[Help:talk|talk]] on your talk page, you can copy it to an archive page, then delete it, all using LST:
+# Put {{tag|section|s|params=begin=archive}} at the beginning of the section you want to archive and {{tag|section|s|params=end=archive}} at the end. (We use "archive" for the label, but any label will do.).  This section can be anywhere, and it can be multiple sections.
+# Save those change to your talk page.
+# Create a new archive page.  Put &lt;kbd&gt;{&lt;nowiki /&gt;{subst:#section:User talk:''pagename''|archive}}&lt;/kbd&gt;.
+# Save that archive page.  The old talk is copied over to it. The transclusion disappears because it was substituted.
+# Edit your talk page again.  Replace all the wikitext on the entire page with &lt;kbd&gt;{&lt;nowiki /&gt;{subst:#section-x:User talk:''username''|archive}}&lt;/kbd&gt;.  The ''database page'' will be transcluded, minus the exact same wikitext in the saved archive, and minus the section tags (which we had labeled "archive").
+
+When using substitution to transclude content on Wikipedia, please use the edit summary to apply [[Wikipedia:Copyrights#Reusers.27_rights_and_obligations|reusers' rights and obligations]].  This applies to any substantial content, and not just article contents.
+
+==No template==
+
+Currently, no template can facilitate this LST markup because it is necessary to use #tag in order to [[mw:Manual:Tag extensions#How do I render wikitext in my extension? | "preSaveTransform"]] magic words inside a tag of any kind.  For the proper attempt see (the non-functioning) {{tl|section}}.
+
+The only way to [[eval|evaluate]] template arguments ''inside a tag'' (because of the parsing order) is [[help:magic words#Formatting|#tag]]. LST would need (template) evaluation of the label as the section tag is generated:
+&lt;syntaxhighlight lang="wikitext"&gt;{{ #tag: section | {{{1}}} }}&lt;/syntaxhighlight&gt;
+
+But #tag only produces [[XML]]-like (balanced, open-closed, start-end, pairs of) tags, while LST will use a singular, explicitly self closing, tag. So LST tags cannot be generated by any template. Compare actual (only in effect) output:
+ 
+ {{#tag:section|''content''|begin=''label''}&lt;nowiki /&gt;} &amp;rarr; 
+ {{ font color || yellow | &amp;lt; }}section begin=''label''&gt; ''content'' {{ font color || yellow | &amp;lt;/}}section&gt;  {{cross}}
+
+{{tracked|37256}}
+with the requested output: 
+
+ &amp;lt;section begin=''label'' {{ font color || yellow | /&gt; }} ''content'' &amp;lt;section end=''label'' {{ font color || yellow | /&gt; }}
+
+== Example pages ==
+
+These are [[H:S|searches]] stored in a link:
+* {{sl|insource:"section h" insource:/\#"section-h"/}} (Articles)
+* {{sl|insource:section insource:/\{\{\#section/}} (Articles)
+* {{sl|all: insource:"section x" insource:/\#"section-x"/}} (entire wiki)
+* {{sl|insource:lst insource:/\#lst/}} (Articles)
+* {{sl|insource:lsth insource:/\{\{\#lsth/}} (Articles)
+* {{sl|all: insource:lstx insource:/\#lstx/}} (entire wiki)
+
+== See also ==
+* [[Help:TRANSSECTION]]
+* [[:mw:Extension:Labeled Section Transclusion]]
+* [[Wikipedia:Cascading content]]
+* [[Help:Transclusion#Drawbacks]]
+=== Templates ===
+* {{tl|Excerpt}}
+* {{tl|Section transclude}}
+* {{tl|R}} - a referencing/citation template optionally taking advange of labeled section transclusion to mark context sections
+
+{{Wikipedia technical help|collapsed}}
+
+[[Category:Wikipedia sections]]</text>
+      <sha1>eaw6q4yv999wg32rlgkk1k6mrbti60s</sha1>
+    </revision>
+    <revision>
+      <id>777926</id>
+      <parentid>777925</parentid>
+      <timestamp>2024-12-19T02:12:46Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>1 revision imported: importing wikipedia</comment>
+      <origin>777925</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="13687" sha1="eaw6q4yv999wg32rlgkk1k6mrbti60s" xml:space="preserve">{{Short description|Wikipedia help page}}{{Hatnote|This is a MediaWiki extension and parser function, see [[mw:Extension:Labeled Section Transclusion]]}}{{Further|Help:Transclusion#Selective transclusion}}{{Wikipedia how-to|H:LST|WP:LST}} 
+
+'''Labeled Section Transclusion''' ([[mw:Extension:Labeled Section Transclusion|LST]]) is a [[Wikipedia:Parser function|parser function]] that provides two ways for designating a "section" of a page for [[Wikipedia:transclusion|transclusion]]. The first method identifies the section by using the [[Wikipedia:Page name|page name]] and a ''heading'' (the [[Help:Section|section]] title as it appears in the source page). The second method allows the selection of an arbitrary "section" for transclusion, but this approach requires adding specific [[Wikipedia:Markup|markup]] to ''label'' the desired section beforehand.
+
+Three functions can transclude a section from a given page name.
+* &lt;kbd&gt;{&lt;nowiki /&gt;{#section''':'''''page&amp;nbsp;name''|'''''label'''''}}&lt;/kbd&gt; (a labeled section)
+* &lt;kbd&gt;{&lt;nowiki /&gt;{#section'''-x:'''''page&amp;nbsp;name''|'''''label'''''}}&lt;/kbd&gt; (all except that labeled section)
+* &lt;kbd&gt;{&lt;nowiki /&gt;{#section'''-h:'''''page&amp;nbsp;name''|'''''heading'''''}}&lt;/kbd&gt; (a normal section)
+
+Note that there are also equivalent names for these functions, the base names being &lt;code&gt;#lst&lt;/code&gt;, &lt;code&gt;#lstx&lt;/code&gt;, and &lt;code&gt;#lsth&lt;/code&gt;.
+
+To prepare an arbitrary "section" for a labeled section transclusion, mark it with ''begin'' and ''end'' attributes inside {{tag|section|s}} tags that contain your '''''label''''':
+:{{xtag|section|single|params=begin=''label''}} and {{xtag|section|single|params=end=''label''}} 
+
+Compared to LST transclusion, [[WP:Transclusion#Partial transclusion|partial transclusion]] markup cannot be ''labeled'', and thus the source page cannot have one set of its sections transcluded to one page while having also a different set for another page.  A page marked up with partial transclusion tags only, will always transclude the same.  But LST and partial transclusion can work together on the same page.
+
+These LST functions take additional parameters, as explained below. {{section link||Example pages}} provides search links for the articles that currently employ LST so you can see how they are using it.
+
+== Functions summary ==
+
+This section summarizes the three parser functions in the Labeled Section Transclusion extension.
+
+{{break}}
+Syntax: {&lt;nowiki /&gt;{'''function''': ''fullpagename'' | ''section'' | ''range''/''change''}}
+{| class="wikitable"
+!colspan=2| Parameter!!Parsing entity it identifies
+|-
+|'''1'''
+|[[wp:Fullpagename|Fullpagename]]
+|'''Source page'''. The only required argument. Type it in, or use [[help:magic words#Variables|variables like {&lt;nowiki /&gt;{FULLPAGENAME}}]], (but not [[help:link#Subpage links|subpage linking with &lt;kbd&gt;../&lt;/kbd&gt;]]).
+|-
+|'''2'''
+| Section
+| '''''Label''''' ("labeled section"), or '''''heading''''' (section title), to transclude. Optional parameter. If a label, it must have been added and saved first.  
+|-
+|'''3'''
+|Range|| '''Final section''' in a contiguous series of headings or labels to transclude. Optional. 
+* &lt;kbd&gt;#section&lt;/kbd&gt; transcludes the final section.  
+* &lt;kbd&gt;#section-h&lt;/kbd&gt; does not transclude the final section. 
+* &lt;kbd&gt;#section-x&lt;/kbd&gt; does not take a range.
+|-
+|'''3'''
+|Change|| '''Replacement wikitext.''' Only &lt;kbd&gt;#lstx&lt;/kbd&gt; can rewrite a labeled section during transclusion. Optional.
+|}
+
+It is not possible to pass [[Help:Template#Parameters|template parameters]] to the transcluded section or page but the code of the page can use [[Help:Magic words|magic words]] like &lt;code&gt;&lt;nowiki&gt;{{PAGENAME}}&lt;/nowiki&gt;&lt;/code&gt; to test where it is and behave differently.
+
+{{break}}
+
+{| class="wikitable"
+|+ style="text-align: left;" |Behaviors
+|-
+! width=6em| Parser Function !! Alias !! Description
+|-
+| &lt;kbd&gt;#lst&lt;/kbd&gt; || &lt;kbd&gt;#section&lt;/kbd&gt; || Transclude a ''label'' found inside {{tag|section|s}} tags. Honors transclusion tags. Default is entire page. If the label is not found, transclude nothing.
+|-
+| &lt;kbd&gt;#lstx&lt;/kbd&gt; || &lt;kbd&gt;#section-x&lt;/kbd&gt; || Transclude entire page, but ''exclude'' a label. Blind to headings.  Honors transclusion tags. Default is entire page.  If the label is not found, transclude entire page.
+|-
+| &lt;kbd&gt;#lsth&lt;/kbd&gt; || &lt;kbd&gt;#section-h&lt;/kbd&gt; || Transclude a ''heading'' (section title).  Blind to labels. ''Does not'' honor transclusion tags.{{sup|&amp;dagger;}} Defaults to the lead section.   If the heading is not found, transclude nothing.
+|}
+:&amp;dagger;{{spaces|2}}&lt;kbd&gt;#section-h&lt;/kbd&gt; makes its target look the same as its source. On the ''source'' page 
+:*&amp;lt;noinclude&gt; displays its content
+:*&amp;lt;onlyinclude&gt; displays its content
+:*&amp;lt;[[wp:transclusion#Markup|includeonly]]&lt;nowiki /&gt;&gt; ''does not'' display its content
+:So &lt;kbd&gt;#section-h&lt;/kbd&gt; must not render {{tag|includeonly|o}} content on the ''target'' page.
+
+{{break}}
+
+LST {{xtag|section|s}} tags behavior:
+* The ''end'' tag is not required.  When only a ''begin'' tag is found, it goes to the end of the page.
+* The same label can mark several ''begin/end'' sections. A range is then everything from the first ''begin'' to last ''end''. 
+* Different labels can overlap.  They can also nest.
+* Cannot be placed by a transclusion, but instead must be present on the page as saved in the database. See {{section link||No template}} below. 
+
+LST transclusion options:
+* It can be [[help:preview|preview]]ed. 
+* The target page can be the source page ''itself''.
+* It can be substituted.  See {{section link||Substitution}} below.
+
+Standard syntax applies:
+* Generous whitespace is allowed: &lt;kbd&gt;{{nowrap|{&lt;nowiki /&gt;{ {{spaces|1}}#lst:{{spaces|2}}''namespace'':{{spaces|2}}''pagename''{{spaces|2}}{{!}}{{spaces|2}}''section''{{spaces|2}}}}}}&lt;/kbd&gt;
+* An unspaced : colon follows the parser function name.
+* In tags no spaces around the = sign of the label (attribute): &lt;kbd&gt;begin=''label''&lt;/kbd&gt; 
+* In tags space is optional before the / slash: &lt;kbd&gt;&amp;lt;section end=''label'' /&gt;&lt;/kbd&gt;
+
+Common usage errors.
+* {{font color|red|Template loop detected:}} preview transcluding a transclusion in the saved version?
+* Cite errors.  You must have the full definition of a [[WP:REFNAME|named reference]] on any page that this ''[[Help:List-defined references|List-defined reference]]'' (&lt;refname="X"/&gt;) is needed.
+* To render transcluding footnotes, you must [[WP:Citing sources#How to create the list of citations|tag where they go on the page]].
+
+==Markup==
+No markup of the source page is needed if only section titles are used to specify the transclusion.  This is the case with &lt;kbd&gt;#section-h&lt;/kbd&gt;.  
+
+For labeling a section for LST transclusion use the following markup. 
+
+===Section marking===
+Markup your section boundaries in the source page using two, singular, {{xtag|section|s}} tags; for example, to label a section "chapter1":
+
+ {{tag|section|s|params=begin=chapter1}}this is a chapter{{tag|section|s|params=end=chapter1}}
+
+Note this is not normal opening-tag, closing-tag HTML. In HTML {{tag|section}} is invalid. This parser tag, {{tag|section|s}}, is incompatible with an HTML element because MediaWiki markup employs a unique parser tag, added just for the Labeled Section Transclusion extension. 
+
+===Section transclusion===
+Use the parser function &lt;code&gt;#section&lt;/code&gt; to transclude the section. For example, to transclude section labeled ''chapter1'' from a page called ''articleX'':
+
+&lt;syntaxhighlight lang="text"&gt;{{#section:ArticleX|chapter1}}&lt;/syntaxhighlight &gt;
+
+===Transclude the page but exclude the section===
+To transclude a page, but exclude a specified section, use the &lt;code&gt;#section-x&lt;/code&gt; parser function:
+
+ &lt;nowiki&gt;{{#&lt;/nowiki&gt;section-x:''fullpagename''|''label''}}
+
+or
+
+ &lt;nowiki&gt;{{#&lt;/nowiki&gt;section-x:''fullpagename''|''heading''}}
+
+Optionally, you may add replacement text to the excluded section.
+
+ &lt;nowiki&gt;{{#&lt;/nowiki&gt;section-x:''fullpagename''|''label''|''replacement text''}}
+
+Example:
+&lt;syntaxhighlight lang="wikitext"&gt;{{#section-x:articleX|chapter1|See chapter 1 in [[articleX]].}}&lt;/syntaxhighlight&gt;
+
+The replacement text will appear in the area where the section is skipped (excluded).
+
+===Dealing with stray whitespace===
+By default, &lt;code&gt;#section&lt;/code&gt; will include all the whitespace in the section, which can lead to issues if you're trying to transclude the section into a different article. To solve this, make use of the fact that the {{pf|if}} parser function trims its inputs, e.g.
+
+&lt;syntaxhighlight lang="text"&gt;{{#if:1|{{#section:ArticleX|chapter1}}}}&lt;/syntaxhighlight&gt;
+
+This will get rid of both leading and trailing whitespace, and the article will render as intended. Because you are nesting templates, it will double the [[WP:PEIS|post-expand include size]] of the excerpt, which can present a problem on longer pages, so you may wish to edit the source page to wrap the content you want to include, without the whitespace, in {{tag|onlyinclude}} tags instead. You can also use the {{tl|trim}} template instead of {{pf|if|1}}, but because it is just a wrapper for the {{pf|if|1}} technique above, it results in a tripling of the post-expand include size.
+
+==Other functions==
+===Discontiguous sections===
+It is possible to have multiple sections with the same name; in this case, every section with that name will be included/excluded. This is especially useful to mark various discussions.
+
+===Section ranges===
+These functions can transclude the whole page, so they have the two, optional argument to specify behaviours: 1) a name-tagged section or heading-title, 2) a range of such named section-tags or section titles, and 3) replacement content for a named section. 
+*&lt;code&gt;&lt;nowiki&gt;{{#section:articleX|chapter1|chapter3}}&lt;/nowiki&gt;&lt;/code&gt; includes everything from the beginning of chapter 1 to the end of chapter 3. This allows using empty marker pairs to mark one end of the section, possibly in a template.
+*&lt;code&gt;&lt;nowiki&gt;{{#section-h:articleX|chapter1|chapter3}}&lt;/nowiki&gt;&lt;/code&gt; includes content of chapter1, heading and content of chapter 2.
+*&lt;code&gt;&lt;nowiki&gt;{{#section-x:articleX|chapter1|chapter3}}&lt;/nowiki&gt;&lt;/code&gt; replaces chapter1 heading and content with the word "chapter3".
+
+===Substitution===
+Instead of transcluding every time, to "transclude" once (to copy), use [[help:substitution|substitution]]:
+: &lt;kbd&gt;{&lt;nowiki /&gt;{subst:&lt;nowiki /&gt;#section...}}&lt;/kbd&gt;
+
+For example to archive old [[Help:talk|talk]] on your talk page, you can copy it to an archive page, then delete it, all using LST:
+# Put {{tag|section|s|params=begin=archive}} at the beginning of the section you want to archive and {{tag|section|s|params=end=archive}} at the end. (We use "archive" for the label, but any label will do.).  This section can be anywhere, and it can be multiple sections.
+# Save those change to your talk page.
+# Create a new archive page.  Put &lt;kbd&gt;{&lt;nowiki /&gt;{subst:#section:User talk:''pagename''|archive}}&lt;/kbd&gt;.
+# Save that archive page.  The old talk is copied over to it. The transclusion disappears because it was substituted.
+# Edit your talk page again.  Replace all the wikitext on the entire page with &lt;kbd&gt;{&lt;nowiki /&gt;{subst:#section-x:User talk:''username''|archive}}&lt;/kbd&gt;.  The ''database page'' will be transcluded, minus the exact same wikitext in the saved archive, and minus the section tags (which we had labeled "archive").
+
+When using substitution to transclude content on Wikipedia, please use the edit summary to apply [[Wikipedia:Copyrights#Reusers.27_rights_and_obligations|reusers' rights and obligations]].  This applies to any substantial content, and not just article contents.
+
+==No template==
+
+Currently, no template can facilitate this LST markup because it is necessary to use #tag in order to [[mw:Manual:Tag extensions#How do I render wikitext in my extension? | "preSaveTransform"]] magic words inside a tag of any kind.  For the proper attempt see (the non-functioning) {{tl|section}}.
+
+The only way to [[eval|evaluate]] template arguments ''inside a tag'' (because of the parsing order) is [[help:magic words#Formatting|#tag]]. LST would need (template) evaluation of the label as the section tag is generated:
+&lt;syntaxhighlight lang="wikitext"&gt;{{ #tag: section | {{{1}}} }}&lt;/syntaxhighlight&gt;
+
+But #tag only produces [[XML]]-like (balanced, open-closed, start-end, pairs of) tags, while LST will use a singular, explicitly self closing, tag. So LST tags cannot be generated by any template. Compare actual (only in effect) output:
+ 
+ {{#tag:section|''content''|begin=''label''}&lt;nowiki /&gt;} &amp;rarr; 
+ {{ font color || yellow | &amp;lt; }}section begin=''label''&gt; ''content'' {{ font color || yellow | &amp;lt;/}}section&gt;  {{cross}}
+
+{{tracked|37256}}
+with the requested output: 
+
+ &amp;lt;section begin=''label'' {{ font color || yellow | /&gt; }} ''content'' &amp;lt;section end=''label'' {{ font color || yellow | /&gt; }}
+
+== Example pages ==
+
+These are [[H:S|searches]] stored in a link:
+* {{sl|insource:"section h" insource:/\#"section-h"/}} (Articles)
+* {{sl|insource:section insource:/\{\{\#section/}} (Articles)
+* {{sl|all: insource:"section x" insource:/\#"section-x"/}} (entire wiki)
+* {{sl|insource:lst insource:/\#lst/}} (Articles)
+* {{sl|insource:lsth insource:/\{\{\#lsth/}} (Articles)
+* {{sl|all: insource:lstx insource:/\#lstx/}} (entire wiki)
+
+== See also ==
+* [[Help:TRANSSECTION]]
+* [[:mw:Extension:Labeled Section Transclusion]]
+* [[Wikipedia:Cascading content]]
+* [[Help:Transclusion#Drawbacks]]
+=== Templates ===
+* {{tl|Excerpt}}
+* {{tl|Section transclude}}
+* {{tl|R}} - a referencing/citation template optionally taking advange of labeled section transclusion to mark context sections
+
+{{Wikipedia technical help|collapsed}}
+
+[[Category:Wikipedia sections]]</text>
+      <sha1>eaw6q4yv999wg32rlgkk1k6mrbti60s</sha1>
+    </revision>
+    <revision>
+      <id>777927</id>
+      <parentid>777926</parentid>
+      <timestamp>2025-04-25T21:22:12Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>/* Example pages */</comment>
+      <origin>777927</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="13724" sha1="gi8z4mbwoxnhrvmi48ll9cl2ue1ujjw" xml:space="preserve">{{Short description|Wikipedia help page}}{{Hatnote|This is a MediaWiki extension and parser function, see [[mw:Extension:Labeled Section Transclusion]]}}{{Further|Help:Transclusion#Selective transclusion}}{{Wikipedia how-to|H:LST|WP:LST}} 
+
+'''Labeled Section Transclusion''' ([[mw:Extension:Labeled Section Transclusion|LST]]) is a [[Wikipedia:Parser function|parser function]] that provides two ways for designating a "section" of a page for [[Wikipedia:transclusion|transclusion]]. The first method identifies the section by using the [[Wikipedia:Page name|page name]] and a ''heading'' (the [[Help:Section|section]] title as it appears in the source page). The second method allows the selection of an arbitrary "section" for transclusion, but this approach requires adding specific [[Wikipedia:Markup|markup]] to ''label'' the desired section beforehand.
+
+Three functions can transclude a section from a given page name.
+* &lt;kbd&gt;{&lt;nowiki /&gt;{#section''':'''''page&amp;nbsp;name''|'''''label'''''}}&lt;/kbd&gt; (a labeled section)
+* &lt;kbd&gt;{&lt;nowiki /&gt;{#section'''-x:'''''page&amp;nbsp;name''|'''''label'''''}}&lt;/kbd&gt; (all except that labeled section)
+* &lt;kbd&gt;{&lt;nowiki /&gt;{#section'''-h:'''''page&amp;nbsp;name''|'''''heading'''''}}&lt;/kbd&gt; (a normal section)
+
+Note that there are also equivalent names for these functions, the base names being &lt;code&gt;#lst&lt;/code&gt;, &lt;code&gt;#lstx&lt;/code&gt;, and &lt;code&gt;#lsth&lt;/code&gt;.
+
+To prepare an arbitrary "section" for a labeled section transclusion, mark it with ''begin'' and ''end'' attributes inside {{tag|section|s}} tags that contain your '''''label''''':
+:{{xtag|section|single|params=begin=''label''}} and {{xtag|section|single|params=end=''label''}} 
+
+Compared to LST transclusion, [[WP:Transclusion#Partial transclusion|partial transclusion]] markup cannot be ''labeled'', and thus the source page cannot have one set of its sections transcluded to one page while having also a different set for another page.  A page marked up with partial transclusion tags only, will always transclude the same.  But LST and partial transclusion can work together on the same page.
+
+These LST functions take additional parameters, as explained below. {{section link||Example pages}} provides search links for the articles that currently employ LST so you can see how they are using it.
+
+== Functions summary ==
+
+This section summarizes the three parser functions in the Labeled Section Transclusion extension.
+
+{{break}}
+Syntax: {&lt;nowiki /&gt;{'''function''': ''fullpagename'' | ''section'' | ''range''/''change''}}
+{| class="wikitable"
+!colspan=2| Parameter!!Parsing entity it identifies
+|-
+|'''1'''
+|[[wp:Fullpagename|Fullpagename]]
+|'''Source page'''. The only required argument. Type it in, or use [[help:magic words#Variables|variables like {&lt;nowiki /&gt;{FULLPAGENAME}}]], (but not [[help:link#Subpage links|subpage linking with &lt;kbd&gt;../&lt;/kbd&gt;]]).
+|-
+|'''2'''
+| Section
+| '''''Label''''' ("labeled section"), or '''''heading''''' (section title), to transclude. Optional parameter. If a label, it must have been added and saved first.  
+|-
+|'''3'''
+|Range|| '''Final section''' in a contiguous series of headings or labels to transclude. Optional. 
+* &lt;kbd&gt;#section&lt;/kbd&gt; transcludes the final section.  
+* &lt;kbd&gt;#section-h&lt;/kbd&gt; does not transclude the final section. 
+* &lt;kbd&gt;#section-x&lt;/kbd&gt; does not take a range.
+|-
+|'''3'''
+|Change|| '''Replacement wikitext.''' Only &lt;kbd&gt;#lstx&lt;/kbd&gt; can rewrite a labeled section during transclusion. Optional.
+|}
+
+It is not possible to pass [[Help:Template#Parameters|template parameters]] to the transcluded section or page but the code of the page can use [[Help:Magic words|magic words]] like &lt;code&gt;&lt;nowiki&gt;{{PAGENAME}}&lt;/nowiki&gt;&lt;/code&gt; to test where it is and behave differently.
+
+{{break}}
+
+{| class="wikitable"
+|+ style="text-align: left;" |Behaviors
+|-
+! width=6em| Parser Function !! Alias !! Description
+|-
+| &lt;kbd&gt;#lst&lt;/kbd&gt; || &lt;kbd&gt;#section&lt;/kbd&gt; || Transclude a ''label'' found inside {{tag|section|s}} tags. Honors transclusion tags. Default is entire page. If the label is not found, transclude nothing.
+|-
+| &lt;kbd&gt;#lstx&lt;/kbd&gt; || &lt;kbd&gt;#section-x&lt;/kbd&gt; || Transclude entire page, but ''exclude'' a label. Blind to headings.  Honors transclusion tags. Default is entire page.  If the label is not found, transclude entire page.
+|-
+| &lt;kbd&gt;#lsth&lt;/kbd&gt; || &lt;kbd&gt;#section-h&lt;/kbd&gt; || Transclude a ''heading'' (section title).  Blind to labels. ''Does not'' honor transclusion tags.{{sup|&amp;dagger;}} Defaults to the lead section.   If the heading is not found, transclude nothing.
+|}
+:&amp;dagger;{{spaces|2}}&lt;kbd&gt;#section-h&lt;/kbd&gt; makes its target look the same as its source. On the ''source'' page 
+:*&amp;lt;noinclude&gt; displays its content
+:*&amp;lt;onlyinclude&gt; displays its content
+:*&amp;lt;[[wp:transclusion#Markup|includeonly]]&lt;nowiki /&gt;&gt; ''does not'' display its content
+:So &lt;kbd&gt;#section-h&lt;/kbd&gt; must not render {{tag|includeonly|o}} content on the ''target'' page.
+
+{{break}}
+
+LST {{xtag|section|s}} tags behavior:
+* The ''end'' tag is not required.  When only a ''begin'' tag is found, it goes to the end of the page.
+* The same label can mark several ''begin/end'' sections. A range is then everything from the first ''begin'' to last ''end''. 
+* Different labels can overlap.  They can also nest.
+* Cannot be placed by a transclusion, but instead must be present on the page as saved in the database. See {{section link||No template}} below. 
+
+LST transclusion options:
+* It can be [[help:preview|preview]]ed. 
+* The target page can be the source page ''itself''.
+* It can be substituted.  See {{section link||Substitution}} below.
+
+Standard syntax applies:
+* Generous whitespace is allowed: &lt;kbd&gt;{{nowrap|{&lt;nowiki /&gt;{ {{spaces|1}}#lst:{{spaces|2}}''namespace'':{{spaces|2}}''pagename''{{spaces|2}}{{!}}{{spaces|2}}''section''{{spaces|2}}}}}}&lt;/kbd&gt;
+* An unspaced : colon follows the parser function name.
+* In tags no spaces around the = sign of the label (attribute): &lt;kbd&gt;begin=''label''&lt;/kbd&gt; 
+* In tags space is optional before the / slash: &lt;kbd&gt;&amp;lt;section end=''label'' /&gt;&lt;/kbd&gt;
+
+Common usage errors.
+* {{font color|red|Template loop detected:}} preview transcluding a transclusion in the saved version?
+* Cite errors.  You must have the full definition of a [[WP:REFNAME|named reference]] on any page that this ''[[Help:List-defined references|List-defined reference]]'' (&lt;refname="X"/&gt;) is needed.
+* To render transcluding footnotes, you must [[WP:Citing sources#How to create the list of citations|tag where they go on the page]].
+
+==Markup==
+No markup of the source page is needed if only section titles are used to specify the transclusion.  This is the case with &lt;kbd&gt;#section-h&lt;/kbd&gt;.  
+
+For labeling a section for LST transclusion use the following markup. 
+
+===Section marking===
+Markup your section boundaries in the source page using two, singular, {{xtag|section|s}} tags; for example, to label a section "chapter1":
+
+ {{tag|section|s|params=begin=chapter1}}this is a chapter{{tag|section|s|params=end=chapter1}}
+
+Note this is not normal opening-tag, closing-tag HTML. In HTML {{tag|section}} is invalid. This parser tag, {{tag|section|s}}, is incompatible with an HTML element because MediaWiki markup employs a unique parser tag, added just for the Labeled Section Transclusion extension. 
+
+===Section transclusion===
+Use the parser function &lt;code&gt;#section&lt;/code&gt; to transclude the section. For example, to transclude section labeled ''chapter1'' from a page called ''articleX'':
+
+&lt;syntaxhighlight lang="text"&gt;{{#section:ArticleX|chapter1}}&lt;/syntaxhighlight &gt;
+
+===Transclude the page but exclude the section===
+To transclude a page, but exclude a specified section, use the &lt;code&gt;#section-x&lt;/code&gt; parser function:
+
+ &lt;nowiki&gt;{{#&lt;/nowiki&gt;section-x:''fullpagename''|''label''}}
+
+or
+
+ &lt;nowiki&gt;{{#&lt;/nowiki&gt;section-x:''fullpagename''|''heading''}}
+
+Optionally, you may add replacement text to the excluded section.
+
+ &lt;nowiki&gt;{{#&lt;/nowiki&gt;section-x:''fullpagename''|''label''|''replacement text''}}
+
+Example:
+&lt;syntaxhighlight lang="wikitext"&gt;{{#section-x:articleX|chapter1|See chapter 1 in [[articleX]].}}&lt;/syntaxhighlight&gt;
+
+The replacement text will appear in the area where the section is skipped (excluded).
+
+===Dealing with stray whitespace===
+By default, &lt;code&gt;#section&lt;/code&gt; will include all the whitespace in the section, which can lead to issues if you're trying to transclude the section into a different article. To solve this, make use of the fact that the {{pf|if}} parser function trims its inputs, e.g.
+
+&lt;syntaxhighlight lang="text"&gt;{{#if:1|{{#section:ArticleX|chapter1}}}}&lt;/syntaxhighlight&gt;
+
+This will get rid of both leading and trailing whitespace, and the article will render as intended. Because you are nesting templates, it will double the [[WP:PEIS|post-expand include size]] of the excerpt, which can present a problem on longer pages, so you may wish to edit the source page to wrap the content you want to include, without the whitespace, in {{tag|onlyinclude}} tags instead. You can also use the {{tl|trim}} template instead of {{pf|if|1}}, but because it is just a wrapper for the {{pf|if|1}} technique above, it results in a tripling of the post-expand include size.
+
+==Other functions==
+===Discontiguous sections===
+It is possible to have multiple sections with the same name; in this case, every section with that name will be included/excluded. This is especially useful to mark various discussions.
+
+===Section ranges===
+These functions can transclude the whole page, so they have the two, optional argument to specify behaviours: 1) a name-tagged section or heading-title, 2) a range of such named section-tags or section titles, and 3) replacement content for a named section. 
+*&lt;code&gt;&lt;nowiki&gt;{{#section:articleX|chapter1|chapter3}}&lt;/nowiki&gt;&lt;/code&gt; includes everything from the beginning of chapter 1 to the end of chapter 3. This allows using empty marker pairs to mark one end of the section, possibly in a template.
+*&lt;code&gt;&lt;nowiki&gt;{{#section-h:articleX|chapter1|chapter3}}&lt;/nowiki&gt;&lt;/code&gt; includes content of chapter1, heading and content of chapter 2.
+*&lt;code&gt;&lt;nowiki&gt;{{#section-x:articleX|chapter1|chapter3}}&lt;/nowiki&gt;&lt;/code&gt; replaces chapter1 heading and content with the word "chapter3".
+
+===Substitution===
+Instead of transcluding every time, to "transclude" once (to copy), use [[help:substitution|substitution]]:
+: &lt;kbd&gt;{&lt;nowiki /&gt;{subst:&lt;nowiki /&gt;#section...}}&lt;/kbd&gt;
+
+For example to archive old [[Help:talk|talk]] on your talk page, you can copy it to an archive page, then delete it, all using LST:
+# Put {{tag|section|s|params=begin=archive}} at the beginning of the section you want to archive and {{tag|section|s|params=end=archive}} at the end. (We use "archive" for the label, but any label will do.).  This section can be anywhere, and it can be multiple sections.
+# Save those change to your talk page.
+# Create a new archive page.  Put &lt;kbd&gt;{&lt;nowiki /&gt;{subst:#section:User talk:''pagename''|archive}}&lt;/kbd&gt;.
+# Save that archive page.  The old talk is copied over to it. The transclusion disappears because it was substituted.
+# Edit your talk page again.  Replace all the wikitext on the entire page with &lt;kbd&gt;{&lt;nowiki /&gt;{subst:#section-x:User talk:''username''|archive}}&lt;/kbd&gt;.  The ''database page'' will be transcluded, minus the exact same wikitext in the saved archive, and minus the section tags (which we had labeled "archive").
+
+When using substitution to transclude content on Wikipedia, please use the edit summary to apply [[Wikipedia:Copyrights#Reusers.27_rights_and_obligations|reusers' rights and obligations]].  This applies to any substantial content, and not just article contents.
+
+==No template==
+
+Currently, no template can facilitate this LST markup because it is necessary to use #tag in order to [[mw:Manual:Tag extensions#How do I render wikitext in my extension? | "preSaveTransform"]] magic words inside a tag of any kind.  For the proper attempt see (the non-functioning) {{tl|section}}.
+
+The only way to [[eval|evaluate]] template arguments ''inside a tag'' (because of the parsing order) is [[help:magic words#Formatting|#tag]]. LST would need (template) evaluation of the label as the section tag is generated:
+&lt;syntaxhighlight lang="wikitext"&gt;{{ #tag: section | {{{1}}} }}&lt;/syntaxhighlight&gt;
+
+But #tag only produces [[XML]]-like (balanced, open-closed, start-end, pairs of) tags, while LST will use a singular, explicitly self closing, tag. So LST tags cannot be generated by any template. Compare actual (only in effect) output:
+ 
+ {{#tag:section|''content''|begin=''label''}&lt;nowiki /&gt;} &amp;rarr; 
+ {{ font color || yellow | &amp;lt; }}section begin=''label''&gt; ''content'' {{ font color || yellow | &amp;lt;/}}section&gt;  {{cross}}
+
+{{tracked|37256}}
+with the requested output: 
+
+ &amp;lt;section begin=''label'' {{ font color || yellow | /&gt; }} ''content'' &amp;lt;section end=''label'' {{ font color || yellow | /&gt; }}
+
+== Example pages ==
+
+These are [[H:S|searches]] stored in a link:
+* {{sl|insource:"section h" insource:/\#"section-h"/}} (Articles)
+* {{sl|insource:section insource:/\{\{\#section/}} (Articles)
+* {{sl|all: insource:"section x" insource:/\#"section-x"/}} (entire wiki)
+* {{sl|insource:lst insource:/\#lst/}} (Articles)
+* {{sl|insource:lsth insource:/\{\{\#lsth/}} (Articles)
+* {{sl|all: insource:lstx insource:/\#lstx/}} (entire wiki)
+[[Category:pages to be overwritten]]
+
+== See also ==
+* [[Help:TRANSSECTION]]
+* [[:mw:Extension:Labeled Section Transclusion]]
+* [[Wikipedia:Cascading content]]
+* [[Help:Transclusion#Drawbacks]]
+=== Templates ===
+* {{tl|Excerpt}}
+* {{tl|Section transclude}}
+* {{tl|R}} - a referencing/citation template optionally taking advange of labeled section transclusion to mark context sections
+
+{{Wikipedia technical help|collapsed}}
+
+[[Category:Wikipedia sections]]</text>
+      <sha1>gi8z4mbwoxnhrvmi48ll9cl2ue1ujjw</sha1>
+    </revision>
+    <revision>
+      <id>777928</id>
+      <parentid>777927</parentid>
+      <timestamp>2025-04-26T00:04:18Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>Auto generating page. date placed far in the past so it is attributed to Immanuelle and FireflyBot sends them messages if it is ever imported to Wikipedia.</comment>
+      <origin>777928</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="207" sha1="2nhrkp9d60j02p1gl2bghsr1tx4bjyi" xml:space="preserve">#redirect[[en:Help:Labeled section transclusion]]
+&lt;includeonly&gt;[[Category:Erroneous transclusions of Help:Labeled section transclusion]]&lt;/includeonly&gt;
+&lt;noinclude&gt;[[Category:Wikipedia overwrites]]&lt;/noinclude&gt;</text>
+      <sha1>2nhrkp9d60j02p1gl2bghsr1tx4bjyi</sha1>
+    </revision>
+    <revision>
+      <id>4847</id>
+      <timestamp>2025-05-20T08:33:39Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <comment>imported only latest revision from https://archive.org/details/miraheze-wiki-shintowiki-20251218 to avoid excessive disk usage, comment on the revision was Bot: remove deleted category Wikipedia overwrites</comment>
+      <origin>4847</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="174" sha1="skfpp79aekbinswz6yh3usd6lbl2e6o" xml:space="preserve">#redirect[[en:Help:Labeled section transclusion]]
+&lt;includeonly&gt;[[Category:Erroneous transclusions of Help:Labeled section transclusion]]&lt;/includeonly&gt;
+&lt;noinclude&gt;&lt;/noinclude&gt;</text>
+      <sha1>skfpp79aekbinswz6yh3usd6lbl2e6o</sha1>
+    </revision>
+    <revision>
+      <id>3695759</id>
+      <parentid>4847</parentid>
+      <timestamp>2026-05-02T22:28:29Z</timestamp>
+      <contributor>
+        <username>Immanuelle</username>
+        <id>3</id>
+      </contributor>
+      <minor/>
+      <comment>removing these dumb broken links that cause problems</comment>
+      <origin>3695759</origin>
+      <model>wikitext</model>
+      <format>text/x-wiki</format>
+      <text bytes="174" sha1="r0sprwd5jlebqnyi4w42e1u9zq8yldm" xml:space="preserve">redirect[[:en:Help:Labeled section transclusion]]
+&lt;includeonly&gt;[[Category:Erroneous transclusions of Help:Labeled section transclusion]]&lt;/includeonly&gt;
+&lt;noinclude&gt;&lt;/noinclude&gt;</text>
+      <sha1>r0sprwd5jlebqnyi4w42e1u9zq8yldm</sha1>
+    </revision>
+  </page>
+</mediawiki>
